@@ -50,7 +50,6 @@ import static io.prestosql.tests.utils.QueryExecutors.onHive;
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class TestHiveTransactionalTable
         extends HiveProductTest
