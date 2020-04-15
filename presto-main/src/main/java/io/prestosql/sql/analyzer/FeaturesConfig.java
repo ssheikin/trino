@@ -85,6 +85,7 @@ public class FeaturesConfig
     private boolean optimizeHashGeneration = true;
     private boolean enableIntermediateAggregations;
     private boolean pushTableWriteThroughUnion = true;
+    private DataIntegrityVerification exchangeDataIntegrityVerification = DataIntegrityVerification.ABORT;
     private boolean exchangeCompressionEnabled;
     private boolean legacyTimestamp = true;
     private boolean optimizeMixedDistinctAggregations;
@@ -158,6 +159,14 @@ public class FeaturesConfig
         {
             return this == BROADCAST || this == AUTOMATIC;
         }
+    }
+
+    public enum DataIntegrityVerification
+    {
+        NONE,
+        ABORT,
+        RETRY,
+        /**/;
     }
 
     public double getCpuCostWeight()
@@ -818,6 +827,18 @@ public class FeaturesConfig
     public FeaturesConfig setExchangeCompressionEnabled(boolean exchangeCompressionEnabled)
     {
         this.exchangeCompressionEnabled = exchangeCompressionEnabled;
+        return this;
+    }
+
+    public DataIntegrityVerification getExchangeDataIntegrityVerification()
+    {
+        return exchangeDataIntegrityVerification;
+    }
+
+    @Config("exchange.data-integrity-verification")
+    public FeaturesConfig setExchangeDataIntegrityVerification(DataIntegrityVerification exchangeDataIntegrityVerification)
+    {
+        this.exchangeDataIntegrityVerification = exchangeDataIntegrityVerification;
         return this;
     }
 

@@ -20,6 +20,7 @@ import io.airlift.units.Duration;
 import io.prestosql.operator.aggregation.arrayagg.ArrayAggGroupImplementation;
 import io.prestosql.operator.aggregation.histogram.HistogramGroupImplementation;
 import io.prestosql.operator.aggregation.multimapagg.MultimapAggGroupImplementation;
+import io.prestosql.sql.analyzer.FeaturesConfig.DataIntegrityVerification;
 import io.prestosql.sql.analyzer.FeaturesConfig.JoinDistributionType;
 import io.prestosql.sql.analyzer.FeaturesConfig.JoinReorderingStrategy;
 import org.testng.annotations.Test;
@@ -91,6 +92,7 @@ public class TestFeaturesConfig
                 .setDefaultFilterFactorEnabled(false)
                 .setEnableForcedExchangeBelowGroupId(true)
                 .setExchangeCompressionEnabled(false)
+                .setExchangeDataIntegrityVerification(DataIntegrityVerification.ABORT)
                 .setLegacyTimestamp(true)
                 .setEnableIntermediateAggregations(false)
                 .setPushAggregationThroughOuterJoin(true)
@@ -167,6 +169,7 @@ public class TestFeaturesConfig
                 .put("memory-revoking-threshold", "0.2")
                 .put("memory-revoking-target", "0.8")
                 .put("exchange.compression-enabled", "true")
+                .put("exchange.data-integrity-verification", "RETRY")
                 .put("deprecated.legacy-timestamp", "false")
                 .put("optimizer.enable-intermediate-aggregations", "true")
                 .put("parse-decimal-literals-as-double", "true")
@@ -237,6 +240,7 @@ public class TestFeaturesConfig
                 .setMemoryRevokingThreshold(0.2)
                 .setMemoryRevokingTarget(0.8)
                 .setExchangeCompressionEnabled(true)
+                .setExchangeDataIntegrityVerification(DataIntegrityVerification.RETRY)
                 .setLegacyTimestamp(false)
                 .setEnableIntermediateAggregations(true)
                 .setParseDecimalLiteralsAsDouble(true)
