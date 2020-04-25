@@ -852,6 +852,7 @@ public class PlanBuilder
                 idAllocator.getNextId(),
                 source,
                 partitionBy,
+                false,
                 rowNumberSymbol,
                 maxRowCountPerPartition,
                 Optional.empty());
