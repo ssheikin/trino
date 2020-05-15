@@ -265,7 +265,8 @@ public class TestHivePageSink
                 ImmutableList.of(),
                 Optional.empty(),
                 "test",
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                false);
         JsonCodec<PartitionUpdate> partitionUpdateCodec = JsonCodec.jsonCodec(PartitionUpdate.class);
         HivePageSinkProvider provider = new HivePageSinkProvider(
                 getDefaultHiveFileWriterFactories(config, HDFS_ENVIRONMENT),
