@@ -33,7 +33,8 @@ public class TestInternalCommunicationConfig
                 .setKeyStorePath(null)
                 .setKeyStorePassword(null)
                 .setTrustStorePath(null)
-                .setTrustStorePassword(null));
+                .setTrustStorePassword(null)
+                .setInternalOnlyChecksEnabled(true));
     }
 
     @Test
@@ -46,6 +47,7 @@ public class TestInternalCommunicationConfig
                 .put("internal-communication.https.keystore.key", "key-key")
                 .put("internal-communication.https.truststore.path", "trust-path")
                 .put("internal-communication.https.truststore.key", "trust-key")
+                .put("internal-only-checks.enabled", "false")
                 .build();
 
         InternalCommunicationConfig expected = new InternalCommunicationConfig()
@@ -54,7 +56,8 @@ public class TestInternalCommunicationConfig
                 .setKeyStorePath("key-path")
                 .setKeyStorePassword("key-key")
                 .setTrustStorePath("trust-path")
-                .setTrustStorePassword("trust-key");
+                .setTrustStorePassword("trust-key")
+                .setInternalOnlyChecksEnabled(false);
 
         assertFullMapping(properties, expected);
     }

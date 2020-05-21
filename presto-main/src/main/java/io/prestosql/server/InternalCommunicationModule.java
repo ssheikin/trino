@@ -16,9 +16,11 @@ package io.prestosql.server;
 import com.google.inject.Binder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.airlift.http.client.HttpClientConfig;
+import io.prestosql.server.security.InternalOnlyDynamicFeature;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
+import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 
 public class InternalCommunicationModule
         extends AbstractConfigurationAwareModule
@@ -36,5 +38,9 @@ public class InternalCommunicationModule
 
         binder.bind(InternalAuthenticationManager.class);
         httpClientBinder(binder).bindGlobalFilter(InternalAuthenticationManager.class);
+
+        if (internalCommunicationConfig.isInternalOnlyChecksEnabled()) {
+            jaxrsBinder(binder).bind(InternalOnlyDynamicFeature.class);
+        }
     }
 }

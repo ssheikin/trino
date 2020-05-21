@@ -14,6 +14,7 @@
 package io.prestosql.server;
 
 import io.airlift.configuration.Config;
+import io.airlift.configuration.ConfigDescription;
 import io.airlift.configuration.ConfigSecuritySensitive;
 import io.airlift.configuration.DefunctConfig;
 
@@ -35,6 +36,7 @@ public class InternalCommunicationConfig
     private String keyStorePassword;
     private String trustStorePath;
     private String trustStorePassword;
+    private boolean internalOnlyChecksEnabled = true;
 
     @NotNull
     public Optional<String> getSharedSecret()
@@ -109,6 +111,19 @@ public class InternalCommunicationConfig
     public InternalCommunicationConfig setTrustStorePassword(String trustStorePassword)
     {
         this.trustStorePassword = trustStorePassword;
+        return this;
+    }
+
+    public boolean isInternalOnlyChecksEnabled()
+    {
+        return internalOnlyChecksEnabled;
+    }
+
+    @Config("internal-only-checks.enabled")
+    @ConfigDescription("Disable internal only security check")
+    public InternalCommunicationConfig setInternalOnlyChecksEnabled(boolean internalOnlyChecksEnabled)
+    {
+        this.internalOnlyChecksEnabled = internalOnlyChecksEnabled;
         return this;
     }
 
