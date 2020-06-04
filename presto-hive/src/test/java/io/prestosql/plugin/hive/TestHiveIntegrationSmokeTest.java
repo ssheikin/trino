@@ -4070,6 +4070,221 @@ public class TestHiveIntegrationSmokeTest
     }
 
     @Test
+    public void schemaMismatchesWithDereferenceProjections()
+    {
+        for (TestingHiveStorageFormat format : getAllTestingHiveStorageFormat()) {
+            schemaMismatchesWithDereferenceProjections(format.getFormat());
+        }
+    }
+
+    private void schemaMismatchesWithDereferenceProjections(HiveStorageFormat format)
+    {
+        // Verify reordering of subfields between a partition column and a table column is not supported
+        // eg. table column: a row(c varchar, b bigint), partition column: a row(b bigint, c varchar)
+        try {
+            assertUpdate("CREATE TABLE evolve_test (dummy bigint, a row(b bigint, c varchar), d bigint) with (format = '" + format + "', partitioned_by=array['d'])");
+            assertUpdate("INSERT INTO evolve_test values (1, row(1, 'abc'), 1)", 1);
+            assertUpdate("ALTER TABLE evolve_test DROP COLUMN a");
+            assertUpdate("ALTER TABLE evolve_test ADD COLUMN a row(c varchar, b bigint)");
+            assertUpdate("INSERT INTO evolve_test values (2, row('def', 2), 2)", 1);
+            assertQueryFails("SELECT a.b FROM evolve_test where d = 1", ".*There is a mismatch between the table and partition schemas.*");
+        }
+        finally {
+            assertUpdate("DROP TABLE IF EXISTS evolve_test");
+        }
+
+        // Subfield absent in partition schema is reported as null
+        // i.e. "a.c" produces null for rows that were inserted before type of "a" was changed
+        try {
+            assertUpdate("CREATE TABLE evolve_test (dummy bigint, a row(b bigint), d bigint) with (format = '" + format + "', partitioned_by=array['d'])");
+            assertUpdate("INSERT INTO evolve_test values (1, row(1), 1)", 1);
+            assertUpdate("ALTER TABLE evolve_test DROP COLUMN a");
+            assertUpdate("ALTER TABLE evolve_test ADD COLUMN a row(b bigint, c varchar)");
+            assertUpdate("INSERT INTO evolve_test values (2, row(2, 'def'), 2)", 1);
+            assertQuery("SELECT a.c FROM evolve_test", "SELECT 'def' UNION SELECT null");
+        }
+        finally {
+            assertUpdate("DROP TABLE IF EXISTS evolve_test");
+        }
+    }
+
+    @Test
+    public void testSubfieldReordering()
+    {
+        // Validate for formats for which subfield access is name based
+        List<HiveStorageFormat> formats = ImmutableList.of(HiveStorageFormat.ORC, HiveStorageFormat.PARQUET);
+
+        for (HiveStorageFormat format : formats) {
+            // Subfields reordered in the file are read correctly. e.g. if partition column type is row(b bigint, c varchar) but the file
+            // column type is row(c varchar, b bigint), "a.b" should read the correct field from the file.
+            try {
+                assertUpdate("CREATE TABLE evolve_test (dummy bigint, a row(b bigint, c varchar)) with (format = '" + format + "')");
+                assertUpdate("INSERT INTO evolve_test values (1, row(1, 'abc'))", 1);
+                assertUpdate("ALTER TABLE evolve_test DROP COLUMN a");
+                assertUpdate("ALTER TABLE evolve_test ADD COLUMN a row(c varchar, b bigint)");
+                assertQuery("SELECT a.b FROM evolve_test", "VALUES 1");
+            }
+            finally {
+                assertUpdate("DROP TABLE IF EXISTS evolve_test");
+            }
+
+            // Assert that reordered subfields are read correctly for a two-level nesting. This is useful for asserting correct adaptation
+            // of residue projections in HivePageSourceProvider
+            try {
+                assertUpdate("CREATE TABLE evolve_test (dummy bigint, a row(b bigint, c row(x bigint, y varchar))) with (format = '" + format + "')");
+                assertUpdate("INSERT INTO evolve_test values (1, row(1, row(3, 'abc')))", 1);
+                assertUpdate("ALTER TABLE evolve_test DROP COLUMN a");
+                assertUpdate("ALTER TABLE evolve_test ADD COLUMN a row(c row(y varchar, x bigint), b bigint)");
+                // TODO: replace the following assertion with assertQuery once h2QueryRunner starts supporting row types
+                assertQuerySucceeds("SELECT a.c.y, a.c FROM evolve_test");
+            }
+            finally {
+                assertUpdate("DROP TABLE IF EXISTS evolve_test");
+            }
+        }
+    }
+
+    @Test
+    public void testParquetColumnNameMappings()
+    {
+        Session sessionUsingColumnIndex = Session.builder(getSession())
+                .setCatalogSessionProperty(catalog, "parquet_use_column_names", "false")
+                .build();
+        Session sessionUsingColumnName = Session.builder(getSession())
+                .setCatalogSessionProperty(catalog, "parquet_use_column_names", "true")
+                .build();
+
+        String tableName = "test_parquet_by_column_index";
+
+        assertUpdate(sessionUsingColumnIndex, format(
+                "CREATE TABLE %s(" +
+                        "  a varchar, " +
+                        "  b varchar) " +
+                        "WITH (format='PARQUET')",
+                tableName));
+        assertUpdate(sessionUsingColumnIndex, "INSERT INTO " + tableName + " VALUES ('a', 'b')", 1);
+
+        assertQuery(
+                sessionUsingColumnIndex,
+                "SELECT a, b FROM " + tableName,
+                "VALUES ('a', 'b')");
+        assertQuery(
+                sessionUsingColumnIndex,
+                "SELECT a FROM " + tableName + " WHERE b = 'b'",
+                "VALUES ('a')");
+
+        String tableLocation = (String) computeActual("SELECT DISTINCT regexp_replace(\"$path\", '/[^/]*$', '') FROM " + tableName).getOnlyValue();
+
+        // Reverse the table so that the Hive column ordering does not match the Parquet column ordering
+        String reversedTableName = "test_parquet_by_column_index_reversed";
+        assertUpdate(sessionUsingColumnIndex, format(
+                "CREATE TABLE %s(" +
+                        "  b varchar, " +
+                        "  a varchar) " +
+                        "WITH (format='PARQUET', external_location='%s')",
+                reversedTableName,
+                tableLocation));
+
+        assertQuery(
+                sessionUsingColumnIndex,
+                "SELECT a, b FROM " + reversedTableName,
+                "VALUES ('b', 'a')");
+        assertQuery(
+                sessionUsingColumnIndex,
+                "SELECT a FROM " + reversedTableName + " WHERE b = 'a'",
+                "VALUES ('b')");
+
+        assertQuery(
+                sessionUsingColumnName,
+                "SELECT a, b FROM " + reversedTableName,
+                "VALUES ('a', 'b')");
+        assertQuery(
+                sessionUsingColumnName,
+                "SELECT a FROM " + reversedTableName + " WHERE b = 'b'",
+                "VALUES ('a')");
+
+        assertUpdate(sessionUsingColumnIndex, "DROP TABLE " + reversedTableName);
+        assertUpdate(sessionUsingColumnIndex, "DROP TABLE " + tableName);
+    }
+
+    @Test
+    public void testParquetWithMissingColumns()
+    {
+        Session sessionUsingColumnIndex = Session.builder(getSession())
+                .setCatalogSessionProperty(catalog, "parquet_use_column_names", "false")
+                .build();
+        Session sessionUsingColumnName = Session.builder(getSession())
+                .setCatalogSessionProperty(catalog, "parquet_use_column_names", "true")
+                .build();
+
+        String singleColumnTableName = "test_parquet_with_missing_columns_one";
+
+        assertUpdate(format(
+                "CREATE TABLE %s(" +
+                        "  a varchar) " +
+                        "WITH (format='PARQUET')",
+                singleColumnTableName));
+        assertUpdate(sessionUsingColumnIndex, "INSERT INTO " + singleColumnTableName + " VALUES ('a')", 1);
+
+        String tableLocation = (String) computeActual("SELECT DISTINCT regexp_replace(\"$path\", '/[^/]*$', '') FROM " + singleColumnTableName).getOnlyValue();
+        String multiColumnTableName = "test_parquet_missing_columns_two";
+        assertUpdate(sessionUsingColumnIndex, format(
+                "CREATE TABLE %s(" +
+                        "  b varchar, " +
+                        "  a varchar) " +
+                        "WITH (format='PARQUET', external_location='%s')",
+                multiColumnTableName,
+                tableLocation));
+
+        assertQuery(
+                sessionUsingColumnName,
+                "SELECT a FROM " + multiColumnTableName + " WHERE b IS NULL",
+                "VALUES ('a')");
+        assertQuery(
+                sessionUsingColumnName,
+                "SELECT a FROM " + multiColumnTableName + " WHERE a = 'a'",
+                "VALUES ('a')");
+
+        assertQuery(
+                sessionUsingColumnIndex,
+                "SELECT b FROM " + multiColumnTableName + " WHERE b = 'a'",
+                "VALUES ('a')");
+        assertQuery(
+                sessionUsingColumnIndex,
+                "SELECT b FROM " + multiColumnTableName + " WHERE a IS NULL",
+                "VALUES ('a')");
+
+        assertUpdate(sessionUsingColumnIndex, "DROP TABLE " + singleColumnTableName);
+        assertUpdate(sessionUsingColumnIndex, "DROP TABLE " + multiColumnTableName);
+    }
+
+    @Test
+    public void testNestedColumnWithDuplicateName()
+    {
+        String tableName = "test_nested_column_with_duplicate_name";
+
+        assertUpdate(format(
+                "CREATE TABLE %s(" +
+                        "  foo varchar, " +
+                        "  root ROW (foo varchar)) " +
+                        "WITH (format='PARQUET')",
+                tableName));
+        assertUpdate("INSERT INTO " + tableName + " VALUES ('a', ROW('b'))", 1);
+        assertQuery("SELECT root.foo FROM " + tableName + " WHERE foo = 'a'", "VALUES ('b')");
+        assertQuery("SELECT root.foo FROM " + tableName + " WHERE root.foo = 'b'", "VALUES ('b')");
+        assertQuery("SELECT root.foo FROM " + tableName + " WHERE foo = 'a' AND root.foo = 'b'", "VALUES ('b')");
+
+        assertQuery("SELECT foo FROM " + tableName + " WHERE foo = 'a'", "VALUES ('a')");
+        assertQuery("SELECT foo FROM " + tableName + " WHERE root.foo = 'b'", "VALUES ('a')");
+        assertQuery("SELECT foo FROM " + tableName + " WHERE foo = 'a' AND root.foo = 'b'", "VALUES ('a')");
+
+        assertTrue(computeActual("SELECT foo FROM " + tableName + " WHERE foo = 'a' AND root.foo = 'a'").getMaterializedRows().isEmpty());
+        assertTrue(computeActual("SELECT foo FROM " + tableName + " WHERE foo = 'b' AND root.foo = 'b'").getMaterializedRows().isEmpty());
+
+        assertUpdate("DROP TABLE " + tableName);
+    }
+
+    @Test
     public void testMismatchedBucketing()
     {
         try {
