@@ -1,8 +1,10 @@
 name: ci
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - release-**
+  pull_request:
 
 env:
   # maven.wagon.rto is in millis, defaults to 30m
