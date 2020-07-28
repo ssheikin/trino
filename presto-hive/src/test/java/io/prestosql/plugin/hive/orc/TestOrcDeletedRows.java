@@ -28,6 +28,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.OptionalInt;
 import java.util.Set;
 
 import static io.prestosql.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
@@ -59,8 +60,8 @@ public class TestOrcDeletedRows
     public void testDeleteLocations()
     {
         AcidInfo.Builder acidInfoBuilder = AcidInfo.builder(partitionDirectory);
-        addDeleteDelta(acidInfoBuilder, 4L, 4L, 0);
-        addDeleteDelta(acidInfoBuilder, 7L, 7L, 0);
+        addDeleteDelta(acidInfoBuilder, 4L, 4L, OptionalInt.of(0), partitionDirectory);
+        addDeleteDelta(acidInfoBuilder, 7L, 7L, OptionalInt.of(0), partitionDirectory);
 
         OrcDeletedRows deletedRows = createOrcDeletedRows(acidInfoBuilder.build().get());
 
@@ -81,10 +82,17 @@ public class TestOrcDeletedRows
         assertEquals(block.getPositionCount(), 10);
     }
 
-    private void addDeleteDelta(AcidInfo.Builder acidInfoBuilder, long minWriteId, long maxWriteId, int statementId)
+    private void addDeleteDelta(AcidInfo.Builder acidInfoBuilder, long minWriteId, long maxWriteId, OptionalInt statementId, Path path)
     {
-        Path deleteDeltaPath = new Path(partitionDirectory, AcidUtils.deleteDeltaSubdir(minWriteId, maxWriteId, statementId));
-        acidInfoBuilder.addDeleteDelta(deleteDeltaPath, minWriteId, maxWriteId, statementId);
+        Path deleteDeltaPath;
+        if (statementId.isPresent()) {
+            deleteDeltaPath = new Path(path, AcidUtils.deleteDeltaSubdir(minWriteId, maxWriteId, statementId.getAsInt()));
+            acidInfoBuilder.addDeleteDelta(deleteDeltaPath, minWriteId, maxWriteId, statementId);
+        }
+        else {
+            deleteDeltaPath = new Path(path, AcidUtils.deleteDeltaSubdir(minWriteId, maxWriteId));
+            acidInfoBuilder.addDeleteDelta(deleteDeltaPath, minWriteId, maxWriteId, OptionalInt.empty());
+        }
     }
 
     private OrcDeletedRows createOrcDeletedRows(AcidInfo acidInfo)
@@ -119,5 +127,30 @@ public class TestOrcDeletedRows
                 originalTransaction.build(),
                 new RunLengthEncodedBlock(bucketBlock, size),
                 new RunLengthEncodedBlock(rowIdBlock, size));
+    }
+
+    @Test
+    public void testDeletedLocationsAfterMinorCompaction()
+    {
+        AcidInfo.Builder acidInfoBuilder = AcidInfo.builder(partitionDirectory);
+        addDeleteDelta(acidInfoBuilder, 4L, 4L, OptionalInt.empty(), partitionDirectory);
+
+        OrcDeletedRows deletedRows = createOrcDeletedRows(acidInfoBuilder.build().orElseThrow());
+
+        // page with deleted rows
+        Page testPage = createTestPage(0, 10);
+        Block block = deletedRows.getMaskDeletedRowsFunction(testPage).apply(testPage.getBlock(0));
+        Set<Object> validRows = resultBuilder(SESSION, BIGINT)
+                .page(new Page(block))
+                .build()
+                .getOnlyColumnAsSet();
+
+        assertEquals(validRows.size(), 9);
+        assertEquals(validRows, ImmutableSet.of(0L, 1L, 3L, 4L, 5L, 6L, 7L, 8L, 9L));
+
+        // page with no deleted rows
+        testPage = createTestPage(10, 20);
+        block = deletedRows.getMaskDeletedRowsFunction(testPage).apply(testPage.getBlock(1));
+        assertEquals(block.getPositionCount(), 10);
     }
 }
