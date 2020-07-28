@@ -453,7 +453,16 @@ public class BackgroundHiveSplitLoader
             DeleteDeltaLocations.Builder deleteDeltaLocationsBuilder = DeleteDeltaLocations.builder(path);
             for (AcidUtils.ParsedDelta delta : directory.getCurrentDirectories()) {
                 if (delta.isDeleteDelta()) {
-                    deleteDeltaLocationsBuilder.addDeleteDelta(delta.getPath(), delta.getMinWriteId(), delta.getMaxWriteId(), delta.getStatementId());
+                    OptionalInt statementId = OptionalInt.empty();
+
+                    // Handling different formats of Delete delta file:
+                    // 1. delete_delta_minWriteId_maxWriteID_statementId: default case
+                    // 2. delete_delta_minWriteId_maxWriteID: after minor compaction
+                    // TODO simplify after https://issues.apache.org/jira/browse/HIVE-24082
+                    if (AcidUtils.deleteDeltaSubdir(delta.getMinWriteId(), delta.getMaxWriteId(), delta.getStatementId()).equals(delta.getPath().getName())) {
+                        statementId = OptionalInt.of(delta.getStatementId());
+                    }
+                    deleteDeltaLocationsBuilder.addDeleteDelta(delta.getPath(), delta.getMinWriteId(), delta.getMaxWriteId(), statementId);
                 }
             }
 

@@ -216,10 +216,14 @@ public class OrcDeletedRows
 
     private static Path createPath(String partitionLocation, DeleteDeltaLocations.DeleteDeltaInfo deleteDeltaInfo, String fileName)
     {
-        Path directory = new Path(partitionLocation, deleteDeltaSubdir(
-                deleteDeltaInfo.getMinWriteId(),
-                deleteDeltaInfo.getMaxWriteId(),
-                deleteDeltaInfo.getStatementId()));
+        String deleteDeltaSubdir;
+        if (deleteDeltaInfo.getStatementId().isPresent()) {
+            deleteDeltaSubdir = deleteDeltaSubdir(deleteDeltaInfo.getMinWriteId(), deleteDeltaInfo.getMaxWriteId(), deleteDeltaInfo.getStatementId().getAsInt());
+        }
+        else {
+            deleteDeltaSubdir = deleteDeltaSubdir(deleteDeltaInfo.getMinWriteId(), deleteDeltaInfo.getMaxWriteId());
+        }
+        Path directory = new Path(partitionLocation, deleteDeltaSubdir);
         return new Path(directory, fileName);
     }
 

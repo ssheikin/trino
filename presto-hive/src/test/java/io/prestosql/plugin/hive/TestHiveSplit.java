@@ -52,8 +52,8 @@ public class TestHiveSplit
         ImmutableList<HostAddress> addresses = ImmutableList.of(HostAddress.fromParts("127.0.0.1", 44), HostAddress.fromParts("127.0.0.1", 45));
 
         DeleteDeltaLocations.Builder deleteDeltaLocationsBuilder = DeleteDeltaLocations.builder(new Path("file:///data/fullacid"));
-        deleteDeltaLocationsBuilder.addDeleteDelta(new Path("file:///data/fullacid/delete_delta_0000004_0000004_0000"), 4L, 4L, 0);
-        deleteDeltaLocationsBuilder.addDeleteDelta(new Path("file:///data/fullacid/delete_delta_0000007_0000007_0000"), 7L, 7L, 0);
+        deleteDeltaLocationsBuilder.addDeleteDelta(new Path("file:///data/fullacid/delete_delta_0000004_0000004_0000"), 4L, 4L, OptionalInt.of(0));
+        deleteDeltaLocationsBuilder.addDeleteDelta(new Path("file:///data/fullacid/delete_delta_0000007_0000007_0000"), 7L, 7L, OptionalInt.of(0));
         DeleteDeltaLocations deleteDeltaLocations = deleteDeltaLocationsBuilder.build().get();
 
         HiveSplit expected = new HiveSplit(
