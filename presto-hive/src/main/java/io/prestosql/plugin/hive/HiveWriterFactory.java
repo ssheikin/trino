@@ -128,7 +128,6 @@ public class HiveWriterFactory
     private final Table table;
     private final DataSize sortBufferSize;
     private final int maxOpenSortFiles;
-    private final boolean immutablePartitions;
     private final InsertExistingPartitionsBehavior insertExistingPartitionsBehavior;
 
     private final ConnectorSession session;
@@ -161,7 +160,6 @@ public class HiveWriterFactory
             PageSorter pageSorter,
             DataSize sortBufferSize,
             int maxOpenSortFiles,
-            boolean immutablePartitions,
             ConnectorSession session,
             NodeManager nodeManager,
             EventClient eventClient,
@@ -187,7 +185,6 @@ public class HiveWriterFactory
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.sortBufferSize = requireNonNull(sortBufferSize, "sortBufferSize is null");
         this.maxOpenSortFiles = maxOpenSortFiles;
-        this.immutablePartitions = immutablePartitions;
         this.insertExistingPartitionsBehavior = getInsertExistingPartitionsBehavior(session);
 
         // divide input columns into partition and data columns
@@ -342,7 +339,6 @@ public class HiveWriterFactory
                 else {
                     switch (insertExistingPartitionsBehavior) {
                         case APPEND:
-                            checkState(!immutablePartitions);
                             updateMode = UpdateMode.APPEND;
                             writeInfo = locationService.getTableWriteInfo(locationHandle, false);
                             break;
@@ -373,7 +369,6 @@ public class HiveWriterFactory
             // Write to: an existing partition in an existing partitioned table
             if (insertExistingPartitionsBehavior == InsertExistingPartitionsBehavior.APPEND) {
                 // Append to an existing partition
-                checkState(!immutablePartitions);
                 updateMode = UpdateMode.APPEND;
                 // Check the column types in partition schema match the column types in table schema
                 List<Column> tableColumns = table.getDataColumns();
