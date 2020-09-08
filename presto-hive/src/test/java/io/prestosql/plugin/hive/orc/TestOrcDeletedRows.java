@@ -87,12 +87,11 @@ public class TestOrcDeletedRows
         Path deleteDeltaPath;
         if (statementId.isPresent()) {
             deleteDeltaPath = new Path(path, AcidUtils.deleteDeltaSubdir(minWriteId, maxWriteId, statementId.getAsInt()));
-            acidInfoBuilder.addDeleteDelta(deleteDeltaPath, minWriteId, maxWriteId, statementId);
         }
         else {
             deleteDeltaPath = new Path(path, AcidUtils.deleteDeltaSubdir(minWriteId, maxWriteId));
-            acidInfoBuilder.addDeleteDelta(deleteDeltaPath, minWriteId, maxWriteId, OptionalInt.empty());
         }
+        acidInfoBuilder.addDeleteDelta(deleteDeltaPath);
     }
 
     private OrcDeletedRows createOrcDeletedRows(AcidInfo acidInfo)
