@@ -30,7 +30,6 @@ import io.prestosql.execution.warnings.WarningCollector;
 import io.prestosql.metadata.Metadata;
 import io.prestosql.operator.OperatorStats;
 import io.prestosql.spi.QueryId;
-import io.prestosql.spi.security.AccessDeniedException;
 import io.prestosql.spi.type.Type;
 import io.prestosql.sql.analyzer.FeaturesConfig;
 import io.prestosql.sql.analyzer.FeaturesConfig.JoinDistributionType;
@@ -66,7 +65,6 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.testing.Closeables.closeAllRuntimeException;
 import static io.prestosql.SystemSessionProperties.JOIN_DISTRIBUTION_TYPE;
@@ -75,12 +73,11 @@ import static io.prestosql.sql.ParsingUtil.createParsingOptions;
 import static io.prestosql.sql.SqlFormatter.formatSql;
 import static io.prestosql.testing.assertions.Assert.assertEventually;
 import static io.prestosql.transaction.TransactionBuilder.transaction;
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
 
 public abstract class AbstractTestQueryFramework
 {
@@ -277,6 +274,11 @@ public abstract class AbstractTestQueryFramework
 
     protected void assertAccessAllowed(Session session, @Language("SQL") String sql, TestingPrivilege... deniedPrivileges)
     {
+        executeExclusively(session, sql, deniedPrivileges);
+    }
+
+    private void executeExclusively(Session session, @Language("SQL") String sql, TestingPrivilege[] deniedPrivileges)
+    {
         executeExclusively(() -> {
             try {
                 queryRunner.getAccessControl().deny(deniedPrivileges);
@@ -299,19 +301,14 @@ public abstract class AbstractTestQueryFramework
             @Language("RegExp") String exceptionsMessageRegExp,
             TestingPrivilege... deniedPrivileges)
     {
-        executeExclusively(() -> {
-            try {
-                queryRunner.getAccessControl().deny(deniedPrivileges);
-                queryRunner.execute(session, sql);
-                fail("Expected " + AccessDeniedException.class.getSimpleName());
-            }
-            catch (RuntimeException e) {
-                assertExceptionMessage(sql, e, ".*Access Denied: " + exceptionsMessageRegExp);
-            }
-            finally {
-                queryRunner.getAccessControl().reset();
-            }
-        });
+        assertException(session, sql, ".*Access Denied: " + exceptionsMessageRegExp, deniedPrivileges);
+    }
+
+    private void assertException(Session session, @Language("SQL") String sql, @Language("RegExp") String exceptionsMessageRegExp, TestingPrivilege[] deniedPrivileges)
+    {
+        assertThatThrownBy(() -> executeExclusively(session, sql, deniedPrivileges))
+                .as("Query: " + sql)
+                .hasMessageMatching(exceptionsMessageRegExp);
     }
 
     protected void assertTableColumnNames(String tableName, String... columnNames)
@@ -322,13 +319,6 @@ public abstract class AbstractTestQueryFramework
                 .map(row -> (String) row.getField(0))
                 .collect(toImmutableList());
         assertEquals(actual, expected);
-    }
-
-    private static void assertExceptionMessage(String sql, Exception exception, @Language("RegExp") String regex)
-    {
-        if (!nullToEmpty(exception.getMessage()).matches(regex)) {
-            fail(format("Expected exception message '%s' to match '%s' for query: %s", exception.getMessage(), regex, sql), exception);
-        }
     }
 
     protected MaterializedResult computeExpected(@Language("SQL") String sql, List<? extends Type> resultTypes)
