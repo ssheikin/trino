@@ -122,6 +122,10 @@
             <groupId>io.prestosql.cassandra</groupId>
             <artifactId>cassandra-driver</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.jodah</groupId>
+            <artifactId>failsafe</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
