@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 import io.prestosql.plugin.hive.metastore.StorageFormat;
-import io.prestosql.spi.type.TimestampType;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
 import io.prestosql.spi.type.TypeSignature;
@@ -35,6 +34,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.prestosql.plugin.hive.HiveStorageFormat.AVRO;
 import static io.prestosql.plugin.hive.HiveStorageFormat.ORC;
+import static io.prestosql.plugin.hive.HiveTimestampPrecision.DEFAULT_PRECISION;
 import static io.prestosql.plugin.hive.util.HiveTypeTranslator.fromPrimitiveType;
 import static io.prestosql.plugin.hive.util.HiveTypeTranslator.toTypeInfo;
 import static io.prestosql.plugin.hive.util.HiveTypeTranslator.toTypeSignature;
@@ -93,11 +93,23 @@ public final class HiveType
         return typeInfo;
     }
 
+    /**
+     * @deprecated Prefer {@link #getTypeSignature(HiveTimestampPrecision)}.
+     */
+    @Deprecated
     public TypeSignature getTypeSignature()
     {
-        return toTypeSignature(typeInfo);
+        return getTypeSignature(DEFAULT_PRECISION);
     }
 
+    public TypeSignature getTypeSignature(HiveTimestampPrecision timestampPrecision)
+    {
+        return toTypeSignature(typeInfo, timestampPrecision);
+    }
+
+    /**
+     * @deprecated Prefer {@link #getType(TypeManager, HiveTimestampPrecision)}.
+     */
     @Deprecated
     public Type getType(TypeManager typeManager)
     {
@@ -106,12 +118,7 @@ public final class HiveType
 
     public Type getType(TypeManager typeManager, HiveTimestampPrecision timestampPrecision)
     {
-        Type tentativeType = typeManager.getType(getTypeSignature());
-        // TODO: handle timestamps in structural types (https://github.com/prestosql/presto/issues/5195)
-        if (tentativeType instanceof TimestampType) {
-            return TimestampType.createTimestampType(timestampPrecision.getPrecision());
-        }
-        return tentativeType;
+        return typeManager.getType(getTypeSignature(timestampPrecision));
     }
 
     @Override

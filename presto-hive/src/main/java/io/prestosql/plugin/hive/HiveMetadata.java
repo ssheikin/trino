@@ -96,6 +96,9 @@ import io.prestosql.spi.statistics.ComputedStatistics;
 import io.prestosql.spi.statistics.TableStatisticType;
 import io.prestosql.spi.statistics.TableStatistics;
 import io.prestosql.spi.statistics.TableStatisticsMetadata;
+import io.prestosql.spi.type.ArrayType;
+import io.prestosql.spi.type.MapType;
+import io.prestosql.spi.type.RowType;
 import io.prestosql.spi.type.TimestampType;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
@@ -2724,15 +2727,30 @@ public class HiveMetadata
         }
     }
 
-    // TODO validate timestamps in structural types (https://github.com/prestosql/presto/issues/5195)
-    private static void validateTimestampColumns(List<ColumnMetadata> columns, HiveTimestampPrecision timestampPrecision)
+    private static void validateTimestampColumns(List<ColumnMetadata> columns, HiveTimestampPrecision precision)
     {
         for (ColumnMetadata column : columns) {
-            Type type = column.getType();
-            if (type instanceof TimestampType) {
-                if (((TimestampType) type).getPrecision() != timestampPrecision.getPrecision()) {
-                    throw new PrestoException(NOT_SUPPORTED, format("Incorrect timestamp precision for %s; the configured precision is %s", type, timestampPrecision));
-                }
+            validateTimestampTypes(column.getType(), precision);
+        }
+    }
+
+    private static void validateTimestampTypes(Type type, HiveTimestampPrecision precision)
+    {
+        if (type instanceof TimestampType) {
+            if (((TimestampType) type).getPrecision() != precision.getPrecision()) {
+                throw new PrestoException(NOT_SUPPORTED, format("Incorrect timestamp precision for %s; the configured precision is %s", type, precision));
+            }
+        }
+        else if (type instanceof ArrayType) {
+            validateTimestampTypes(((ArrayType) type).getElementType(), precision);
+        }
+        else if (type instanceof MapType) {
+            validateTimestampTypes(((MapType) type).getKeyType(), precision);
+            validateTimestampTypes(((MapType) type).getValueType(), precision);
+        }
+        else if (type instanceof RowType) {
+            for (Type fieldType : ((RowType) type).getTypeParameters()) {
+                validateTimestampTypes(fieldType, precision);
             }
         }
     }
