@@ -44,6 +44,7 @@
         <air.maven.version>3.3.9</air.maven.version>
 
         <dep.antlr.version>4.7.1</dep.antlr.version>
+        <!-- We need to hold dep.packaging.version at 0.195. Otherwise build fails to access internal starburst maven repo -->
         <dep.airlift.version>0.195-e.7</dep.airlift.version>
         <dep.packaging.version>0.195</dep.packaging.version>
         <dep.aws-sdk.version>1.11.749</dep.aws-sdk.version>
