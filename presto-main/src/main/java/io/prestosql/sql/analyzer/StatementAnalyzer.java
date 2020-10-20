@@ -1498,6 +1498,9 @@ class StatementAnalyzer
 
                 leftJoinFields.add(leftField.get().getRelationFieldIndex());
                 rightJoinFields.add(rightField.get().getRelationFieldIndex());
+
+                recordColumnAccess(leftField.get().getField());
+                recordColumnAccess(rightField.get().getField());
             }
 
             ImmutableList.Builder<Field> outputs = ImmutableList.builder();
@@ -1522,6 +1525,16 @@ class StatementAnalyzer
             analysis.setJoinUsing(node, new Analysis.JoinUsingAnalysis(leftJoinFields, rightJoinFields, leftFields.build(), rightFields.build()));
 
             return createAndAssignScope(node, scope, new RelationType(outputs.build()));
+        }
+
+        private void recordColumnAccess(Field field)
+        {
+            if (field.getOriginTable().isPresent() && field.getOriginColumnName().isPresent()) {
+                analysis.addTableColumnReferences(
+                        accessControl,
+                        session.getIdentity(),
+                        ImmutableMultimap.of(field.getOriginTable().get(), field.getOriginColumnName().get()));
+            }
         }
 
         private boolean isLateralRelation(Relation node)
