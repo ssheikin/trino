@@ -9,7 +9,8 @@ maven_run_tests="${maven} clean test -Dair.check.skip-all=true -Dmaven.javadoc.s
 "${maven}" -version
 
 current_version=$(${maven} help:evaluate -Dexpression=project.version -q -DforceStdout)
-previous_released_version=$((${current_version%-SNAPSHOT}-1))
+current_version=$(echo "${current_version}" | sed -n 's/^\([0-9]\+\)\(-e.[0-9]\+\)\?\(-SNAPSHOT\)\?$/\1/p')
+previous_released_version=$((current_version - 1))
 first_tested_version=312
 # test n-th version only
 version_step=3
