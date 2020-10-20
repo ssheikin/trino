@@ -3,12 +3,11 @@ name: ci
 on:
   push:
     branches:
-      - master
+      - release-**
   pull_request:
     paths-ignore:
       - 'docs/**'
-  repository_dispatch:
-    types: [test-with-secrets-command]
+  workflow_dispatch:
 
 defaults:
   run:
