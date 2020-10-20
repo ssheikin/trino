@@ -493,7 +493,7 @@ public class TestingAccessControlManager
             denySelectColumns(tableName.toString(), columns);
         }
         for (String column : columns) {
-            if (shouldDenyPrivilege(context.getIdentity().getUser(), column, SELECT_COLUMN)) {
+            if (shouldDenyPrivilege(context.getIdentity().getUser(), tableName.getObjectName() + "." + column, SELECT_COLUMN)) {
                 denySelectColumns(tableName.toString(), columns);
             }
         }
