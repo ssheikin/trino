@@ -28,9 +28,8 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git://github.com/trinodb/trino.git</connection>
-        <url>https://github.com/trinodb/trino</url>
-        <tag>356</tag>
+        <connection>scm:git:git://github.com/starburstdata/presto-lts.git</connection>
+        <url>https://github.com/starburstdata/presto-lts</url>
     </scm>
 
     <properties>
