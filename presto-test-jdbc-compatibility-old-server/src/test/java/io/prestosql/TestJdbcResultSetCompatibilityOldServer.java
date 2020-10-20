@@ -61,7 +61,7 @@ public class TestJdbcResultSetCompatibilityOldServer
     {
         try {
             String currentVersionString = Resources.toString(Resources.getResource("presto-test-jdbc-compatibility-old-server-version.txt"), UTF_8).trim();
-            Matcher matcher = Pattern.compile("(\\d+)(?:-SNAPSHOT)?").matcher(currentVersionString);
+            Matcher matcher = Pattern.compile("(\\d+)(?:-e\\.\\d+)(?:-SNAPSHOT)?").matcher(currentVersionString);
             checkState(matcher.matches());
             int currentVersion = Integer.parseInt(matcher.group(1));
             ImmutableList.Builder<String> testedPrestoVersions = ImmutableList.builder();
