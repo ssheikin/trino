@@ -27,12 +27,6 @@
         </license>
     </licenses>
 
-    <scm>
-        <connection>scm:git:git://github.com/prestosql/presto.git</connection>
-        <url>https://github.com/prestosql/presto</url>
-        <tag>345</tag>
-    </scm>
-
     <properties>
         <air.main.basedir>${project.basedir}</air.main.basedir>
 
