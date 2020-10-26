@@ -22,6 +22,9 @@ env:
   # the Docker daemon only downloads 3 layers concurrently which prevents the other pull from making any progress.
   # This value should be greater than the time taken for the longest image pull.
   TESTCONTAINERS_PULL_PAUSE_TIMEOUT: 600
+  MAVEN_CONFIG: "-s settings.xml"
+  mavenCredentials: ${{ secrets.mavenCredentials }}
+  dockerCredentials: ${{ secrets.dockerCredentials }}
 
 # Cancel previous PR builds.
 concurrency:
