@@ -25,6 +25,9 @@ env:
   # This value should be greater than the time taken for the longest image pull.
   TESTCONTAINERS_PULL_PAUSE_TIMEOUT: 600
   TEST_REPORT_RETENTION_DAYS: 5
+  MAVEN_CONFIG: "-s settings.xml"
+  mavenCredentials: ${{ secrets.mavenCredentials }}
+  dockerCredentials: ${{ secrets.dockerCredentials }}
 
 # Cancel previous PR builds.
 concurrency:
