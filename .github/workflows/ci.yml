@@ -15,6 +15,9 @@ env:
   MAVEN_FAST_INSTALL: "-B -V --quiet -T C1 -DskipTests -Dair.check.skip-all"
   MAVEN_TEST: "-B -Dair.check.skip-all --fail-at-end"
   RETRY: .github/bin/retry
+  MAVEN_CONFIG: "-s settings.xml"
+  mavenCredentials: ${{ secrets.mavenCredentials }}
+  dockerCredentials: ${{ secrets.dockerCredentials }}
 
 jobs:
   maven-checks:
