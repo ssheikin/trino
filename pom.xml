@@ -79,6 +79,14 @@
         <air.test.jvmsize>3g</air.test.jvmsize>
 
         <air.javadoc.lint>-missing</air.javadoc.lint>
+
+        <!-- Internal deployment properties -->
+        <air.repository.snapshot.id>starburstdata.snapshots</air.repository.snapshot.id>
+        <air.repository.snapshot.name>Starburstdata Snapshots</air.repository.snapshot.name>
+        <air.repository.snapshot.url>https://maven.starburstdata.net/starburstdata-artifacts/snapshots</air.repository.snapshot.url>
+        <air.repository.release.id>starburstdata.releases</air.repository.release.id>
+        <air.repository.release.name>Starburstdata Releases</air.repository.release.name>
+        <air.repository.release.url>https://maven.starburstdata.net/starburstdata-artifacts/releases</air.repository.release.url>
     </properties>
 
     <modules>
@@ -163,6 +171,27 @@
         <repository>
             <id>confluent</id>
             <url>http://packages.confluent.io/maven/</url>
+        </repository>
+        <!-- Allow the consumption of artifacts from our internal snapshot and release repositories -->
+        <repository>
+            <id>${air.repository.snapshot.id}</id>
+            <url>${air.repository.snapshot.url}</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>${air.repository.release.id}</id>
+            <url>${air.repository.release.url}</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
