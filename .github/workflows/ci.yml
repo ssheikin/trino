@@ -15,6 +15,9 @@ env:
   MAVEN_FAST_INSTALL: "-B --strict-checksums -V --quiet -T C1 -DskipTests -Dair.check.skip-all"
   MAVEN_TEST: "-B --strict-checksums -Dair.check.skip-all --fail-at-end"
   RETRY: .github/bin/retry
+  MAVEN_CONFIG: "-s settings.xml"
+  mavenCredentials: ${{ secrets.mavenCredentials }}
+  dockerCredentials: ${{ secrets.dockerCredentials }}
 
 # Cancel previous PR builds.
 concurrency:
