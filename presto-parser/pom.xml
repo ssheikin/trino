@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.prestosql</groupId>
         <artifactId>presto-root</artifactId>
-        <version>345-e.0-SNAPSHOT</version>
+        <version>345-e.0</version>
     </parent>
 
     <artifactId>presto-parser</artifactId>
