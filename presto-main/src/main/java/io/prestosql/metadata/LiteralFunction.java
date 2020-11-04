@@ -22,6 +22,7 @@ import io.prestosql.operator.scalar.ScalarFunctionImplementation;
 import io.prestosql.spi.block.Block;
 import io.prestosql.spi.block.BlockEncodingSerde;
 import io.prestosql.spi.type.LongTimestamp;
+import io.prestosql.spi.type.LongTimestampWithTimeZone;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeSignature;
 import io.prestosql.spi.type.VarcharType;
@@ -47,7 +48,7 @@ public class LiteralFunction
         extends SqlScalarFunction
 {
     public static final String LITERAL_FUNCTION_NAME = "$literal$";
-    private static final Set<Class<?>> SUPPORTED_LITERAL_TYPES = ImmutableSet.of(long.class, double.class, Slice.class, boolean.class, LongTimestamp.class);
+    private static final Set<Class<?>> SUPPORTED_LITERAL_TYPES = ImmutableSet.of(long.class, double.class, Slice.class, boolean.class, LongTimestamp.class, LongTimestampWithTimeZone.class);
 
     private final Supplier<BlockEncodingSerde> blockEncodingSerdeSupplier;
 
