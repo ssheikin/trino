@@ -88,7 +88,6 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.prestosql.sql.planner.plan.JoinNode.Type.INNER;
 import static java.util.Objects.requireNonNull;
@@ -675,9 +674,13 @@ public class UnaliasSymbolReferences
 
             // extract new mappings for correlation symbols to apply in Subquery
             Set<Symbol> correlationSymbols = ImmutableSet.copyOf(node.getCorrelation());
-            Map<Symbol, Symbol> correlationMapping = mapper.getMapping().entrySet().stream()
-                    .filter(mapping -> correlationSymbols.contains(mapping.getKey()))
-                    .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            Map<Symbol, Symbol> correlationMapping = new HashMap<>();
+            for (Map.Entry<Symbol, Symbol> entry : mapper.getMapping().entrySet()) {
+                if (correlationSymbols.contains(entry.getKey())) {
+                    correlationMapping.put(entry.getKey(), mapper.map(entry.getKey()));
+                }
+            }
 
             Map<Symbol, Symbol> mappingForSubquery = new HashMap<>();
             mappingForSubquery.putAll(context.getCorrelationMapping());
@@ -738,9 +741,12 @@ public class UnaliasSymbolReferences
 
             // extract new mappings for correlation symbols to apply in Subquery
             Set<Symbol> correlationSymbols = ImmutableSet.copyOf(node.getCorrelation());
-            Map<Symbol, Symbol> correlationMapping = mapper.getMapping().entrySet().stream()
-                    .filter(mapping -> correlationSymbols.contains(mapping.getKey()))
-                    .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+            Map<Symbol, Symbol> correlationMapping = new HashMap<>();
+            for (Map.Entry<Symbol, Symbol> entry : mapper.getMapping().entrySet()) {
+                if (correlationSymbols.contains(entry.getKey())) {
+                    correlationMapping.put(entry.getKey(), mapper.map(entry.getKey()));
+                }
+            }
 
             Map<Symbol, Symbol> mappingForSubquery = new HashMap<>();
             mappingForSubquery.putAll(context.getCorrelationMapping());
