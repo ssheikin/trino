@@ -941,6 +941,7 @@ public class TestHiveFileFormats
                 TYPE_MANAGER,
                 TableToPartitionMapping.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 false,
                 Optional.empty());
 
@@ -1007,6 +1008,7 @@ public class TestHiveFileFormats
                 DateTimeZone.getDefault(),
                 TYPE_MANAGER,
                 TableToPartitionMapping.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 false,
                 Optional.empty());

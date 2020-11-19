@@ -44,6 +44,7 @@ import static java.util.Locale.ENGLISH;
 public final class HiveSessionProperties
 {
     private static final String BUCKET_EXECUTION_ENABLED = "bucket_execution_enabled";
+    private static final String VALIDATE_BUCKETING = "validate_bucketing";
     private static final String FORCE_LOCAL_SCHEDULING = "force_local_scheduling";
     private static final String INSERT_EXISTING_PARTITIONS_BEHAVIOR = "insert_existing_partitions_behavior";
     private static final String ORC_BLOOM_FILTERS_ENABLED = "orc_bloom_filters_enabled";
@@ -125,6 +126,11 @@ public final class HiveSessionProperties
                         BUCKET_EXECUTION_ENABLED,
                         "Enable bucket-aware execution: only use a single worker per bucket",
                         hiveConfig.isBucketExecutionEnabled(),
+                        false),
+                booleanProperty(
+                        VALIDATE_BUCKETING,
+                        "Verify that data is bucketed correctly when reading",
+                        hiveConfig.isValidateBucketing(),
                         false),
                 booleanProperty(
                         FORCE_LOCAL_SCHEDULING,
@@ -380,6 +386,11 @@ public final class HiveSessionProperties
     public static boolean isBucketExecutionEnabled(ConnectorSession session)
     {
         return session.getProperty(BUCKET_EXECUTION_ENABLED, Boolean.class);
+    }
+
+    public static boolean isValidateBucketing(ConnectorSession session)
+    {
+        return session.getProperty(VALIDATE_BUCKETING, Boolean.class);
     }
 
     public static boolean isForceLocalScheduling(ConnectorSession session)

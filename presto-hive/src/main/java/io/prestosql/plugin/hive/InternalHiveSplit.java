@@ -15,6 +15,7 @@ package io.prestosql.plugin.hive;
 
 import com.google.common.collect.ImmutableList;
 import io.prestosql.plugin.hive.HiveSplit.BucketConversion;
+import io.prestosql.plugin.hive.HiveSplit.BucketValidation;
 import io.prestosql.spi.HostAddress;
 import org.openjdk.jol.info.ClassLayout;
 
@@ -55,6 +56,7 @@ public class InternalHiveSplit
     private final boolean forceLocalScheduling;
     private final TableToPartitionMapping tableToPartitionMapping;
     private final Optional<BucketConversion> bucketConversion;
+    private final Optional<BucketValidation> bucketValidation;
     private final boolean s3SelectPushdownEnabled;
     private final Optional<AcidInfo> acidInfo;
 
@@ -76,6 +78,7 @@ public class InternalHiveSplit
             boolean forceLocalScheduling,
             TableToPartitionMapping tableToPartitionMapping,
             Optional<BucketConversion> bucketConversion,
+            Optional<BucketValidation> bucketValidation,
             boolean s3SelectPushdownEnabled,
             Optional<AcidInfo> acidInfo)
     {
@@ -90,6 +93,7 @@ public class InternalHiveSplit
         requireNonNull(bucketNumber, "bucketNumber is null");
         requireNonNull(tableToPartitionMapping, "tableToPartitionMapping is null");
         requireNonNull(bucketConversion, "bucketConversion is null");
+        requireNonNull(bucketValidation, "bucketValidation is null");
         requireNonNull(acidInfo, "acidInfo is null");
 
         this.partitionName = partitionName;
@@ -106,6 +110,7 @@ public class InternalHiveSplit
         this.forceLocalScheduling = forceLocalScheduling;
         this.tableToPartitionMapping = tableToPartitionMapping;
         this.bucketConversion = bucketConversion;
+        this.bucketValidation = bucketValidation;
         this.s3SelectPushdownEnabled = s3SelectPushdownEnabled;
         this.acidInfo = acidInfo;
     }
@@ -178,6 +183,11 @@ public class InternalHiveSplit
     public Optional<BucketConversion> getBucketConversion()
     {
         return bucketConversion;
+    }
+
+    public Optional<BucketValidation> getBucketValidation()
+    {
+        return bucketValidation;
     }
 
     public InternalHiveBlock currentBlock()
