@@ -76,6 +76,7 @@ public class TestHiveSplit
                         32,
                         16,
                         ImmutableList.of(new HiveColumnHandle("col", HIVE_LONG, BIGINT, 5, ColumnType.REGULAR, Optional.of("comment"))))),
+                Optional.empty(),
                 false,
                 Optional.of(deleteDeltaLocations));
 

@@ -236,6 +236,7 @@ public class TestHivePageSink
                 false,
                 TableToPartitionMapping.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 false,
                 Optional.empty());
         ConnectorTableHandle table = new HiveTableHandle(SCHEMA_NAME, TABLE_NAME, ImmutableMap.of(), ImmutableList.of(), Optional.empty());

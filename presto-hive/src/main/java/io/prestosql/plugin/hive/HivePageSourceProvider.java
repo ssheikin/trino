@@ -16,7 +16,9 @@ package io.prestosql.plugin.hive;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.prestosql.plugin.hive.HdfsEnvironment.HdfsContext;
+import io.prestosql.plugin.hive.HivePageSource.BucketValidator;
 import io.prestosql.plugin.hive.HiveSplit.BucketConversion;
+import io.prestosql.plugin.hive.HiveSplit.BucketValidation;
 import io.prestosql.plugin.hive.util.HiveBucketing.BucketingVersion;
 import io.prestosql.spi.connector.ColumnHandle;
 import io.prestosql.spi.connector.ConnectorPageSource;
@@ -33,10 +35,12 @@ import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.joda.time.DateTimeZone;
 
 import javax.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +52,7 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.PARTITION_KEY;
 import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
@@ -55,6 +60,7 @@ import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.SYNTHESIZED;
 import static io.prestosql.plugin.hive.HivePageSourceProvider.ColumnMapping.toColumnHandles;
 import static io.prestosql.plugin.hive.util.HiveUtil.getPrefilledColumnValue;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 
 public class HivePageSourceProvider
@@ -118,6 +124,7 @@ public class HivePageSourceProvider
                 typeManager,
                 hiveSplit.getTableToPartitionMapping(),
                 hiveSplit.getBucketConversion(),
+                hiveSplit.getBucketValidation(),
                 hiveSplit.isS3SelectPushdownEnabled(),
                 hiveSplit.getDeleteDeltaLocations());
         if (pageSource.isPresent()) {
@@ -145,6 +152,7 @@ public class HivePageSourceProvider
             TypeManager typeManager,
             TableToPartitionMapping tableToPartitionMapping,
             Optional<BucketConversion> bucketConversion,
+            Optional<BucketValidation> bucketValidation,
             boolean s3SelectPushdownEnabled,
             Optional<DeleteDeltaLocations> deleteDeltaLocations)
     {
@@ -179,6 +187,7 @@ public class HivePageSourceProvider
                     conversion.getPartitionBucketCount(),
                     bucketNumber.getAsInt());
         });
+        Optional<BucketValidator> bucketValidator = createBucketValidator(path, bucketValidation, bucketNumber, regularAndInterimColumnMappings);
 
         for (HivePageSourceFactory pageSourceFactory : pageSourceFactories) {
             Optional<? extends ConnectorPageSource> pageSource = pageSourceFactory.createPageSource(
@@ -199,6 +208,7 @@ public class HivePageSourceProvider
                                 columnMappings,
                                 bucketAdaptation,
                                 hiveStorageTimeZone,
+                                bucketValidator,
                                 typeManager,
                                 pageSource.get()));
             }
@@ -242,6 +252,11 @@ public class HivePageSourceProvider
                 // Need to wrap RcText and RcBinary into a wrapper, which will do the coercion for mismatch columns
                 if (doCoercion) {
                     delegate = new HiveCoercionRecordCursor(regularAndInterimColumnMappings, typeManager, delegate);
+                }
+
+                // bucket adaptation already validates that data is in the right bucket
+                if (!bucketAdaptation.isPresent() && bucketValidator.isPresent()) {
+                    delegate = bucketValidator.get().wrapRecordCursor(delegate, typeManager);
                 }
 
                 HiveRecordCursor hiveRecordCursor = new HiveRecordCursor(
@@ -454,5 +469,37 @@ public class HivePageSourceProvider
         {
             return bucketToKeep;
         }
+    }
+
+    private static Optional<BucketValidator> createBucketValidator(Path path, Optional<BucketValidation> bucketValidation, OptionalInt bucketNumber, List<ColumnMapping> columnMappings)
+    {
+        return bucketValidation.flatMap(validation -> {
+            Map<Integer, ColumnMapping> baseHiveColumnToBlockIndex = columnMappings.stream()
+                    .collect(toImmutableMap(mapping -> mapping.getHiveColumnHandle().getHiveColumnIndex(), identity()));
+
+            int[] bucketColumnIndices = new int[validation.getBucketColumns().size()];
+
+            List<TypeInfo> bucketColumnTypes = new ArrayList<>();
+            for (int i = 0; i < validation.getBucketColumns().size(); i++) {
+                HiveColumnHandle column = validation.getBucketColumns().get(i);
+                ColumnMapping mapping = baseHiveColumnToBlockIndex.get(column.getHiveColumnIndex());
+                if (mapping == null) {
+                    // The bucket column is not read by the query, and thus invalid bucketing cannot
+                    // affect the results. Filtering on the hidden $bucket column still correctly
+                    // partitions the table by bucket, even if the bucket has the wrong data.
+                    return Optional.empty();
+                }
+                bucketColumnIndices[i] = mapping.getIndex();
+                bucketColumnTypes.add(mapping.getHiveColumnHandle().getHiveType().getTypeInfo());
+            }
+
+            return Optional.of(new BucketValidator(
+                    path,
+                    bucketColumnIndices,
+                    bucketColumnTypes,
+                    validation.getBucketingVersion(),
+                    validation.getBucketCount(),
+                    bucketNumber.orElseThrow(() -> new IllegalArgumentException("Bucket number not found"))));
+        });
     }
 }
