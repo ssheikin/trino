@@ -19,9 +19,11 @@ import io.prestosql.orc.metadata.ColumnMetadata;
 import io.prestosql.orc.metadata.OrcColumnId;
 import io.prestosql.orc.metadata.OrcType;
 import io.prestosql.plugin.hive.HdfsEnvironment.HdfsContext;
+import io.prestosql.plugin.hive.HivePageSource.BucketValidator;
 import io.prestosql.plugin.hive.HivePageSourceFactory.ReaderPageSourceWithProjections;
 import io.prestosql.plugin.hive.HiveRecordCursorProvider.ReaderRecordCursorWithProjections;
 import io.prestosql.plugin.hive.HiveSplit.BucketConversion;
+import io.prestosql.plugin.hive.HiveSplit.BucketValidation;
 import io.prestosql.plugin.hive.acid.AcidTransaction;
 import io.prestosql.plugin.hive.orc.OrcFileWriterFactory;
 import io.prestosql.plugin.hive.orc.OrcPageSource;
@@ -42,9 +44,11 @@ import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 
 import javax.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,6 +61,7 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.PARTITION_KEY;
 import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
@@ -68,6 +73,7 @@ import static io.prestosql.plugin.hive.HiveUpdatablePageSource.ORIGINAL_FILE_PAT
 import static io.prestosql.plugin.hive.orc.OrcTypeToHiveTypeTranslator.fromOrcTypeToHiveType;
 import static io.prestosql.plugin.hive.util.HiveUtil.getPrefilledColumnValue;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 
 public class HivePageSourceProvider
@@ -156,6 +162,7 @@ public class HivePageSourceProvider
                 typeManager,
                 hiveSplit.getTableToPartitionMapping(),
                 hiveSplit.getBucketConversion(),
+                hiveSplit.getBucketValidation(),
                 hiveSplit.isS3SelectPushdownEnabled(),
                 hiveSplit.getAcidInfo(),
                 originalFile,
@@ -209,6 +216,7 @@ public class HivePageSourceProvider
             TypeManager typeManager,
             TableToPartitionMapping tableToPartitionMapping,
             Optional<BucketConversion> bucketConversion,
+            Optional<BucketValidation> bucketValidation,
             boolean s3SelectPushdownEnabled,
             Optional<AcidInfo> acidInfo,
             boolean originalFile,
@@ -231,6 +239,7 @@ public class HivePageSourceProvider
         List<ColumnMapping> regularAndInterimColumnMappings = ColumnMapping.extractRegularAndInterimColumnMappings(columnMappings);
 
         Optional<BucketAdaptation> bucketAdaptation = createBucketAdaptation(bucketConversion, bucketNumber, regularAndInterimColumnMappings);
+        Optional<BucketValidator> bucketValidator = createBucketValidator(path, bucketValidation, bucketNumber, regularAndInterimColumnMappings);
 
         for (HivePageSourceFactory pageSourceFactory : pageSourceFactories) {
             List<HiveColumnHandle> desiredColumns = toColumnHandles(regularAndInterimColumnMappings, true, typeManager);
@@ -262,6 +271,7 @@ public class HivePageSourceProvider
                 return Optional.of(new HivePageSource(
                         columnMappings,
                         bucketAdaptation,
+                        bucketValidator,
                         adapter,
                         typeManager,
                         pageSource));
@@ -312,6 +322,11 @@ public class HivePageSourceProvider
                 // Need to wrap RcText and RcBinary into a wrapper, which will do the coercion for mismatch columns
                 if (doCoercion) {
                     delegate = new HiveCoercionRecordCursor(regularAndInterimColumnMappings, typeManager, delegate);
+                }
+
+                // bucket adaptation already validates that data is in the right bucket
+                if (bucketAdaptation.isEmpty() && bucketValidator.isPresent()) {
+                    delegate = bucketValidator.get().wrapRecordCursor(delegate, typeManager);
                 }
 
                 HiveRecordCursor hiveRecordCursor = new HiveRecordCursor(columnMappings, delegate);
@@ -627,5 +642,38 @@ public class HivePageSourceProvider
         {
             return bucketToKeep;
         }
+    }
+
+    private static Optional<BucketValidator> createBucketValidator(Path path, Optional<BucketValidation> bucketValidation, OptionalInt bucketNumber, List<ColumnMapping> columnMappings)
+    {
+        return bucketValidation.flatMap(validation -> {
+            Map<Integer, ColumnMapping> baseHiveColumnToBlockIndex = columnMappings.stream()
+                    .filter(mapping -> mapping.getHiveColumnHandle().isBaseColumn())
+                    .collect(toImmutableMap(mapping -> mapping.getHiveColumnHandle().getBaseHiveColumnIndex(), identity()));
+
+            int[] bucketColumnIndices = new int[validation.getBucketColumns().size()];
+
+            List<TypeInfo> bucketColumnTypes = new ArrayList<>();
+            for (int i = 0; i < validation.getBucketColumns().size(); i++) {
+                HiveColumnHandle column = validation.getBucketColumns().get(i);
+                ColumnMapping mapping = baseHiveColumnToBlockIndex.get(column.getBaseHiveColumnIndex());
+                if (mapping == null) {
+                    // The bucket column is not read by the query, and thus invalid bucketing cannot
+                    // affect the results. Filtering on the hidden $bucket column still correctly
+                    // partitions the table by bucket, even if the bucket has the wrong data.
+                    return Optional.empty();
+                }
+                bucketColumnIndices[i] = mapping.getIndex();
+                bucketColumnTypes.add(mapping.getHiveColumnHandle().getHiveType().getTypeInfo());
+            }
+
+            return Optional.of(new BucketValidator(
+                    path,
+                    bucketColumnIndices,
+                    bucketColumnTypes,
+                    validation.getBucketingVersion(),
+                    validation.getBucketCount(),
+                    bucketNumber.orElseThrow()));
+        });
     }
 }
