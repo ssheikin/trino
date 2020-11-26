@@ -2138,8 +2138,9 @@ public class LocalExecutionPlanner
             ImmutableList.Builder<OperatorFactory> factoriesBuilder = new ImmutableList.Builder<>();
             factoriesBuilder.addAll(buildSource.getOperatorFactories());
 
+            int operatorId = buildContext.getNextOperatorId();
             createDynamicFilter(buildSource, node, context, partitionCount, localDynamicFilters).ifPresent(
-                    filter -> factoriesBuilder.add(createDynamicFilterSourceOperatorFactory(filter, node, buildSource, buildContext)));
+                    filter -> factoriesBuilder.add(createDynamicFilterSourceOperatorFactory(operatorId, filter, node, buildSource)));
 
             HashBuilderOperatorFactory hashBuilderOperatorFactory = new HashBuilderOperatorFactory(
                     buildContext.getNextOperatorId(),
@@ -2169,10 +2170,10 @@ public class LocalExecutionPlanner
         }
 
         private DynamicFilterSourceOperatorFactory createDynamicFilterSourceOperatorFactory(
+                int operatorId,
                 LocalDynamicFilterConsumer dynamicFilter,
                 JoinNode node,
-                PhysicalOperation buildSource,
-                LocalExecutionPlanContext context)
+                PhysicalOperation buildSource)
         {
             List<DynamicFilterSourceOperator.Channel> filterBuildChannels = dynamicFilter.getBuildChannels().entrySet().stream()
                     .map(entry -> {
@@ -2184,13 +2185,13 @@ public class LocalExecutionPlanner
                     .collect(Collectors.toList());
             boolean isReplicatedJoin = isBuildSideReplicated(node);
             return new DynamicFilterSourceOperatorFactory(
-                    context.getNextOperatorId(),
+                    operatorId,
                     node.getId(),
                     dynamicFilter.getTupleDomainConsumer(),
                     filterBuildChannels,
-                    getDynamicFilteringMaxDistinctValuesPerDriver(context.getSession(), isReplicatedJoin),
-                    getDynamicFilteringMaxSizePerDriver(context.getSession(), isReplicatedJoin),
-                    getDynamicFilteringRangeRowLimitPerDriver(context.getSession(), isReplicatedJoin),
+                    getDynamicFilteringMaxDistinctValuesPerDriver(session, isReplicatedJoin),
+                    getDynamicFilteringMaxSizePerDriver(session, isReplicatedJoin),
+                    getDynamicFilteringRangeRowLimitPerDriver(session, isReplicatedJoin),
                     blockTypeOperators);
         }
 
@@ -2312,6 +2313,7 @@ public class LocalExecutionPlanner
             ImmutableList.Builder<OperatorFactory> buildOperatorFactories = new ImmutableList.Builder<>();
             buildOperatorFactories.addAll(buildSource.getOperatorFactories());
 
+            int operatorId = buildContext.getNextOperatorId();
             if (isLocalDynamicFilter || isCoordinatorDynamicFilter) {
                 // Add a DynamicFilterSourceOperatorFactory to build operator factories
                 DynamicFilterId filterId = node.getDynamicFilterId().get();
@@ -2329,7 +2331,7 @@ public class LocalExecutionPlanner
                 }
                 boolean isReplicatedJoin = isBuildSideReplicated(node);
                 buildOperatorFactories.add(new DynamicFilterSourceOperatorFactory(
-                        buildContext.getNextOperatorId(),
+                        operatorId,
                         node.getId(),
                         filterConsumer.getTupleDomainConsumer(),
                         ImmutableList.of(new DynamicFilterSourceOperator.Channel(filterId, buildSource.getTypes().get(buildChannel), buildChannel)),
