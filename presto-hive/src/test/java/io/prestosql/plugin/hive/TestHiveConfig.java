@@ -98,7 +98,8 @@ public class TestHiveConfig
                 .setPartitionUseColumnNames(false)
                 .setProjectionPushdownEnabled(true)
                 .setDynamicFilteringProbeBlockingTimeout(new Duration(0, TimeUnit.MINUTES))
-                .setTimestampPrecision(HiveTimestampPrecision.MILLISECONDS));
+                .setTimestampPrecision(HiveTimestampPrecision.MILLISECONDS)
+                .setLegacyHiveViewTranslation(false));
     }
 
     @Test
@@ -168,6 +169,7 @@ public class TestHiveConfig
                 .put("hive.projection-pushdown-enabled", "false")
                 .put("hive.dynamic-filtering-probe-blocking-timeout", "10s")
                 .put("hive.timestamp-precision", "NANOSECONDS")
+                .put("hive.legacy-hive-view-translation", "true")
                 .build();
 
         HiveConfig expected = new HiveConfig()
@@ -233,7 +235,8 @@ public class TestHiveConfig
                 .setPartitionUseColumnNames(true)
                 .setProjectionPushdownEnabled(false)
                 .setDynamicFilteringProbeBlockingTimeout(new Duration(10, TimeUnit.SECONDS))
-                .setTimestampPrecision(HiveTimestampPrecision.NANOSECONDS);
+                .setTimestampPrecision(HiveTimestampPrecision.NANOSECONDS)
+                .setLegacyHiveViewTranslation(true);
 
         assertFullMapping(properties, expected);
     }
