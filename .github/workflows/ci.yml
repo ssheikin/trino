@@ -3,7 +3,8 @@ name: ci
 on:
   push:
     branches:
-      - release-**
+      - release-*-e
+      - master
   pull_request:
 
 env:
