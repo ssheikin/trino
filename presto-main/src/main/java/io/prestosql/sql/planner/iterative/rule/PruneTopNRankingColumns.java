@@ -16,34 +16,34 @@ package io.prestosql.sql.planner.iterative.rule;
 import com.google.common.collect.Streams;
 import io.prestosql.sql.planner.Symbol;
 import io.prestosql.sql.planner.plan.PlanNode;
-import io.prestosql.sql.planner.plan.TopNRowNumberNode;
+import io.prestosql.sql.planner.plan.TopNRankingNode;
 
 import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.prestosql.sql.planner.iterative.rule.Util.restrictChildOutputs;
-import static io.prestosql.sql.planner.plan.Patterns.topNRowNumber;
+import static io.prestosql.sql.planner.plan.Patterns.topNRanking;
 
-public class PruneTopNRowNumberColumns
-        extends ProjectOffPushDownRule<TopNRowNumberNode>
+public class PruneTopNRankingColumns
+        extends ProjectOffPushDownRule<TopNRankingNode>
 {
-    public PruneTopNRowNumberColumns()
+    public PruneTopNRankingColumns()
     {
-        super(topNRowNumber());
+        super(topNRanking());
     }
 
     @Override
-    protected Optional<PlanNode> pushDownProjectOff(Context context, TopNRowNumberNode topNRowNumberNode, Set<Symbol> referencedOutputs)
+    protected Optional<PlanNode> pushDownProjectOff(Context context, TopNRankingNode topNRankingNode, Set<Symbol> referencedOutputs)
     {
         Set<Symbol> requiredInputs = Streams.concat(
                 referencedOutputs.stream()
-                        .filter(symbol -> !symbol.equals(topNRowNumberNode.getRowNumberSymbol())),
-                topNRowNumberNode.getPartitionBy().stream(),
-                topNRowNumberNode.getOrderingScheme().getOrderBy().stream(),
-                topNRowNumberNode.getHashSymbol().stream())
+                        .filter(symbol -> !symbol.equals(topNRankingNode.getRankingSymbol())),
+                topNRankingNode.getPartitionBy().stream(),
+                topNRankingNode.getOrderingScheme().getOrderBy().stream(),
+                topNRankingNode.getHashSymbol().stream())
                 .collect(toImmutableSet());
 
-        return restrictChildOutputs(context.getIdAllocator(), topNRowNumberNode, requiredInputs);
+        return restrictChildOutputs(context.getIdAllocator(), topNRankingNode, requiredInputs);
     }
 }

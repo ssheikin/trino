@@ -41,7 +41,7 @@ import io.prestosql.sql.planner.plan.PlanVisitor;
 import io.prestosql.sql.planner.plan.ProjectNode;
 import io.prestosql.sql.planner.plan.RowNumberNode;
 import io.prestosql.sql.planner.plan.TopNNode;
-import io.prestosql.sql.planner.plan.TopNRowNumberNode;
+import io.prestosql.sql.planner.plan.TopNRankingNode;
 import io.prestosql.sql.planner.plan.WindowNode.Specification;
 import io.prestosql.sql.tree.ComparisonExpression;
 import io.prestosql.sql.tree.Expression;
@@ -315,20 +315,20 @@ public class PlanNodeDecorrelator
 
             return decorrelatedOrderingScheme
                     .map(orderingScheme -> {
-                        // ordering symbols are present - rewrite TopN to TopNRowNumberNode partitioned by constant symbols
-                        TopNRowNumberNode topNRowNumberNode = new TopNRowNumberNode(
+                        // ordering symbols are present - rewrite TopN to TopNRankingNode partitioned by constant symbols
+                        TopNRankingNode topNRankingNode = new TopNRankingNode(
                                 node.getId(),
                                 decorrelatedChildNode,
                                 new Specification(
                                         ImmutableList.copyOf(childDecorrelationResult.symbolsToPropagate),
                                         Optional.of(orderingScheme)),
-                                symbolAllocator.newSymbol("row_number", BIGINT),
+                                symbolAllocator.newSymbol("ranking", BIGINT),
                                 toIntExact(node.getCount()),
                                 false,
                                 Optional.empty());
 
                         return Optional.of(new DecorrelationResult(
-                                topNRowNumberNode,
+                                topNRankingNode,
                                 childDecorrelationResult.symbolsToPropagate,
                                 childDecorrelationResult.correlatedPredicates,
                                 childDecorrelationResult.correlatedSymbolsMapping,

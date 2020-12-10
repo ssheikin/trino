@@ -33,7 +33,7 @@ import io.prestosql.sql.planner.plan.StatisticsWriterNode;
 import io.prestosql.sql.planner.plan.TableFinishNode;
 import io.prestosql.sql.planner.plan.TableWriterNode;
 import io.prestosql.sql.planner.plan.TopNNode;
-import io.prestosql.sql.planner.plan.TopNRowNumberNode;
+import io.prestosql.sql.planner.plan.TopNRankingNode;
 import io.prestosql.sql.planner.plan.WindowNode;
 import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.ExpressionRewriter;
@@ -345,14 +345,14 @@ public class SymbolMapper
                 node.getHashSymbol().map(this::map));
     }
 
-    public TopNRowNumberNode map(TopNRowNumberNode node, PlanNode source)
+    public TopNRankingNode map(TopNRankingNode node, PlanNode source)
     {
-        return new TopNRowNumberNode(
+        return new TopNRankingNode(
                 node.getId(),
                 source,
                 mapAndDistinct(node.getSpecification()),
-                map(node.getRowNumberSymbol()),
-                node.getMaxRowCountPerPartition(),
+                map(node.getRankingSymbol()),
+                node.getMaxRankingPerPartition(),
                 node.isPartial(),
                 node.getHashSymbol().map(this::map));
     }

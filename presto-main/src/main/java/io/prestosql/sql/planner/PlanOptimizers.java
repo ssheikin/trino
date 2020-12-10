@@ -107,7 +107,7 @@ import io.prestosql.sql.planner.iterative.rule.PruneSpatialJoinColumns;
 import io.prestosql.sql.planner.iterative.rule.PruneTableScanColumns;
 import io.prestosql.sql.planner.iterative.rule.PruneTableWriterSourceColumns;
 import io.prestosql.sql.planner.iterative.rule.PruneTopNColumns;
-import io.prestosql.sql.planner.iterative.rule.PruneTopNRowNumberColumns;
+import io.prestosql.sql.planner.iterative.rule.PruneTopNRankingColumns;
 import io.prestosql.sql.planner.iterative.rule.PruneUnionColumns;
 import io.prestosql.sql.planner.iterative.rule.PruneUnionSourceColumns;
 import io.prestosql.sql.planner.iterative.rule.PruneUnnestColumns;
@@ -128,7 +128,7 @@ import io.prestosql.sql.planner.iterative.rule.PushDownDereferencesThroughLimit;
 import io.prestosql.sql.planner.iterative.rule.PushDownDereferencesThroughRowNumber;
 import io.prestosql.sql.planner.iterative.rule.PushDownDereferencesThroughSort;
 import io.prestosql.sql.planner.iterative.rule.PushDownDereferencesThroughTopN;
-import io.prestosql.sql.planner.iterative.rule.PushDownDereferencesThroughTopNRowNumber;
+import io.prestosql.sql.planner.iterative.rule.PushDownDereferencesThroughTopNRanking;
 import io.prestosql.sql.planner.iterative.rule.PushDownDereferencesThroughWindow;
 import io.prestosql.sql.planner.iterative.rule.PushLimitIntoTableScan;
 import io.prestosql.sql.planner.iterative.rule.PushLimitThroughMarkDistinct;
@@ -333,7 +333,7 @@ public class PlanOptimizers
                 new PruneTableScanColumns(metadata),
                 new PruneTableWriterSourceColumns(),
                 new PruneTopNColumns(),
-                new PruneTopNRowNumberColumns(),
+                new PruneTopNRankingColumns(),
                 new PruneUnionColumns(),
                 new PruneUnionSourceColumns(),
                 new PruneUnnestColumns(),
@@ -358,7 +358,7 @@ public class PlanOptimizers
                 new PushDownDereferencesThroughWindow(typeAnalyzer),
                 new PushDownDereferencesThroughTopN(typeAnalyzer),
                 new PushDownDereferencesThroughRowNumber(typeAnalyzer),
-                new PushDownDereferencesThroughTopNRowNumber(typeAnalyzer));
+                new PushDownDereferencesThroughTopNRanking(typeAnalyzer));
 
         IterativeOptimizer inlineProjections = new IterativeOptimizer(
                 ruleStats,

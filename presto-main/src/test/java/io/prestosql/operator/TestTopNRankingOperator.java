@@ -41,7 +41,7 @@ import static io.prestosql.SessionTestUtils.TEST_SESSION;
 import static io.prestosql.operator.GroupByHashYieldAssertion.createPagesWithDistinctHashKeys;
 import static io.prestosql.operator.GroupByHashYieldAssertion.finishOperatorWithYieldingGroupByHash;
 import static io.prestosql.operator.OperatorAssertion.assertOperatorEquals;
-import static io.prestosql.operator.TopNRowNumberOperator.TopNRowNumberOperatorFactory;
+import static io.prestosql.operator.TopNRankingOperator.TopNRankingOperatorFactory;
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.DoubleType.DOUBLE;
 import static io.prestosql.spi.type.VarcharType.VARCHAR;
@@ -52,7 +52,7 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static org.testng.Assert.assertEquals;
 
 @Test(singleThreaded = true)
-public class TestTopNRowNumberOperator
+public class TestTopNRankingOperator
 {
     private ExecutorService executor;
     private ScheduledExecutorService scheduledExecutor;
@@ -111,7 +111,7 @@ public class TestTopNRowNumberOperator
                 .row("b", 0.9)
                 .build();
 
-        TopNRowNumberOperatorFactory operatorFactory = new TopNRowNumberOperatorFactory(
+        TopNRankingOperatorFactory operatorFactory = new TopNRankingOperatorFactory(
                 0,
                 new PlanNodeId("test"),
                 ImmutableList.of(VARCHAR, DOUBLE),
@@ -161,7 +161,7 @@ public class TestTopNRowNumberOperator
                 .row("b", 0.9)
                 .build();
 
-        TopNRowNumberOperatorFactory operatorFactory = new TopNRowNumberOperatorFactory(
+        TopNRankingOperatorFactory operatorFactory = new TopNRankingOperatorFactory(
                 0,
                 new PlanNodeId("test"),
                 ImmutableList.of(VARCHAR, DOUBLE),
@@ -203,7 +203,7 @@ public class TestTopNRowNumberOperator
         Type type = BIGINT;
         List<Page> input = createPagesWithDistinctHashKeys(type, 1_000, 500);
 
-        OperatorFactory operatorFactory = new TopNRowNumberOperatorFactory(
+        OperatorFactory operatorFactory = new TopNRankingOperatorFactory(
                 0,
                 new PlanNodeId("test"),
                 ImmutableList.of(type),
@@ -225,7 +225,7 @@ public class TestTopNRowNumberOperator
                 input,
                 type,
                 operatorFactory,
-                operator -> ((TopNRowNumberOperator) operator).getCapacity(),
+                operator -> ((TopNRankingOperator) operator).getCapacity(),
                 1_000_000);
         assertGreaterThan(result.getYieldCount(), 3);
         assertGreaterThan(result.getMaxReservedBytes(), 5L << 20);

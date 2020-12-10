@@ -95,7 +95,7 @@ import io.prestosql.operator.TableScanOperator.TableScanOperatorFactory;
 import io.prestosql.operator.TaskContext;
 import io.prestosql.operator.TaskOutputOperator.TaskOutputFactory;
 import io.prestosql.operator.TopNOperator;
-import io.prestosql.operator.TopNRowNumberOperator;
+import io.prestosql.operator.TopNRankingOperator;
 import io.prestosql.operator.ValuesOperator.ValuesOperatorFactory;
 import io.prestosql.operator.WindowFunctionDefinition;
 import io.prestosql.operator.WindowOperator.WindowOperatorFactory;
@@ -184,7 +184,7 @@ import io.prestosql.sql.planner.plan.TableScanNode;
 import io.prestosql.sql.planner.plan.TableWriterNode;
 import io.prestosql.sql.planner.plan.TableWriterNode.DeleteTarget;
 import io.prestosql.sql.planner.plan.TopNNode;
-import io.prestosql.sql.planner.plan.TopNRowNumberNode;
+import io.prestosql.sql.planner.plan.TopNRankingNode;
 import io.prestosql.sql.planner.plan.UnionNode;
 import io.prestosql.sql.planner.plan.UnnestNode;
 import io.prestosql.sql.planner.plan.ValuesNode;
@@ -872,7 +872,7 @@ public class LocalExecutionPlanner
         }
 
         @Override
-        public PhysicalOperation visitTopNRowNumber(TopNRowNumberNode node, LocalExecutionPlanContext context)
+        public PhysicalOperation visitTopNRanking(TopNRankingNode node, LocalExecutionPlanContext context)
         {
             PhysicalOperation source = node.getSource().accept(this, context);
 
@@ -898,13 +898,13 @@ public class LocalExecutionPlanner
             outputMappings.putAll(source.getLayout());
 
             if (!node.isPartial() || !partitionChannels.isEmpty()) {
-                // row number function goes in the last channel
+                // ranking function goes in the last channel
                 int channel = source.getTypes().size();
-                outputMappings.put(node.getRowNumberSymbol(), channel);
+                outputMappings.put(node.getRankingSymbol(), channel);
             }
 
             Optional<Integer> hashChannel = node.getHashSymbol().map(channelGetter(source));
-            OperatorFactory operatorFactory = new TopNRowNumberOperator.TopNRowNumberOperatorFactory(
+            OperatorFactory operatorFactory = new TopNRankingOperator.TopNRankingOperatorFactory(
                     context.getNextOperatorId(),
                     node.getId(),
                     source.getTypes(),
@@ -913,7 +913,7 @@ public class LocalExecutionPlanner
                     partitionTypes,
                     sortChannels,
                     sortOrder,
-                    node.getMaxRowCountPerPartition(),
+                    node.getMaxRankingPerPartition(),
                     node.isPartial(),
                     hashChannel,
                     1000,

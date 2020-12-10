@@ -47,7 +47,7 @@ import io.prestosql.sql.planner.plan.TableDeleteNode;
 import io.prestosql.sql.planner.plan.TableFinishNode;
 import io.prestosql.sql.planner.plan.TableScanNode;
 import io.prestosql.sql.planner.plan.TableWriterNode;
-import io.prestosql.sql.planner.plan.TopNRowNumberNode;
+import io.prestosql.sql.planner.plan.TopNRankingNode;
 import io.prestosql.sql.planner.plan.ValuesNode;
 import io.prestosql.sql.planner.plan.WindowNode;
 
@@ -651,7 +651,7 @@ public class PlanFragmenter
         }
 
         @Override
-        public GroupedExecutionProperties visitTopNRowNumber(TopNRowNumberNode node, Void context)
+        public GroupedExecutionProperties visitTopNRanking(TopNRankingNode node, Void context)
         {
             return processWindowFunction(node);
         }
