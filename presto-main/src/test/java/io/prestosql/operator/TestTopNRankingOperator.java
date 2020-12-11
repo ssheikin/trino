@@ -45,6 +45,7 @@ import static io.prestosql.operator.TopNRankingOperator.TopNRankingOperatorFacto
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.DoubleType.DOUBLE;
 import static io.prestosql.spi.type.VarcharType.VARCHAR;
+import static io.prestosql.sql.planner.plan.TopNRankingNode.RankingType.ROW_NUMBER;
 import static io.prestosql.testing.MaterializedResult.resultBuilder;
 import static io.prestosql.testing.TestingTaskContext.createTaskContext;
 import static java.util.concurrent.Executors.newCachedThreadPool;
@@ -114,6 +115,7 @@ public class TestTopNRankingOperator
         TopNRankingOperatorFactory operatorFactory = new TopNRankingOperatorFactory(
                 0,
                 new PlanNodeId("test"),
+                ROW_NUMBER,
                 ImmutableList.of(VARCHAR, DOUBLE),
                 Ints.asList(1, 0),
                 Ints.asList(0),
@@ -164,6 +166,7 @@ public class TestTopNRankingOperator
         TopNRankingOperatorFactory operatorFactory = new TopNRankingOperatorFactory(
                 0,
                 new PlanNodeId("test"),
+                ROW_NUMBER,
                 ImmutableList.of(VARCHAR, DOUBLE),
                 Ints.asList(1, 0),
                 Ints.asList(),
@@ -206,6 +209,7 @@ public class TestTopNRankingOperator
         OperatorFactory operatorFactory = new TopNRankingOperatorFactory(
                 0,
                 new PlanNodeId("test"),
+                ROW_NUMBER,
                 ImmutableList.of(type),
                 ImmutableList.of(0),
                 ImmutableList.of(0),

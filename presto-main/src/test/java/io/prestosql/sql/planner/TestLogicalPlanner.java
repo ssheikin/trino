@@ -137,6 +137,7 @@ import static io.prestosql.sql.planner.plan.JoinNode.DistributionType.PARTITIONE
 import static io.prestosql.sql.planner.plan.JoinNode.DistributionType.REPLICATED;
 import static io.prestosql.sql.planner.plan.JoinNode.Type.INNER;
 import static io.prestosql.sql.planner.plan.JoinNode.Type.LEFT;
+import static io.prestosql.sql.planner.plan.TopNRankingNode.RankingType.ROW_NUMBER;
 import static io.prestosql.sql.tree.BooleanLiteral.TRUE_LITERAL;
 import static io.prestosql.sql.tree.ComparisonExpression.Operator.EQUAL;
 import static io.prestosql.sql.tree.ComparisonExpression.Operator.LESS_THAN;
@@ -713,6 +714,7 @@ public class TestLogicalPlanner
                                                         ImmutableList.of("nation_regionkey"),
                                                         ImmutableList.of("nation_name"),
                                                         ImmutableMap.of("nation_name", SortOrder.ASC_NULLS_LAST))
+                                                .rankingType(ROW_NUMBER)
                                                 .maxRankingPerPartition(2)
                                                 .partial(false),
                                         anyTree(tableScan("nation", ImmutableMap.of("nation_name", "name", "nation_regionkey", "regionkey"))))))));

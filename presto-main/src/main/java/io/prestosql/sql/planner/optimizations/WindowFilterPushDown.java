@@ -35,6 +35,7 @@ import io.prestosql.sql.planner.plan.PlanNode;
 import io.prestosql.sql.planner.plan.RowNumberNode;
 import io.prestosql.sql.planner.plan.SimplePlanRewriter;
 import io.prestosql.sql.planner.plan.TopNRankingNode;
+import io.prestosql.sql.planner.plan.TopNRankingNode.RankingType;
 import io.prestosql.sql.planner.plan.ValuesNode;
 import io.prestosql.sql.planner.plan.WindowNode;
 import io.prestosql.sql.tree.BooleanLiteral;
@@ -53,6 +54,7 @@ import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.sql.planner.DomainTranslator.ExtractionResult;
 import static io.prestosql.sql.planner.DomainTranslator.fromPredicate;
 import static io.prestosql.sql.planner.plan.ChildReplacer.replaceChildren;
+import static io.prestosql.sql.planner.plan.TopNRankingNode.RankingType.ROW_NUMBER;
 import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
 
@@ -157,7 +159,7 @@ public class WindowFilterPushDown
                 WindowNode windowNode = (WindowNode) source;
                 // verify that unordered row_number window functions are replaced by RowNumberNode
                 verify(windowNode.getOrderingScheme().isPresent());
-                TopNRankingNode topNRankingNode = convertToTopNRanking(windowNode, limit);
+                TopNRankingNode topNRankingNode = convertToTopNRanking(windowNode, ROW_NUMBER, limit);
                 if (windowNode.getPartitionBy().isEmpty()) {
                     return topNRankingNode;
                 }
@@ -194,7 +196,7 @@ public class WindowFilterPushDown
                     if (upperBound.getAsInt() <= 0) {
                         return new ValuesNode(node.getId(), node.getOutputSymbols(), ImmutableList.of());
                     }
-                    source = convertToTopNRanking(windowNode, upperBound.getAsInt());
+                    source = convertToTopNRanking(windowNode, ROW_NUMBER, upperBound.getAsInt());
                     return rewriteFilterSource(node, source, rowNumberSymbol, upperBound.getAsInt());
                 }
             }
@@ -283,11 +285,12 @@ public class WindowFilterPushDown
                     node.getHashSymbol());
         }
 
-        private TopNRankingNode convertToTopNRanking(WindowNode windowNode, int limit)
+        private TopNRankingNode convertToTopNRanking(WindowNode windowNode, RankingType rankingType, int limit)
         {
             return new TopNRankingNode(idAllocator.getNextId(),
                     windowNode.getSource(),
                     windowNode.getSpecification(),
+                    rankingType,
                     getOnlyElement(windowNode.getWindowFunctions().keySet()),
                     limit,
                     false,

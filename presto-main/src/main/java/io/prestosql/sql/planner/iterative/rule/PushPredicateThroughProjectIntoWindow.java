@@ -50,6 +50,7 @@ import static io.prestosql.sql.planner.plan.Patterns.filter;
 import static io.prestosql.sql.planner.plan.Patterns.project;
 import static io.prestosql.sql.planner.plan.Patterns.source;
 import static io.prestosql.sql.planner.plan.Patterns.window;
+import static io.prestosql.sql.planner.plan.TopNRankingNode.RankingType.ROW_NUMBER;
 import static io.prestosql.sql.tree.BooleanLiteral.TRUE_LITERAL;
 import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
@@ -71,7 +72,7 @@ import static java.util.Objects.requireNonNull;
  * <pre>
  * - Filter (a > 1)
  *     - Project (a, ranking)
- *         - TopNRanking (maxRankingPerPartition = 5, order by a)
+ *         - TopNRanking (type = ROW_NUMBER, maxRankingPerPartition = 5, order by a)
  *             - source (a, b)
  * </pre>
  */
@@ -143,6 +144,7 @@ public class PushPredicateThroughProjectIntoWindow
                 window.getId(),
                 window.getSource(),
                 window.getSpecification(),
+                ROW_NUMBER,
                 rankingSymbol,
                 upperBound.getAsInt(),
                 false,
