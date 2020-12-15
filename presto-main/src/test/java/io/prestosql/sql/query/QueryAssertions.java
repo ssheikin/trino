@@ -272,9 +272,7 @@ public class QueryAssertions
         public QueryAssert matches(MaterializedResult expected)
         {
             return satisfies(actual -> {
-                assertThat(actual.getTypes())
-                        .as("Output types")
-                        .isEqualTo(expected.getTypes());
+                assertTypes(actual, expected.getTypes());
 
                 ListAssert<MaterializedRow> assertion = assertThat(actual.getMaterializedRows())
                         .as("Rows")
@@ -287,6 +285,41 @@ public class QueryAssertions
                     assertion.containsExactlyInAnyOrderElementsOf(expected.getMaterializedRows());
                 }
             });
+        }
+
+        public QueryAssert containsAll(MaterializedResult expected)
+        {
+            return satisfies(actual -> {
+                assertTypes(actual, expected.getTypes());
+
+                assertThat(actual.getMaterializedRows())
+                        .as("Rows")
+                        .withRepresentation(ROWS_REPRESENTATION)
+                        .containsAll(expected.getMaterializedRows());
+            });
+        }
+
+        public QueryAssert hasOutputTypes(List<Type> expectedTypes)
+        {
+            return satisfies(actual -> {
+                assertTypes(actual, expectedTypes);
+            });
+        }
+
+        public QueryAssert outputHasType(int index, Type expectedType)
+        {
+            return satisfies(actual -> {
+                assertThat(actual.getTypes())
+                        .as("Output types")
+                        .element(index).isEqualTo(expectedType);
+            });
+        }
+
+        private static void assertTypes(MaterializedResult actual, List<Type> expectedTypes)
+        {
+            assertThat(actual.getTypes())
+                    .as("Output types")
+                    .isEqualTo(expectedTypes);
         }
 
         public QueryAssert returnsEmptyResult()
