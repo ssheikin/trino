@@ -13,10 +13,11 @@
  */
 package io.prestosql.plugin.kafka.schema.confluent;
 
+import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.prestosql.plugin.kafka.KafkaTopicFieldGroup;
 import io.prestosql.spi.connector.ConnectorSession;
 
 public interface SchemaParser
 {
-    KafkaTopicFieldGroup parse(ConnectorSession session, String subject, String rawSchema);
+    KafkaTopicFieldGroup parse(ConnectorSession session, String subject, ParsedSchema parsedSchema);
 }
