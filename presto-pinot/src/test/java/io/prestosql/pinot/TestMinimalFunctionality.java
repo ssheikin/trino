@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.testing.Closeables.closeAllRuntimeException;
 import static io.prestosql.spi.type.DoubleType.DOUBLE;
 import static io.prestosql.spi.type.IntegerType.INTEGER;
@@ -60,8 +59,6 @@ public class TestMinimalFunctionality
         kafka.start();
         pinot = new TestingPinotCluster();
         pinot.start();
-
-        kafka.createTopic(TOPIC_AND_TABLE);
 
         ImmutableList.Builder<ProducerRecord<Long, Object>> builder = ImmutableList.builder();
         long key = 0L;
