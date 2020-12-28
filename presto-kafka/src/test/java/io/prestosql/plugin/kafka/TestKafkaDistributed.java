@@ -17,29 +17,17 @@ import io.prestosql.testing.AbstractTestQueries;
 import io.prestosql.testing.QueryRunner;
 import io.prestosql.testing.kafka.BasicTestingKafka;
 import io.prestosql.tpch.TpchTable;
-import org.testng.annotations.AfterClass;
 
 public class TestKafkaDistributed
         extends AbstractTestQueries
 {
-    private BasicTestingKafka testingKafka;
-
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        testingKafka = new BasicTestingKafka();
+        BasicTestingKafka testingKafka = closeAfterClass(new BasicTestingKafka());
         return KafkaQueryRunner.builder(testingKafka)
                 .setTables(TpchTable.getTables())
                 .build();
-    }
-
-    @AfterClass(alwaysRun = true)
-    public void destroy()
-    {
-        if (testingKafka != null) {
-            testingKafka.close();
-            testingKafka = null;
-        }
     }
 }
