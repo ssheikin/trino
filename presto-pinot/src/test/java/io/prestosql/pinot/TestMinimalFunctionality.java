@@ -20,7 +20,6 @@ import io.prestosql.pinot.client.PinotHostMapper;
 import io.prestosql.testing.AbstractTestQueryFramework;
 import io.prestosql.testing.MaterializedResult;
 import io.prestosql.testing.QueryRunner;
-import io.prestosql.testing.kafka.BasicTestingKafka;
 import io.prestosql.testing.kafka.TestingKafka;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.testng.annotations.AfterClass;
@@ -55,7 +54,7 @@ public class TestMinimalFunctionality
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        kafka = new BasicTestingKafka();
+        kafka = TestingKafka.create();
         kafka.start();
         pinot = new TestingPinotCluster();
         pinot.start();

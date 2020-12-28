@@ -31,7 +31,7 @@ import io.prestosql.plugin.kafka.util.CodecSupplier;
 import io.prestosql.plugin.tpch.TpchPlugin;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.testing.DistributedQueryRunner;
-import io.prestosql.testing.kafka.BasicTestingKafka;
+import io.prestosql.testing.kafka.TestingKafka;
 import io.prestosql.tpch.TpchTable;
 
 import java.io.IOException;
@@ -59,18 +59,18 @@ public final class KafkaQueryRunner
     private static final String TPCH_SCHEMA = "tpch";
     private static final String TEST = "test";
 
-    public static Builder builder(BasicTestingKafka testingKafka)
+    public static Builder builder(TestingKafka testingKafka)
     {
         return new Builder(testingKafka);
     }
 
     public static class Builder
-            extends KafkaQueryRunnerBuilder<BasicTestingKafka>
+            extends KafkaQueryRunnerBuilder
     {
         private List<TpchTable<?>> tables = ImmutableList.of();
         private Map<SchemaTableName, KafkaTopicDescription> extraTopicDescription = ImmutableMap.of();
 
-        protected Builder(BasicTestingKafka testingKafka)
+        protected Builder(TestingKafka testingKafka)
         {
             super(testingKafka, TPCH_SCHEMA);
         }
@@ -203,7 +203,7 @@ public final class KafkaQueryRunner
             throws Exception
     {
         Logging.initialize();
-        DistributedQueryRunner queryRunner = builder(new BasicTestingKafka())
+        DistributedQueryRunner queryRunner = builder(TestingKafka.create())
                 .setTables(TpchTable.getTables())
                 .build();
         Logger log = Logger.get(KafkaQueryRunner.class);

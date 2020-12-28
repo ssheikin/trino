@@ -18,7 +18,7 @@ import io.prestosql.metadata.QualifiedObjectName;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.testing.AbstractTestQueryFramework;
 import io.prestosql.testing.QueryRunner;
-import io.prestosql.testing.kafka.BasicTestingKafka;
+import io.prestosql.testing.kafka.TestingKafka;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.testng.annotations.Test;
 
@@ -32,14 +32,14 @@ import static org.testng.Assert.assertTrue;
 public class TestMinimalFunctionality
         extends AbstractTestQueryFramework
 {
-    private BasicTestingKafka testingKafka;
+    private TestingKafka testingKafka;
     private String topicName;
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        testingKafka = closeAfterClass(new BasicTestingKafka());
+        testingKafka = closeAfterClass(TestingKafka.create());
         topicName = "test_" + randomUUID().toString().replaceAll("-", "_");
         QueryRunner queryRunner = KafkaQueryRunner.builder(testingKafka)
                 .setExtraTopicDescription(ImmutableMap.<SchemaTableName, KafkaTopicDescription>builder()

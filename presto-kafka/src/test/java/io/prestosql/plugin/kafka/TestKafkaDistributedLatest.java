@@ -15,7 +15,7 @@ package io.prestosql.plugin.kafka;
 
 import io.prestosql.testing.AbstractTestQueries;
 import io.prestosql.testing.QueryRunner;
-import io.prestosql.testing.kafka.BasicTestingKafka;
+import io.prestosql.testing.kafka.TestingKafka;
 import io.prestosql.tpch.TpchTable;
 
 public class TestKafkaDistributedLatest
@@ -25,7 +25,7 @@ public class TestKafkaDistributedLatest
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        BasicTestingKafka testingKafka = closeAfterClass(new BasicTestingKafka("6.0.1"));
+        TestingKafka testingKafka = closeAfterClass(TestingKafka.create("6.0.1"));
         return KafkaQueryRunner.builder(testingKafka)
                 .setTables(TpchTable.getTables())
                 .build();
