@@ -24,6 +24,7 @@ import io.prestosql.operator.window.LagFunction;
 import io.prestosql.operator.window.LastValueFunction;
 import io.prestosql.operator.window.LeadFunction;
 import io.prestosql.operator.window.NthValueFunction;
+import io.prestosql.operator.window.RankFunction;
 import io.prestosql.operator.window.ReflectionWindowFunctionSupplier;
 import io.prestosql.operator.window.RowNumberFunction;
 import io.prestosql.spi.Page;
@@ -78,6 +79,9 @@ public class TestWindowOperator
 
     public static final List<WindowFunctionDefinition> ROW_NUMBER = ImmutableList.of(
             window(new ReflectionWindowFunctionSupplier<>("row_number", BIGINT, ImmutableList.of(), RowNumberFunction.class), BIGINT, UNBOUNDED_FRAME, false, ImmutableList.of()));
+
+    public static final List<WindowFunctionDefinition> RANK = ImmutableList.of(
+            window(new ReflectionWindowFunctionSupplier<>("rank", BIGINT, ImmutableList.of(), RankFunction.class), BIGINT, UNBOUNDED_FRAME, false, ImmutableList.of()));
 
     private static final List<WindowFunctionDefinition> FIRST_VALUE = ImmutableList.of(
             window(new ReflectionWindowFunctionSupplier<>("first_value", VARCHAR, ImmutableList.<Type>of(VARCHAR), FirstValueFunction.class), VARCHAR, UNBOUNDED_FRAME, false, ImmutableList.of(), 1));
@@ -301,6 +305,67 @@ public class TestWindowOperator
                 .build();
 
         assertOperatorEquals(operatorFactory, driverContext, input, expected);
+    }
+
+    @Test(dataProvider = "spillEnabled")
+    public void testDistinctPartitionAndPeers(boolean spillEnabled, boolean revokeMemoryWhenAddingPages, long memoryLimit)
+    {
+        List<Page> input = rowPagesBuilder(DOUBLE, DOUBLE)
+                .row(1.0, 1.0)
+                .row(1.0, 0.0)
+                .row(1.0, Double.NaN)
+                .row(1.0, null)
+                .row(2.0, 2.0)
+                .row(2.0, Double.NaN)
+                .row(Double.NaN, Double.NaN)
+                .row(Double.NaN, Double.NaN)
+                .row(null, null)
+                .row(null, 1.0)
+                .row(null, null)
+                .pageBreak()
+                .row(1.0, Double.NaN)
+                .row(1.0, null)
+                .row(2.0, 2.0)
+                .row(2.0, null)
+                .row(Double.NaN, 3.0)
+                .row(Double.NaN, null)
+                .row(null, 2.0)
+                .row(null, null)
+                .build();
+
+        WindowOperatorFactory operatorFactory = createFactoryUnbounded(
+                ImmutableList.of(DOUBLE, DOUBLE),
+                Ints.asList(0, 1),
+                RANK,
+                Ints.asList(0),
+                Ints.asList(1),
+                ImmutableList.copyOf(new SortOrder[] {SortOrder.ASC_NULLS_LAST}),
+                spillEnabled);
+
+        DriverContext driverContext = createDriverContext(memoryLimit);
+        MaterializedResult expected = resultBuilder(driverContext.getSession(), DOUBLE, DOUBLE, BIGINT)
+                .row(1.0, 0.0, 1L)
+                .row(1.0, 1.0, 2L)
+                .row(1.0, Double.NaN, 3L)
+                .row(1.0, Double.NaN, 3L)
+                .row(1.0, null, 5L)
+                .row(1.0, null, 5L)
+                .row(2.0, 2.0, 1L)
+                .row(2.0, 2.0, 1L)
+                .row(2.0, Double.NaN, 3L)
+                .row(2.0, null, 4L)
+                .row(Double.NaN, 3.0, 1L)
+                .row(Double.NaN, Double.NaN, 2L)
+                .row(Double.NaN, Double.NaN, 2L)
+                .row(Double.NaN, null, 4L)
+                .row(null, 1.0, 1L)
+                .row(null, 2.0, 2L)
+                .row(null, null, 3L)
+                .row(null, null, 3L)
+                .row(null, null, 3L)
+                .build();
+
+        assertOperatorEquals(operatorFactory, driverContext, input, expected, revokeMemoryWhenAddingPages);
     }
 
     @Test(expectedExceptions = ExceededMemoryLimitException.class, expectedExceptionsMessageRegExp = "Query exceeded per-node user memory limit of 10B.*")
