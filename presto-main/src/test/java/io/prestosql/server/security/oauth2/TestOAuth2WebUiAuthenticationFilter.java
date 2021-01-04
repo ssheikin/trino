@@ -187,6 +187,7 @@ public class TestOAuth2WebUiAuthenticationFilter
     }
 
     @Test
+    @Flaky(issue = "https://github.com/trinodb/trino/issues/6223", match = OAUTH2_COOKIE + " is missing")
     public void testSuccessfulFlow()
             throws Exception
     {
