@@ -67,7 +67,12 @@ public class TestJdbcResultSetCompatibilityOldServer
             ImmutableList.Builder<String> testedPrestoVersions = ImmutableList.builder();
             int lastReleasedVersion = currentVersion - 1;
             for (int i = 0; i < NUMBER_OF_TESTED_VERSIONS; i++) {
-                testedPrestoVersions.add(String.valueOf(lastReleasedVersion - TESTED_VERSIONS_GRANULARITY * i));
+                int versionToTest = lastReleasedVersion - TESTED_VERSIONS_GRANULARITY * i;
+                if (versionToTest == 349) {
+                    // Release 349 was not done correctly and the code was re-released as 350.
+                    versionToTest = 350;
+                }
+                testedPrestoVersions.add(String.valueOf(versionToTest));
             }
 
             return testedPrestoVersions.build().stream()
