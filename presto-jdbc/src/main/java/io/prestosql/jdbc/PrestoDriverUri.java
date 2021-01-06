@@ -69,6 +69,7 @@ import static io.prestosql.jdbc.ConnectionProperties.KERBEROS_USE_CANONICAL_HOST
 import static io.prestosql.jdbc.ConnectionProperties.PASSWORD;
 import static io.prestosql.jdbc.ConnectionProperties.ROLES;
 import static io.prestosql.jdbc.ConnectionProperties.SESSION_PROPERTIES;
+import static io.prestosql.jdbc.ConnectionProperties.SESSION_USER;
 import static io.prestosql.jdbc.ConnectionProperties.SOCKS_PROXY;
 import static io.prestosql.jdbc.ConnectionProperties.SOURCE;
 import static io.prestosql.jdbc.ConnectionProperties.SSL;
@@ -183,6 +184,12 @@ public final class PrestoDriverUri
     public Properties getProperties()
     {
         return properties;
+    }
+
+    public Optional<String> getSessionUser()
+            throws SQLException
+    {
+        return SESSION_USER.getValue(properties);
     }
 
     public Map<String, String> getExtraCredentials()
