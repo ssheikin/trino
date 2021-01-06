@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import io.prestosql.jdbc.BaseTestJdbcResultSet;
 import org.testcontainers.containers.PrestoContainer;
+import org.testcontainers.utility.DockerImageName;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -91,7 +92,7 @@ public class TestJdbcResultSetCompatibilityOldServer
             throw new AssertionError("Could not determine current Presto version");
         }
 
-        prestoContainer = new PrestoContainer<>("prestosql/presto:" + testedPrestoVersion.get());
+        prestoContainer = new PrestoContainer<>(DockerImageName.parse("ghcr.io/trinodb/presto:" + testedPrestoVersion.get()).asCompatibleSubstituteFor("prestosql/presto"));
         prestoContainer.start();
 
         // verify that version reported by Presto server matches requested one.
