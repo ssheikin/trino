@@ -243,20 +243,20 @@ public class TestOAuth2WebUiAuthenticationFilter
             throws Exception
     {
         withSuccessfulAuthentication((driver, wait) -> {
-            Cookie cookie = driver.manage().getCookieNamed("Presto-OAuth2-Token");
+            Cookie cookie = driver.manage().getCookieNamed(OAUTH2_COOKIE);
             assertPrestoCookie(cookie);
             assertUICallWithCookie(cookie);
         });
     }
 
     @Test
-    @Flaky(issue = "https://github.com/prestosql/presto/issues/6223", match = "Presto-OAuth2-Token is missing")
+    @Flaky(issue = "https://github.com/prestosql/presto/issues/6223", match = OAUTH2_COOKIE + " is missing")
     public void testExpiredAccessToken()
             throws Exception
     {
         withSuccessfulAuthentication(((driver, wait) -> {
-            Cookie cookie = driver.manage().getCookieNamed("Presto-OAuth2-Token");
-            assertThat(cookie).withFailMessage("Presto-OAuth2-Token is missing").isNotNull();
+            Cookie cookie = driver.manage().getCookieNamed(OAUTH2_COOKIE);
+            assertThat(cookie).withFailMessage(OAUTH2_COOKIE + " is missing").isNotNull();
             Thread.sleep((TTL_ACCESS_TOKEN_IN_SECONDS + 1) * 1000L); // wait for the token expiration
             try (Response response = httpClientUsingCookie(cookie).newCall(uiCall().build()).execute()) {
                 assertRedirectResponse(response);
@@ -323,7 +323,7 @@ public class TestOAuth2WebUiAuthenticationFilter
 
     private void assertPrestoCookie(Cookie cookie)
     {
-        assertThat(cookie.getName()).isEqualTo("Presto-OAuth2-Token");
+        assertThat(cookie.getName()).isEqualTo(OAUTH2_COOKIE);
         assertThat(cookie.getDomain()).isEqualTo("host.testcontainers.internal");
         assertThat(cookie.getPath()).isEqualTo("/ui/");
         assertThat(cookie.isSecure()).isTrue();
@@ -374,7 +374,7 @@ public class TestOAuth2WebUiAuthenticationFilter
                 return ImmutableList.of(new okhttp3.Cookie.Builder()
                         .domain("localhost")
                         .path("/ui/")
-                        .name("Presto-OAuth2-Token")
+                        .name(OAUTH2_COOKIE)
                         .value(cookie.getValue())
                         .httpOnly()
                         .secure()

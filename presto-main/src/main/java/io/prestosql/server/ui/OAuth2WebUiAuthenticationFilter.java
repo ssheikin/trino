@@ -41,6 +41,7 @@ import static io.prestosql.server.ServletSecurityUtils.setAuthenticatedIdentity;
 import static io.prestosql.server.security.oauth2.OAuth2CallbackResource.CALLBACK_ENDPOINT;
 import static io.prestosql.server.ui.FormWebUiAuthenticationFilter.DISABLED_LOCATION;
 import static io.prestosql.server.ui.FormWebUiAuthenticationFilter.DISABLED_LOCATION_URI;
+import static io.prestosql.server.ui.OAuthWebUiCookie.OAUTH2_COOKIE;
 import static java.util.Objects.requireNonNull;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 
@@ -105,7 +106,7 @@ public class OAuth2WebUiAuthenticationFilter
 
     private Optional<Jws<Claims>> getAccessToken(ContainerRequestContext request)
     {
-        return OAuthWebUiCookie.read(request)
+        return OAuthWebUiCookie.read(request.getCookies().get(OAUTH2_COOKIE))
                 .flatMap(token -> {
                     try {
                         return Optional.ofNullable(service.parseClaimsJws(token));
