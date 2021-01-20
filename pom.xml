@@ -10,7 +10,7 @@
 
     <groupId>io.prestosql</groupId>
     <artifactId>presto-root</artifactId>
-    <version>345-e.5-SNAPSHOT</version>
+    <version>345-e.5</version>
 
     <name>presto-root</name>
     <description>Presto</description>
@@ -30,7 +30,7 @@
     <scm>
         <connection>scm:git:git://github.com/starburstdata/presto-lts.git</connection>
         <url>https://github.com/starburstdata/presto-lts</url>
-      <tag>HEAD</tag>
+      <tag>345-e.5</tag>
   </scm>
 
     <properties>
