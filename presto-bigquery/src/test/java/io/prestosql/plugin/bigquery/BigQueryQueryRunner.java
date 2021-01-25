@@ -33,7 +33,7 @@ import java.util.Map;
 import static io.airlift.testing.Closeables.closeAllSuppress;
 import static io.prestosql.testing.TestingSession.testSessionBuilder;
 
-public class BigQueryQueryRunner
+public final class BigQueryQueryRunner
 {
     private static final String TPCH_SCHEMA = "tpch";
 
@@ -65,26 +65,49 @@ public class BigQueryQueryRunner
         }
     }
 
-    public static BigQuery createBigQueryClient()
-    {
-        try {
-            InputStream jsonKey = new ByteArrayInputStream(Base64.getDecoder().decode(System.getProperty("bigquery.credentials-key")));
-            return BigQueryOptions.newBuilder()
-                    .setCredentials(ServiceAccountCredentials.fromStream(jsonKey))
-                    .build()
-                    .getService();
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     public static Session createSession()
     {
         return testSessionBuilder()
                 .setCatalog("bigquery")
                 .setSchema(TPCH_SCHEMA)
                 .build();
+    }
+
+    public static class BigQuerySqlExecutor
+            implements SqlExecutor
+    {
+        private final BigQuery bigQuery;
+
+        public BigQuerySqlExecutor()
+        {
+            this.bigQuery = createBigQueryClient();
+        }
+
+        @Override
+        public void execute(String sql)
+        {
+            try {
+                bigQuery.query(QueryJobConfiguration.of(sql));
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static BigQuery createBigQueryClient()
+        {
+            try {
+                InputStream jsonKey = new ByteArrayInputStream(Base64.getDecoder().decode(System.getProperty("bigquery.credentials-key")));
+                return BigQueryOptions.newBuilder()
+                        .setCredentials(ServiceAccountCredentials.fromStream(jsonKey))
+                        .build()
+                        .getService();
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
     public static void main(String[] args)

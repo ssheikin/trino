@@ -13,32 +13,29 @@
  */
 package io.prestosql.plugin.bigquery;
 
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.Job;
-import com.google.cloud.bigquery.JobId;
-import com.google.cloud.bigquery.JobInfo;
-import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.common.collect.ImmutableMap;
 import io.prestosql.testing.AbstractTestIntegrationSmokeTest;
 import io.prestosql.testing.MaterializedResult;
 import io.prestosql.testing.QueryRunner;
 import org.testng.annotations.Test;
 
-import static io.prestosql.plugin.bigquery.BigQueryQueryRunner.createBigQueryClient;
+import static io.prestosql.plugin.bigquery.BigQueryQueryRunner.BigQuerySqlExecutor;
 import static io.prestosql.spi.type.VarcharType.VARCHAR;
 import static io.prestosql.testing.MaterializedResult.resultBuilder;
 import static io.prestosql.testing.assertions.Assert.assertEquals;
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Test
 public class TestBigQueryIntegrationSmokeTest
         extends AbstractTestIntegrationSmokeTest
 {
+    private BigQuerySqlExecutor bigQuerySqlExecutor;
+
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
+        this.bigQuerySqlExecutor = new BigQuerySqlExecutor();
         return BigQueryQueryRunner.createQueryRunner(ImmutableMap.of());
     }
 
@@ -63,11 +60,9 @@ public class TestBigQueryIntegrationSmokeTest
     @Test(enabled = false)
     public void testSelectFromHourlyPartitionedTable()
     {
-        BigQuery client = createBigQueryClient();
-
-        executeBigQuerySql(client, "DROP TABLE IF EXISTS test.hourly_partitioned");
-        executeBigQuerySql(client, "CREATE TABLE test.hourly_partitioned (value INT64, ts TIMESTAMP) PARTITION BY TIMESTAMP_TRUNC(ts, HOUR)");
-        executeBigQuerySql(client, "INSERT INTO test.hourly_partitioned (value, ts) VALUES (1000, '2018-01-01 10:00:00')");
+        onBigQuery("DROP TABLE IF EXISTS test.hourly_partitioned");
+        onBigQuery("CREATE TABLE test.hourly_partitioned (value INT64, ts TIMESTAMP) PARTITION BY TIMESTAMP_TRUNC(ts, HOUR)");
+        onBigQuery("INSERT INTO test.hourly_partitioned (value, ts) VALUES (1000, '2018-01-01 10:00:00')");
 
         MaterializedResult actualValues = computeActual("SELECT COUNT(1) FROM test.hourly_partitioned");
 
@@ -77,11 +72,9 @@ public class TestBigQueryIntegrationSmokeTest
     @Test(enabled = false)
     public void testSelectFromYearlyPartitionedTable()
     {
-        BigQuery client = createBigQueryClient();
-
-        executeBigQuerySql(client, "DROP TABLE IF EXISTS test.yearly_partitioned");
-        executeBigQuerySql(client, "CREATE TABLE test.yearly_partitioned (value INT64, ts TIMESTAMP) PARTITION BY TIMESTAMP_TRUNC(ts, YEAR)");
-        executeBigQuerySql(client, "INSERT INTO test.yearly_partitioned (value, ts) VALUES (1000, '2018-01-01 10:00:00')");
+        onBigQuery("DROP TABLE IF EXISTS test.yearly_partitioned");
+        onBigQuery("CREATE TABLE test.yearly_partitioned (value INT64, ts TIMESTAMP) PARTITION BY TIMESTAMP_TRUNC(ts, YEAR)");
+        onBigQuery("INSERT INTO test.yearly_partitioned (value, ts) VALUES (1000, '2018-01-01 10:00:00')");
 
         MaterializedResult actualValues = computeActual("SELECT COUNT(1) FROM test.yearly_partitioned");
 
@@ -91,13 +84,11 @@ public class TestBigQueryIntegrationSmokeTest
     @Test(description = "regression test for https://github.com/prestosql/presto/issues/5618")
     public void testPredicatePushdownPrunnedColumns()
     {
-        BigQuery client = createBigQueryClient();
-
         String tableName = "test.predicate_pushdown_prunned_columns";
 
-        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
-        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (a INT64, b INT64, c INT64)");
-        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES (1,2,3)");
+        onBigQuery("DROP TABLE IF EXISTS " + tableName);
+        onBigQuery("CREATE TABLE " + tableName + " (a INT64, b INT64, c INT64)");
+        onBigQuery("INSERT INTO " + tableName + " VALUES (1,2,3)");
 
         assertQuery(
                 "SELECT 1 FROM " + tableName + " WHERE " +
@@ -109,16 +100,14 @@ public class TestBigQueryIntegrationSmokeTest
     @Test(description = "regression test for https://github.com/prestosql/presto/issues/5635")
     public void testCountAggregationView()
     {
-        BigQuery client = createBigQueryClient();
-
         String tableName = "test.count_aggregation_table";
         String viewName = "test.count_aggregation_view";
 
-        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
-        executeBigQuerySql(client, "DROP VIEW IF EXISTS " + viewName);
-        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (a INT64, b INT64, c INT64)");
-        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES (1, 2, 3), (4, 5, 6)");
-        executeBigQuerySql(client, "CREATE VIEW " + viewName + " AS SELECT * FROM " + tableName);
+        onBigQuery("DROP TABLE IF EXISTS " + tableName);
+        onBigQuery("DROP VIEW IF EXISTS " + viewName);
+        onBigQuery("CREATE TABLE " + tableName + " (a INT64, b INT64, c INT64)");
+        onBigQuery("INSERT INTO " + tableName + " VALUES (1, 2, 3), (4, 5, 6)");
+        onBigQuery("CREATE VIEW " + viewName + " AS SELECT * FROM " + tableName);
 
         assertQuery(
                 "SELECT count(*) FROM " + viewName,
@@ -139,45 +128,17 @@ public class TestBigQueryIntegrationSmokeTest
     @Test
     public void testColumnPositionMismatch()
     {
-        BigQuery client = createBigQueryClient();
         String tableName = "test.test_column_position_mismatch";
 
-        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
-        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (c_varchar STRING, c_int INT64, c_date DATE)");
-        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES ('a', 1, '2021-01-01')");
-
+        onBigQuery("DROP TABLE IF EXISTS " + tableName);
+        onBigQuery("CREATE TABLE " + tableName + " (c_varchar STRING, c_int INT64, c_date DATE)");
+        onBigQuery("INSERT INTO " + tableName + " VALUES ('a', 1, '2021-01-01')");
         // Adding a CAST makes BigQuery return columns in a different order
         assertQuery(
                 "SELECT c_varchar, CAST(c_int AS SMALLINT), c_date FROM " + tableName,
                 "VALUES ('a', 1, '2021-01-01')");
 
-        executeBigQuerySql(client, "DROP TABLE " + tableName);
-    }
-
-    private static void executeBigQuerySql(BigQuery bigquery, String query)
-    {
-        QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query)
-                .setUseLegacySql(false)
-                .build();
-
-        JobId jobId = JobId.of();
-        Job queryJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
-
-        try {
-            queryJob = queryJob.waitFor();
-
-            if (queryJob == null) {
-                throw new RuntimeException(format("Job with uuid %s does not longer exists", jobId.getJob()));
-            }
-
-            if (queryJob.getStatus().getError() != null) {
-                throw new RuntimeException(format("Query '%s' failed: %s", query, queryJob.getStatus().getError()));
-            }
-        }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+        onBigQuery("DROP TABLE " + tableName);
     }
 
     @Override
@@ -202,10 +163,9 @@ public class TestBigQueryIntegrationSmokeTest
     {
         String tableName = "test.test_time_type";
 
-        BigQuery client = createBigQueryClient();
-        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
-        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (a TIME)");
-        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES ('01:02:03.123'), ('23:59:59.999')");
+        onBigQuery("DROP TABLE IF EXISTS " + tableName);
+        onBigQuery("CREATE TABLE " + tableName + " (a TIME)");
+        onBigQuery("INSERT INTO " + tableName + " VALUES ('01:02:03.123'), ('23:59:59.999')");
 
         assertThat(query("SELECT a FROM " + tableName))
                 .containsAll("VALUES (TIME '01:02:03.123+00:00'), (TIME '23:59:59.999+00:00')");
@@ -214,6 +174,11 @@ public class TestBigQueryIntegrationSmokeTest
         assertThat(query("SELECT a FROM " + tableName + " WHERE rand() = 42 OR a = TIME '01:02:03.123+00:00'"))
                 .containsAll("VALUES (TIME '01:02:03.123+00:00')");
 
-        executeBigQuerySql(client, "DROP TABLE " + tableName);
+        onBigQuery("DROP TABLE " + tableName);
+    }
+
+    private void onBigQuery(String sql)
+    {
+        bigQuerySqlExecutor.execute(sql);
     }
 }
