@@ -94,16 +94,28 @@ public class GenericHiveRecordCursorProvider
                     projectedReaderColumns
                             .map(ReaderProjections::getReaderColumns)
                             .orElse(columns));
-
-            return new GenericHiveRecordCursor<>(
-                    configuration,
-                    path,
-                    genericRecordReader(recordReader),
-                    length,
-                    schema,
-                    projectedReaderColumns
-                            .map(ReaderProjections::getReaderColumns)
-                            .orElse(columns));
+            try {
+                return new GenericHiveRecordCursor<>(
+                        configuration,
+                        path,
+                        genericRecordReader(recordReader),
+                        length,
+                        schema,
+                        projectedReaderColumns
+                                .map(ReaderProjections::getReaderColumns)
+                                .orElse(columns));
+            }
+            catch (Exception e) {
+                try {
+                    recordReader.close();
+                }
+                catch (IOException closeException) {
+                    if (e != closeException) {
+                        e.addSuppressed(closeException);
+                    }
+                }
+                throw e;
+            }
         });
 
         return Optional.of(new ReaderRecordCursorWithProjections(cursor, projectedReaderColumns));
