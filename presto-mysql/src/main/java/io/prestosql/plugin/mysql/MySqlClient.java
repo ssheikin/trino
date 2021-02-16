@@ -302,6 +302,10 @@ public class MySqlClient
 
             case Types.DATE:
                 return Optional.of(dateColumnMapping());
+
+            case Types.TIMESTAMP:
+                // TODO support higher precisions (https://github.com/trinodb/trino/issues/6910)
+                break; // currently handled by the default mappings
         }
 
         // TODO add explicit mappings
@@ -347,7 +351,7 @@ public class MySqlClient
             throw new PrestoException(NOT_SUPPORTED, "Unsupported column type: " + type.getDisplayName());
         }
         if (TIMESTAMP_MILLIS.equals(type)) {
-            // TODO use `timestampWriteFunction`
+            // TODO use `timestampWriteFunction` (https://github.com/trinodb/trino/issues/6910)
             return WriteMapping.longMapping("datetime", timestampWriteFunctionUsingSqlTimestamp(TIMESTAMP_MILLIS));
         }
         if (VARBINARY.equals(type)) {
