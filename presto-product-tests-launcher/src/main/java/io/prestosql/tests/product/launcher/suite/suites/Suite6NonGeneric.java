@@ -16,8 +16,8 @@ package io.prestosql.tests.product.launcher.suite.suites;
 import com.google.common.collect.ImmutableList;
 import io.prestosql.tests.product.launcher.env.EnvironmentConfig;
 import io.prestosql.tests.product.launcher.env.EnvironmentDefaults;
+import io.prestosql.tests.product.launcher.env.environment.MultinodeKafka;
 import io.prestosql.tests.product.launcher.env.environment.SinglenodeCassandra;
-import io.prestosql.tests.product.launcher.env.environment.SinglenodeKafka;
 import io.prestosql.tests.product.launcher.env.environment.SinglenodeKerberosKmsHdfsImpersonation;
 import io.prestosql.tests.product.launcher.env.environment.SinglenodeKerberosKmsHdfsNoImpersonation;
 import io.prestosql.tests.product.launcher.env.environment.SinglenodeLdap;
@@ -46,6 +46,6 @@ public class Suite6NonGeneric
                 testOnEnvironment(SinglenodeKerberosKmsHdfsNoImpersonation.class).withGroups("storage_formats").build(),
                 testOnEnvironment(SinglenodeKerberosKmsHdfsImpersonation.class).withGroups("storage_formats").build(),
                 testOnEnvironment(SinglenodeCassandra.class).withGroups("cassandra").build(),
-                testOnEnvironment(SinglenodeKafka.class).withGroups("kafka").build());
+                testOnEnvironment(MultinodeKafka.class).withGroups("kafka").build());
     }
 }

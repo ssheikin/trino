@@ -17,42 +17,50 @@ package io.prestosql.tests.product.launcher.env.environment;
 import com.google.common.collect.ImmutableList;
 import io.prestosql.tests.product.launcher.docker.DockerFiles;
 import io.prestosql.tests.product.launcher.docker.DockerFiles.ResourceProvider;
+import io.prestosql.tests.product.launcher.env.DockerContainer;
 import io.prestosql.tests.product.launcher.env.Environment;
 import io.prestosql.tests.product.launcher.env.EnvironmentProvider;
 import io.prestosql.tests.product.launcher.env.common.Kafka;
-import io.prestosql.tests.product.launcher.env.common.Standard;
+import io.prestosql.tests.product.launcher.env.common.StandardMultinode;
 import io.prestosql.tests.product.launcher.env.common.TestsEnvironment;
 
 import javax.inject.Inject;
 
 import static io.prestosql.tests.product.launcher.env.EnvironmentContainers.COORDINATOR;
+import static io.prestosql.tests.product.launcher.env.EnvironmentContainers.WORKER;
 import static io.prestosql.tests.product.launcher.env.common.Standard.CONTAINER_PRESTO_ETC;
 import static java.util.Objects.requireNonNull;
 import static org.testcontainers.utility.MountableFile.forHostPath;
 
 @TestsEnvironment
-public final class SinglenodeKafka
+public final class MultinodeKafka
         extends EnvironmentProvider
 {
     private final ResourceProvider configDir;
 
     @Inject
-    public SinglenodeKafka(Kafka kafka, Standard standard, DockerFiles dockerFiles)
+    public MultinodeKafka(Kafka kafka, StandardMultinode standardMultinode, DockerFiles dockerFiles)
     {
-        super(ImmutableList.of(standard, kafka));
+        super(ImmutableList.of(standardMultinode, kafka));
         requireNonNull(dockerFiles, "dockerFiles is null");
-        configDir = dockerFiles.getDockerFilesHostDirectory("conf/environment/singlenode-kafka/");
+        configDir = dockerFiles.getDockerFilesHostDirectory("conf/environment/multinode-kafka/");
     }
 
     @Override
     public void extendEnvironment(Environment.Builder builder)
     {
-        builder.configureContainer(COORDINATOR, container -> container
+        builder.configureContainer(COORDINATOR, this::addCatalogs);
+        builder.configureContainer(WORKER, this::addCatalogs);
+    }
+
+    private void addCatalogs(DockerContainer container)
+    {
+        container
                 .withCopyFileToContainer(
                         forHostPath(configDir.getPath("kafka_schema_registry.properties")),
                         CONTAINER_PRESTO_ETC + "/catalog/kafka_schema_registry.properties")
                 .withCopyFileToContainer(
                         forHostPath(configDir.getPath("kafka.properties")),
-                        CONTAINER_PRESTO_ETC + "/catalog/kafka.properties"));
+                        CONTAINER_PRESTO_ETC + "/catalog/kafka.properties");
     }
 }

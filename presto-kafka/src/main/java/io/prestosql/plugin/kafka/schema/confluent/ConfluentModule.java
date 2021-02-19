@@ -82,17 +82,18 @@ public class ConfluentModule
         private final SchemaRegistryClient schemaRegistryClient;
 
         @Inject
-        public SchemaRegistryClientProvider(ConfluentSchemaRegistryConfig confluentConfig, Set<SchemaProvider> schemaProviders)
+        public SchemaRegistryClientProvider(ConfluentSchemaRegistryConfig confluentConfig, Set<SchemaProvider> schemaProviders, ClassLoader classLoader)
         {
             requireNonNull(confluentConfig, "confluentConfig is null");
             requireNonNull(schemaProviders, "confluentConfig is null");
-            schemaRegistryClient = new CachedSchemaRegistryClient(
+            schemaRegistryClient = new ClassLoaderSafeSchemaRegistryClient(new CachedSchemaRegistryClient(
                     confluentConfig.getConfluentSchemaRegistryUrls().stream()
                             .map(HostAddress::getHostText)
                             .collect(toImmutableList()),
                     confluentConfig.getConfluentSchemaRegistryClientCacheSize(),
                     ImmutableList.copyOf(schemaProviders),
-                    ImmutableMap.of());
+                    ImmutableMap.of()),
+                    classLoader);
         }
 
         @Override
