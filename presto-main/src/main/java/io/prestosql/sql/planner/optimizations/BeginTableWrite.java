@@ -89,7 +89,7 @@ public class BeginTableWrite
             // Part of the plan should be an Optional<StateChangeListener<QueryState>> and this
             // callback can create the table and abort the table creation if the query fails.
 
-            WriterTarget writerTarget = context.get().getMaterializedHandle(node.getTarget()).get();
+            WriterTarget writerTarget = context.get().getWriterTarget();
             return new TableWriterNode(
                     node.getId(),
                     node.getSource().accept(this, context),
@@ -107,10 +107,10 @@ public class BeginTableWrite
         @Override
         public PlanNode visitDelete(DeleteNode node, RewriteContext<Context> context)
         {
-            DeleteTarget deleteTarget = (DeleteTarget) context.get().getMaterializedHandle(node.getTarget()).get();
+            DeleteTarget deleteTarget = (DeleteTarget) context.get().getWriterTarget();
             return new DeleteNode(
                     node.getId(),
-                    rewriteDeleteTableScan(node.getSource(), deleteTarget.getHandle()),
+                    rewriteDeleteTableScan(node.getSource(), deleteTarget.getHandleOrElseThrow()),
                     deleteTarget,
                     node.getRowId(),
                     node.getOutputSymbols());
@@ -142,7 +142,7 @@ public class BeginTableWrite
             WriterTarget originalTarget = getTarget(child);
             WriterTarget newTarget = createWriterTarget(originalTarget);
 
-            context.get().addMaterializedHandle(originalTarget, newTarget);
+            context.get().setWriterTarget(newTarget);
             child = child.accept(this, context);
 
             return new TableFinishNode(
@@ -160,7 +160,11 @@ public class BeginTableWrite
                 return ((TableWriterNode) node).getTarget();
             }
             if (node instanceof DeleteNode) {
-                return ((DeleteNode) node).getTarget();
+                DeleteNode deleteNode = (DeleteNode) node;
+                DeleteTarget delete = deleteNode.getTarget();
+                return new DeleteTarget(
+                        Optional.of(findTableScanHandle(deleteNode.getSource())),
+                        delete.getSchemaTableName());
             }
             if (node instanceof ExchangeNode || node instanceof UnionNode) {
                 Set<WriterTarget> writerTargets = node.getSources().stream()
@@ -185,7 +189,8 @@ public class BeginTableWrite
             }
             if (target instanceof DeleteTarget) {
                 DeleteTarget delete = (DeleteTarget) target;
-                return new DeleteTarget(metadata.beginDelete(session, delete.getHandle()), delete.getSchemaTableName());
+                TableHandle newHandle = metadata.beginDelete(session, delete.getHandleOrElseThrow());
+                return new DeleteTarget(Optional.of(newHandle), delete.getSchemaTableName());
             }
             if (target instanceof TableWriterNode.RefreshMaterializedViewReference) {
                 TableWriterNode.RefreshMaterializedViewReference refreshMV = (TableWriterNode.RefreshMaterializedViewReference) target;
@@ -196,6 +201,29 @@ public class BeginTableWrite
                         refreshMV.getSourceTableHandles());
             }
             throw new IllegalArgumentException("Unhandled target type: " + target.getClass().getSimpleName());
+        }
+
+        private TableHandle findTableScanHandle(PlanNode node)
+        {
+            if (node instanceof TableScanNode) {
+                return ((TableScanNode) node).getTable();
+            }
+            if (node instanceof FilterNode) {
+                return findTableScanHandle(((FilterNode) node).getSource());
+            }
+            if (node instanceof ProjectNode) {
+                return findTableScanHandle(((ProjectNode) node).getSource());
+            }
+            if (node instanceof SemiJoinNode) {
+                return findTableScanHandle(((SemiJoinNode) node).getSource());
+            }
+            if (node instanceof JoinNode) {
+                JoinNode joinNode = (JoinNode) node;
+                if (joinNode.getType() == JoinNode.Type.INNER && isAtMostScalar(joinNode.getRight())) {
+                    return findTableScanHandle(joinNode.getLeft());
+                }
+            }
+            throw new IllegalArgumentException("Invalid descendant for DeleteNode or UpdateNode: " + node.getClass().getName());
         }
 
         private PlanNode rewriteDeleteTableScan(PlanNode node, TableHandle handle)
@@ -236,20 +264,17 @@ public class BeginTableWrite
 
     public static class Context
     {
-        private Optional<WriterTarget> handle = Optional.empty();
-        private Optional<WriterTarget> materializedHandle = Optional.empty();
+        private Optional<WriterTarget> writerTarget = Optional.empty();
 
-        public void addMaterializedHandle(WriterTarget handle, WriterTarget materializedHandle)
+        public void setWriterTarget(WriterTarget writerTarget)
         {
-            checkState(this.handle.isEmpty(), "can only have one WriterTarget in a subtree");
-            this.handle = Optional.of(handle);
-            this.materializedHandle = Optional.of(materializedHandle);
+            checkState(this.writerTarget.isEmpty(), "WriterTarget already set");
+            this.writerTarget = Optional.of(writerTarget);
         }
 
-        public Optional<WriterTarget> getMaterializedHandle(WriterTarget handle)
+        public WriterTarget getWriterTarget()
         {
-            checkState(this.handle.get().equals(handle), "can't find materialized handle for WriterTarget");
-            return materializedHandle;
+            return writerTarget.orElseThrow(() -> new IllegalStateException("WriterTarget not set"));
         }
     }
 }

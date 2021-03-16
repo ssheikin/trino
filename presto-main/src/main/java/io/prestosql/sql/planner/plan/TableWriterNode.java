@@ -14,6 +14,7 @@
 package io.prestosql.sql.planner.plan;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -421,12 +422,12 @@ public class TableWriterNode
     public static class DeleteTarget
             extends WriterTarget
     {
-        private final TableHandle handle;
+        private final Optional<TableHandle> handle;
         private final SchemaTableName schemaTableName;
 
         @JsonCreator
         public DeleteTarget(
-                @JsonProperty("handle") TableHandle handle,
+                @JsonProperty("handle") Optional<TableHandle> handle,
                 @JsonProperty("schemaTableName") SchemaTableName schemaTableName)
         {
             this.handle = requireNonNull(handle, "handle is null");
@@ -434,9 +435,15 @@ public class TableWriterNode
         }
 
         @JsonProperty
-        public TableHandle getHandle()
+        public Optional<TableHandle> getHandle()
         {
             return handle;
+        }
+
+        @JsonIgnore
+        public TableHandle getHandleOrElseThrow()
+        {
+            return handle.orElseThrow(() -> new IllegalStateException("DeleteTarget does not contain handle"));
         }
 
         @JsonProperty
@@ -448,7 +455,7 @@ public class TableWriterNode
         @Override
         public String toString()
         {
-            return handle.toString();
+            return handle.map(Object::toString).orElse("[]");
         }
     }
 }

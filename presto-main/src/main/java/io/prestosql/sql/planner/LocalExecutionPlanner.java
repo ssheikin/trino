@@ -3126,7 +3126,7 @@ public class LocalExecutionPlanner
                         refreshTarget.getSourceTableHandles());
             }
             else if (target instanceof DeleteTarget) {
-                metadata.finishDelete(session, ((DeleteTarget) target).getHandle(), fragments);
+                metadata.finishDelete(session, ((DeleteTarget) target).getHandleOrElseThrow(), fragments);
                 return Optional.empty();
             }
             else {

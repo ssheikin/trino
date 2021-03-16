@@ -654,7 +654,7 @@ public class IoPlanPrinter
             else if (writerTarget instanceof DeleteTarget) {
                 DeleteTarget target = (DeleteTarget) writerTarget;
                 context.setOutputTable(new CatalogSchemaTableName(
-                        target.getHandle().getCatalogName().getCatalogName(),
+                        target.getHandleOrElseThrow().getCatalogName().getCatalogName(),
                         target.getSchemaTableName().getSchemaName(),
                         target.getSchemaTableName().getTableName()));
             }
