@@ -457,7 +457,14 @@ class QueryPlanner
                 symbolAllocator.newSymbol("partialrows", BIGINT),
                 symbolAllocator.newSymbol("fragment", VARBINARY));
 
-        return new DeleteNode(idAllocator.getNextId(), builder.getRoot(), new DeleteTarget(handle, metadata.getTableMetadata(session, handle).getTable()), rowId, outputs);
+        return new DeleteNode(
+                idAllocator.getNextId(),
+                builder.getRoot(),
+                new DeleteTarget(
+                        Optional.empty(),
+                        metadata.getTableMetadata(session, handle).getTable()),
+                rowId,
+                outputs);
     }
 
     private static List<Symbol> computeOutputs(PlanBuilder builder, List<Expression> outputExpressions)

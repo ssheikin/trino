@@ -779,6 +779,23 @@ public class TestHiveTransactionalTable
         });
     }
 
+    @Test(groups = HIVE_TRANSACTIONAL, timeOut = TEST_TIMEOUT)
+    public void testDeletePartitionedTable()
+    {
+        withTemporaryTable("delete_partitioned", true, true, NONE, tableName -> {
+            onPresto().executeQuery(format("CREATE TABLE %s WITH (transactional = true, partitioned_by = ARRAY['regionkey'])" +
+                    " AS SELECT nationkey, name, regionkey FROM tpch.tiny.nation", tableName));
+
+            verifySelectForPrestoAndHive("SELECT count(*) FROM " + tableName, "true", row(25));
+
+            onPresto().executeQuery(format("DELETE FROM %s WHERE regionkey = 4 AND nationkey %% 10 = 3", tableName));
+            verifySelectForPrestoAndHive("SELECT count(*) FROM " + tableName, "true", row(24));
+
+            onPresto().executeQuery(format("DELETE FROM %s WHERE regionkey = 4", tableName));
+            verifySelectForPrestoAndHive("SELECT count(*) FROM " + tableName, "true", row(20));
+        });
+    }
+
     @DataProvider
     public Object[][] insertersProvider()
     {
