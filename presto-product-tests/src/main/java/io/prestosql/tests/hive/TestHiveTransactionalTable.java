@@ -1091,15 +1091,16 @@ public class TestHiveTransactionalTable
 
     private void verifySelectForPrestoAndHive(String select, String whereClause, QueryAssert.Row... rows)
     {
-        verifySelect(onPresto(), "selecting on Presto", select, whereClause, rows);
-        verifySelect(onHive(), "selecting on Hive", select, whereClause, rows);
+        verifySelect("onPresto", onPresto(), "selecting on Presto", select, whereClause, rows);
+        verifySelect("onHive", onHive(), "selecting on Hive", select, whereClause, rows);
     }
 
-    private void verifySelect(QueryExecutor executor, String description, String select, String whereClause, QueryAssert.Row... rows)
+    private void verifySelect(String name, QueryExecutor executor, String description, String select, String whereClause, QueryAssert.Row... rows)
     {
         String fullQuery = format("%s WHERE %s", select, whereClause);
 
         assertThat(executor.executeQuery(fullQuery))
+                .describedAs(name)
                 .containsOnly(rows);
     }
 }
