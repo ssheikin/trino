@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static io.prestosql.memory.context.AggregatedMemoryContext.newSimpleAggregatedMemoryContext;
@@ -271,16 +272,14 @@ public class OrcPageSourceFactory
                         .collect(Collectors.groupingBy(
                                 HiveColumnHandle::getBaseColumnName,
                                 mapping(
-                                        column -> column.getHiveColumnProjectionInfo().map(HiveColumnProjectionInfo::getDereferenceNames).orElse(ImmutableList.<String>of()),
-                                        toList())));
+                                        OrcPageSourceFactory::getDereferencesAsList, toList())));
             }
             else {
                 projectionsByColumnIndex = projections.stream()
                         .collect(Collectors.groupingBy(
                                 HiveColumnHandle::getBaseHiveColumnIndex,
                                 mapping(
-                                        column -> column.getHiveColumnProjectionInfo().map(HiveColumnProjectionInfo::getDereferenceNames).orElse(ImmutableList.<String>of()),
-                                        toList())));
+                                        OrcPageSourceFactory::getDereferencesAsList, toList())));
             }
 
             TupleDomainOrcPredicateBuilder predicateBuilder = TupleDomainOrcPredicate.builder()
@@ -437,5 +436,14 @@ public class OrcPageSourceFactory
             current = orcColumn.get();
         }
         return current;
+    }
+
+    private static List<String> getDereferencesAsList(HiveColumnHandle column)
+    {
+        return column.getHiveColumnProjectionInfo()
+                .map(info -> info.getDereferenceNames().stream()
+                        .map(dereference -> dereference.toLowerCase(ENGLISH))
+                        .collect(toImmutableList()))
+                .orElse(ImmutableList.of());
     }
 }
