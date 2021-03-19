@@ -478,6 +478,42 @@ public class TestHiveStorageFormats
         onHive().executeQuery("DROP TABLE " + tableName);
     }
 
+    @Test
+    public void testOrcStructsWithNonLowercaseFields()
+            throws SQLException
+    {
+        String tableName = "orc_structs_with_non_lowercase";
+
+        ensureDummyExists();
+        onHive().executeQuery("DROP TABLE IF EXISTS " + tableName);
+
+        onHive().executeQuery(format(
+                "CREATE TABLE %s (" +
+                        "   c_bigint BIGINT," +
+                        "   c_struct struct<testCustId:string, requestDate:string>)" +
+                        "STORED AS ORC ",
+                tableName));
+
+        onHive().executeQuery(format(
+                "INSERT INTO %s"
+                        // insert with SELECT because hive does not support array/map/struct functions in VALUES
+                        + " SELECT"
+                        + "   1,"
+                        + "   named_struct('testCustId', '1234', 'requestDate', 'some day')"
+                        // some hive versions don't allow INSERT from SELECT without FROM
+                        + " FROM dummy",
+                tableName));
+
+        setSessionProperty(onPresto().getConnection(), "hive.projection_pushdown_enabled", "true");
+        assertThat(onPresto().executeQuery("SELECT c_struct.testCustId FROM " + tableName)).containsOnly(row("1234"));
+        assertThat(onPresto().executeQuery("SELECT c_struct.testcustid FROM " + tableName)).containsOnly(row("1234"));
+        assertThat(onPresto().executeQuery("SELECT c_struct.requestDate FROM " + tableName)).containsOnly(row("some day"));
+        setSessionProperty(onPresto().getConnection(), "hive.projection_pushdown_enabled", "false");
+        assertThat(onPresto().executeQuery("SELECT c_struct.testCustId FROM " + tableName)).containsOnly(row("1234"));
+        assertThat(onPresto().executeQuery("SELECT c_struct.testcustid FROM " + tableName)).containsOnly(row("1234"));
+        assertThat(onPresto().executeQuery("SELECT c_struct.requestDate FROM " + tableName)).containsOnly(row("some day"));
+    }
+
     @Test(dataProvider = "storageFormatsWithNanosecondPrecision")
     public void testTimestampCreatedFromHive(StorageFormat storageFormat)
             throws Exception
