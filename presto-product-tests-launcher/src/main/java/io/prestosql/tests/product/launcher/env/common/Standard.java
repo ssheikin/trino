@@ -124,7 +124,7 @@ public final class Standard
                 .withCommand("/docker/presto-product-tests/run-presto.sh")
                 .withStartupCheckStrategy(new IsRunningStartupCheckStrategy())
                 .waitingFor(Wait.forLogMessage(".*======== SERVER STARTED ========.*", 1))
-                .withStartupTimeout(Duration.ofMinutes(5));
+                .withStartupTimeout(Duration.ofMinutes(8));
     }
 
     private void enableDebuggerInJvmConfig(CreateContainerCmd createContainerCmd)
