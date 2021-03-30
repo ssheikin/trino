@@ -35,6 +35,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
+      - name: Pull ryuk # workaround for https://github.com/testcontainers/testcontainers-java/issues/3574
+        run: |
+          docker pull ghcr.io/trinodb/testing/testcontainers-ryuk:0.2.3
       - name: Maven Checks
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -90,6 +93,9 @@ jobs:
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
           ./bin/retry ./mvnw install ${MAVEN_FAST_INSTALL} -am -pl presto-hive-hadoop2
+      - name: Pull ryuk # workaround for https://github.com/testcontainers/testcontainers-java/issues/3574
+        run: |
+          docker pull ghcr.io/trinodb/testing/testcontainers-ryuk:0.2.3
       - name: Run Hive Tests
         run: |
           source presto-product-tests/conf/product-tests-${{ matrix.config }}.sh &&
@@ -130,6 +136,9 @@ jobs:
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
           ./bin/retry ./mvnw install ${MAVEN_FAST_INSTALL} -pl '!presto-docs,!presto-server,!presto-server-rpm'
+      - name: Pull ryuk # workaround for https://github.com/testcontainers/testcontainers-java/issues/3574
+        run: |
+          docker pull ghcr.io/trinodb/testing/testcontainers-ryuk:0.2.3
       - name: Maven Tests
         run: |
           ./mvnw test -B -fae -Dair.check.skip-all -pl '
@@ -176,6 +185,9 @@ jobs:
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
           ./bin/retry ./mvnw install ${MAVEN_FAST_INSTALL} -am -pl $(echo '${{ matrix.modules }}' | cut -d' ' -f1)
+      - name: Pull ryuk # workaround for https://github.com/testcontainers/testcontainers-java/issues/3574
+        run: |
+          docker pull ghcr.io/trinodb/testing/testcontainers-ryuk:0.2.3
       - name: Maven Tests
         run: ./mvnw test -B -fae -Dair.check.skip-all -pl ${{ matrix.modules }}
 
@@ -224,6 +236,9 @@ jobs:
           docker image prune -af
           sudo apt-get clean
           rm -rf ~/.m2/repository
+      - name: Pull ryuk # workaround for https://github.com/testcontainers/testcontainers-java/issues/3574
+        run: |
+          docker pull ghcr.io/trinodb/testing/testcontainers-ryuk:0.2.3
       - name: Product Tests
         run: |
           export PTL_BIND_PORTS=false &&
