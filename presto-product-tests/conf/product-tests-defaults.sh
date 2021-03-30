@@ -7,7 +7,7 @@ else
     test ! -v TESTS_HIVE_VERSION_MAJOR
     test ! -v TESTS_HIVE_VERSION_MINOR
 
-    export HADOOP_BASE_IMAGE="prestodev/hdp2.6-hive"
+    export HADOOP_BASE_IMAGE="ghcr.io/trinodb/testing/hdp2.6-hive"
     export TESTS_HIVE_VERSION_MAJOR="1"
     export TESTS_HIVE_VERSION_MINOR="2"
 fi

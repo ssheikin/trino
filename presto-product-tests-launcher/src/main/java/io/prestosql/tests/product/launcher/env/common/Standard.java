@@ -89,7 +89,7 @@ public final class Standard
     private DockerContainer createPrestoMaster()
     {
         DockerContainer container =
-                createPrestoContainer(dockerFiles, pathResolver, serverPackage, "prestodev/centos7-oj11:" + imagesVersion)
+                createPrestoContainer(dockerFiles, pathResolver, serverPackage, "ghcr.io/trinodb/testing/centos7-oj11:" + imagesVersion)
                         .withFileSystemBind(dockerFiles.getDockerFilesHostPath("common/standard/config.properties"), CONTAINER_PRESTO_CONFIG_PROPERTIES, READ_ONLY);
 
         exposePort(container, 8080); // Presto default port
@@ -105,7 +105,7 @@ public final class Standard
     @SuppressWarnings("resource")
     private DockerContainer createTestsContainer()
     {
-        DockerContainer container = new DockerContainer("prestodev/centos6-oj8:" + imagesVersion)
+        DockerContainer container = new DockerContainer("ghcr.io/trinodb/testing/centos6-oj8:" + imagesVersion)
                 .withFileSystemBind(dockerFiles.getDockerFilesHostPath(), "/docker/presto-product-tests", READ_ONLY)
                 .withCommand("bash", "-xeuc", "echo 'No command provided' >&2; exit 69")
                 .waitingFor(new WaitAllStrategy()) // don't wait

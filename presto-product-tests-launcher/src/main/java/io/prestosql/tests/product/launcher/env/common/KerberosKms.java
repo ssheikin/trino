@@ -42,7 +42,7 @@ public class KerberosKms
     public void extendEnvironment(Environment.Builder builder)
     {
         // TODO (https://github.com/prestosql/presto/issues/1652) create images with HDP and KMS
-        String dockerImageName = "prestodev/cdh5.15-hive-kerberized-kms:" + imagesVersion;
+        String dockerImageName = "ghcr.io/trinodb/testing/cdh5.15-hive-kerberized-kms:" + imagesVersion;
 
         builder.configureContainer("hadoop-master", container -> {
             container.setDockerImageName(dockerImageName);

@@ -21,7 +21,7 @@ import java.io.File;
 public final class EnvironmentOptions
 {
     @Option(name = "--hadoop-base-image", title = "image", description = "Hadoop base image")
-    public String hadoopBaseImage = System.getenv().getOrDefault("HADOOP_BASE_IMAGE", "prestodev/hdp2.6-hive");
+    public String hadoopBaseImage = System.getenv().getOrDefault("HADOOP_BASE_IMAGE", "ghcr.io/trinodb/testing/hdp2.6-hive");
 
     @Option(name = "--image-version", title = "version", description = "docker images version")
     public String imagesVersion = System.getenv().getOrDefault("DOCKER_IMAGES_VERSION", "27");
