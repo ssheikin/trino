@@ -300,13 +300,6 @@ public class TestDateTimeFunctions
     }
 
     @Test
-    public void testToUnixTime()
-    {
-        assertFunction("to_unixtime(" + TIMESTAMP_LITERAL + ")", DOUBLE, TIMESTAMP.getMillis() / 1000.0);
-        assertFunction("to_unixtime(" + WEIRD_TIMESTAMP_LITERAL + ")", DOUBLE, WEIRD_TIMESTAMP.getMillis() / 1000.0);
-    }
-
-    @Test
     public void testDate()
     {
         assertFunction("date('" + DATE_ISO8601_STRING + "')", DateType.DATE, toDate(DATE));
