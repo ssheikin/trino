@@ -48,7 +48,7 @@ public class TestRyukImage
         String effectiveRyukImage = TestcontainersConfiguration.getInstance().getRyukImage();
 
         // Verify we are using our image (otherwise this test method is not needed).
-        assertThat(effectiveRyukImage).startsWith("prestodev/");
+        assertThat(effectiveRyukImage).startsWith("ghcr.io/trinodb/testing/");
 
         // Verify we have the same version
         assertThat(effectiveRyukImage).endsWith(":" + version);

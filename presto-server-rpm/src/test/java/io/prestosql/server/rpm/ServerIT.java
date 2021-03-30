@@ -45,7 +45,7 @@ public class ServerIT
     @Test
     public void testWithJava11(String rpm)
     {
-        testServer("prestodev/centos7-oj11", rpm, "11");
+        testServer("ghcr.io/trinodb/testing/centos7-oj11", rpm, "11");
     }
 
     private static void testServer(String baseImage, String rpmHostPath, String expectedJavaVersion)

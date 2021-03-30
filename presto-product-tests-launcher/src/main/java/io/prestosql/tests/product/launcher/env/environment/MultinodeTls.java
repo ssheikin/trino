@@ -88,7 +88,7 @@ public final class MultinodeTls
 
     private void addPrestoWorker(Environment.Builder builder, String workerName)
     {
-        DockerContainer container = createPrestoContainer(dockerFiles, pathResolver, serverPackage, "prestodev/centos7-oj11:" + imagesVersion)
+        DockerContainer container = createPrestoContainer(dockerFiles, pathResolver, serverPackage, "ghcr.io/trinodb/testing/centos7-oj11:" + imagesVersion)
                 .withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withDomainName("docker.cluster"))
                 .withNetworkAliases(workerName + ".docker.cluster")
                 .withCopyFileToContainer(forHostPath(dockerFiles.getDockerFilesHostPath("conf/environment/multinode-tls/config-worker.properties")), CONTAINER_PRESTO_CONFIG_PROPERTIES)

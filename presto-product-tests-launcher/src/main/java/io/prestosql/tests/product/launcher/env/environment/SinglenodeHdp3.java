@@ -48,7 +48,7 @@ public class SinglenodeHdp3
     @Override
     protected void extendEnvironment(Environment.Builder builder)
     {
-        String dockerImageName = "prestodev/hdp3.1-hive:" + hadoopImagesVersion;
+        String dockerImageName = "ghcr.io/trinodb/testing/hdp3.1-hive:" + hadoopImagesVersion;
 
         builder.configureContainer("hadoop-master", dockerContainer -> {
             dockerContainer.setDockerImageName(dockerImageName);
