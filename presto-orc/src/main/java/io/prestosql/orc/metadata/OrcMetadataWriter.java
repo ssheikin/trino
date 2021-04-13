@@ -48,7 +48,7 @@ public class OrcMetadataWriter
         implements MetadataWriter
 {
     // see https://github.com/prestosql/orc-protobuf/blob/master/src/main/protobuf/orc_proto.proto
-    private static final int PRESTO_WRITER_ID = 2;
+    public static final int PRESTO_WRITER_ID = 2;
     // in order to change this value, the master Apache ORC proto file must be updated
     private static final int PRESTO_WRITER_VERSION = 6;
     // maximum version readable by Hive 2.x before the ORC-125 fix

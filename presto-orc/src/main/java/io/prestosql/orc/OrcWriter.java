@@ -530,7 +530,8 @@ public final class OrcWriter
                         .collect(toImmutableList()),
                 orcTypes,
                 fileStats,
-                userMetadata);
+                userMetadata,
+                Optional.empty()); // writer id will be set by MetadataWriter
 
         closedStripes.clear();
         closedStripesRetainedBytes = 0;
