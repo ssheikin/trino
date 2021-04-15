@@ -218,7 +218,8 @@ jobs:
             !presto-sqlserver,!presto-postgresql,!presto-mysql,!presto-memsql,
             !presto-oracle,
             !presto-kudu,
-            !presto-phoenix,!presto-iceberg,!presto-druid,
+            !presto-phoenix,
+            !presto-iceberg,!presto-druid,
             !presto-docs,!presto-server,!presto-server-rpm,
             !presto-test-jdbc-compatibility-old-server,
             !presto-bigquery'
@@ -242,7 +243,8 @@ jobs:
           - "presto-sqlserver,presto-postgresql,presto-mysql"
           - "presto-oracle"
           - "presto-kudu"
-          - "presto-phoenix,presto-iceberg,presto-druid"
+          - "presto-phoenix"
+          - "presto-iceberg,presto-druid"
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
