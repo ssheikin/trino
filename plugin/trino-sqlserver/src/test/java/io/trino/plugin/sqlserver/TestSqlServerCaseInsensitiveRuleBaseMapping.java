@@ -49,7 +49,6 @@ public class TestSqlServerCaseInsensitiveRuleBaseMapping
     {
         mappingFile = createRuleBasedIdentifierMappingFile();
         sqlServer = closeAfterClass(new TestingSqlServer());
-        sqlServer.start();
         return createSqlServerQueryRunner(
                 sqlServer,
                 ImmutableMap.of(),
