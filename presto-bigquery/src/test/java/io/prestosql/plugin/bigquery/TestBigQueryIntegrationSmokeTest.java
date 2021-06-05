@@ -133,6 +133,27 @@ public class TestBigQueryIntegrationSmokeTest
                 "VALUES (1)");
     }
 
+    /**
+     * https://github.com/trinodb/trino/issues/8183
+     */
+    @Test
+    public void testColumnPositionMismatch()
+    {
+        BigQuery client = createBigQueryClient();
+        String tableName = "test.test_column_position_mismatch";
+
+        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
+        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (c_varchar STRING, c_int INT64, c_date DATE)");
+        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES ('a', 1, '2021-01-01')");
+
+        // Adding a CAST makes BigQuery return columns in a different order
+        assertQuery(
+                "SELECT c_varchar, CAST(c_int AS SMALLINT), c_date FROM " + tableName,
+                "VALUES ('a', 1, '2021-01-01')");
+
+        executeBigQuerySql(client, "DROP TABLE " + tableName);
+    }
+
     private static void executeBigQuerySql(BigQuery bigquery, String query)
     {
         QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query)
