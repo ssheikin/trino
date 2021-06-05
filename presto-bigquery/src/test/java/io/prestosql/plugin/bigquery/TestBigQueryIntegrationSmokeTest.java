@@ -24,6 +24,7 @@ import io.prestosql.testing.MaterializedResult;
 import io.prestosql.testing.QueryRunner;
 import org.testng.annotations.Test;
 
+import static io.prestosql.plugin.bigquery.BigQueryQueryRunner.createBigQueryClient;
 import static io.prestosql.spi.type.VarcharType.VARCHAR;
 import static io.prestosql.testing.MaterializedResult.resultBuilder;
 import static io.prestosql.testing.assertions.Assert.assertEquals;
@@ -56,6 +57,27 @@ public class TestBigQueryIntegrationSmokeTest
                 .build();
         MaterializedResult actualColumns = computeActual("DESCRIBE orders");
         assertEquals(actualColumns, expectedColumns);
+    }
+
+    /**
+     * https://github.com/trinodb/trino/issues/8183
+     */
+    @Test
+    public void testColumnPositionMismatch()
+    {
+        BigQuery client = createBigQueryClient();
+        String tableName = "test.test_column_position_mismatch";
+
+        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
+        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (c_varchar STRING, c_int INT64, c_date DATE)");
+        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES ('a', 1, '2021-01-01')");
+
+        // Adding a CAST makes BigQuery return columns in a different order
+        assertQuery(
+                "SELECT c_varchar, CAST(c_int AS SMALLINT), c_date FROM " + tableName,
+                "VALUES ('a', 1, '2021-01-01')");
+
+        executeBigQuerySql(client, "DROP TABLE " + tableName);
     }
 
     private static void executeBigQuerySql(BigQuery bigquery, String query)
