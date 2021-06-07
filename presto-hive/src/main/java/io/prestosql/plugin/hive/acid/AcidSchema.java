@@ -53,8 +53,8 @@ public final class AcidSchema
 
     public static final RowType ACID_ROW_ID_ROW_TYPE = RowType.from(ImmutableList.of(
             field(ACID_COLUMN_ORIGINAL_TRANSACTION, BIGINT),
-            field(ACID_COLUMN_ROW_ID, BIGINT),
-            field(ACID_COLUMN_BUCKET, INTEGER)));
+            field(ACID_COLUMN_BUCKET, INTEGER),
+            field(ACID_COLUMN_ROW_ID, BIGINT)));
 
     private AcidSchema() {}
 
