@@ -323,8 +323,8 @@ public class OrcPageSource
                     Optional.empty(),
                     new Block[] {
                             sourcePage.getBlock(ORIGINAL_TRANSACTION_CHANNEL),
-                            sourcePage.getBlock(ROW_ID_CHANNEL),
                             sourcePage.getBlock(BUCKET_CHANNEL),
+                            sourcePage.getBlock(ROW_ID_CHANNEL),
                     }));
             return rowBlock;
         }
@@ -351,9 +351,8 @@ public class OrcPageSource
                     Optional.empty(),
                     new Block[] {
                             new RunLengthEncodedBlock(ORIGINAL_FILE_TRANSACTION_ID_BLOCK, positionCount),
-                            createRowIdBlock(filePosition, positionCount),
-                            new RunLengthEncodedBlock(bucketBlock, positionCount)
-                    }));
+                            new RunLengthEncodedBlock(bucketBlock, positionCount),
+                            createRowIdBlock(filePosition, positionCount)}));
             return rowBlock;
         }
 
