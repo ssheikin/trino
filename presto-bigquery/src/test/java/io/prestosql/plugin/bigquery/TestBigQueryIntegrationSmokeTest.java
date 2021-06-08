@@ -13,6 +13,11 @@
  */
 package io.prestosql.plugin.bigquery;
 
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobId;
+import com.google.cloud.bigquery.JobInfo;
+import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.common.collect.ImmutableMap;
 import io.prestosql.testing.AbstractTestIntegrationSmokeTest;
 import io.prestosql.testing.MaterializedResult;
@@ -22,6 +27,7 @@ import org.testng.annotations.Test;
 import static io.prestosql.spi.type.VarcharType.VARCHAR;
 import static io.prestosql.testing.MaterializedResult.resultBuilder;
 import static io.prestosql.testing.assertions.Assert.assertEquals;
+import static java.lang.String.format;
 
 @Test
 public class TestBigQueryIntegrationSmokeTest
@@ -50,5 +56,31 @@ public class TestBigQueryIntegrationSmokeTest
                 .build();
         MaterializedResult actualColumns = computeActual("DESCRIBE orders");
         assertEquals(actualColumns, expectedColumns);
+    }
+
+    private static void executeBigQuerySql(BigQuery bigquery, String query)
+    {
+        QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query)
+                .setUseLegacySql(false)
+                .build();
+
+        JobId jobId = JobId.of();
+        Job queryJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+
+        try {
+            queryJob = queryJob.waitFor();
+
+            if (queryJob == null) {
+                throw new RuntimeException(format("Job with uuid %s does not longer exists", jobId.getJob()));
+            }
+
+            if (queryJob.getStatus().getError() != null) {
+                throw new RuntimeException(format("Query '%s' failed: %s", query, queryJob.getStatus().getError()));
+            }
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }
