@@ -14,7 +14,7 @@
 package io.prestosql.plugin.mysql;
 
 import com.google.common.collect.ImmutableSet;
-import com.mysql.jdbc.Statement;
+import com.mysql.cj.jdbc.JdbcStatement;
 import io.prestosql.plugin.jdbc.BaseJdbcClient;
 import io.prestosql.plugin.jdbc.BaseJdbcConfig;
 import io.prestosql.plugin.jdbc.ColumnMapping;
@@ -23,6 +23,7 @@ import io.prestosql.plugin.jdbc.JdbcColumnHandle;
 import io.prestosql.plugin.jdbc.JdbcExpression;
 import io.prestosql.plugin.jdbc.JdbcTableHandle;
 import io.prestosql.plugin.jdbc.JdbcTypeHandle;
+import io.prestosql.plugin.jdbc.LongReadFunction;
 import io.prestosql.plugin.jdbc.WriteMapping;
 import io.prestosql.plugin.jdbc.expression.AggregateFunctionRewriter;
 import io.prestosql.plugin.jdbc.expression.AggregateFunctionRule;
@@ -55,6 +56,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -63,8 +65,8 @@ import java.util.function.BiFunction;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
-import static com.mysql.jdbc.SQLError.SQL_STATE_ER_TABLE_EXISTS_ERROR;
-import static com.mysql.jdbc.SQLError.SQL_STATE_SYNTAX_ERROR;
+import static com.mysql.cj.exceptions.MysqlErrorNumbers.SQL_STATE_ER_TABLE_EXISTS_ERROR;
+import static com.mysql.cj.exceptions.MysqlErrorNumbers.SQL_STATE_SYNTAX_ERROR;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.plugin.base.util.JsonTypeUtil.jsonParse;
 import static io.prestosql.plugin.jdbc.DecimalConfig.DecimalMapping.ALLOW_OVERFLOW;
@@ -91,7 +93,7 @@ import static io.prestosql.plugin.jdbc.StandardColumnMappings.realWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.shortDecimalWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.smallintColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.smallintWriteFunction;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.timestampWriteFunctionUsingSqlTimestamp;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.timestampWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.tinyintColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.tinyintWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.varbinaryReadFunction;
@@ -109,12 +111,16 @@ import static io.prestosql.spi.type.SmallintType.SMALLINT;
 import static io.prestosql.spi.type.TimeWithTimeZoneType.TIME_WITH_TIME_ZONE;
 import static io.prestosql.spi.type.TimestampType.TIMESTAMP_MILLIS;
 import static io.prestosql.spi.type.TimestampWithTimeZoneType.TIMESTAMP_TZ_MILLIS;
+import static io.prestosql.spi.type.Timestamps.MICROSECONDS_PER_MILLISECOND;
+import static io.prestosql.spi.type.Timestamps.MICROSECONDS_PER_SECOND;
+import static io.prestosql.spi.type.Timestamps.NANOSECONDS_PER_MILLISECOND;
 import static io.prestosql.spi.type.TinyintType.TINYINT;
 import static io.prestosql.spi.type.VarbinaryType.VARBINARY;
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.String.format;
+import static java.time.ZoneOffset.UTC;
 import static java.util.Locale.ENGLISH;
 
 public class MySqlClient
@@ -198,8 +204,8 @@ public class MySqlClient
             throws SQLException
     {
         PreparedStatement statement = connection.prepareStatement(sql);
-        if (statement.isWrapperFor(Statement.class)) {
-            statement.unwrap(Statement.class).enableStreamingResults();
+        if (statement.isWrapperFor(JdbcStatement.class)) {
+            statement.unwrap(JdbcStatement.class).enableStreamingResults();
         }
         return statement;
     }
@@ -303,11 +309,28 @@ public class MySqlClient
 
             case Types.TIMESTAMP:
                 // TODO support higher precisions (https://github.com/trinodb/trino/issues/6910)
-                break; // currently handled by the default mappings
+                return Optional.of(ColumnMapping.longMapping(
+                        TIMESTAMP_MILLIS,
+                        timestampMillisReadFunction(),
+                        timestampWriteFunction(TIMESTAMP_MILLIS),
+                        DISABLE_PUSHDOWN));
         }
 
         // TODO add explicit mappings
         return legacyToPrestoType(session, connection, typeHandle);
+    }
+
+    // TODO support higher precisions (https://github.com/trinodb/trino/issues/6910)
+    private static LongReadFunction timestampMillisReadFunction()
+    {
+        return (resultSet, columnIndex) -> toTrinoTimestampMillis(resultSet.getObject(columnIndex, LocalDateTime.class));
+    }
+
+    private static long toTrinoTimestampMillis(LocalDateTime localDateTime)
+    {
+        return localDateTime.toEpochSecond(UTC) * MICROSECONDS_PER_SECOND
+                // rounding to millis, TODO support higher precisions (https://github.com/trinodb/trino/issues/6910)
+                + Math.round(localDateTime.getNano() * 1.0 / NANOSECONDS_PER_MILLISECOND) * MICROSECONDS_PER_MILLISECOND;
     }
 
     @Override
@@ -350,7 +373,7 @@ public class MySqlClient
         }
         if (TIMESTAMP_MILLIS.equals(type)) {
             // TODO use `timestampWriteFunction` (https://github.com/trinodb/trino/issues/6910)
-            return WriteMapping.longMapping("datetime(3)", timestampWriteFunctionUsingSqlTimestamp(TIMESTAMP_MILLIS));
+            return WriteMapping.longMapping("datetime(3)", timestampWriteFunction(TIMESTAMP_MILLIS));
         }
         if (VARBINARY.equals(type)) {
             return WriteMapping.sliceMapping("mediumblob", varbinaryWriteFunction());
