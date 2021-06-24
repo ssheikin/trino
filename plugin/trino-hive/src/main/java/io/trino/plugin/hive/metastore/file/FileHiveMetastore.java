@@ -110,6 +110,7 @@ import static io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig.VERSIO
 import static io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig.VersionCompatibility.UNSAFE_ASSUME_COMPATIBILITY;
 import static io.trino.plugin.hive.metastore.thrift.ThriftMetastoreUtil.getHiveBasicStatistics;
 import static io.trino.plugin.hive.metastore.thrift.ThriftMetastoreUtil.updateStatisticsParameters;
+import static io.trino.plugin.hive.util.HiveUtil.isIcebergTable;
 import static io.trino.plugin.hive.util.HiveUtil.toPartitionValues;
 import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -134,8 +135,6 @@ public class FileHiveMetastore
     private static final String TRINO_PERMISSIONS_DIRECTORY_NAME = ".trinoPermissions";
     // todo there should be a way to manage the admins list
     private static final Set<String> ADMIN_USERS = ImmutableSet.of("admin", "hive", "hdfs");
-    private static final String ICEBERG_TABLE_TYPE_NAME = "table_type";
-    private static final String ICEBERG_TABLE_TYPE_VALUE = "iceberg";
 
     private final String currentVersion;
     private final VersionCompatibility versionCompatibility;
@@ -561,7 +560,7 @@ public class FileHiveMetastore
         Table table = getRequiredTable(databaseName, tableName);
         getRequiredDatabase(newDatabaseName);
 
-        if (isIcebergTable(table.getParameters())) {
+        if (isIcebergTable(table)) {
             throw new TrinoException(NOT_SUPPORTED, "Rename not supported for Iceberg tables");
         }
 
@@ -1397,11 +1396,6 @@ public class FileHiveMetastore
             return false;
         }
         return isChildDirectory(parentDirectory, childDirectory.getParent());
-    }
-
-    private static boolean isIcebergTable(Map<String, String> parameters)
-    {
-        return ICEBERG_TABLE_TYPE_VALUE.equalsIgnoreCase(parameters.get(ICEBERG_TABLE_TYPE_NAME));
     }
 
     private static class RoleGranteeTuple

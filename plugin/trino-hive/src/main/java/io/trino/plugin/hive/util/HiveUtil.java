@@ -120,8 +120,10 @@ import static io.trino.plugin.hive.HiveErrorCode.HIVE_INVALID_METADATA;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_INVALID_PARTITION_VALUE;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_SERDE_NOT_FOUND;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_UNSUPPORTED_FORMAT;
+import static io.trino.plugin.hive.HiveMetadata.DELTA_LAKE_PROVIDER;
 import static io.trino.plugin.hive.HiveMetadata.SKIP_FOOTER_COUNT_KEY;
 import static io.trino.plugin.hive.HiveMetadata.SKIP_HEADER_COUNT_KEY;
+import static io.trino.plugin.hive.HiveMetadata.SPARK_TABLE_PROVIDER_KEY;
 import static io.trino.plugin.hive.HivePartitionKey.HIVE_DEFAULT_DYNAMIC_PARTITION;
 import static io.trino.plugin.hive.HiveTableProperties.ORC_BLOOM_FILTER_COLUMNS;
 import static io.trino.plugin.hive.HiveTableProperties.ORC_BLOOM_FILTER_FPP;
@@ -152,6 +154,7 @@ import static java.lang.Long.parseLong;
 import static java.lang.Short.parseShort;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ROUND_UNNECESSARY;
+import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.apache.hadoop.hive.common.FileUtils.unescapePathName;
@@ -176,6 +179,9 @@ public final class HiveUtil
     private static final String BIG_DECIMAL_POSTFIX = "BD";
 
     private static final Splitter COLUMN_NAMES_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
+
+    private static final String ICEBERG_TABLE_TYPE_NAME = "table_type";
+    private static final String ICEBERG_TABLE_TYPE_VALUE = "iceberg";
 
     static {
         DateTimeParser[] timestampWithoutTimeZoneParser = {
@@ -1025,5 +1031,16 @@ public final class HiveUtil
             }
         }
         return orcWriterOptions;
+    }
+
+    public static boolean isDeltaLakeTable(Table table)
+    {
+        return table.getParameters().containsKey(SPARK_TABLE_PROVIDER_KEY)
+                && table.getParameters().get(SPARK_TABLE_PROVIDER_KEY).toLowerCase(ENGLISH).equals(DELTA_LAKE_PROVIDER);
+    }
+
+    public static boolean isIcebergTable(Table table)
+    {
+        return ICEBERG_TABLE_TYPE_VALUE.equalsIgnoreCase(table.getParameters().get(ICEBERG_TABLE_TYPE_NAME));
     }
 }
