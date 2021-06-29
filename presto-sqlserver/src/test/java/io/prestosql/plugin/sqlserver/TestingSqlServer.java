@@ -24,7 +24,7 @@ public final class TestingSqlServer
 {
     public TestingSqlServer()
     {
-        super(DockerImageName.parse("microsoft/mssql-server-linux:2017-CU13").asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server:2017-CU12"));
+        super(DockerImageName.parse("mcr.microsoft.com/mssql/server:2017-CU13"));
         addEnv("ACCEPT_EULA", "yes");
     }
 
