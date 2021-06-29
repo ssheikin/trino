@@ -30,8 +30,8 @@
     <scm>
         <connection>scm:git:git://github.com/starburstdata/presto-lts.git</connection>
         <url>https://github.com/starburstdata/presto-lts</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <air.main.basedir>${project.basedir}</air.main.basedir>
