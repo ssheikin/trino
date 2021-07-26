@@ -70,6 +70,17 @@ import static org.testng.Assert.assertTrue;
 public abstract class AbstractTestDistributedQueries
         extends AbstractTestQueries
 {
+    protected boolean supportsCreateSchema()
+    {
+        return true;
+    }
+
+    private boolean supportsDropSchema()
+    {
+        // A connector either supports CREATE SCHEMA and DROP SCHEMA or none of them.
+        return supportsCreateSchema();
+    }
+
     protected boolean supportsDelete()
     {
         return true;
@@ -1038,6 +1049,21 @@ public abstract class AbstractTestDistributedQueries
         assertQueryFails("CREATE SCHEMA " + schemaName, format("line 1:1: Schema '.*\\.%s' already exists", schemaName));
         assertUpdate("DROP SCHEMA " + schemaName);
         assertQueryFails("DROP SCHEMA " + schemaName, format("line 1:1: Schema '.*\\.%s' does not exist", schemaName));
+    }
+
+    @Test
+    public void testDropNonEmptySchema()
+    {
+        String schemaName = "test_drop_non_empty_schema_" + randomTableSuffix();
+        if (!supportsDropSchema()) {
+            return;
+        }
+
+        assertUpdate("CREATE SCHEMA " + schemaName);
+        assertUpdate("CREATE TABLE " + schemaName + ".t(x int)");
+        assertQueryFails("DROP SCHEMA " + schemaName, ".*Cannot drop non-empty schema '\\Q" + schemaName + "\\E'");
+        assertUpdate("DROP TABLE " + schemaName + ".t");
+        assertUpdate("DROP SCHEMA " + schemaName);
     }
 
     @Test

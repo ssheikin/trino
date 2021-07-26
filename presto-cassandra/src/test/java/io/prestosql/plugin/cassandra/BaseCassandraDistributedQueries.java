@@ -29,6 +29,12 @@ public abstract class BaseCassandraDistributedQueries
         extends AbstractTestDistributedQueries
 {
     @Override
+    protected boolean supportsCreateSchema()
+    {
+        return false;
+    }
+
+    @Override
     protected boolean supportsViews()
     {
         return false;

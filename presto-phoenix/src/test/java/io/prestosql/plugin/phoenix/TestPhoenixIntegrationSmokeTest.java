@@ -30,8 +30,8 @@ import static io.prestosql.plugin.jdbc.TypeHandlingJdbcSessionProperties.UNSUPPO
 import static io.prestosql.plugin.jdbc.UnsupportedTypeHandling.CONVERT_TO_VARCHAR;
 import static io.prestosql.plugin.phoenix.PhoenixQueryRunner.createPhoenixQueryRunner;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 public class TestPhoenixIntegrationSmokeTest
         extends AbstractTestIntegrationSmokeTest
@@ -80,12 +80,9 @@ public class TestPhoenixIntegrationSmokeTest
         assertUpdate("CREATE SCHEMA new_schema");
         assertUpdate("CREATE TABLE new_schema.test (x bigint)");
 
-        try {
-            getQueryRunner().execute("DROP SCHEMA new_schema");
-            fail("Should not be able to drop non-empty schema");
-        }
-        catch (RuntimeException e) {
-        }
+        assertThatThrownBy(() -> getQueryRunner().execute("DROP SCHEMA new_schema"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Cannot drop non-empty schema 'new_schema'");
 
         assertUpdate("DROP TABLE new_schema.test");
         assertUpdate("DROP SCHEMA new_schema");
