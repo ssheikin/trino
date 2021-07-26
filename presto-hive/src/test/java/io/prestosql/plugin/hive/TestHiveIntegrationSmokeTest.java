@@ -552,7 +552,7 @@ public class TestHiveIntegrationSmokeTest
 
         assertUpdate(session, "CREATE TABLE new_schema.test (x bigint)");
 
-        assertQueryFails(session, "DROP SCHEMA new_schema", "Schema not empty: new_schema");
+        assertQueryFails(session, "DROP SCHEMA new_schema", ".*Cannot drop non-empty schema 'new_schema'");
 
         assertUpdate(session, "DROP TABLE new_schema.test");
 

@@ -122,6 +122,12 @@ public class TestKuduDistributedQueries
     }
 
     @Override
+    public void testDropNonEmptySchema()
+    {
+        // TODO Support these test once kudu connector can create tables with default partitions
+    }
+
+    @Override
     public void testDelete()
     {
         // TODO Support these test once kudu connector can create tables with default partitions

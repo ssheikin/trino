@@ -251,7 +251,6 @@ import static io.prestosql.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
 import static io.prestosql.spi.StandardErrorCode.INVALID_SCHEMA_PROPERTY;
 import static io.prestosql.spi.StandardErrorCode.INVALID_TABLE_PROPERTY;
 import static io.prestosql.spi.StandardErrorCode.NOT_SUPPORTED;
-import static io.prestosql.spi.StandardErrorCode.SCHEMA_NOT_EMPTY;
 import static io.prestosql.spi.predicate.TupleDomain.withColumnDomains;
 import static io.prestosql.spi.statistics.TableStatisticType.ROW_COUNT;
 import static io.prestosql.spi.type.BigintType.BIGINT;
@@ -814,11 +813,6 @@ public class HiveMetadata
     @Override
     public void dropSchema(ConnectorSession session, String schemaName)
     {
-        // basic sanity check to provide a better error message
-        if (!listTables(session, Optional.of(schemaName)).isEmpty() ||
-                !listViews(session, Optional.of(schemaName)).isEmpty()) {
-            throw new PrestoException(SCHEMA_NOT_EMPTY, "Schema not empty: " + schemaName);
-        }
         metastore.dropDatabase(new HiveIdentity(session), schemaName);
     }
 

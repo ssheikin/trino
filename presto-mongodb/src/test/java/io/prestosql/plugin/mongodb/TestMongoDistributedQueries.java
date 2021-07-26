@@ -48,6 +48,12 @@ public class TestMongoDistributedQueries
     }
 
     @Override
+    protected boolean supportsCreateSchema()
+    {
+        return false;
+    }
+
+    @Override
     protected boolean supportsDelete()
     {
         return false;
