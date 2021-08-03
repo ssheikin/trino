@@ -48,7 +48,9 @@ import static com.google.common.io.BaseEncoding.base16;
 import static io.airlift.slice.SliceUtf8.countCodePoints;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.airlift.slice.Slices.wrappedBuffer;
+import static io.prestosql.plugin.jdbc.PredicatePushdownController.CASE_INSENSITIVE_CHARACTER_PUSHDOWN;
 import static io.prestosql.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
+import static io.prestosql.plugin.jdbc.PredicatePushdownController.FULL_PUSHDOWN;
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.BooleanType.BOOLEAN;
 import static io.prestosql.spi.type.CharType.createCharType;
@@ -231,18 +233,19 @@ public final class StandardColumnMappings
         };
     }
 
-    public static ColumnMapping defaultCharColumnMapping(int columnSize)
+    public static ColumnMapping defaultCharColumnMapping(int columnSize, boolean isRemoteCaseSensitive)
     {
         if (columnSize > CharType.MAX_LENGTH) {
-            return defaultVarcharColumnMapping(columnSize);
+            return defaultVarcharColumnMapping(columnSize, isRemoteCaseSensitive);
         }
-        return charColumnMapping(createCharType(columnSize));
+        return charColumnMapping(createCharType(columnSize), isRemoteCaseSensitive);
     }
 
-    public static ColumnMapping charColumnMapping(CharType charType)
+    public static ColumnMapping charColumnMapping(CharType charType, boolean isRemoteCaseSensitive)
     {
         requireNonNull(charType, "charType is null");
-        return ColumnMapping.sliceMapping(charType, charReadFunction(charType), charWriteFunction());
+        PredicatePushdownController pushdownController = isRemoteCaseSensitive ? FULL_PUSHDOWN : CASE_INSENSITIVE_CHARACTER_PUSHDOWN;
+        return ColumnMapping.sliceMapping(charType, charReadFunction(charType), charWriteFunction(), pushdownController);
     }
 
     public static SliceReadFunction charReadFunction(CharType charType)
@@ -262,17 +265,18 @@ public final class StandardColumnMappings
         };
     }
 
-    public static ColumnMapping defaultVarcharColumnMapping(int columnSize)
+    public static ColumnMapping defaultVarcharColumnMapping(int columnSize, boolean isRemoteCaseSensitive)
     {
         if (columnSize > VarcharType.MAX_LENGTH) {
-            return varcharColumnMapping(createUnboundedVarcharType());
+            return varcharColumnMapping(createUnboundedVarcharType(), isRemoteCaseSensitive);
         }
-        return varcharColumnMapping(createVarcharType(columnSize));
+        return varcharColumnMapping(createVarcharType(columnSize), isRemoteCaseSensitive);
     }
 
-    public static ColumnMapping varcharColumnMapping(VarcharType varcharType)
+    public static ColumnMapping varcharColumnMapping(VarcharType varcharType, boolean isRemoteCaseSensitive)
     {
-        return ColumnMapping.sliceMapping(varcharType, varcharReadFunction(varcharType), varcharWriteFunction());
+        PredicatePushdownController pushdownController = isRemoteCaseSensitive ? FULL_PUSHDOWN : CASE_INSENSITIVE_CHARACTER_PUSHDOWN;
+        return ColumnMapping.sliceMapping(varcharType, varcharReadFunction(varcharType), varcharWriteFunction(), pushdownController);
     }
 
     public static SliceReadFunction varcharReadFunction(VarcharType varcharType)
@@ -561,13 +565,13 @@ public final class StandardColumnMappings
 
             case Types.CHAR:
             case Types.NCHAR:
-                return Optional.of(defaultCharColumnMapping(typeHandle.getRequiredColumnSize()));
+                return Optional.of(defaultCharColumnMapping(typeHandle.getRequiredColumnSize(), false));
 
             case Types.VARCHAR:
             case Types.NVARCHAR:
             case Types.LONGVARCHAR:
             case Types.LONGNVARCHAR:
-                return Optional.of(defaultVarcharColumnMapping(typeHandle.getRequiredColumnSize()));
+                return Optional.of(defaultVarcharColumnMapping(typeHandle.getRequiredColumnSize(), false));
 
             case Types.BINARY:
             case Types.VARBINARY:

@@ -67,7 +67,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.slice.Slices.wrappedBuffer;
 import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
 import static io.prestosql.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
-import static io.prestosql.plugin.jdbc.PredicatePushdownController.FULL_PUSHDOWN;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanColumnMapping;
@@ -188,14 +187,8 @@ public class SqlServerClient
             return mapping;
         }
 
-        // TODO how to provide SIMPLIFY_UNSUPPORTED_PUSHDOWN in most readable & maintainable way?
         return toColumnMapping(typeHandle)
-                .or(() -> legacyToPrestoType(session, connection, typeHandle))
-                .map(columnMapping -> new ColumnMapping(
-                        columnMapping.getType(),
-                        columnMapping.getReadFunction(),
-                        columnMapping.getWriteFunction(),
-                        FULL_PUSHDOWN));
+                .or(() -> legacyToPrestoType(session, connection, typeHandle));
     }
 
     private Optional<ColumnMapping> toColumnMapping(JdbcTypeHandle typeHandle)
@@ -246,11 +239,11 @@ public class SqlServerClient
 
             case Types.CHAR:
             case Types.NCHAR:
-                return Optional.of(defaultCharColumnMapping(typeHandle.getRequiredColumnSize()));
+                return Optional.of(defaultCharColumnMapping(typeHandle.getRequiredColumnSize(), false));
 
             case Types.VARCHAR:
             case Types.NVARCHAR:
-                return Optional.of(defaultVarcharColumnMapping(typeHandle.getRequiredColumnSize()));
+                return Optional.of(defaultVarcharColumnMapping(typeHandle.getRequiredColumnSize(), false));
 
             case Types.BINARY:
             case Types.VARBINARY:
