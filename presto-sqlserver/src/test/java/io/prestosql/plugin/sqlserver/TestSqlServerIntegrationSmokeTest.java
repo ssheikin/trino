@@ -16,6 +16,11 @@ package io.prestosql.plugin.sqlserver;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.prestosql.Session;
+import io.prestosql.plugin.jdbc.JdbcColumnHandle;
+import io.prestosql.plugin.jdbc.JdbcTableHandle;
+import io.prestosql.spi.connector.ColumnHandle;
+import io.prestosql.spi.predicate.Domain;
+import io.prestosql.spi.predicate.TupleDomain;
 import io.prestosql.sql.planner.plan.AggregationNode;
 import io.prestosql.sql.planner.plan.FilterNode;
 import io.prestosql.sql.planner.plan.ProjectNode;
@@ -26,10 +31,15 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
+import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.plugin.sqlserver.DataCompression.NONE;
 import static io.prestosql.plugin.sqlserver.DataCompression.PAGE;
 import static io.prestosql.plugin.sqlserver.DataCompression.ROW;
 import static io.prestosql.plugin.sqlserver.SqlServerQueryRunner.createSqlServerQueryRunner;
+import static io.prestosql.spi.type.VarcharType.createVarcharType;
+import static io.prestosql.sql.planner.assertions.PlanMatchPattern.node;
+import static io.prestosql.sql.planner.assertions.PlanMatchPattern.tableScan;
 import static io.prestosql.testing.sql.TestTable.randomTableSuffix;
 import static io.prestosql.tpch.TpchTable.CUSTOMER;
 import static io.prestosql.tpch.TpchTable.NATION;
@@ -281,6 +291,54 @@ public class TestSqlServerIntegrationSmokeTest
                 .matches("VALUES (BIGINT '3', BIGINT '19', CAST('ROMANIA' AS varchar(25)))")
                 // SQL Server is case insensitive by default
                 .isNotFullyPushedDown(FilterNode.class);
+
+        // varchar IN without domain compaction
+        assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE name IN ('POLAND', 'ROMANIA', 'VIETNAM')"))
+                .matches("VALUES " +
+                        "(BIGINT '3', BIGINT '19', CAST('ROMANIA' AS varchar(25))), " +
+                        "(BIGINT '2', BIGINT '21', CAST('VIETNAM' AS varchar(25)))")
+                // SQL Server is case insensitive by default
+                .isNotFullyPushedDown(
+                        node(
+                                FilterNode.class,
+                                // verify that pushed down constraint is applied by the connector
+                                tableScan(
+                                        tableHandle -> {
+                                            TupleDomain<ColumnHandle> constraint = ((JdbcTableHandle) tableHandle).getConstraint();
+                                            ColumnHandle nameColumn = constraint.getDomains().orElseThrow()
+                                                    .keySet().stream()
+                                                    .map(JdbcColumnHandle.class::cast)
+                                                    .filter(column -> column.getColumnName().equals("name"))
+                                                    .collect(onlyElement());
+                                            return constraint.getDomains().get().get(nameColumn)
+                                                    .equals(Domain.multipleValues(
+                                                            createVarcharType(25),
+                                                            ImmutableList.of(
+                                                                    utf8Slice("POLAND"),
+                                                                    utf8Slice("ROMANIA"),
+                                                                    utf8Slice("VIETNAM"))));
+                                        },
+                                        TupleDomain.all(),
+                                        ImmutableMap.of())));
+
+        // varchar IN with small compaction threshold
+        assertThat(query(
+                Session.builder(getSession())
+                        .setCatalogSessionProperty("sqlserver", "domain_compaction_threshold", "1")
+                        .build(),
+                "SELECT regionkey, nationkey, name FROM nation WHERE name IN ('POLAND', 'ROMANIA', 'VIETNAM')"))
+                .matches("VALUES " +
+                        "(BIGINT '3', BIGINT '19', CAST('ROMANIA' AS varchar(25))), " +
+                        "(BIGINT '2', BIGINT '21', CAST('VIETNAM' AS varchar(25)))")
+                // SQL Server is case insensitive by default
+                .isNotFullyPushedDown(
+                        node(
+                                FilterNode.class,
+                                // verify that no constraint is applied by the connector
+                                tableScan(
+                                        tableHandle -> ((JdbcTableHandle) tableHandle).getConstraint().isAll(),
+                                        TupleDomain.all(),
+                                        ImmutableMap.of())));
 
         // varchar different case
         assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE name = 'romania'"))

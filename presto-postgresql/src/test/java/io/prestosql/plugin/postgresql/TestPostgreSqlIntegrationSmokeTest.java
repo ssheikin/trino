@@ -13,7 +13,15 @@
  */
 package io.prestosql.plugin.postgresql;
 
+import com.google.common.collect.ImmutableMap;
 import io.prestosql.Session;
+import io.prestosql.plugin.jdbc.JdbcColumnHandle;
+import io.prestosql.plugin.jdbc.JdbcTableHandle;
+import io.prestosql.spi.connector.ColumnHandle;
+import io.prestosql.spi.predicate.Domain;
+import io.prestosql.spi.predicate.Range;
+import io.prestosql.spi.predicate.TupleDomain;
+import io.prestosql.spi.predicate.ValueSet;
 import io.prestosql.sql.planner.plan.AggregationNode;
 import io.prestosql.sql.planner.plan.FilterNode;
 import io.prestosql.testing.AbstractTestIntegrationSmokeTest;
@@ -30,7 +38,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
+import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.plugin.postgresql.PostgreSqlQueryRunner.createPostgreSqlQueryRunner;
+import static io.prestosql.spi.type.VarcharType.createVarcharType;
+import static io.prestosql.sql.planner.assertions.PlanMatchPattern.node;
+import static io.prestosql.sql.planner.assertions.PlanMatchPattern.tableScan;
 import static io.prestosql.testing.sql.TestTable.randomTableSuffix;
 import static io.prestosql.tpch.TpchTable.CUSTOMER;
 import static io.prestosql.tpch.TpchTable.NATION;
@@ -214,6 +227,48 @@ public class TestPostgreSqlIntegrationSmokeTest
         assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE name BETWEEN 'POLAND' AND 'RPA'"))
                 .matches("VALUES (BIGINT '3', BIGINT '19', CAST('ROMANIA' AS varchar(25)))")
                 .isNotFullyPushedDown(FilterNode.class);
+
+        // varchar IN without domain compaction
+        assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE name IN ('POLAND', 'ROMANIA', 'VIETNAM')"))
+                .matches("VALUES " +
+                        "(BIGINT '3', BIGINT '19', CAST('ROMANIA' AS varchar(25))), " +
+                        "(BIGINT '2', BIGINT '21', CAST('VIETNAM' AS varchar(25)))")
+                .isFullyPushedDown();
+
+        // varchar IN with small compaction threshold
+        assertThat(query(
+                Session.builder(getSession())
+                        .setCatalogSessionProperty("postgresql", "domain_compaction_threshold", "1")
+                        .build(),
+                "SELECT regionkey, nationkey, name FROM nation WHERE name IN ('POLAND', 'ROMANIA', 'VIETNAM')"))
+                .matches("VALUES " +
+                        "(BIGINT '3', BIGINT '19', CAST('ROMANIA' AS varchar(25))), " +
+                        "(BIGINT '2', BIGINT '21', CAST('VIETNAM' AS varchar(25)))")
+                // Filter node is retained as only a range predicate is pushed into connector
+                .isNotFullyPushedDown(
+                        node(
+                                FilterNode.class,
+                                // verify that pushed down range predicate is applied by the connector
+                                tableScan(
+                                        tableHandle -> {
+                                            TupleDomain<ColumnHandle> constraint = ((JdbcTableHandle) tableHandle).getConstraint();
+                                            ColumnHandle nameColumn = constraint.getDomains().orElseThrow()
+                                                    .keySet().stream()
+                                                    .map(JdbcColumnHandle.class::cast)
+                                                    .filter(column -> column.getColumnName().equals("name"))
+                                                    .collect(onlyElement());
+                                            return constraint.getDomains().get().get(nameColumn)
+                                                    .equals(Domain.create(ValueSet.ofRanges(
+                                                                    Range.range(
+                                                                            createVarcharType(25),
+                                                                            utf8Slice("POLAND"),
+                                                                            true,
+                                                                            utf8Slice("VIETNAM"),
+                                                                            true)),
+                                                            false));
+                                        },
+                                        TupleDomain.all(),
+                                        ImmutableMap.of())));
 
         // varchar different case
         assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE name = 'romania'"))
