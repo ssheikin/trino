@@ -140,7 +140,7 @@
                         </goals>
                         <configuration>
                             <source>
-                                def match = project.version =~ /(\d+)(?:-SNAPSHOT)?/
+                                def match = project.version =~ /(\d+)(?:-e\.\d+)(?:-SNAPSHOT)?/
                                 if (!match.matches()) {
                                     throw new RuntimeException("Invalid version: " + project.version)
                                 }
