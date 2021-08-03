@@ -20,7 +20,6 @@ import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.AggregateFunction;
 import io.prestosql.spi.connector.ColumnHandle;
 import io.prestosql.spi.connector.ConnectorSession;
-import io.prestosql.spi.type.CharType;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.VarcharType;
 
@@ -32,9 +31,10 @@ import java.util.Optional;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanColumnMapping;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.charColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.doubleColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.doubleWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.integerColumnMapping;
@@ -47,13 +47,11 @@ import static io.prestosql.plugin.jdbc.StandardColumnMappings.timeColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.timestampColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.tinyintColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.tinyintWriteFunction;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.varcharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.varcharWriteFunction;
 import static io.prestosql.plugin.jdbc.TypeHandlingJdbcSessionProperties.getUnsupportedTypeHandling;
 import static io.prestosql.plugin.jdbc.UnsupportedTypeHandling.CONVERT_TO_VARCHAR;
 import static io.prestosql.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.prestosql.spi.type.BigintType.BIGINT;
-import static io.prestosql.spi.type.CharType.createCharType;
 import static io.prestosql.spi.type.DateType.DATE;
 import static io.prestosql.spi.type.DoubleType.DOUBLE;
 import static io.prestosql.spi.type.IntegerType.INTEGER;
@@ -62,8 +60,6 @@ import static io.prestosql.spi.type.SmallintType.SMALLINT;
 import static io.prestosql.spi.type.TimeType.TIME_MILLIS;
 import static io.prestosql.spi.type.TimestampType.TIMESTAMP_MILLIS;
 import static io.prestosql.spi.type.TinyintType.TINYINT;
-import static io.prestosql.spi.type.VarcharType.createUnboundedVarcharType;
-import static io.prestosql.spi.type.VarcharType.createVarcharType;
 
 class TestingH2JdbcClient
         extends BaseJdbcClient
@@ -119,10 +115,10 @@ class TestingH2JdbcClient
                 return Optional.of(doubleColumnMapping());
 
             case Types.CHAR:
-                return Optional.of(defaultCharColumnMapping(typeHandle.getColumnSize()));
+                return Optional.of(defaultCharColumnMapping(typeHandle.getColumnSize(), true));
 
             case Types.VARCHAR:
-                return Optional.of(defaultVarcharColumnMapping(typeHandle.getColumnSize()));
+                return Optional.of(defaultVarcharColumnMapping(typeHandle.getColumnSize(), true));
 
             case Types.DATE:
                 return Optional.of(dateColumnMapping());
@@ -174,21 +170,5 @@ class TestingH2JdbcClient
         }
 
         throw new PrestoException(NOT_SUPPORTED, "Unsupported column type: " + type.getDisplayName());
-    }
-
-    private static ColumnMapping defaultCharColumnMapping(int columnSize)
-    {
-        if (columnSize > CharType.MAX_LENGTH) {
-            return defaultVarcharColumnMapping(columnSize);
-        }
-        return charColumnMapping(createCharType(columnSize));
-    }
-
-    private static ColumnMapping defaultVarcharColumnMapping(int columnSize)
-    {
-        if (columnSize > VarcharType.MAX_LENGTH) {
-            return varcharColumnMapping(createUnboundedVarcharType());
-        }
-        return varcharColumnMapping(createVarcharType(columnSize));
     }
 }

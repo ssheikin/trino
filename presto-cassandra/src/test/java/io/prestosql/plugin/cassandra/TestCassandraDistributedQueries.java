@@ -169,6 +169,17 @@ public class TestCassandraDistributedQueries
     }
 
     @Override
+    protected Optional<DataMappingTestSetup> filterCaseSensitiveDataMappingTestData(DataMappingTestSetup dataMappingTestSetup)
+    {
+        String typeName = dataMappingTestSetup.getPrestoTypeName();
+        if (typeName.equals("char(1)")) {
+            // TODO this should either work or fail cleanly
+            return Optional.empty();
+        }
+        return Optional.of(dataMappingTestSetup);
+    }
+
+    @Override
     protected String dataMappingTableName(String prestoTypeName)
     {
         return "presto_tmp_" + System.nanoTime();

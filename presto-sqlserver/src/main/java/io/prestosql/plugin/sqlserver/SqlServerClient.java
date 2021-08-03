@@ -62,7 +62,9 @@ import java.util.function.BiFunction;
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.slice.Slices.wrappedBuffer;
 import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
+import static io.prestosql.plugin.jdbc.PredicatePushdownController.CASE_INSENSITIVE_CHARACTER_PUSHDOWN;
 import static io.prestosql.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
+import static io.prestosql.plugin.jdbc.PredicatePushdownController.FULL_PUSHDOWN;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.charWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.varcharWriteFunction;
@@ -273,9 +275,15 @@ public class SqlServerClient
 
     private DomainPushdownResult fullPushDownIfPossilble(Domain domain)
     {
+        boolean charDataType = domain.getType() instanceof VarcharType || domain.getType() instanceof CharType;
         if (domain.getValues().getRanges().getRangeCount() > SQL_SERVER_MAX_LIST_EXPRESSIONS) {
-            return new DomainPushdownResult(domain.simplify(), domain);
+            if (!charDataType) {
+                return new DomainPushdownResult(domain.simplify(), domain);
+            }
         }
-        return new DomainPushdownResult(domain, Domain.all(domain.getType()));
+        if (charDataType) {
+            return CASE_INSENSITIVE_CHARACTER_PUSHDOWN.apply(domain);
+        }
+        return FULL_PUSHDOWN.apply(domain);
     }
 }

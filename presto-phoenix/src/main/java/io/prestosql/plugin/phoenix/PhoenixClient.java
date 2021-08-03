@@ -280,7 +280,7 @@ public class PhoenixClient
             case LONGVARCHAR:
             case LONGNVARCHAR:
                 if (typeHandle.getColumnSize() == 0) {
-                    return Optional.of(varcharColumnMapping(createUnboundedVarcharType()));
+                    return Optional.of(varcharColumnMapping(createUnboundedVarcharType(), true));
                 }
                 break;
             // TODO add support for TIMESTAMP after Phoenix adds support for LocalDateTime

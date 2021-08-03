@@ -14,14 +14,33 @@
 package io.prestosql.plugin.jdbc;
 
 import io.prestosql.spi.predicate.Domain;
+import io.prestosql.spi.type.CharType;
+import io.prestosql.spi.type.VarcharType;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public interface PredicatePushdownController
 {
     PredicatePushdownController FULL_PUSHDOWN = domain -> new DomainPushdownResult(domain, Domain.all(domain.getType()));
-    PredicatePushdownController PUSHDOWN_AND_KEEP = domain -> new DomainPushdownResult(domain, domain);
     PredicatePushdownController DISABLE_PUSHDOWN = domain -> new DomainPushdownResult(Domain.all(domain.getType()), domain);
+
+    PredicatePushdownController CASE_INSENSITIVE_CHARACTER_PUSHDOWN = domain -> {
+        checkArgument(
+                domain.getType() instanceof VarcharType || domain.getType() instanceof CharType,
+                "CASE_SENSITIVE_PUSHDOWN can be used only for chars and varchars");
+
+        if (domain.isOnlyNull()) {
+            return FULL_PUSHDOWN.apply(domain);
+        }
+
+        if (domain.getValues().isDiscreteSet()) {
+            return new DomainPushdownResult(domain, domain);
+        }
+
+        // case insensitive predicate pushdown could return incorrect results for operators like `!=`, `<` or `>`
+        return DISABLE_PUSHDOWN.apply(domain);
+    };
 
     DomainPushdownResult apply(Domain domain);
 

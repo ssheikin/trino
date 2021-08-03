@@ -1425,6 +1425,11 @@ public abstract class AbstractTestDistributedQueries
     @Test(dataProvider = "testDataMappingSmokeTestDataProvider")
     public void testDataMappingSmokeTest(DataMappingTestSetup dataMappingTestSetup)
     {
+        testDataMapping(dataMappingTestSetup);
+    }
+
+    private void testDataMapping(DataMappingTestSetup dataMappingTestSetup)
+    {
         String prestoTypeName = dataMappingTestSetup.getPrestoTypeName();
         String sampleValueLiteral = dataMappingTestSetup.getSampleValueLiteral();
         String highValueLiteral = dataMappingTestSetup.getHighValueLiteral();
@@ -1512,6 +1517,38 @@ public abstract class AbstractTestDistributedQueries
     protected Optional<DataMappingTestSetup> filterDataMappingSmokeTestData(DataMappingTestSetup dataMappingTestSetup)
     {
         return Optional.of(dataMappingTestSetup);
+    }
+
+    @Test(dataProvider = "testCaseSensitiveDataMappingProvider")
+    public void testCaseSensitiveDataMapping(DataMappingTestSetup dataMappingTestSetup)
+    {
+        testDataMapping(dataMappingTestSetup);
+    }
+
+    @DataProvider
+    public final Object[][] testCaseSensitiveDataMappingProvider()
+    {
+        return testCaseSensitiveDataMappingData().stream()
+                .map(this::filterCaseSensitiveDataMappingTestData)
+                .flatMap(Optional::stream)
+                .collect(toDataProvider());
+    }
+
+    protected Optional<DataMappingTestSetup> filterCaseSensitiveDataMappingTestData(DataMappingTestSetup dataMappingTestSetup)
+    {
+        return Optional.of(dataMappingTestSetup);
+    }
+
+    private List<DataMappingTestSetup> testCaseSensitiveDataMappingData()
+    {
+        return ImmutableList.<DataMappingTestSetup>builder()
+                .add(new DataMappingTestSetup("char(1)", "'A'", "'a'"))
+                .add(new DataMappingTestSetup("varchar(1)", "'A'", "'a'"))
+                .add(new DataMappingTestSetup("char(1)", "'A'", "'b'"))
+                .add(new DataMappingTestSetup("varchar(1)", "'A'", "'b'"))
+                .add(new DataMappingTestSetup("char(1)", "'B'", "'a'"))
+                .add(new DataMappingTestSetup("varchar(1)", "'B'", "'a'"))
+                .build();
     }
 
     protected static final class DataMappingTestSetup
