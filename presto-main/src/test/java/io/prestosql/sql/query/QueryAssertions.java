@@ -13,6 +13,7 @@
  */
 package io.prestosql.sql.query;
 
+import com.google.common.collect.ImmutableList;
 import io.prestosql.Session;
 import io.prestosql.cost.PlanNodeStatsEstimate;
 import io.prestosql.execution.warnings.WarningCollector;
@@ -43,6 +44,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static io.airlift.testing.Assertions.assertEqualsIgnoreOrder;
 import static io.prestosql.sql.planner.assertions.PlanAssert.assertPlan;
@@ -379,10 +381,26 @@ public class QueryAssertions
          * <b>Note:</b> the primary intent of this assertion is to ensure the test is updated to {@link #isFullyPushedDown()}
          * when pushdown capabilities are improved.
          */
-        public QueryAssert isNotFullyPushedDown(Class<? extends PlanNode> retainedNode)
+        @SafeVarargs
+        public final QueryAssert isNotFullyPushedDown(Class<? extends PlanNode>... retainedNodes)
         {
-            // Compare the results with pushdown disabled, so that explicit matches() call is not needed
-            verifyResultsWithPushdownDisabled();
+            checkArgument(retainedNodes.length > 0, "No retainedNodes");
+            PlanMatchPattern expectedPlan = PlanMatchPattern.node(TableScanNode.class);
+            for (Class<? extends PlanNode> retainedNode : ImmutableList.copyOf(retainedNodes).reverse()) {
+                expectedPlan = PlanMatchPattern.node(retainedNode, expectedPlan);
+            }
+            return isNotFullyPushedDown(expectedPlan);
+        }
+
+        /**
+         * Verifies query is not fully pushed down and verifies the results are the same as when the pushdown is fully disabled.
+         * <p>
+         * <b>Note:</b> the primary intent of this assertion is to ensure the test is updated to {@link #isFullyPushedDown()}
+         * when pushdown capabilities are improved.
+         */
+        public final QueryAssert isNotFullyPushedDown(PlanMatchPattern retainedSubplan)
+        {
+            PlanMatchPattern expectedPlan = PlanMatchPattern.anyTree(retainedSubplan);
 
             transaction(runner.getTransactionManager(), runner.getAccessControl())
                     .execute(session, session -> {
@@ -392,11 +410,11 @@ public class QueryAssertions
                                 runner.getMetadata(),
                                 (node, sourceStats, lookup, ignore, types) -> PlanNodeStatsEstimate.unknown(),
                                 plan,
-                                PlanMatchPattern.anyTree(
-                                        PlanMatchPattern.node(retainedNode,
-                                                PlanMatchPattern.node(TableScanNode.class))));
+                                expectedPlan);
                     });
 
+            // Compare the results with pushdown disabled, so that explicit matches() call is not needed
+            verifyResultsWithPushdownDisabled();
             return this;
         }
 
