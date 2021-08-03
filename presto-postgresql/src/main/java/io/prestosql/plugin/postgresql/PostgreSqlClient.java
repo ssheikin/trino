@@ -34,6 +34,7 @@ import io.prestosql.plugin.jdbc.LongReadFunction;
 import io.prestosql.plugin.jdbc.LongWriteFunction;
 import io.prestosql.plugin.jdbc.ObjectReadFunction;
 import io.prestosql.plugin.jdbc.ObjectWriteFunction;
+import io.prestosql.plugin.jdbc.PredicatePushdownController;
 import io.prestosql.plugin.jdbc.ReadFunction;
 import io.prestosql.plugin.jdbc.SliceReadFunction;
 import io.prestosql.plugin.jdbc.SliceWriteFunction;
@@ -59,6 +60,7 @@ import io.prestosql.spi.connector.ConnectorTableMetadata;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.connector.TableNotFoundException;
 import io.prestosql.spi.type.ArrayType;
+import io.prestosql.spi.type.CharType;
 import io.prestosql.spi.type.DecimalType;
 import io.prestosql.spi.type.Decimals;
 import io.prestosql.spi.type.LongTimestamp;
@@ -72,6 +74,7 @@ import io.prestosql.spi.type.TinyintType;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
 import io.prestosql.spi.type.TypeSignature;
+import io.prestosql.spi.type.VarcharType;
 import org.postgresql.core.TypeInfo;
 import org.postgresql.jdbc.PgConnection;
 import org.postgresql.util.PGobject;
@@ -114,12 +117,16 @@ import static io.prestosql.plugin.jdbc.DecimalSessionSessionProperties.getDecima
 import static io.prestosql.plugin.jdbc.DecimalSessionSessionProperties.getDecimalRoundingMode;
 import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
 import static io.prestosql.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
+import static io.prestosql.plugin.jdbc.PredicatePushdownController.FULL_PUSHDOWN;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.charReadFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.charWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.fromPrestoTimestamp;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.timestampReadFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.tinyintWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.varbinaryWriteFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.varcharReadFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.varcharWriteFunction;
 import static io.prestosql.plugin.jdbc.TypeHandlingJdbcSessionProperties.getUnsupportedTypeHandling;
 import static io.prestosql.plugin.jdbc.UnsupportedTypeHandling.IGNORE;
 import static io.prestosql.plugin.postgresql.PostgreSqlConfig.ArrayMapping.AS_ARRAY;
@@ -133,6 +140,7 @@ import static io.prestosql.plugin.postgresql.TypeUtils.toPgTimestamp;
 import static io.prestosql.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 import static io.prestosql.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.prestosql.spi.type.CharType.createCharType;
 import static io.prestosql.spi.type.DateTimeEncoding.packDateTimeWithZone;
 import static io.prestosql.spi.type.DateTimeEncoding.unpackMillisUtc;
 import static io.prestosql.spi.type.DecimalType.createDecimalType;
@@ -151,6 +159,8 @@ import static io.prestosql.spi.type.Timestamps.round;
 import static io.prestosql.spi.type.TypeSignature.mapType;
 import static io.prestosql.spi.type.VarbinaryType.VARBINARY;
 import static io.prestosql.spi.type.VarcharType.VARCHAR;
+import static io.prestosql.spi.type.VarcharType.createUnboundedVarcharType;
+import static io.prestosql.spi.type.VarcharType.createVarcharType;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.sql.DatabaseMetaData.columnNoNulls;
@@ -173,6 +183,22 @@ public class PostgreSqlClient
     private final MapType varcharMapType;
     private final String[] tableTypes;
     private final AggregateFunctionRewriter aggregateFunctionRewriter;
+
+    private static final PredicatePushdownController POSTGRESQL_CHARACTER_PUSHDOWN = domain -> {
+        checkArgument(
+                domain.getType() instanceof VarcharType || domain.getType() instanceof CharType,
+                "This PredicatePushdownController can be used only for chars and varchars");
+
+        if (domain.isOnlyNull() ||
+                // PostgreSQL is case sensitive by default
+                domain.getValues().isDiscreteSet()) {
+            return FULL_PUSHDOWN.apply(domain);
+        }
+
+        // PostgreSQL by default orders lowercase letters before uppercase, which is different from Trino
+        // TODO We could still push the predicates down if we could inject a PostgreSQL-specific syntax for selecting a collation for given comparison.
+        return DISABLE_PUSHDOWN.apply(domain);
+    };
 
     @Inject
     public PostgreSqlClient(
@@ -360,9 +386,15 @@ public class PostgreSqlClient
             case "hstore":
                 return Optional.of(hstoreColumnMapping(session));
         }
-        if (typeHandle.getJdbcType() == Types.VARCHAR && !jdbcTypeName.equals("varchar")) {
-            // This can be e.g. an ENUM
-            return Optional.of(typedVarcharColumnMapping(jdbcTypeName));
+        if (typeHandle.getJdbcType() == Types.CHAR) {
+            return Optional.of(charColumnMapping(typeHandle.getColumnSize()));
+        }
+        if (typeHandle.getJdbcType() == Types.VARCHAR) {
+            if (!jdbcTypeName.equals("varchar")) {
+                // This can be e.g. an ENUM
+                return Optional.of(typedVarcharColumnMapping(jdbcTypeName));
+            }
+            return Optional.of(varcharColumnMapping(typeHandle.getColumnSize()));
         }
         if (typeHandle.getJdbcType() == Types.TIME) {
             int decimalDigits = typeHandle.getDecimalDigits().orElseThrow(() -> new IllegalStateException("decimal digits not present"));
@@ -514,6 +546,31 @@ public class PostgreSqlClient
     public boolean isLimitGuaranteed(ConnectorSession session)
     {
         return true;
+    }
+
+    private static ColumnMapping charColumnMapping(int charLength)
+    {
+        if (charLength > CharType.MAX_LENGTH) {
+            return varcharColumnMapping(charLength);
+        }
+        CharType charType = createCharType(charLength);
+        return ColumnMapping.sliceMapping(
+                charType,
+                charReadFunction(charType),
+                charWriteFunction(),
+                POSTGRESQL_CHARACTER_PUSHDOWN);
+    }
+
+    private static ColumnMapping varcharColumnMapping(int varcharLength)
+    {
+        VarcharType varcharType = varcharLength <= VarcharType.MAX_LENGTH
+                ? createVarcharType(varcharLength)
+                : createUnboundedVarcharType();
+        return ColumnMapping.sliceMapping(
+                varcharType,
+                varcharReadFunction(varcharType),
+                varcharWriteFunction(),
+                POSTGRESQL_CHARACTER_PUSHDOWN);
     }
 
     private static ColumnMapping timeColumnMapping(int precision)

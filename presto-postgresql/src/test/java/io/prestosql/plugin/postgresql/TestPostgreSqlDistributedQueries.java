@@ -19,7 +19,6 @@ import io.prestosql.testing.QueryRunner;
 import io.prestosql.testing.sql.JdbcSqlExecutor;
 import io.prestosql.testing.sql.TestTable;
 import io.prestosql.tpch.TpchTable;
-import org.testng.SkipException;
 
 import static io.prestosql.plugin.postgresql.PostgreSqlQueryRunner.createPostgreSqlQueryRunner;
 
@@ -84,13 +83,6 @@ public class TestPostgreSqlDistributedQueries
                         "col_default BIGINT DEFAULT 43," +
                         "col_nonnull_default BIGINT NOT NULL DEFAULT 42," +
                         "col_required2 BIGINT NOT NULL)");
-    }
-
-    @Override
-    public void testCaseSensitiveDataMapping(DataMappingTestSetup dataMappingTestSetup)
-    {
-        // TODO - https://github.com/trinodb/trino/issues/3645
-        throw new SkipException("PostgreSQL has different collation than Trino");
     }
 
     // PostgreSQL specific tests should normally go in TestPostgreSqlIntegrationSmokeTest
