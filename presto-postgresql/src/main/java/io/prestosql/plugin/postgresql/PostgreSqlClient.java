@@ -58,6 +58,7 @@ import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.connector.ConnectorTableMetadata;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.connector.TableNotFoundException;
+import io.prestosql.spi.predicate.Domain;
 import io.prestosql.spi.type.ArrayType;
 import io.prestosql.spi.type.CharType;
 import io.prestosql.spi.type.DecimalType;
@@ -113,6 +114,7 @@ import static io.prestosql.plugin.jdbc.DecimalSessionSessionProperties.getDecima
 import static io.prestosql.plugin.jdbc.DecimalSessionSessionProperties.getDecimalRounding;
 import static io.prestosql.plugin.jdbc.DecimalSessionSessionProperties.getDecimalRoundingMode;
 import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
+import static io.prestosql.plugin.jdbc.JdbcMetadataSessionProperties.getDomainCompactionThreshold;
 import static io.prestosql.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
 import static io.prestosql.plugin.jdbc.PredicatePushdownController.FULL_PUSHDOWN;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
@@ -217,15 +219,26 @@ public class PostgreSqlClient
                 domain.getType() instanceof VarcharType || domain.getType() instanceof CharType,
                 "This PredicatePushdownController can be used only for chars and varchars");
 
-        if (domain.isOnlyNull() ||
-                // PostgreSQL is case sensitive by default
-                domain.getValues().isDiscreteSet()) {
+        if (domain.isOnlyNull()) {
             return FULL_PUSHDOWN.apply(session, domain);
         }
 
+        // PostgreSQL is case sensitive by default
         // PostgreSQL by default orders lowercase letters before uppercase, which is different from Trino
         // TODO We could still push the predicates down if we could inject a PostgreSQL-specific syntax for selecting a collation for given comparison.
-        return DISABLE_PUSHDOWN.apply(session, domain);
+        if (!domain.getValues().isDiscreteSet()) {
+            // Push down of range predicate for varchar/char types could lead to incorrect results
+            // due to different sort ordering of lowercase and uppercase letters in PostgreSQL
+            return DISABLE_PUSHDOWN.apply(session, domain);
+        }
+
+        Domain simplifiedDomain = domain.simplify(getDomainCompactionThreshold(session));
+        if (!simplifiedDomain.getValues().isDiscreteSet()) {
+            // Domain#simplify can turn a discrete set into a range predicate
+            return DISABLE_PUSHDOWN.apply(session, domain);
+        }
+
+        return FULL_PUSHDOWN.apply(session, simplifiedDomain);
     };
 
     @Inject
