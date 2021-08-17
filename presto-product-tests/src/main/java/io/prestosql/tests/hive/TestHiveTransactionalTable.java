@@ -27,6 +27,7 @@ import io.prestosql.testng.services.Flaky;
 import io.prestosql.tests.hive.util.TemporaryHiveTable;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.assertj.core.api.Assertions;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -515,7 +516,13 @@ public class TestHiveTransactionalTable
         withTemporaryTable("unpartitioned_transactional_insert", true, false, NONE, tableName -> {
             onPresto().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true)", tableName));
 
-            onPresto().executeQuery(format("INSERT INTO %s VALUES (11, 100), (12, 200), (13, 300)", tableName));
+            String insertQuery = format("INSERT INTO %s VALUES (11, 100), (12, 200), (13, 300)", tableName);
+
+            // ensure that we treat ACID tables as implicitly bucketed on INSERT
+            String explainOutput = (String) onPresto().executeQuery("EXPLAIN " + insertQuery).row(0).get(0);
+            Assertions.assertThat(explainOutput).contains("Output partitioning: hive:buckets=1");
+
+            onPresto().executeQuery(insertQuery);
 
             verifySelectForPrestoAndHive("SELECT * FROM " + tableName, "true", row(11, 100L), row(12, 200L), row(13, 300L));
 
