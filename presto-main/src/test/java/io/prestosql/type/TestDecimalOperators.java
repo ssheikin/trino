@@ -13,6 +13,7 @@
  */
 package io.prestosql.type;
 
+import io.airlift.slice.Slice;
 import io.prestosql.operator.scalar.AbstractTestFunctions;
 import org.testng.annotations.Test;
 
@@ -21,6 +22,9 @@ import static io.prestosql.spi.StandardErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static io.prestosql.spi.function.OperatorType.INDETERMINATE;
 import static io.prestosql.spi.type.BooleanType.BOOLEAN;
 import static io.prestosql.spi.type.DecimalType.createDecimalType;
+import static io.prestosql.spi.type.UnscaledDecimal128Arithmetic.unscaledDecimal;
+import static io.prestosql.type.DecimalOperators.addShortLongLong;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestDecimalOperators
         extends AbstractTestFunctions
@@ -848,5 +852,19 @@ public class TestDecimalOperators
         assertOperator(INDETERMINATE, "DECIMAL '18'", BOOLEAN, false);
         assertOperator(INDETERMINATE, "DECIMAL '9.0'", BOOLEAN, false);
         assertOperator(INDETERMINATE, "DECIMAL '12345678901234567.89012345678901234567'", BOOLEAN, false);
+    }
+
+    @Test
+    public void testArgumentsNotModified()
+    {
+        Slice value = unscaledDecimal(2);
+
+        addShortLongLong(1, value, 0, false);
+        assertThat(value.getBytes())
+                .isEqualTo(unscaledDecimal(2).getBytes());
+
+        addShortLongLong(1, value, 0, false);
+        assertThat(value.getBytes())
+                .isEqualTo(unscaledDecimal(2).getBytes());
     }
 }
