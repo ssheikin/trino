@@ -15,6 +15,7 @@ package io.prestosql.sql.planner.iterative.rule;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
+import io.airlift.slice.Slice;
 import io.prestosql.Session;
 import io.prestosql.SystemSessionProperties;
 import io.prestosql.metadata.Metadata;
@@ -22,6 +23,7 @@ import io.prestosql.metadata.OperatorNotFoundException;
 import io.prestosql.metadata.ResolvedFunction;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.function.InvocationConvention;
+import io.prestosql.spi.type.CharType;
 import io.prestosql.spi.type.DecimalType;
 import io.prestosql.spi.type.DoubleType;
 import io.prestosql.spi.type.LongTimestampWithTimeZone;
@@ -32,6 +34,7 @@ import io.prestosql.spi.type.TimestampType;
 import io.prestosql.spi.type.TimestampWithTimeZoneType;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeOperators;
+import io.prestosql.spi.type.VarcharType;
 import io.prestosql.sql.InterpretedFunctionInvoker;
 import io.prestosql.sql.planner.ExpressionInterpreter;
 import io.prestosql.sql.planner.LiteralEncoder;
@@ -54,6 +57,8 @@ import java.time.temporal.ChronoUnit;
 import java.time.zone.ZoneOffsetTransition;
 import java.util.Optional;
 
+import static com.google.common.base.Verify.verify;
+import static io.airlift.slice.SliceUtf8.countCodePoints;
 import static io.prestosql.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static io.prestosql.spi.function.InvocationConvention.InvocationArgumentConvention.NEVER_NULL;
 import static io.prestosql.spi.function.InvocationConvention.InvocationReturnConvention.FAIL_ON_NULL;
@@ -480,8 +485,29 @@ public class UnwrapCastInComparison
                 return false;
             }
 
+            boolean coercible = new TypeCoercion(metadata::getType).canCoerce(source, target);
+            if (source instanceof VarcharType && target instanceof CharType) {
+                // char should probably be coercible to varchar, not vice-versa. The code here needs to be updated when things change.
+                verify(coercible, "%s was expected to be coercible to %s", source, target);
+
+                VarcharType sourceVarchar = (VarcharType) source;
+                CharType targetChar = (CharType) target;
+
+                if (sourceVarchar.isUnbounded() || sourceVarchar.getBoundedLength() > targetChar.getLength()) {
+                    // Truncation, not injective.
+                    return false;
+                }
+                if (sourceVarchar.getBoundedLength() == 0) {
+                    // the source domain is single-element set
+                    return true;
+                }
+                int actualLengthWithoutSpaces = countCodePoints((Slice) value);
+                verify(actualLengthWithoutSpaces <= targetChar.getLength(), "Incorrect char value [%s] for %s", ((Slice) value).toStringUtf8(), targetChar);
+                return sourceVarchar.getBoundedLength() == actualLengthWithoutSpaces;
+            }
+
             // Well-behaved implicit casts are injective
-            return new TypeCoercion(metadata::getType).canCoerce(source, target);
+            return coercible;
         }
 
         private Object coerce(Object value, ResolvedFunction coercion)
