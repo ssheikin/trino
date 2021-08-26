@@ -14,6 +14,7 @@
 package io.prestosql.sql.planner;
 
 import io.prestosql.Session;
+import io.prestosql.spi.type.CharType;
 import io.prestosql.spi.type.TimeZoneKey;
 import io.prestosql.sql.planner.assertions.BasePlanTest;
 import org.testng.annotations.Test;
@@ -124,6 +125,30 @@ public class TestUnwrapCastInComparison
                 anyTree(
                         filter("A IS NULL AND NULL",
                                 values("A"))));
+
+        // shorter varchar and char
+        testNoUnwrap("varchar(1)", "= CAST('abc' AS char(3))", "char(3)");
+        // varchar and char, same length
+        assertPlan(
+                "SELECT * FROM (VALUES 'abc') t(a) WHERE a = CAST('abc' AS char(3))",
+                anyTree(
+                        filter("A = 'abc'",
+                                values("A"))));
+        testNoUnwrap("varchar(3)", "= CAST('ab' AS char(3))", "char(3)");
+        // longer varchar and char
+        assertPlan(
+                "SELECT * FROM (VALUES '1234567890') t(a) WHERE a = CAST('abc' AS char(3))",
+                anyTree(
+                        filter("CAST(A AS char(10)) = CAST('abc' AS char(10))", // no unwrapping
+                                values("A"))));
+        // unbounded varchar and char
+        assertPlan(
+                "SELECT * FROM (VALUES CAST('abc' AS varchar)) t(a) WHERE a = CAST('abc' AS char(3))",
+                anyTree(
+                        filter("CAST(A AS char(65536)) = CAST('abc' AS char(65536))", // no unwrapping
+                                values("A"))));
+        // unbounded varchar and char of maximum length (could be unwrapped, but currently it is not)
+        testNoUnwrap("varchar", format("= CAST('abc' AS char(%s))", CharType.MAX_LENGTH), "char(65536)");
     }
 
     @Test
@@ -1072,6 +1097,11 @@ public class TestUnwrapCastInComparison
                                 values("A"))));
     }
 
+    private void testNoUnwrap(String inputType, String inputPredicate, String expectedCastType)
+    {
+        testNoUnwrap(getQueryRunner().getDefaultSession(), inputType, inputPredicate, expectedCastType);
+    }
+
     private void testNoUnwrap(Session session, String inputType, String inputPredicate, String expectedCastType)
     {
         String sql = format("SELECT * FROM (VALUES CAST(NULL AS %s)) t(a) WHERE a %s", inputType, inputPredicate);
@@ -1086,6 +1116,11 @@ public class TestUnwrapCastInComparison
             e.addSuppressed(new Exception("Query: " + sql));
             throw e;
         }
+    }
+
+    private void testUnwrap(String inputType, String inputPredicate, String expectedPredicate)
+    {
+        testUnwrap(getQueryRunner().getDefaultSession(), inputType, inputPredicate, expectedPredicate);
     }
 
     private void testUnwrap(Session session, String inputType, String inputPredicate, String expectedPredicate)

@@ -211,6 +211,27 @@ public abstract class AbstractTestEngineOnlyQueries
     }
 
     @Test
+    public void testCharVarcharComparison()
+    {
+        assertQuery("SELECT * FROM (VALUES" +
+                "   CAST(NULL AS char(3)), " +
+                "   CAST('   ' AS char(3))) t(x) " +
+                "WHERE x = CAST('  ' AS varchar(2))");
+    }
+
+    @Test
+    public void testVarcharCharComparison()
+    {
+        assertQuery("SELECT * FROM (VALUES" +
+                "   CAST(NULL AS varchar(3)), " +
+                "   CAST('' AS varchar(3))," +
+                "   CAST(' ' AS varchar(3)), " +
+                "   CAST('  ' AS varchar(3)), " +
+                "   CAST('   ' AS varchar(3))) t(x) " +
+                "WHERE x = CAST('  ' AS char(2))");
+    }
+
+    @Test
     public void testLargeQuerySuccess()
     {
         assertQuery("SELECT " + Joiner.on(" AND ").join(nCopies(500, "1 = 1")), "SELECT true");
