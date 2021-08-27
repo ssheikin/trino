@@ -34,7 +34,6 @@ import io.prestosql.spi.type.VarcharType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -46,6 +45,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static io.prestosql.plugin.bigquery.BigQueryMetadata.NUMERIC_DATA_TYPE_PRECISION;
 import static io.prestosql.plugin.bigquery.BigQueryMetadata.NUMERIC_DATA_TYPE_SCALE;
 import static io.prestosql.spi.type.Timestamps.MICROSECONDS_PER_MILLISECOND;
+import static io.prestosql.spi.type.Timestamps.NANOSECONDS_PER_MILLISECOND;
 import static io.prestosql.spi.type.VarcharType.createUnboundedVarcharType;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -80,6 +80,7 @@ public enum BigQueryType
             10, // 8 digits after the dot
             1, // 9 digits after the dot
     };
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("''HH:mm:ss.SSS''");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("''yyyy-MM-dd HH:mm:ss.SSS''");
 
     private final Type nativeType;
@@ -140,10 +141,9 @@ public enum BigQueryType
     static String timeToStringConverter(Object value)
     {
         long longValue = ((Long) value).longValue();
-        long millisUtc = DateTimeEncoding.unpackMillisUtc(longValue);
+        long nanosUtc = DateTimeEncoding.unpackTimeNanos(longValue);
         ZoneId zoneId = ZoneId.of(DateTimeEncoding.unpackZoneKey(longValue).getId());
-        LocalTime time = toZonedDateTime(millisUtc, zoneId).toLocalTime();
-        return quote(time.toString());
+        return TIME_FORMATTER.format(toZonedDateTime(nanosUtc / NANOSECONDS_PER_MILLISECOND, zoneId));
     }
 
     static String timestampToStringConverter(Object value)

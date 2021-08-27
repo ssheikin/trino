@@ -29,6 +29,7 @@ import static io.prestosql.spi.type.VarcharType.VARCHAR;
 import static io.prestosql.testing.MaterializedResult.resultBuilder;
 import static io.prestosql.testing.assertions.Assert.assertEquals;
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Test
 public class TestBigQueryIntegrationSmokeTest
@@ -132,5 +133,25 @@ public class TestBigQueryIntegrationSmokeTest
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    public void testTimeType()
+    {
+        BigQuery client = createBigQueryClient();
+        String tableName = "test.test_time_type";
+
+        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
+        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (a TIME)");
+        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES ('01:02:03.123'), ('23:59:59.999')");
+
+        assertThat(query("SELECT a FROM " + tableName))
+                .matches("VALUES (TIME '01:02:03.123+00:00'), (TIME '23:59:59.999+00:00')");
+        assertThat(query("SELECT a FROM " + tableName + " WHERE a = TIME '01:02:03.123+00:00'"))
+                .matches("VALUES (TIME '01:02:03.123+00:00')");
+        assertThat(query("SELECT a FROM " + tableName + " WHERE rand() = 42 OR a = TIME '01:02:03.123+00:00'"))
+                .matches("VALUES (TIME '01:02:03.123+00:00')");
+
+        executeBigQuerySql(client, "DROP TABLE " + tableName);
     }
 }
