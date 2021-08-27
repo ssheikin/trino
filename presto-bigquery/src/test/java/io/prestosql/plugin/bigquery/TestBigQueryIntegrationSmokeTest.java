@@ -196,4 +196,24 @@ public class TestBigQueryIntegrationSmokeTest
                         "   comment varchar NOT NULL\n" +
                         ")");
     }
+
+    @Test
+    public void testTimeType()
+    {
+        String tableName = "test.test_time_type";
+
+        BigQuery client = createBigQueryClient();
+        executeBigQuerySql(client, "DROP TABLE IF EXISTS " + tableName);
+        executeBigQuerySql(client, "CREATE TABLE " + tableName + " (a TIME)");
+        executeBigQuerySql(client, "INSERT INTO " + tableName + " VALUES ('01:02:03.123'), ('23:59:59.999')");
+
+        assertThat(query("SELECT a FROM " + tableName))
+                .containsAll("VALUES (TIME '01:02:03.123+00:00'), (TIME '23:59:59.999+00:00')");
+        assertThat(query("SELECT a FROM " + tableName + " WHERE a = TIME '01:02:03.123+00:00'"))
+                .containsAll("VALUES (TIME '01:02:03.123+00:00')");
+        assertThat(query("SELECT a FROM " + tableName + " WHERE rand() = 42 OR a = TIME '01:02:03.123+00:00'"))
+                .containsAll("VALUES (TIME '01:02:03.123+00:00')");
+
+        executeBigQuerySql(client, "DROP TABLE " + tableName);
+    }
 }
