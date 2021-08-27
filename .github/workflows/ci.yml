@@ -182,9 +182,9 @@ jobs:
             plugin/trino-hive-hadoop2/bin/run_hive_tests.sh
       - name: Run Hive S3 Tests
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESSKEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRETKEY }}
-          S3_BUCKET: "presto-ci-test"
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_TESTS_AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_TESTS_AWS_SECRET_KEY }}
+          S3_BUCKET: "presto-hive-s3-tests"
           S3_BUCKET_ENDPOINT: "s3.us-east-2.amazonaws.com"
         run: |
           if [ "${AWS_ACCESS_KEY_ID}" != "" ]; then
@@ -193,8 +193,8 @@ jobs:
           fi
       - name: Run Hive Glue Tests
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESSKEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRETKEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CICD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CICD_AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
           if [ "${AWS_ACCESS_KEY_ID}" != "" ]; then
@@ -203,9 +203,9 @@ jobs:
       - name: Run Hive Azure ABFS Access Key Tests
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
-          ABFS_CONTAINER: ${{ secrets.AZURE_ABFS_CONTAINER }}
-          ABFS_ACCOUNT: ${{ secrets.AZURE_ABFS_ACCOUNT }}
-          ABFS_ACCESS_KEY: ${{ secrets.AZURE_ABFS_ACCESSKEY }}
+          ABFS_CONTAINER: 'container'
+          ABFS_ACCOUNT: ${{ secrets.ABFS_TESTS_ABFS_ACCOUNT }}
+          ABFS_ACCESS_KEY: ${{ secrets.ABFS_TESTS_ABFS_ACCESS_KEY }}
         run: |
           if [ "${ABFS_CONTAINER}" != "" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
@@ -214,22 +214,22 @@ jobs:
       - name: Run Hive Azure ABFS OAuth Tests
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
-          ABFS_CONTAINER: ${{ secrets.AZURE_ABFS_CONTAINER }}
-          ABFS_ACCOUNT: ${{ secrets.AZURE_ABFS_ACCOUNT }}
-          ABFS_OAUTH_ENDPOINT: ${{ secrets.AZURE_ABFS_OAUTH_ENDPOINT }}
-          ABFS_OAUTH_CLIENTID: ${{ secrets.AZURE_ABFS_OAUTH_CLIENTID }}
-          ABFS_OAUTH_SECRET: ${{ secrets.AZURE_ABFS_OAUTH_SECRET }}
+          ABFS_CONTAINER: 'container'
+          ABFS_ACCOUNT: ${{ secrets.ABFS_OAUTH_TESTS_ACCOUNT }}
+          ABFS_OAUTH_ENDPOINT: ${{ secrets.ABFS_OAUTH_TESTS_OAUTH_ENDPOINT }}
+          ABFS_OAUTH_CLIENTID: ${{ secrets.ABFS_OAUTH_TESTS_CLIENT_ID }}
+          ABFS_OAUTH_SECRET: ${{ secrets.ABFS_OAUTH_TESTS_OAUTH_SECRET }}
         run: |
-          if [ -n "$ABFS_CONTAINER" ]; then
+          if [ -n "${ABFS_OAUTH_CLIENTID}" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
               plugin/trino-hive-hadoop2/bin/run_hive_abfs_oauth_tests.sh
           fi
       - name: Run Hive Azure WASB Tests
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
-          WASB_CONTAINER: ${{ secrets.AZURE_WASB_CONTAINER }}
-          WASB_ACCOUNT: ${{ secrets.AZURE_WASB_ACCOUNT }}
-          WASB_ACCESS_KEY: ${{ secrets.AZURE_WASB_ACCESSKEY }}
+          WASB_CONTAINER: ${{ secrets.WASB_TESTS_CONTAINER }}
+          WASB_ACCOUNT: ${{ secrets.WASB_TESTS_ACCOUNT }}
+          WASB_ACCESS_KEY: ${{ secrets.WASB_TESTS_ACCESS_KEY }}
         run: |
           if [ "${WASB_CONTAINER}" != "" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
@@ -238,10 +238,10 @@ jobs:
       - name: Run Hive Azure ADL Tests
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
-          ADL_NAME: ${{ secrets.AZURE_ADL_NAME }}
-          ADL_CLIENT_ID: ${{ secrets.AZURE_ADL_CLIENTID }}
-          ADL_CREDENTIAL: ${{ secrets.AZURE_ADL_CREDENTIAL }}
-          ADL_REFRESH_URL: ${{ secrets.AZURE_ADL_REFRESHURL }}
+          ADL_NAME: ${{ secrets.ADL_TESTS_NAME }}
+          ADL_CLIENT_ID: ${{ secrets.ADL_TESTS_CLIENT_ID }}
+          ADL_CREDENTIAL: ${{ secrets.ADL_TESTS_CREDENTIAL }}
+          ADL_REFRESH_URL: ${{ secrets.ADL_TESTS_REFRESH_URL }}
         run: |
           if [ "${ADL_NAME}" != "" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
