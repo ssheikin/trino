@@ -27,13 +27,6 @@
                 </httpConfiguration>
             </configuration>
         </server>
-
-        <!-- Starburst Docker registry -->
-        <server>
-            <id>harbor.starburstdata.net</id>
-            <username>admin</username>
-            <password>${env.dockerCredentials}</password>
-        </server>
     </servers>
     <profiles>
         <profile>
