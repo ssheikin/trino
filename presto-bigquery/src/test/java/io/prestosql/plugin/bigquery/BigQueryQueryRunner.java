@@ -16,12 +16,14 @@ package io.prestosql.plugin.bigquery;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
+import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.airlift.log.Logging;
 import io.prestosql.Session;
 import io.prestosql.plugin.tpch.TpchPlugin;
 import io.prestosql.testing.DistributedQueryRunner;
+import io.prestosql.testing.sql.SqlExecutor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

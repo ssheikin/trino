@@ -21,7 +21,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>11.0.0</version>
+                <version>22.0.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -29,7 +29,7 @@
             <dependency>
                 <groupId>org.threeten</groupId>
                 <artifactId>threetenbp</artifactId>
-                <version>1.4.4</version>
+                <version>1.5.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -289,6 +289,7 @@
                             <excludes>
                                 <!-- If you are adding entry here also add an entry to cloud-tests profile below -->
                                 <exclude>**/TestBigQueryIntegrationSmokeTest.java</exclude>
+                                <exclude>**/TestBigQueryTypeMapping.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -309,6 +310,7 @@
                         <configuration>
                             <includes>
                                 <include>**/TestBigQueryIntegrationSmokeTest.java</include>
+                                <include>**/TestBigQueryTypeMapping.java</include>
                             </includes>
                         </configuration>
                     </plugin>
