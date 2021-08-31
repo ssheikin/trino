@@ -58,7 +58,7 @@
         <dep.selenium.version>3.141.59</dep.selenium.version>
         <dep.tempto.version>183</dep.tempto.version>
         <dep.gcs.version>2.0.0</dep.gcs.version>
-        <dep.errorprone.version>2.5.1</dep.errorprone.version>
+        <dep.errorprone.version>2.9.0</dep.errorprone.version>
         <dep.testcontainers.version>1.15.3</dep.testcontainers.version>
         <dep.docker-java.version>3.2.8</dep.docker-java.version>
         <dep.coral.version>1.0.42</dep.coral.version>
@@ -1782,7 +1782,6 @@
                                     -Xep:OptionalEquality:ERROR
                                     -Xep:OptionalMapUnusedValue:ERROR
                                     -Xep:PreconditionsInvalidPlaceholder:ERROR
-                                    -Xep:ReturnValueIgnored:ERROR
                                     -Xep:StaticQualifiedUsingExpression:ERROR
                                     -Xep:ThrowIfUncheckedKnownChecked:ERROR
                                     -Xep:UnnecessaryCheckNotNull:ERROR
