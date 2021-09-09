@@ -109,7 +109,7 @@ public final class BigQueryQueryRunner
 
         public void dropDataset(String dataset)
         {
-            bigQuery.delete(dataset);
+            bigQuery.delete(dataset, deleteContents());
         }
 
         private static BigQuery createBigQueryClient()
