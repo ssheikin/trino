@@ -44,7 +44,7 @@ public class Suite7NonGeneric
                 testOnEnvironment(SinglenodeMysql.class).withGroups("mysql").build(),
                 testOnEnvironment(SinglenodePostgresql.class).withGroups("postgresql").build(),
                 testOnEnvironment(SinglenodeSqlserver.class).withGroups("sqlserver").build(),
-                testOnEnvironment(SinglenodeSparkHive.class).withGroups("hive_spark_bucketing").build(),
+                testOnEnvironment(SinglenodeSparkHive.class).withGroups("hive_spark").build(),
                 testOnEnvironment(SinglenodeSparkIceberg.class).withGroups("iceberg").withExcludedGroups("storage_formats").build(),
                 testOnEnvironment(SinglenodeKerberosHdfsImpersonationCrossRealm.class).withGroups("storage_formats", "cli", "hdfs_impersonation").build(),
                 testOnEnvironment(TwoMixedHives.class).withGroups("two_hives").build(),
