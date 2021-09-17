@@ -138,6 +138,8 @@ public class FeaturesConfig
     private int filterAndProjectMinOutputPageRowCount = 256;
     private int maxGroupingSets = 2048;
 
+    private boolean allowSetViewAuthorization;
+
     public enum JoinReorderingStrategy
     {
         NONE,
@@ -1047,6 +1049,20 @@ public class FeaturesConfig
     public FeaturesConfig setTableScanNodePartitioningMinBucketToTaskRatio(double tableScanNodePartitioningMinBucketToTaskRatio)
     {
         this.tableScanNodePartitioningMinBucketToTaskRatio = tableScanNodePartitioningMinBucketToTaskRatio;
+        return this;
+    }
+
+    public boolean isAllowSetViewAuthorization()
+    {
+        return allowSetViewAuthorization;
+    }
+
+    @Config("legacy.allow-set-view-authorization")
+    @ConfigDescription("For security reasons ALTER VIEW SET AUTHORIZATION is disabled for SECURITY DEFINER; " +
+            "setting this option to true will re-enable this functionality")
+    public FeaturesConfig setAllowSetViewAuthorization(boolean allowSetViewAuthorization)
+    {
+        this.allowSetViewAuthorization = allowSetViewAuthorization;
         return this;
     }
 }

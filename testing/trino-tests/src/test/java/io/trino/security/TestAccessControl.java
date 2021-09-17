@@ -18,8 +18,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.testing.Assertions;
 import io.trino.Session;
+import io.trino.connector.MockConnectorFactory;
+import io.trino.connector.MockConnectorPlugin;
 import io.trino.plugin.blackhole.BlackHolePlugin;
 import io.trino.plugin.tpch.TpchPlugin;
+import io.trino.spi.connector.ConnectorViewDefinition;
+import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.security.Identity;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
@@ -27,7 +31,10 @@ import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingSession;
 import org.testng.annotations.Test;
 
+import java.util.Optional;
+
 import static io.trino.SystemSessionProperties.QUERY_MAX_MEMORY;
+import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.testing.TestingAccessControlManager.TestingPrivilegeType.ADD_COLUMN;
 import static io.trino.testing.TestingAccessControlManager.TestingPrivilegeType.CREATE_MATERIALIZED_VIEW;
 import static io.trino.testing.TestingAccessControlManager.TestingPrivilegeType.CREATE_TABLE;
@@ -72,6 +79,30 @@ public class TestAccessControl
         queryRunner.createCatalog("blackhole", "blackhole");
         queryRunner.installPlugin(new TpchPlugin());
         queryRunner.createCatalog("tpch", "tpch");
+        queryRunner.installPlugin(new MockConnectorPlugin(MockConnectorFactory.builder()
+                .withGetViews((connectorSession, prefix) -> {
+                    ConnectorViewDefinition definitionRunAsDefiner = new ConnectorViewDefinition(
+                            "select 1",
+                            Optional.of("mock"),
+                            Optional.of("default"),
+                            ImmutableList.of(new ConnectorViewDefinition.ViewColumn("test", BIGINT.getTypeId())),
+                            Optional.of("comment"),
+                            Optional.of("admin"),
+                            false);
+                    ConnectorViewDefinition definitionRunAsInvoker = new ConnectorViewDefinition(
+                            "select 1",
+                            Optional.of("mock"),
+                            Optional.of("default"),
+                            ImmutableList.of(new ConnectorViewDefinition.ViewColumn("test", BIGINT.getTypeId())),
+                            Optional.of("comment"),
+                            Optional.empty(),
+                            true);
+                    return ImmutableMap.of(
+                            new SchemaTableName("default", "test_view_definer"), definitionRunAsDefiner,
+                            new SchemaTableName("default", "test_view_invoker"), definitionRunAsInvoker);
+                })
+                .build()));
+        queryRunner.createCatalog("mock", "mock");
         for (String tableName : ImmutableList.of("orders", "nation", "region", "lineitem")) {
             queryRunner.execute(format("CREATE TABLE %1$s AS SELECT * FROM tpch.tiny.%1$s WITH NO DATA", tableName));
         }
@@ -383,5 +414,21 @@ public class TestAccessControl
             }
         });
         assertUpdate("DROP VIEW " + viewName);
+    }
+
+    @Test
+    public void testSetViewAuthorizationWithSecurityDefiner()
+    {
+        assertAccessDenied(
+                "ALTER VIEW mock.default.test_view_definer SET AUTHORIZATION some_other_user",
+                "Cannot set authorization for view mock.default.test_view_definer to USER some_other_user");
+    }
+
+    @Test
+    public void testSetViewAuthorizationWithSecurityInvoker()
+    {
+        assertQueryFails(
+                "ALTER VIEW mock.default.test_view_invoker SET AUTHORIZATION some_other_user",
+                "This connector does not support setting an owner on a view");
     }
 }
