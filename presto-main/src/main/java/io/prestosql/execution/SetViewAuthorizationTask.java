@@ -20,11 +20,15 @@ import io.prestosql.metadata.Metadata;
 import io.prestosql.metadata.QualifiedObjectName;
 import io.prestosql.security.AccessControl;
 import io.prestosql.spi.PrestoException;
+import io.prestosql.spi.connector.ConnectorViewDefinition;
 import io.prestosql.spi.security.PrestoPrincipal;
 import io.prestosql.spi.security.PrincipalType;
+import io.prestosql.sql.analyzer.FeaturesConfig;
 import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.SetViewAuthorization;
 import io.prestosql.transaction.TransactionManager;
+
+import javax.inject.Inject;
 
 import java.util.List;
 
@@ -34,11 +38,21 @@ import static io.prestosql.metadata.MetadataUtil.createQualifiedObjectName;
 import static io.prestosql.spi.StandardErrorCode.NOT_FOUND;
 import static io.prestosql.spi.StandardErrorCode.ROLE_NOT_FOUND;
 import static io.prestosql.spi.StandardErrorCode.TABLE_NOT_FOUND;
+import static io.prestosql.spi.security.AccessDeniedException.denySetViewAuthorization;
 import static io.prestosql.sql.analyzer.SemanticExceptions.semanticException;
+import static java.util.Objects.requireNonNull;
 
 public class SetViewAuthorizationTask
         implements DataDefinitionTask<SetViewAuthorization>
 {
+    private final boolean isAllowSetViewAuthorization;
+
+    @Inject
+    public SetViewAuthorizationTask(FeaturesConfig featuresConfig)
+    {
+        this.isAllowSetViewAuthorization = requireNonNull(featuresConfig, "featuresConfig is null").isAllowSetViewAuthorization();
+    }
+
     @Override
     public String getName()
     {
@@ -52,7 +66,7 @@ public class SetViewAuthorizationTask
         QualifiedObjectName viewName = createQualifiedObjectName(session, statement, statement.getSource());
         CatalogName catalogName = metadata.getCatalogHandle(session, viewName.getCatalogName())
                 .orElseThrow(() -> new PrestoException(NOT_FOUND, "Catalog does not exist: " + viewName.getCatalogName()));
-        metadata.getView(session, viewName)
+        ConnectorViewDefinition view = metadata.getView(session, viewName)
                 .orElseThrow(() -> semanticException(TABLE_NOT_FOUND, statement, "View '%s' does not exist", viewName));
 
         PrestoPrincipal principal = createPrincipal(statement.getPrincipal());
@@ -61,6 +75,9 @@ public class SetViewAuthorizationTask
             throw semanticException(ROLE_NOT_FOUND, statement, "Role '%s' does not exist", principal.getName());
         }
 
+        if (!view.isRunAsInvoker() && !isAllowSetViewAuthorization) {
+            denySetViewAuthorization(viewName.getCatalogName() + '.' + viewName.getSchemaName() + '.' + viewName.getObjectName(), principal);
+        }
         accessControl.checkCanSetViewAuthorization(session.toSecurityContext(), viewName, principal);
 
         metadata.setViewAuthorization(session, viewName.asCatalogSchemaTableName(), principal);

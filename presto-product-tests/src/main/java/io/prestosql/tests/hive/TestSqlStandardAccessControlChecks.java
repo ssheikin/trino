@@ -47,7 +47,7 @@ public class TestSqlStandardAccessControlChecks
         aliceExecutor.executeQuery(format("CREATE TABLE %s(month bigint, day bigint) WITH (partitioned_by = ARRAY['day'])", tableName));
 
         aliceExecutor.executeQuery(format("DROP VIEW IF EXISTS %s", viewName));
-        aliceExecutor.executeQuery(format("CREATE VIEW %s AS SELECT month, day FROM %s", viewName, tableName));
+        aliceExecutor.executeQuery(format("CREATE VIEW %s SECURITY INVOKER AS SELECT month, day FROM %s", viewName, tableName));
     }
 
     @Test(groups = {AUTHORIZATION, PROFILE_SPECIFIC_TESTS})
