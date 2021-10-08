@@ -524,10 +524,10 @@ class StatementAnalyzer
             }
 
             accessControl.checkCanRefreshMaterializedView(session.toSecurityContext(), name);
+            analysis.setUpdateType("REFRESH MATERIALIZED VIEW");
 
             if (metadata.delegateMaterializedViewRefreshToConnector(session, name)) {
                 analysis.setDelegatedRefreshMaterializedView(name);
-                analysis.setUpdateType("REFRESH MATERIALIZED VIEW");
                 analysis.setUpdateTarget(
                         name,
                         Optional.empty(),
@@ -588,7 +588,6 @@ class StatementAnalyzer
                             .map(Type::toString),
                     Column::new);
 
-            analysis.setUpdateType("REFRESH MATERIALIZED VIEW");
             analysis.setUpdateTarget(
                     targetTable,
                     Optional.empty(),
