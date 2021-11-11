@@ -26,6 +26,7 @@ import io.trino.spi.type.LongTimestamp;
 import io.trino.spi.type.TimestampType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarcharType;
+import org.apache.parquet.bytes.BytesUtils;
 import org.apache.parquet.bytes.LittleEndianDataOutputStream;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.column.statistics.BinaryStatistics;
@@ -35,15 +36,22 @@ import org.apache.parquet.column.statistics.FloatStatistics;
 import org.apache.parquet.column.statistics.IntStatistics;
 import org.apache.parquet.column.statistics.LongStatistics;
 import org.apache.parquet.column.statistics.Statistics;
+import org.apache.parquet.internal.column.columnindex.BoundaryOrder;
+import org.apache.parquet.internal.column.columnindex.ColumnIndex;
+import org.apache.parquet.internal.column.columnindex.ColumnIndexBuilder;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Types;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -83,6 +91,7 @@ import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Math.toIntExact;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -91,6 +100,7 @@ import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT32;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT64;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.testng.Assert.assertEquals;
@@ -503,6 +513,28 @@ public class TestTupleDomainParquetPredicate
         assertTrue(parquetPredicate.matches(new DictionaryDescriptor(column, Optional.of(page))));
     }
 
+    @Test
+    public void testColumnIndexWithNullPages()
+            throws Exception
+    {
+        ColumnIndex columnIndex = ColumnIndexBuilder.build(
+                Types.required(INT64).named("test_int64"),
+                BoundaryOrder.UNORDERED,
+                asList(true, false, true, false, true, false),
+                asList(1L, 2L, 3L, 4L, 5L, 6L),
+                toByteBufferList(null, 2L, null, 4L, null, 9L),
+                toByteBufferList(null, 3L, null, 15L, null, 10L));
+        ColumnDescriptor columnDescriptor = new ColumnDescriptor(new String[] {"path"}, INT64, 0, 0);
+        RichColumnDescriptor column = new RichColumnDescriptor(columnDescriptor, new PrimitiveType(OPTIONAL, INT64, "Test column"));
+        assertThat(getDomain(BIGINT, 200, columnIndex, new ParquetDataSourceId("test"), column, UTC))
+                .isEqualTo(Domain.create(
+                        ValueSet.ofRanges(
+                                range(BIGINT, 2L, true, 3L, true),
+                                range(BIGINT, 4L, true, 15L, true),
+                                range(BIGINT, 9L, true, 10L, true)),
+                        true));
+    }
+
     private TupleDomain<ColumnDescriptor> getEffectivePredicate(RichColumnDescriptor column, VarcharType type, Slice value)
     {
         ColumnDescriptor predicateColumn = new ColumnDescriptor(column.getPath(), column.getPrimitiveType().getPrimitiveTypeName(), 0, 0);
@@ -610,5 +642,19 @@ public class TestTupleDomainParquetPredicate
         return new LongTimestamp(
                 start.atZone(ZoneOffset.UTC).toInstant().getEpochSecond() * MICROSECONDS_PER_SECOND + start.getLong(MICRO_OF_SECOND),
                 toIntExact(round((start.getNano() % PICOSECONDS_PER_NANOSECOND) * PICOSECONDS_PER_NANOSECOND, toIntExact(TimestampType.MAX_PRECISION - precision))));
+    }
+
+    private static List<ByteBuffer> toByteBufferList(Long... values)
+    {
+        List<ByteBuffer> buffers = new ArrayList<>(values.length);
+        for (Long value : values) {
+            if (value == null) {
+                buffers.add(ByteBuffer.allocate(0));
+            }
+            else {
+                buffers.add(ByteBuffer.wrap(BytesUtils.longToBytes(value)));
+            }
+        }
+        return buffers;
     }
 }
