@@ -328,6 +328,7 @@
                                 <!-- If you are adding entry here also add an entry to cloud-tests profile below -->
                                 <exclude>**/TestBigQueryIntegrationSmokeTest.java</exclude>
                                 <exclude>**/TestBigQueryTypeMapping.java</exclude>
+                                <exclude>**/TestBigQueryMetadata.java</exclude>
                                 <exclude>**/TestBigQueryCaseInsensitiveMapping.java</exclude>
                             </excludes>
                         </configuration>
@@ -350,6 +351,7 @@
                             <includes>
                                 <include>**/TestBigQueryIntegrationSmokeTest.java</include>
                                 <include>**/TestBigQueryTypeMapping.java</include>
+                                <include>**/TestBigQueryMetadata.java</include>
                             </includes>
                         </configuration>
                     </plugin>
