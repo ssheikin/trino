@@ -13,6 +13,7 @@
  */
 package io.prestosql.plugin.bigquery;
 
+import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.DatasetId;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.Schema;
@@ -25,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import io.airlift.log.Logger;
+import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.Assignment;
 import io.prestosql.spi.connector.ColumnHandle;
 import io.prestosql.spi.connector.ColumnMetadata;
@@ -54,6 +56,7 @@ import java.util.Set;
 import static com.google.cloud.bigquery.TableDefinition.Type.TABLE;
 import static com.google.cloud.bigquery.TableDefinition.Type.VIEW;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.prestosql.plugin.bigquery.BigQueryErrorCode.BIGQUERY_LISTING_DATASET_ERROR;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -111,8 +114,19 @@ public class BigQueryMetadata
 
         ImmutableList.Builder<SchemaTableName> tableNames = ImmutableList.builder();
         for (String datasetId : schemaNames) {
-            for (Table table : bigQueryClient.listTables(DatasetId.of(projectId, datasetId), types)) {
-                tableNames.add(new SchemaTableName(datasetId, table.getTableId().getTable()));
+            try {
+                for (Table table : bigQueryClient.listTables(DatasetId.of(projectId, datasetId), types)) {
+                    tableNames.add(new SchemaTableName(datasetId, table.getTableId().getTable()));
+                }
+            }
+            catch (BigQueryException e) {
+                if (e.getCode() == 404 && e.getMessage().contains("Not found: Dataset")) {
+                    // Dataset not found error is ignored because listTables is used for metadata queries (SELECT FROM information_schema)
+                    log.debug("Dataset disappeared during listing operation: %s", datasetId);
+                }
+                else {
+                    throw new PrestoException(BIGQUERY_LISTING_DATASET_ERROR, "Exception happened during listing BigQuery dataset: " + datasetId, e);
+                }
             }
         }
         return tableNames.build();

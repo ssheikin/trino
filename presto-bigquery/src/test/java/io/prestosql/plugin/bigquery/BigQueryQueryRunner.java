@@ -97,6 +97,11 @@ public final class BigQueryQueryRunner
             }
         }
 
+        public BigQuery getBigQuery()
+        {
+            return bigQuery;
+        }
+
         private static BigQuery createBigQueryClient()
         {
             try {
