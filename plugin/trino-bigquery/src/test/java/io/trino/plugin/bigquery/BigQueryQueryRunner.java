@@ -113,6 +113,11 @@ public final class BigQueryQueryRunner
             bigQuery.delete(dataset, deleteContents());
         }
 
+        public BigQuery getBigQuery()
+        {
+            return bigQuery;
+        }
+
         private static BigQuery createBigQueryClient()
         {
             try {
