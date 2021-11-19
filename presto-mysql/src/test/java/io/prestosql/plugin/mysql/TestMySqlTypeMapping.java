@@ -20,7 +20,6 @@ import io.prestosql.plugin.jdbc.UnsupportedTypeHandling;
 import io.prestosql.spi.type.BigintType;
 import io.prestosql.spi.type.DoubleType;
 import io.prestosql.spi.type.IntegerType;
-import io.prestosql.spi.type.RealType;
 import io.prestosql.spi.type.SmallintType;
 import io.prestosql.spi.type.TimeZoneKey;
 import io.prestosql.spi.type.VarcharType;
@@ -59,6 +58,7 @@ import static io.prestosql.plugin.jdbc.TypeHandlingJdbcSessionProperties.UNSUPPO
 import static io.prestosql.plugin.jdbc.UnsupportedTypeHandling.CONVERT_TO_VARCHAR;
 import static io.prestosql.plugin.mysql.MySqlQueryRunner.createMySqlQueryRunner;
 import static io.prestosql.spi.type.DecimalType.createDecimalType;
+import static io.prestosql.spi.type.RealType.REAL;
 import static io.prestosql.spi.type.TimeZoneKey.UTC_KEY;
 import static io.prestosql.spi.type.TimestampType.TIMESTAMP_MILLIS;
 import static io.prestosql.spi.type.VarbinaryType.VARBINARY;
@@ -767,9 +767,19 @@ public class TestMySqlTypeMapping
     @Test
     public void testFloat()
     {
-        singlePrecisionFloatingPointTests(realDataType())
+        // we are not testing Nan/-Infinity/+Infinity as those are not supported by MySQL
+        SqlDataTypeTest.create()
+                .addRoundTrip("real", "3.14", REAL, "REAL '3.14'")
+                .addRoundTrip("real", "10.3e0", REAL, "REAL '10.3e0'")
+                .addRoundTrip("real", "NULL", REAL, "CAST(NULL AS REAL)")
+                // .addRoundTrip("real", "3.1415927", REAL, "REAL '3.1415927'") // Overeagerly rounded by mysql to 3.14159
                 .execute(getQueryRunner(), prestoCreateAsSelect("presto_test_float"));
-        singlePrecisionFloatingPointTests(mysqlFloatDataType())
+
+        SqlDataTypeTest.create()
+                .addRoundTrip("float", "3.14", REAL, "REAL '3.14'")
+                .addRoundTrip("float", "10.3e0", REAL, "REAL '10.3e0'")
+                .addRoundTrip("float", "NULL", REAL, "CAST(NULL AS REAL)")
+                // .addRoundTrip("float", "3.1415927", REAL, "REAL '3.1415927'") // Overeagerly rounded by mysql to 3.14159
                 .execute(getQueryRunner(), mysqlCreateAndInsert("tpch.mysql_test_float"));
     }
 
@@ -798,15 +808,6 @@ public class TestMySqlTypeMapping
                 .addRoundTrip(mysqlUnsignedInteger, 4_294_967_295L)
                 .addRoundTrip(mysqlUnsignedBigint, new BigDecimal("18446744073709551615"))
                 .execute(getQueryRunner(), mysqlCreateAndInsert("tpch.mysql_test_unsigned"));
-    }
-
-    private static DataTypeTest singlePrecisionFloatingPointTests(DataType<Float> floatType)
-    {
-        // we are not testing Nan/-Infinity/+Infinity as those are not supported by MySQL
-        return DataTypeTest.create()
-                .addRoundTrip(floatType, 3.14f)
-                // .addRoundTrip(floatType, 3.1415927f) // Overeagerly rounded by mysql to 3.14159
-                .addRoundTrip(floatType, null);
     }
 
     private static DataTypeTest doublePrecisionFloatingPointTests(DataType<Double> doubleType)
@@ -857,11 +858,6 @@ public class TestMySqlTypeMapping
                 "json",
                 JSON,
                 toLiteral);
-    }
-
-    private static DataType<Float> mysqlFloatDataType()
-    {
-        return dataType("float", RealType.REAL, Object::toString);
     }
 
     private static DataType<Double> mysqlDoubleDataType()
