@@ -69,6 +69,7 @@ import static io.prestosql.spi.type.DecimalType.createDecimalType;
 import static io.prestosql.spi.type.RealType.REAL;
 import static io.prestosql.spi.type.TimestampType.TIMESTAMP_MILLIS;
 import static io.prestosql.spi.type.VarbinaryType.VARBINARY;
+import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
@@ -140,6 +141,14 @@ public class MemSqlClient
         }
 
         switch (typeHandle.getJdbcType()) {
+            case Types.REAL:
+                // Disable pushdown because floating-point values are approximate and not stored as exact values,
+                // attempts to treat them as exact in comparisons may lead to problems
+                return Optional.of(ColumnMapping.longMapping(
+                        REAL,
+                        (resultSet, columnIndex) -> floatToRawIntBits(resultSet.getFloat(columnIndex)),
+                        realWriteFunction(),
+                        DISABLE_PUSHDOWN));
             case Types.CHAR:
             case Types.NCHAR: // TODO it it is dummy copied from StandardColumnMappings, verify if it is proper mapping
                 return Optional.of(defaultCharColumnMapping(typeHandle.getRequiredColumnSize(), false));
