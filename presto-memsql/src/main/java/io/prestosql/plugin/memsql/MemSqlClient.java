@@ -21,6 +21,7 @@ import io.prestosql.plugin.jdbc.ConnectionFactory;
 import io.prestosql.plugin.jdbc.JdbcColumnHandle;
 import io.prestosql.plugin.jdbc.JdbcTableHandle;
 import io.prestosql.plugin.jdbc.JdbcTypeHandle;
+import io.prestosql.plugin.jdbc.LongWriteFunction;
 import io.prestosql.plugin.jdbc.WriteMapping;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.ColumnMetadata;
@@ -41,6 +42,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +59,7 @@ import static io.prestosql.plugin.jdbc.DecimalSessionSessionProperties.getDecima
 import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
 import static io.prestosql.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateReadFunctionUsingLocalDate;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
@@ -65,6 +69,7 @@ import static io.prestosql.plugin.jdbc.StandardColumnMappings.smallintColumnMapp
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.timestampWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.varbinaryWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.varcharWriteFunction;
+import static io.prestosql.spi.type.DateType.DATE;
 import static io.prestosql.spi.type.DecimalType.createDecimalType;
 import static io.prestosql.spi.type.RealType.REAL;
 import static io.prestosql.spi.type.TimestampType.TIMESTAMP_MILLIS;
@@ -81,6 +86,7 @@ public class MemSqlClient
     static final int MEMSQL_VARCHAR_MAX_LENGTH = 21844;
     static final int MEMSQL_TEXT_MAX_LENGTH = 65535;
     static final int MEMSQL_MEDIUMTEXT_MAX_LENGTH = 16777215;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd");
 
     private final Type jsonType;
 
@@ -154,6 +160,11 @@ public class MemSqlClient
                 return Optional.of(defaultCharColumnMapping(typeHandle.getRequiredColumnSize(), false));
             case Types.VARCHAR:
                 return Optional.of(defaultVarcharColumnMapping(typeHandle.getRequiredColumnSize(), false));
+            case Types.DATE:
+                return Optional.of(ColumnMapping.longMapping(
+                        DATE,
+                        dateReadFunctionUsingLocalDate(),
+                        dateWriteFunction()));
             case Types.DECIMAL:
                 int precision = typeHandle.getRequiredColumnSize();
                 int decimalDigits = typeHandle.getRequiredDecimalDigits();
@@ -279,6 +290,9 @@ public class MemSqlClient
         if (REAL.equals(type)) {
             return WriteMapping.longMapping("float", realWriteFunction());
         }
+        if (type == DATE) {
+            return WriteMapping.longMapping("date", dateWriteFunction());
+        }
         // TODO implement TIME type
         // TODO add support for other TIMESTAMP precisions
         if (TIMESTAMP_MILLIS.equals(type)) {
@@ -322,6 +336,11 @@ public class MemSqlClient
         }
 
         return Optional.empty();
+    }
+
+    private static LongWriteFunction dateWriteFunction()
+    {
+        return (statement, index, day) -> statement.setString(index, DATE_FORMATTER.format(LocalDate.ofEpochDay(day)));
     }
 
     private ColumnMapping jsonColumnMapping()
