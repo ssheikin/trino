@@ -73,7 +73,7 @@ import static io.prestosql.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHD
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.charWriteFunction;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunctionUsingSqlDate;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.doubleWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.integerWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.jdbcTypeToPrestoType;
@@ -128,7 +128,7 @@ public abstract class BaseJdbcClient
             .put(DOUBLE, WriteMapping.doubleMapping("double precision", doubleWriteFunction()))
             .put(REAL, WriteMapping.longMapping("real", realWriteFunction()))
             .put(VARBINARY, WriteMapping.sliceMapping("varbinary", varbinaryWriteFunction()))
-            .put(DATE, WriteMapping.longMapping("date", dateWriteFunction()))
+            .put(DATE, WriteMapping.longMapping("date", dateWriteFunctionUsingSqlDate()))
             .build();
 
     protected final ConnectionFactory connectionFactory;

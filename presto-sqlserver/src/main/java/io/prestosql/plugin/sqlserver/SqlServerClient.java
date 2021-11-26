@@ -72,8 +72,8 @@ import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintWriteFunctio
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.charWriteFunction;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMapping;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMappingUsingSqlDate;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunctionUsingSqlDate;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
@@ -251,7 +251,7 @@ public class SqlServerClient
                 return Optional.of(varbinaryColumnMapping());
 
             case Types.DATE:
-                return Optional.of(dateColumnMapping());
+                return Optional.of(dateColumnMappingUsingSqlDate());
 
             case Types.TIME:
                 return Optional.of(timeColumnMapping(TIME));
@@ -316,7 +316,7 @@ public class SqlServerClient
         }
 
         if (type == DATE) {
-            return WriteMapping.longMapping("date", dateWriteFunction());
+            return WriteMapping.longMapping("date", dateWriteFunctionUsingSqlDate());
         }
 
         // TODO implement proper type mapping

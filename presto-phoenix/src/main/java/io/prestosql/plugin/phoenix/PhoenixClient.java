@@ -108,8 +108,8 @@ import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintWriteFunctio
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.charWriteFunction;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMapping;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMappingUsingSqlDate;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunctionUsingSqlDate;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
@@ -359,7 +359,7 @@ public class PhoenixClient
                 return Optional.of(varbinaryColumnMapping());
 
             case Types.DATE:
-                return Optional.of(dateColumnMapping());
+                return Optional.of(dateColumnMappingUsingSqlDate());
 
             // TODO add support for TIMESTAMP after Phoenix adds support for LocalDateTime
             case TIMESTAMP:
@@ -442,7 +442,7 @@ public class PhoenixClient
         }
 
         if (type == DATE) {
-            return WriteMapping.longMapping("date", dateWriteFunction());
+            return WriteMapping.longMapping("date", dateWriteFunctionUsingSqlDate());
         }
         if (TIME.equals(type)) {
             return WriteMapping.longMapping("time", timeWriteFunctionUsingSqlTime());

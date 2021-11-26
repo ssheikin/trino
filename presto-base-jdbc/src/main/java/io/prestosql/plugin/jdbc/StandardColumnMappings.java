@@ -34,10 +34,12 @@ import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Optional;
@@ -333,7 +335,12 @@ public final class StandardColumnMappings
         return (statement, index, value) -> statement.setBytes(index, value.getBytes());
     }
 
-    public static ColumnMapping dateColumnMapping()
+    /**
+     * @deprecated This method leads to incorrect result when the date value is before 1582 Oct 14.
+     * If driver supports {@link LocalDate}, use {@link #dateColumnMappingUsingLocalDate} instead.
+     */
+    @Deprecated
+    public static ColumnMapping dateColumnMappingUsingSqlDate()
     {
         return ColumnMapping.longMapping(
                 DATE,
@@ -352,16 +359,78 @@ public final class StandardColumnMappings
                     // convert to days
                     return MILLISECONDS.toDays(utcMillis);
                 },
-                dateWriteFunction());
+                dateWriteFunctionUsingSqlDate());
     }
 
-    public static LongWriteFunction dateWriteFunction()
+    /**
+     * @deprecated If driver supports {@link LocalDate}, use {@link #dateReadFunctionUsingLocalDate} instead.
+     */
+    @Deprecated
+    public static LongReadFunction dateReadFunctionUsingSqlDate()
+    {
+        return (resultSet, columnIndex) -> {
+            /*
+             * JDBC returns a date using a timestamp at midnight in the JVM timezone, or earliest time after that if there was no midnight.
+             * This works correctly for all dates and zones except when the missing local times 'gap' is 24h. I.e. this fails when JVM time
+             * zone is Pacific/Apia and date to be returned is 2011-12-30.
+             *
+             * `return resultSet.getObject(columnIndex, LocalDate.class).toEpochDay()` avoids these problems but
+             * is currently known not to work with Redshift (old Postgres connector) and SQL Server.
+             */
+            long localMillis = resultSet.getDate(columnIndex).getTime();
+            // Convert it to a ~midnight in UTC.
+            long utcMillis = ISOChronology.getInstance().getZone().getMillisKeepLocal(DateTimeZone.UTC, localMillis);
+            // convert to days
+            return MILLISECONDS.toDays(utcMillis);
+        };
+    }
+
+    /**
+     * @deprecated If driver supports {@link LocalDate}, use {@link #dateWriteFunctionUsingLocalDate} instead.
+     */
+    @Deprecated
+    public static LongWriteFunction dateWriteFunctionUsingSqlDate()
     {
         return (statement, index, value) -> {
             // convert to midnight in default time zone
             long millis = DAYS.toMillis(value);
             statement.setDate(index, new Date(DateTimeZone.UTC.getMillisKeepLocal(DateTimeZone.getDefault(), millis)));
         };
+    }
+
+    public static ColumnMapping dateColumnMappingUsingLocalDate()
+    {
+        return ColumnMapping.longMapping(
+                DATE,
+                dateReadFunctionUsingLocalDate(),
+                dateWriteFunctionUsingLocalDate());
+    }
+
+    public static LongReadFunction dateReadFunctionUsingLocalDate()
+    {
+        return new LongReadFunction() {
+            @Override
+            public boolean isNull(ResultSet resultSet, int columnIndex)
+                    throws SQLException
+            {
+                // 'ResultSet.getObject' without class name may throw an exception
+                // e.g. in MySQL driver, rs.getObject(int) throws for dates between Oct 5 and 14, 1582
+                resultSet.getObject(columnIndex, LocalDate.class);
+                return resultSet.wasNull();
+            }
+
+            @Override
+            public long readLong(ResultSet resultSet, int columnIndex)
+                    throws SQLException
+            {
+                return resultSet.getObject(columnIndex, LocalDate.class).toEpochDay();
+            }
+        };
+    }
+
+    public static LongWriteFunction dateWriteFunctionUsingLocalDate()
+    {
+        return (statement, index, value) -> statement.setObject(index, LocalDate.ofEpochDay(value));
     }
 
     /**
@@ -579,7 +648,7 @@ public final class StandardColumnMappings
                 return Optional.of(varbinaryColumnMapping());
 
             case Types.DATE:
-                return Optional.of(dateColumnMapping());
+                return Optional.of(dateColumnMappingUsingSqlDate());
 
             case Types.TIME:
                 // TODO default to `timeColumnMapping`

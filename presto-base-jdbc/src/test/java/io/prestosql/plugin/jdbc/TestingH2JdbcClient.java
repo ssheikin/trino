@@ -31,8 +31,8 @@ import java.util.Optional;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanColumnMapping;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMapping;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMappingUsingSqlDate;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunctionUsingSqlDate;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.doubleColumnMapping;
@@ -121,7 +121,7 @@ class TestingH2JdbcClient
                 return Optional.of(defaultVarcharColumnMapping(typeHandle.getRequiredColumnSize(), true));
 
             case Types.DATE:
-                return Optional.of(dateColumnMapping());
+                return Optional.of(dateColumnMappingUsingSqlDate());
 
             case Types.TIME:
                 return Optional.of(timeColumnMapping(TIME_MILLIS));
@@ -166,7 +166,7 @@ class TestingH2JdbcClient
         }
 
         if (type == DATE) {
-            return WriteMapping.longMapping("date", dateWriteFunction());
+            return WriteMapping.longMapping("date", dateWriteFunctionUsingSqlDate());
         }
 
         throw new PrestoException(NOT_SUPPORTED, "Unsupported column type: " + type.getDisplayName());

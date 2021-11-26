@@ -488,7 +488,7 @@ public class PostgreSqlClient
                 return Optional.of(varbinaryColumnMapping());
 
             case Types.DATE:
-                return Optional.of(dateColumnMapping());
+                return Optional.of(dateColumnMappingUsingSqlDate());
 
             case Types.TIME:
                 return Optional.of(timeColumnMapping(typeHandle.getRequiredDecimalDigits()));
@@ -615,7 +615,7 @@ public class PostgreSqlClient
         }
 
         if (type == DATE) {
-            return WriteMapping.longMapping("date", dateWriteFunction());
+            return WriteMapping.longMapping("date", dateWriteFunctionUsingSqlDate());
         }
 
         if (type instanceof TimeType) {
