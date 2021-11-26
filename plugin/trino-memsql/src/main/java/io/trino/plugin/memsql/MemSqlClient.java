@@ -25,6 +25,7 @@ import io.trino.plugin.jdbc.JdbcJoinCondition;
 import io.trino.plugin.jdbc.JdbcSortItem;
 import io.trino.plugin.jdbc.JdbcTableHandle;
 import io.trino.plugin.jdbc.JdbcTypeHandle;
+import io.trino.plugin.jdbc.LongWriteFunction;
 import io.trino.plugin.jdbc.PreparedQuery;
 import io.trino.plugin.jdbc.RemoteTableName;
 import io.trino.plugin.jdbc.UnsupportedTypeHandling;
@@ -58,6 +59,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -81,7 +84,7 @@ import static io.trino.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
 import static io.trino.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
 import static io.trino.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.booleanColumnMapping;
-import static io.trino.plugin.jdbc.StandardColumnMappings.dateColumnMappingUsingSqlDate;
+import static io.trino.plugin.jdbc.StandardColumnMappings.dateReadFunctionUsingLocalDate;
 import static io.trino.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
@@ -100,6 +103,7 @@ import static io.trino.plugin.jdbc.TypeHandlingJdbcSessionProperties.getUnsuppor
 import static io.trino.plugin.jdbc.UnsupportedTypeHandling.CONVERT_TO_VARCHAR;
 import static io.trino.plugin.jdbc.UnsupportedTypeHandling.IGNORE;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.spi.type.DateType.DATE;
 import static io.trino.spi.type.DecimalType.createDecimalType;
 import static io.trino.spi.type.RealType.REAL;
 import static io.trino.spi.type.TimestampType.TIMESTAMP_MICROS;
@@ -122,6 +126,7 @@ public class MemSqlClient
     static final int MEMSQL_VARCHAR_MAX_LENGTH = 21844;
     static final int MEMSQL_TEXT_MAX_LENGTH = 65535;
     static final int MEMSQL_MEDIUMTEXT_MAX_LENGTH = 16777215;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd");
 
     private final Type jsonType;
 
@@ -336,7 +341,10 @@ public class MemSqlClient
             case Types.LONGVARBINARY:
                 return Optional.of(varbinaryColumnMapping());
             case Types.DATE:
-                return Optional.of(dateColumnMappingUsingSqlDate());
+                return Optional.of(ColumnMapping.longMapping(
+                        DATE,
+                        dateReadFunctionUsingLocalDate(),
+                        dateWriteFunction()));
             case Types.TIME:
                 // TODO (https://github.com/trinodb/trino/issues/5450) Fix TIME type mapping
                 return Optional.of(timeColumnMappingUsingSqlTime());
@@ -465,6 +473,9 @@ public class MemSqlClient
         }
         if (REAL.equals(type)) {
             return WriteMapping.longMapping("float", realWriteFunction());
+        }
+        if (type == DATE) {
+            return WriteMapping.longMapping("date", dateWriteFunction());
         }
         // TODO implement TIME type
         if (type instanceof TimestampType) {
@@ -596,6 +607,11 @@ public class MemSqlClient
         }
 
         return Optional.empty();
+    }
+
+    private static LongWriteFunction dateWriteFunction()
+    {
+        return (statement, index, day) -> statement.setString(index, DATE_FORMATTER.format(LocalDate.ofEpochDay(day)));
     }
 
     private ColumnMapping jsonColumnMapping()
