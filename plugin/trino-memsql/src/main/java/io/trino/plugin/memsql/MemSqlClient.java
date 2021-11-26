@@ -81,7 +81,7 @@ import static io.trino.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
 import static io.trino.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
 import static io.trino.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.booleanColumnMapping;
-import static io.trino.plugin.jdbc.StandardColumnMappings.dateColumnMapping;
+import static io.trino.plugin.jdbc.StandardColumnMappings.dateColumnMappingUsingSqlDate;
 import static io.trino.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
@@ -336,7 +336,7 @@ public class MemSqlClient
             case Types.LONGVARBINARY:
                 return Optional.of(varbinaryColumnMapping());
             case Types.DATE:
-                return Optional.of(dateColumnMapping());
+                return Optional.of(dateColumnMappingUsingSqlDate());
             case Types.TIME:
                 // TODO (https://github.com/trinodb/trino/issues/5450) Fix TIME type mapping
                 return Optional.of(timeColumnMappingUsingSqlTime());
