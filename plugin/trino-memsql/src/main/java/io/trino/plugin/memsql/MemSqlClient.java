@@ -23,6 +23,7 @@ import io.trino.plugin.jdbc.JdbcJoinCondition;
 import io.trino.plugin.jdbc.JdbcSortItem;
 import io.trino.plugin.jdbc.JdbcTableHandle;
 import io.trino.plugin.jdbc.JdbcTypeHandle;
+import io.trino.plugin.jdbc.LongWriteFunction;
 import io.trino.plugin.jdbc.PreparedQuery;
 import io.trino.plugin.jdbc.WriteMapping;
 import io.trino.plugin.jdbc.mapping.IdentifierMapping;
@@ -49,6 +50,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -66,8 +69,7 @@ import static io.trino.plugin.jdbc.DecimalSessionSessionProperties.getDecimalRou
 import static io.trino.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
 import static io.trino.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
 import static io.trino.plugin.jdbc.StandardColumnMappings.bigintColumnMapping;
-import static io.trino.plugin.jdbc.StandardColumnMappings.dateColumnMappingUsingSqlDate;
-import static io.trino.plugin.jdbc.StandardColumnMappings.dateWriteFunctionUsingSqlDate;
+import static io.trino.plugin.jdbc.StandardColumnMappings.dateReadFunctionUsingLocalDate;
 import static io.trino.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.defaultCharColumnMapping;
 import static io.trino.plugin.jdbc.StandardColumnMappings.defaultVarcharColumnMapping;
@@ -95,6 +97,7 @@ public class MemSqlClient
     static final int MEMSQL_VARCHAR_MAX_LENGTH = 21844;
     static final int MEMSQL_TEXT_MAX_LENGTH = 65535;
     static final int MEMSQL_MEDIUMTEXT_MAX_LENGTH = 16777215;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd");
 
     private final Type jsonType;
 
@@ -168,6 +171,11 @@ public class MemSqlClient
                 return Optional.of(defaultCharColumnMapping(typeHandle.getRequiredColumnSize(), false));
             case Types.VARCHAR:
                 return Optional.of(defaultVarcharColumnMapping(typeHandle.getRequiredColumnSize(), false));
+            case Types.DATE:
+                return Optional.of(ColumnMapping.longMapping(
+                        DATE,
+                        dateReadFunctionUsingLocalDate(),
+                        dateWriteFunction()));
             case Types.DECIMAL:
                 int precision = typeHandle.getRequiredColumnSize();
                 int decimalDigits = typeHandle.getRequiredDecimalDigits();
@@ -288,6 +296,9 @@ public class MemSqlClient
         }
         if (VARBINARY.equals(type)) {
             return WriteMapping.sliceMapping("longblob", varbinaryWriteFunction());
+        }
+        if (type == DATE) {
+            return WriteMapping.longMapping("date", dateWriteFunction());
         }
         if (type.equals(jsonType)) {
             return WriteMapping.sliceMapping("json", varcharWriteFunction());
@@ -421,6 +432,11 @@ public class MemSqlClient
         }
 
         return Optional.empty();
+    }
+
+    private static LongWriteFunction dateWriteFunction()
+    {
+        return (statement, index, day) -> statement.setString(index, DATE_FORMATTER.format(LocalDate.ofEpochDay(day)));
     }
 
     private ColumnMapping jsonColumnMapping()
