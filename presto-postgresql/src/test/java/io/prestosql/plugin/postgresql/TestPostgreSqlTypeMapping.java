@@ -80,6 +80,7 @@ import static io.prestosql.plugin.postgresql.PostgreSqlQueryRunner.createPostgre
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.BooleanType.BOOLEAN;
 import static io.prestosql.spi.type.CharType.createCharType;
+import static io.prestosql.spi.type.DateType.DATE;
 import static io.prestosql.spi.type.DecimalType.createDecimalType;
 import static io.prestosql.spi.type.DoubleType.DOUBLE;
 import static io.prestosql.spi.type.IntegerType.INTEGER;
@@ -967,6 +968,10 @@ public class TestPostgreSqlTypeMapping
         checkIsDoubled(someZone, dateOfLocalTimeChangeBackwardAtMidnightInSomeZone.atStartOfDay().minusMinutes(1));
 
         DataTypeTest testCases = DataTypeTest.create(true)
+                .addRoundTrip(dateDataType(), LocalDate.of(1, 1, 1))
+                .addRoundTrip(dateDataType(), LocalDate.of(1582, 10, 4)) // before julian->gregorian switch
+                .addRoundTrip(dateDataType(), LocalDate.of(1582, 10, 5)) // begin julian->gregorian switch
+                .addRoundTrip(dateDataType(), LocalDate.of(1582, 10, 14)) // end julian->gregorian switch
                 .addRoundTrip(dateDataType(), LocalDate.of(1952, 4, 3)) // before epoch
                 .addRoundTrip(dateDataType(), LocalDate.of(1970, 1, 1))
                 .addRoundTrip(dateDataType(), LocalDate.of(1970, 2, 3))
@@ -985,6 +990,16 @@ public class TestPostgreSqlTypeMapping
             testCases.execute(getQueryRunner(), session, prestoCreateAsSelect(getSession(), "test_date"));
             testCases.execute(getQueryRunner(), session, prestoCreateAndInsert(session, "test_date"));
         }
+    }
+
+    @Test
+    public void testDateMinMax()
+    {
+        // Merge into 'testDate()' when converting the method to SqlDataTypeTest. Currently, we can't test these values with DataTypeTest.
+        SqlDataTypeTest.create()
+                .addRoundTrip("DATE", "'4713-01-01 BC'", DATE, "DATE '-4712-01-01'")
+                .addRoundTrip("DATE", "'5874897-12-31'", DATE, "DATE '5874897-12-31'")
+                .execute(getQueryRunner(), postgresCreateAndInsert("tpch.test_date_min_max"));
     }
 
     @Test

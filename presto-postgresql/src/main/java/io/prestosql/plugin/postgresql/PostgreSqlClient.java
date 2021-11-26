@@ -89,6 +89,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -123,8 +124,7 @@ import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanColumnMappi
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.charReadFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.charWriteFunction;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateColumnMapping;
-import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunction;
+import static io.prestosql.plugin.jdbc.StandardColumnMappings.dateWriteFunctionUsingLocalDate;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.decimalColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.doubleColumnMapping;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.doubleWriteFunction;
@@ -206,6 +206,7 @@ public class PostgreSqlClient
     private static final String DUPLICATE_TABLE_SQLSTATE = "42P07";
     private static final int POSTGRESQL_MAX_SUPPORTED_TIMESTAMP_PRECISION = 6;
 
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("y-MM-dd[ G]");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSS");
 
     private final Type jsonType;
@@ -488,7 +489,10 @@ public class PostgreSqlClient
                 return Optional.of(varbinaryColumnMapping());
 
             case Types.DATE:
-                return Optional.of(dateColumnMappingUsingSqlDate());
+                return Optional.of(ColumnMapping.longMapping(
+                        DATE,
+                        (resultSet, index) -> LocalDate.parse(resultSet.getString(index), DATE_FORMATTER).toEpochDay(),
+                        dateWriteFunctionUsingLocalDate()));
 
             case Types.TIME:
                 return Optional.of(timeColumnMapping(typeHandle.getRequiredDecimalDigits()));
@@ -615,7 +619,7 @@ public class PostgreSqlClient
         }
 
         if (type == DATE) {
-            return WriteMapping.longMapping("date", dateWriteFunctionUsingSqlDate());
+            return WriteMapping.longMapping("date", dateWriteFunctionUsingLocalDate());
         }
 
         if (type instanceof TimeType) {
