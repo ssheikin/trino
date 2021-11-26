@@ -73,7 +73,7 @@ import static io.trino.plugin.jdbc.PredicatePushdownController.DISABLE_PUSHDOWN;
 import static io.trino.plugin.jdbc.StandardColumnMappings.bigintWriteFunction;
 import static io.trino.plugin.jdbc.StandardColumnMappings.booleanWriteFunction;
 import static io.trino.plugin.jdbc.StandardColumnMappings.charWriteFunction;
-import static io.trino.plugin.jdbc.StandardColumnMappings.dateWriteFunction;
+import static io.trino.plugin.jdbc.StandardColumnMappings.dateWriteFunctionUsingSqlDate;
 import static io.trino.plugin.jdbc.StandardColumnMappings.doubleWriteFunction;
 import static io.trino.plugin.jdbc.StandardColumnMappings.integerWriteFunction;
 import static io.trino.plugin.jdbc.StandardColumnMappings.legacyDefaultColumnMapping;
@@ -126,7 +126,7 @@ public abstract class BaseJdbcClient
             .put(DOUBLE, WriteMapping.doubleMapping("double precision", doubleWriteFunction()))
             .put(REAL, WriteMapping.longMapping("real", realWriteFunction()))
             .put(VARBINARY, WriteMapping.sliceMapping("varbinary", varbinaryWriteFunction()))
-            .put(DATE, WriteMapping.longMapping("date", dateWriteFunction()))
+            .put(DATE, WriteMapping.longMapping("date", dateWriteFunctionUsingSqlDate()))
             .build();
 
     protected final ConnectionFactory connectionFactory;
