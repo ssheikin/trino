@@ -1035,6 +1035,62 @@ public class TestHiveTransactionalTable
         });
     }
 
+    @Test(groups = HIVE_TRANSACTIONAL)
+    public void testDeleteWithOriginalFiles()
+    {
+        withTemporaryTable("test_delete_with_original_files", true, false, NONE, tableName -> {
+            // these 3 properties are necessary to make sure there is more than 1 original file created
+            onPresto().executeQuery("SET SESSION scale_writers = true");
+            onPresto().executeQuery("SET SESSION writer_min_size = '4kB'");
+            onPresto().executeQuery("SET SESSION task_writer_count = 2");
+            onPresto().executeQuery(format(
+                    "CREATE TABLE %s WITH (transactional = true) AS SELECT * FROM tpch.sf1000.orders LIMIT 100000", tableName));
+
+            verify(onPresto().executeQuery(format("SELECT DISTINCT \"$path\" FROM %s", tableName)).getRowsCount() >= 2,
+                    "There should be at least 2 files");
+            validateFileIsDirectlyUnderTableLocation(tableName);
+
+            onPresto().executeQuery(format("DELETE FROM %s", tableName));
+            verifySelectForPrestoAndHive(format("SELECT COUNT(*) FROM %s", tableName), "TRUE", row(0));
+        });
+    }
+
+    @Test(groups = HIVE_TRANSACTIONAL)
+    public void testDeleteWithOriginalFilesWithWhereClause()
+    {
+        withTemporaryTable("test_delete_with_original_files_with_where_clause", true, false, NONE, tableName -> {
+            // these 3 properties are necessary to make sure there is more than 1 original file created
+            onPresto().executeQuery("SET SESSION scale_writers = true");
+            onPresto().executeQuery("SET SESSION writer_min_size = '4kB'");
+            onPresto().executeQuery("SET SESSION task_writer_count = 2");
+            onPresto().executeQuery(format("CREATE TABLE %s WITH (transactional = true) AS SELECT * FROM tpch.sf1000.orders LIMIT 100000", tableName));
+
+            verify(onPresto().executeQuery(format("SELECT DISTINCT \"$path\" FROM %s", tableName)).getRowsCount() >= 2,
+                    "There should be at least 2 files");
+            validateFileIsDirectlyUnderTableLocation(tableName);
+            int sizeBeforeDeletion = onPresto().executeQuery(format("SELECT orderkey FROM %s", tableName)).rows().size();
+
+            onPresto().executeQuery(format("DELETE FROM %s WHERE (orderkey %% 2) = 0", tableName));
+            assertThat(onPresto().executeQuery(format("SELECT COUNT (orderkey) FROM %s WHERE orderkey %%2 = 0", tableName))).containsOnly(row(0));
+
+            int sizeOnTrinoWithWhere = onPresto().executeQuery(format("SELECT orderkey FROM %s WHERE orderkey %%2 = 1", tableName)).rows().size();
+            int sizeOnHiveWithWhere = onHive().executeQuery(format("SELECT orderkey FROM %s WHERE orderkey %%2 = 1", tableName)).rows().size();
+            int sizeOnTrinoWithoutWhere = onPresto().executeQuery(format("SELECT orderkey FROM %s", tableName)).rows().size();
+
+            verify(sizeOnHiveWithWhere == sizeOnTrinoWithWhere);
+            verify(sizeOnTrinoWithWhere == sizeOnTrinoWithoutWhere);
+            verify(sizeBeforeDeletion > sizeOnTrinoWithoutWhere);
+        });
+    }
+
+    private void validateFileIsDirectlyUnderTableLocation(String tableName)
+    {
+        onPresto().executeQuery(format("SELECT DISTINCT regexp_replace(\"$path\", '/[^/]*$', '') FROM %s", tableName))
+                .column(1)
+                .forEach(path -> verify(path.toString().endsWith(tableName.toLowerCase(ENGLISH)),
+                        "files in %s are not directly under table location"));
+    }
+
     private void hdfsDeleteAll(String directory)
     {
         if (!hdfsClient.exist(directory)) {
