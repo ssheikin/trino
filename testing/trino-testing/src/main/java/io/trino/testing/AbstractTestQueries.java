@@ -280,7 +280,9 @@ public abstract class AbstractTestQueries
             Set<Object> allSchemas = computeActual("SHOW SCHEMAS").getOnlyColumnAsSet();
             assertEquals(allSchemas, computeActual("SHOW SCHEMAS LIKE '%_%'").getOnlyColumnAsSet());
             Set<Object> result = computeActual("SHOW SCHEMAS LIKE '%$_%' ESCAPE '$'").getOnlyColumnAsSet();
-            assertNotEquals(allSchemas, result);
+            assertThat(result)
+                    .isSubsetOf(allSchemas)
+                    .isNotEqualTo(allSchemas);
             assertThat(result).contains("information_schema").allMatch(schemaName -> ((String) schemaName).contains("_"));
         });
     }
