@@ -14,6 +14,7 @@
 package io.trino.plugin.iceberg;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -39,6 +40,8 @@ import org.weakref.jmx.guice.MBeanModule;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
@@ -69,7 +72,7 @@ public class IcebergConnectorFactory
     {
         ClassLoader classLoader = IcebergConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_ICEBERG_CATALOG_MODULE, true);
+            Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_ICEBERG_CATALOG_MODULE, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -84,9 +87,25 @@ public class IcebergConnectorFactory
             Module module,
             Optional<Module> icebergCatalogModule)
     {
+        return createConnector(catalogName, config, ImmutableMap.of(), _ -> {}, context, module, icebergCatalogModule);
+    }
+
+    public static Connector createConnector(
+            String catalogName,
+            Map<String, String> requiredConfig,
+            Map<String, String> optionalConfig, // Used from Starburst ObjectStore connector. Unused properties are verified later.
+            Consumer<Set<String>> usedConfigPropertiesConsumer,
+            ConnectorContext context,
+            Module module,
+            Optional<Module> icebergCatalogModule)
+    {
         ClassLoader classLoader = IcebergConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, module, icebergCatalogModule, false);
+            Bootstrap app = createBootstrap(catalogName, requiredConfig, optionalConfig, context, module, icebergCatalogModule, false);
+
+            usedConfigPropertiesConsumer.accept(app.configure().stream()
+                    .map(ConfigPropertyMetadata::name)
+                    .collect(Collectors.toSet()));
 
             Injector injector = app
                     .loadSecretsPlugins() // starburst-functions-client requires access to secrets.
@@ -101,7 +120,8 @@ public class IcebergConnectorFactory
     @VisibleForTesting
     public static Bootstrap createBootstrap(
             String catalogName,
-            Map<String, String> config,
+            Map<String, String> requiredConfig,
+            Map<String, String> optionalConfig,
             ConnectorContext context,
             Module module,
             Optional<Module> icebergCatalogModule,
@@ -131,7 +151,8 @@ public class IcebergConnectorFactory
 
         return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(config);
+                .setRequiredConfigurationProperties(requiredConfig)
+                .setOptionalConfigurationProperties(optionalConfig);
     }
 
     private static class IcebergFileSystemModule

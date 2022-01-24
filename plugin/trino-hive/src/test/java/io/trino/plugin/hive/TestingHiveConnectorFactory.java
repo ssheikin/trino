@@ -108,7 +108,7 @@ public class TestingHiveConnectorFactory
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), context, module, metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister, true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, module, metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 

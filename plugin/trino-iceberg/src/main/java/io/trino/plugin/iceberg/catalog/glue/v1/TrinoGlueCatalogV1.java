@@ -47,7 +47,9 @@ import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.metastore.SchemaAlreadyExistsException;
+import io.trino.metastore.Table;
 import io.trino.metastore.TableInfo;
+import io.trino.plugin.base.util.MaybeLazy;
 import io.trino.plugin.hive.TrinoViewUtil;
 import io.trino.plugin.hive.ViewAlreadyExistsException;
 import io.trino.plugin.hive.ViewReaderUtil;
@@ -55,6 +57,7 @@ import io.trino.plugin.hive.metastore.glue.GlueMetastoreStats;
 import io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter;
 import io.trino.plugin.iceberg.IcebergMaterializedViewDefinition;
 import io.trino.plugin.iceberg.IcebergMetadata;
+import io.trino.plugin.iceberg.IcebergUtil;
 import io.trino.plugin.iceberg.UnknownTableTypeException;
 import io.trino.plugin.iceberg.catalog.AbstractTrinoCatalog;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperations;
@@ -158,7 +161,6 @@ import static io.trino.plugin.iceberg.IcebergUtil.TRINO_TABLE_COMMENT_CACHE_PREV
 import static io.trino.plugin.iceberg.IcebergUtil.TRINO_TABLE_METADATA_INFO_VALID_FOR;
 import static io.trino.plugin.iceberg.IcebergUtil.getColumnMetadatas;
 import static io.trino.plugin.iceberg.IcebergUtil.getIcebergTableWithMetadata;
-import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
 import static io.trino.plugin.iceberg.IcebergUtil.quotedTableName;
 import static io.trino.plugin.iceberg.TableType.MATERIALIZED_VIEW_STORAGE;
 import static io.trino.plugin.iceberg.TrinoMetricsReporter.TRINO_METRICS_REPORTER;
@@ -238,6 +240,81 @@ public class TrinoGlueCatalogV1
         this.hideMaterializedViewStorageTable = hideMaterializedViewStorageTable;
         this.scheduledMaterializedViewRefreshEnabled = scheduledMaterializedViewRefreshEnabled;
         this.metadataFetchingExecutor = requireNonNull(metadataFetchingExecutor, "metadataFetchingExecutor is null");
+    }
+
+    @Override
+    public MaybeLazy<List<ColumnMetadata>> getTableColumnMetadata(ConnectorSession session, Table metastoreTable)
+    {
+        checkArgument(isIcebergTable(metastoreTable), "Not Iceberg table: %s", metastoreTable);
+        String metadataLocation = metastoreTable.getParameters().get(METADATA_LOCATION_PROP);
+        Optional<List<ColumnMetadata>> columnMetadata = getCachedColumnMetadata(metastoreTable);
+        return columnMetadata
+                .map(MaybeLazy::ofValue)
+                .orElseGet(() -> MaybeLazy.ofLazy(() -> {
+                    TableMetadata tableMetadata = TableMetadataParser.read(fileIoFactory.create(fileSystemFactory.create(session)), metadataLocation);
+                    return getColumnMetadatas(tableMetadata.schema(), typeManager, tableMetadata.formatVersion());
+                }));
+    }
+
+    /**
+     * Mimicks {@link #getCachedColumnMetadata(com.amazonaws.services.glue.model.Table)}.
+     */
+    private Optional<List<ColumnMetadata>> getCachedColumnMetadata(io.trino.metastore.Table metastoreTable)
+    {
+        if (!cacheTableMetadata) {
+            return Optional.empty();
+        }
+
+        Map<String, String> tableParameters = metastoreTable.getParameters();
+        String metadataLocation = tableParameters.get(METADATA_LOCATION_PROP);
+        String metadataValidForMetadata = tableParameters.get(TRINO_TABLE_METADATA_INFO_VALID_FOR);
+        if (metadataLocation == null || !metadataLocation.equals(metadataValidForMetadata)) {
+            return Optional.empty();
+        }
+
+        List<io.trino.metastore.Column> metastoreColumns = metastoreTable.getDataColumns();
+        if (metastoreColumns.stream().noneMatch(column -> column.getProperties().containsKey(COLUMN_TRINO_TYPE_ID_PROPERTY))) {
+            // No column has type parameter, maybe the parameters were erased
+            return Optional.empty();
+        }
+
+        ImmutableList.Builder<ColumnMetadata> columns = ImmutableList.builderWithExpectedSize(metastoreColumns.size());
+        for (io.trino.metastore.Column metastoreColumn : metastoreColumns) {
+            Map<String, String> columnParameters = metastoreColumn.getProperties();
+            String trinoTypeId = columnParameters.getOrDefault(COLUMN_TRINO_TYPE_ID_PROPERTY, metastoreColumn.getType().toString());
+            boolean notNull = parseBoolean(columnParameters.getOrDefault(COLUMN_TRINO_NOT_NULL_PROPERTY, "false"));
+            Type type = typeManager.getType(TypeId.of(trinoTypeId));
+            columns.add(ColumnMetadata.builder()
+                    .setName(metastoreColumn.getName())
+                    .setType(type)
+                    .setComment(metastoreColumn.getComment())
+                    .setNullable(!notNull)
+                    .build());
+        }
+        return Optional.of(columns.build());
+    }
+
+    @Override
+    public MaybeLazy<Optional<String>> getTableComment(ConnectorSession session, Table table)
+    {
+        checkArgument(isIcebergTable(table), "Not Iceberg table: %s", table);
+        Optional<Optional<String>> comment = Optional.empty();
+        Map<String, String> tableParameters = table.getParameters();
+        String metadataLocation = tableParameters.get(METADATA_LOCATION_PROP);
+        if (cacheTableMetadata && metadataLocation.equals(tableParameters.get(TRINO_TABLE_METADATA_INFO_VALID_FOR))) {
+            comment = Optional.of(Optional.ofNullable(tableParameters.get(TABLE_COMMENT)));
+        }
+        return comment
+                .map(MaybeLazy::ofValue)
+                .orElseGet(() -> MaybeLazy.ofLazy(() -> {
+                    TableMetadata tableMetadata = TableMetadataParser.read(fileIoFactory.create(fileSystemFactory.create(session)), metadataLocation);
+                    return Optional.ofNullable(tableMetadata.properties().get(TABLE_COMMENT));
+                }));
+    }
+
+    private static Optional<String> getTableComment(BaseTable icebergTable)
+    {
+        return IcebergUtil.getTableComment(icebergTable);
     }
 
     @Override

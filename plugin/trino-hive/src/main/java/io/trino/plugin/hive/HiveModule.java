@@ -25,6 +25,7 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.base.DecoratingConnectorSplitManager;
 import io.trino.plugin.base.Decorator;
 import io.trino.plugin.base.ForDecorator;
+import io.trino.plugin.base.connector.SystemTableProvider;
 import io.trino.plugin.base.metrics.FileFormatDataSourceStats;
 import io.trino.plugin.hive.avro.AvroFileWriterFactory;
 import io.trino.plugin.hive.avro.AvroPageSourceFactory;

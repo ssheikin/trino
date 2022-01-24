@@ -51,6 +51,8 @@ public class HiveConnector
         implements Connector
 {
     private final Injector injector;
+    private final boolean recursiveDirWalkerEnabled;
+    private final boolean partitionProjectionEnabled;
     private final LifeCycleManager lifeCycleManager;
     private final ConnectorSplitManager splitManager;
     private final ConnectorCacheMetadata cacheMetadata;
@@ -78,6 +80,8 @@ public class HiveConnector
 
     public HiveConnector(
             Injector injector,
+            boolean recursiveDirWalkerEnabled,
+            boolean partitionProjectionEnabled,
             LifeCycleManager lifeCycleManager,
             HiveTransactionManager transactionManager,
             ConnectorSplitManager splitManager,
@@ -102,6 +106,8 @@ public class HiveConnector
             ClassLoader classLoader)
     {
         this.injector = requireNonNull(injector, "injector is null");
+        this.recursiveDirWalkerEnabled = recursiveDirWalkerEnabled;
+        this.partitionProjectionEnabled = partitionProjectionEnabled;
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
@@ -126,6 +132,16 @@ public class HiveConnector
         this.functionProvider = requireNonNull(functionProvider, "functionProvider is null");
         this.singleStatementWritesOnly = singleStatementWritesOnly;
         this.classLoader = requireNonNull(classLoader, "classLoader is null");
+    }
+
+    public boolean isRecursiveDirWalkerEnabled()
+    {
+        return recursiveDirWalkerEnabled;
+    }
+
+    public boolean isPartitionProjectionEnabled()
+    {
+        return partitionProjectionEnabled;
     }
 
     @Override

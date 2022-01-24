@@ -11,17 +11,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.hive;
+package io.trino.plugin.iceberg.catalog.unity;
 
-import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.connector.SchemaTableName;
-import io.trino.spi.connector.SystemTable;
+import io.trino.plugin.iceberg.catalog.TrinoCatalog;
+import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
+import io.trino.spi.security.ConnectorIdentity;
 
-import java.util.Optional;
-
-public interface SystemTableProvider
+public class TrinoUnityCatalogFactory
+        implements TrinoCatalogFactory
 {
-    Optional<SchemaTableName> getSourceTableName(SchemaTableName table);
+    private static final TrinoUnityCatalog TRINO_DUMMY_UNITY_CATALOG = new TrinoUnityCatalog();
 
-    Optional<SystemTable> getSystemTable(HiveMetadata metadata, ConnectorSession session, SchemaTableName tableName);
+    @Override
+    public synchronized TrinoCatalog create(ConnectorIdentity identity)
+    {
+        return TRINO_DUMMY_UNITY_CATALOG;
+    }
 }

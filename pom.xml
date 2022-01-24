@@ -69,6 +69,7 @@
         <module>plugin/starburst-base-jdbc</module>
         <module>plugin/starburst-dynamodb</module>
         <module>plugin/starburst-functions</module>
+        <module>plugin/starburst-objectstore</module>
         <module>plugin/starburst-openapi</module>
         <module>plugin/starburst-oracle</module>
         <module>plugin/starburst-salesforce</module>
@@ -1065,6 +1066,12 @@
             </dependency>
 
             <dependency>
+                <groupId>io.starburst.schema-discovery</groupId>
+                <artifactId>schema-discovery-trino-system-table</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.starburst.stargate.buffer</groupId>
                 <artifactId>starburst-buffer-client-common</artifactId>
                 <version>${project.version}</version>
@@ -1157,6 +1164,19 @@
                 <groupId>io.trino</groupId>
                 <artifactId>starburst-license</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>starburst-objectstore</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>starburst-objectstore</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
             </dependency>
 
             <dependency>
@@ -1432,6 +1452,13 @@
                 <groupId>io.trino</groupId>
                 <artifactId>trino-hudi</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-hudi</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
             </dependency>
 
             <dependency>

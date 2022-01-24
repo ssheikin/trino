@@ -19,6 +19,7 @@ import io.trino.Session;
 import io.trino.filesystem.Location;
 import io.trino.plugin.hive.TestingHivePlugin;
 import io.trino.plugin.hudi.testing.TpchHudiTablesInitializer;
+import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
@@ -55,6 +56,9 @@ final class TestHudiSharedMetastore
 
         Path dataDirectory = queryRunner.getCoordinator().getBaseDataDir().resolve("hudi_data");
         dataDirectory.toFile().deleteOnExit();
+
+        queryRunner.installPlugin(new TpchPlugin());
+        queryRunner.createCatalog("tpch", "tpch");
 
         queryRunner.installPlugin(new HudiPlugin());
         queryRunner.createCatalog(

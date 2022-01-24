@@ -14,6 +14,7 @@
 package io.trino.plugin.hive;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -35,6 +36,7 @@ import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorSplitManager;
 import io.trino.plugin.base.classloader.ClassLoaderSafeNodePartitioningProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeSystemTable;
 import io.trino.plugin.base.config.ConfigUtils;
+import io.trino.plugin.base.connector.SystemTableProvider;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
@@ -64,6 +66,8 @@ import org.weakref.jmx.guice.MBeanModule;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
@@ -97,7 +101,7 @@ public class HiveConnectorFactory
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER, true);
+            Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -115,9 +119,28 @@ public class HiveConnectorFactory
             Optional<TrinoFileSystemFactory> fileSystemFactory,
             Optional<DirectoryLister> directoryLister)
     {
+        return createConnector(catalogName, config, ImmutableMap.of(), _ -> {}, context, module, metastore, metastoreImpersonationEnabled, fileSystemFactory, directoryLister);
+    }
+
+    public static Connector createConnector(
+            String catalogName,
+            Map<String, String> requiredConfig,
+            Map<String, String> optionalConfig, // Used from Starburst ObjectStore connector. Unused properties are verified later.
+            Consumer<Set<String>> usedConfigPropertiesConsumer,
+            ConnectorContext context,
+            Module module,
+            Optional<HiveMetastore> metastore,
+            boolean metastoreImpersonationEnabled,
+            Optional<TrinoFileSystemFactory> fileSystemFactory,
+            Optional<DirectoryLister> directoryLister)
+    {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, module, metastore, metastoreImpersonationEnabled, fileSystemFactory, directoryLister, false);
+            Bootstrap app = createBootstrap(catalogName, requiredConfig, optionalConfig, context, module, metastore, metastoreImpersonationEnabled, fileSystemFactory, directoryLister, false);
+
+            usedConfigPropertiesConsumer.accept(app.configure().stream()
+                    .map(ConfigPropertyMetadata::name)
+                    .collect(Collectors.toSet()));
 
             Injector injector = app.initialize();
 
@@ -141,9 +164,12 @@ public class HiveConnectorFactory
             Optional<ConnectorAccessControl> hiveAccessControl = injector.getInstance(new Key<Optional<ConnectorAccessControl>>() {})
                     .map(accessControl -> new SystemTableAwareAccessControl(accessControl, systemTableProviders))
                     .map(accessControl -> new ClassLoaderSafeConnectorAccessControl(accessControl, classLoader));
+            HiveConfig hiveConfig = injector.getInstance(HiveConfig.class);
 
             return new HiveConnector(
                     injector,
+                    hiveConfig.getRecursiveDirWalkerEnabled(),
+                    hiveConfig.isPartitionProjectionEnabled(),
                     lifeCycleManager,
                     transactionManager,
                     new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
@@ -172,7 +198,8 @@ public class HiveConnectorFactory
     @VisibleForTesting
     public static Bootstrap createBootstrap(
             String catalogName,
-            Map<String, String> config,
+            Map<String, String> requiredConfig,
+            Map<String, String> optionalConfig,
             ConnectorContext context,
             Module module,
             Optional<HiveMetastore> metastore,
@@ -208,6 +235,7 @@ public class HiveConnectorFactory
 
         return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(config);
+                .setRequiredConfigurationProperties(requiredConfig)
+                .setOptionalConfigurationProperties(optionalConfig);
     }
 }

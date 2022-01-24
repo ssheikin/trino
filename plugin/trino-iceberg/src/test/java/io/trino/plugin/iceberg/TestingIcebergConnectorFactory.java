@@ -80,7 +80,7 @@ public class TestingIcebergConnectorFactory
     {
         ClassLoader classLoader = IcebergConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), context, module, icebergCatalogModule, true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, module, icebergCatalogModule, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 

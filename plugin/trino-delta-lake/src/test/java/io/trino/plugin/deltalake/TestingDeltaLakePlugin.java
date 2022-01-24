@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.deltalake;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
@@ -93,7 +94,7 @@ public class TestingDeltaLakePlugin
             {
                 ClassLoader classLoader = DeltaLakeConnectorFactory.class.getClassLoader();
                 try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-                    Bootstrap app = createBootstrap(catalogName, config, context, metastoreModule, fileSystemFactory, createAdditionalModule(), true);
+                    Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, metastoreModule, fileSystemFactory, createAdditionalModule(), true);
 
                     Set<ConfigPropertyMetadata> usedProperties = app.configure();
 

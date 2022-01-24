@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.warp.proxiedconnector.hive;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
@@ -85,6 +86,7 @@ public class HiveProxiedConnectorInitializer
             Bootstrap app = HiveConnectorFactory.createBootstrap(
                     catalogName,
                     hiveConfig,
+                    ImmutableMap.of(),
                     context,
                     DEFAULT_ADDITIONAL_MODULE,
                     DEFAULT_METASTORE,

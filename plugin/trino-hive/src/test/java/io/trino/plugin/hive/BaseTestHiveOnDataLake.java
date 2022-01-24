@@ -76,17 +76,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 @TestInstance(PER_CLASS)
-abstract class BaseTestHiveOnDataLake
+public abstract class BaseTestHiveOnDataLake
         extends AbstractTestQueryFramework
 {
     private static final String HIVE_TEST_SCHEMA = "hive_datalake";
     private static final DataSize HIVE_S3_STREAMING_PART_SIZE = DataSize.of(5, MEGABYTE);
 
-    private final HiveMinioDataLake hiveMinioDataLake;
+    protected final String bucketName;
+    protected final HiveMinioDataLake hiveMinioDataLake;
+    protected HiveMetastore metastoreClient;
     private final Function<HiveMinioDataLake, S3HiveQueryRunner.Builder> queryRunnerBuilderProvider;
-    private final String bucketName;
-
-    private HiveMetastore metastoreClient;
 
     public BaseTestHiveOnDataLake(String bucketName, HiveMinioDataLake hiveMinioDataLake)
     {
@@ -625,7 +624,7 @@ abstract class BaseTestHiveOnDataLake
         testEnumPartitionProjectionOnVarcharColumnWithStorageLocationTemplate(HIVE_TEST_SCHEMA, tableName);
     }
 
-    private void testEnumPartitionProjectionOnVarcharColumnWithStorageLocationTemplate(String schemaName, String tableName)
+    protected void testEnumPartitionProjectionOnVarcharColumnWithStorageLocationTemplate(String schemaName, String tableName)
     {
         String fullyQualifiedTestTableName = getFullyQualifiedTestTableName(schemaName, tableName);
         computeActual(createInsertStatement(
@@ -2551,5 +2550,10 @@ abstract class BaseTestHiveOnDataLake
         assertInsertFailure(
                 testTable,
                 "Overwriting existing partition in transactional tables doesn't support DIRECT_TO_TARGET_EXISTING_DIRECTORY write mode");
+    }
+
+    protected boolean isObjectStore()
+    {
+        return false;
     }
 }

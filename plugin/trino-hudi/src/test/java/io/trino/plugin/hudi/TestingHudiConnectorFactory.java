@@ -28,6 +28,7 @@ import io.trino.spi.connector.ConnectorFactory;
 
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
@@ -61,7 +62,7 @@ public class TestingHudiConnectorFactory
         if (!config.containsKey("hive.metastore")) {
             configBuilder.put("hive.metastore", "file");
         }
-        return createConnector(catalogName, configBuilder.buildOrThrow(), context, createAdditionalModule());
+        return createConnector(catalogName, configBuilder.buildOrThrow(), Optional.empty(), context, createAdditionalModule());
     }
 
     @Override
@@ -69,7 +70,7 @@ public class TestingHudiConnectorFactory
     {
         ClassLoader classLoader = HudiConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), context, createAdditionalModule(), true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), Optional.empty(), context, createAdditionalModule(), true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 

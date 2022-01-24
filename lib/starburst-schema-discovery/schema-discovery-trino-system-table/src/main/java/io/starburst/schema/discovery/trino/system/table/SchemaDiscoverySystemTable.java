@@ -79,8 +79,17 @@ public final class SchemaDiscoverySystemTable
             ObjectMapper objectMapper,
             DiscoveryLocationAccessControlAdapter locationAccessControl)
     {
+        this(controllerFactory, objectMapper, locationAccessControl, config.getMaxBucketQuantity());
+    }
+
+    public SchemaDiscoverySystemTable(
+            SchemaDiscoveryControllerFactory controllerFactory,
+            ObjectMapper objectMapper,
+            DiscoveryLocationAccessControlAdapter locationAccessControl,
+            int maxBucketQuantity)
+    {
         super(controllerFactory, objectMapper, locationAccessControl);
-        this.maxBucketQuantity = config.getMaxBucketQuantity();
+        this.maxBucketQuantity = maxBucketQuantity;
     }
 
     @Override

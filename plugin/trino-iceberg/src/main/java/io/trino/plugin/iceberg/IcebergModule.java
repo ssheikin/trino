@@ -25,6 +25,7 @@ import io.trino.metastore.RawHiveMetastoreFactory;
 import io.trino.plugin.base.DecoratingConnectorSplitManager;
 import io.trino.plugin.base.Decorator;
 import io.trino.plugin.base.ForDecorator;
+import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorCacheMetadata;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSinkProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSourceProviderFactory;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorSplitManager;
@@ -125,7 +126,8 @@ public class IcebergModule
         binder.bind(FileFormatDataSourceStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(FileFormatDataSourceStats.class).withGeneratedName();
 
-        binder.bind(ConnectorCacheMetadata.class).to(IcebergCacheMetadata.class).in(Scopes.SINGLETON);
+        binder.bind(ConnectorCacheMetadata.class).annotatedWith(ForClassLoaderSafe.class).to(IcebergCacheMetadata.class).in(Scopes.SINGLETON);
+        binder.bind(ConnectorCacheMetadata.class).to(ClassLoaderSafeConnectorCacheMetadata.class).in(Scopes.SINGLETON);
 
         // for table handle, column handle and split ids
         jsonCodecBinder(binder).bindJsonCodec(IcebergCacheTableId.class);

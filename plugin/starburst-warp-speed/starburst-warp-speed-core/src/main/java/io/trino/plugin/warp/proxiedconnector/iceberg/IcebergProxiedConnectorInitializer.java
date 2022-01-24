@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.warp.proxiedconnector.iceberg;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
@@ -72,7 +73,7 @@ public class IcebergProxiedConnectorInitializer
 
         ClassLoader classLoader = IcebergConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = IcebergConnectorFactory.createBootstrap(catalogName, icebergConfig, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_ICEBERG_CATALOG_MODULE, true);
+            Bootstrap app = IcebergConnectorFactory.createBootstrap(catalogName, icebergConfig, ImmutableMap.of(), context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_ICEBERG_CATALOG_MODULE, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 

@@ -14,6 +14,7 @@
 package io.trino.plugin.deltalake;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -58,6 +59,8 @@ import org.weakref.jmx.guice.MBeanModule;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -92,7 +95,7 @@ public class DeltaLakeConnectorFactory
     {
         ClassLoader classLoader = DeltaLakeConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, DEFAULT_METASTORE_MODULE, DEFAULT_FILE_SYSTEM_FACTORY, DEFAULT_ADDITIONAL_MODULE, true);
+            Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, DEFAULT_METASTORE_MODULE, DEFAULT_FILE_SYSTEM_FACTORY, DEFAULT_ADDITIONAL_MODULE, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -108,9 +111,26 @@ public class DeltaLakeConnectorFactory
             Optional<TrinoFileSystemFactory> fileSystemFactory,
             Module module)
     {
+        return createConnector(catalogName, config, ImmutableMap.of(), _ -> {}, context, metastoreModule, fileSystemFactory, module);
+    }
+
+    public static Connector createConnector(
+            String catalogName,
+            Map<String, String> requiredConfig,
+            Map<String, String> optionalConfig, // Used from Starburst ObjectStore connector. Unused properties are verified later.
+            Consumer<Set<String>> usedConfigPropertiesConsumer,
+            ConnectorContext context,
+            Optional<Module> metastoreModule,
+            Optional<TrinoFileSystemFactory> fileSystemFactory,
+            Module module)
+    {
         ClassLoader classLoader = DeltaLakeConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, metastoreModule, fileSystemFactory, module, false);
+            Bootstrap app = createBootstrap(catalogName, requiredConfig, optionalConfig, context, metastoreModule, fileSystemFactory, module, false);
+
+            usedConfigPropertiesConsumer.accept(app.configure().stream()
+                    .map(ConfigPropertyMetadata::name)
+                    .collect(Collectors.toSet()));
 
             Injector injector = app.initialize();
 
@@ -164,7 +184,8 @@ public class DeltaLakeConnectorFactory
     @VisibleForTesting
     public static Bootstrap createBootstrap(
             String catalogName,
-            Map<String, String> config,
+            Map<String, String> requiredConfig,
+            Map<String, String> optionalConfig,
             ConnectorContext context,
             Optional<Module> metastoreModule,
             Optional<TrinoFileSystemFactory> fileSystemFactory,
@@ -197,6 +218,7 @@ public class DeltaLakeConnectorFactory
 
         return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(config);
+                .setRequiredConfigurationProperties(requiredConfig)
+                .setOptionalConfigurationProperties(optionalConfig);
     }
 }

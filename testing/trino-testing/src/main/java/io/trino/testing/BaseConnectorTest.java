@@ -58,6 +58,7 @@ import io.trino.testing.assertions.TrinoExceptionAssert;
 import io.trino.testing.sql.TestTable;
 import io.trino.testing.sql.TestView;
 import io.trino.tpch.TpchTable;
+import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.AssertProvider;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.BeforeAll;
@@ -1289,8 +1290,7 @@ public abstract class BaseConnectorTest
 
         // verify write in transaction
         if (!hasBehavior(SUPPORTS_MULTI_STATEMENT_WRITES)) {
-            assertThatThrownBy(() -> inTransaction(session -> computeActual(session, "REFRESH MATERIALIZED VIEW " + view)))
-                    .hasMessageMatching("Catalog only supports writes using autocommit: \\w+");
+            verifyRefreshMaterializedViewFailureWithoutMultiWriteInTransactionSupport(assertThatThrownBy(() -> inTransaction(session -> computeActual(session, "REFRESH MATERIALIZED VIEW " + view))));
         }
 
         assertUpdate("DROP MATERIALIZED VIEW " + view);
@@ -1301,6 +1301,11 @@ public abstract class BaseConnectorTest
         assertQueryReturnsEmptyResult(listMaterializedViewsSql("name = '" + viewWithComment.objectName() + "'"));
 
         assertUpdate("DROP SCHEMA " + otherSchema);
+    }
+
+    protected void verifyRefreshMaterializedViewFailureWithoutMultiWriteInTransactionSupport(AbstractThrowableAssert abstractThrowableAssert)
+    {
+        abstractThrowableAssert.hasMessageMatching("Catalog only supports writes using autocommit: \\w+");
     }
 
     @Test
@@ -2687,7 +2692,7 @@ public abstract class BaseConnectorTest
             try (TestTable table = newTrinoTable("test_drop_field_", "AS SELECT CAST(row(1, 2) AS row(x integer, y integer)) AS col")) {
                 assertQueryFails(
                         "ALTER TABLE " + table.getName() + " DROP COLUMN col.x",
-                        "This connector does not support dropping fields");
+                        "This connector does not support dropping fields|Dropping fields from [\\w\\s]+ tables is not supported");
             }
             return;
         }

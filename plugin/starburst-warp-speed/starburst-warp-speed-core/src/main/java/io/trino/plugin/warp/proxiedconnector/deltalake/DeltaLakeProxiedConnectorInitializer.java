@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.warp.proxiedconnector.deltalake;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
@@ -80,6 +81,7 @@ public class DeltaLakeProxiedConnectorInitializer
             Bootstrap app = DeltaLakeConnectorFactory.createBootstrap(
                     catalogName,
                     deltaLakeConfig,
+                    ImmutableMap.of(),
                     context,
                     DEFAULT_METASTORE_MODULE,
                     DEFAULT_FILE_SYSTEM_FACTORY,
