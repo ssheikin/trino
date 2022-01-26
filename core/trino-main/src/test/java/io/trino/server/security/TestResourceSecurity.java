@@ -548,6 +548,7 @@ public class TestResourceSecurity
                         .setProperties(ImmutableMap.<String, String>builder()
                                 .putAll(SECURE_PROPERTIES)
                                 .put("web-ui.enabled", String.valueOf(webUiEnabled))
+                                .put("http-server.authentication.type", "oauth2")
                                 .putAll(getOAuth2Properties(tokenServer))
                                 .put("http-server.authentication.oauth2.principal-field", principalField.orElse("sub"))
                                 .build())
@@ -638,6 +639,53 @@ public class TestResourceSecurity
         }
     }
 
+    @Test
+    public void testJwtAndOAuth2AuthenticatorsSeparation()
+            throws Exception
+    {
+        TestingHttpServer jwkServer = createTestingJwkServer();
+        jwkServer.start();
+        try (TokenServer tokenServer = new TokenServer(Optional.empty());
+                TestingTrinoServer server = TestingTrinoServer.builder()
+                        .setProperties(
+                                ImmutableMap.<String, String>builder()
+                                        .putAll(SECURE_PROPERTIES)
+                                        .put("http-server.authentication.type", "jwt,oauth2")
+                                        .put("http-server.authentication.jwt.key-file", jwkServer.getBaseUrl().toString())
+                                        .putAll(getOAuth2Properties(tokenServer))
+                                        .put("web-ui.enabled", "true")
+                                        .build())
+                        .setAdditionalModule(oauth2Module(tokenServer))
+                        .build()) {
+            server.getInstance(Key.get(AccessControlManager.class)).addSystemAccessControl(TestSystemAccessControl.NO_IMPERSONATION);
+            HttpServerInfo httpServerInfo = server.getInstance(Key.get(HttpServerInfo.class));
+
+            assertAuthenticationDisabled(httpServerInfo.getHttpUri());
+
+            OkHttpClient clientWithOAuthToken = client.newBuilder()
+                    .authenticator((route, response) -> response.request().newBuilder()
+                            .header(AUTHORIZATION, "Bearer " + tokenServer.getAccessToken())
+                            .build())
+                    .build();
+
+            assertAuthenticationAutomatic(httpServerInfo.getHttpsUri(), clientWithOAuthToken);
+
+            String token = Jwts.builder()
+                    .signWith(SignatureAlgorithm.RS256, JWK_PRIVATE_KEY)
+                    .setHeaderParam(JwsHeader.KEY_ID, JWK_KEY_ID)
+                    .setSubject("test-user")
+                    .setExpiration(Date.from(ZonedDateTime.now().plusMinutes(5).toInstant()))
+                    .compact();
+
+            OkHttpClient clientWithJwt = client.newBuilder()
+                    .authenticator((route, response) -> response.request().newBuilder()
+                            .header(AUTHORIZATION, "Bearer " + token)
+                            .build())
+                    .build();
+            assertAuthenticationAutomatic(httpServerInfo.getHttpsUri(), clientWithJwt);
+        }
+    }
+
     private static Module oauth2Module(TokenServer tokenServer)
     {
         return binder -> {
@@ -651,7 +699,6 @@ public class TestResourceSecurity
     private static Map<String, String> getOAuth2Properties(TokenServer tokenServer)
     {
         return ImmutableMap.<String, String>builder()
-                .put("http-server.authentication.type", "oauth2")
                 .put("http-server.authentication.oauth2.jwks-url", tokenServer.getJwksUrl())
                 .put("http-server.authentication.oauth2.state-key", "test-state-key")
                 .put("http-server.authentication.oauth2.auth-url", tokenServer.getIssuer())
