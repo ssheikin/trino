@@ -527,7 +527,7 @@ public final class HttpRemoteTask
     {
         // synchronized so that needsUpdate is not cleared in sendUpdate before actual request is sent
         needsUpdate.set(true);
-        sendUpdate();
+        scheduleUpdate();
     }
 
     private synchronized void sendUpdate()
