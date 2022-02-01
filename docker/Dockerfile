@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM centos:centos8
+FROM registry.access.redhat.com/ubi8/ubi
 LABEL maintainer="Presto community <https://prestosql.io/community.html>"
 
 ENV JAVA_HOME /usr/lib/jvm/zulu11
