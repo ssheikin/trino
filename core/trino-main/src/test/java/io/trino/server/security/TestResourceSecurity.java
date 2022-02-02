@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.google.inject.Key;
+import com.google.inject.Module;
 import io.airlift.http.server.HttpServerConfig;
 import io.airlift.http.server.HttpServerInfo;
 import io.airlift.http.server.testing.TestingHttpServer;
@@ -67,6 +68,7 @@ import java.security.PrivateKey;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -115,6 +117,7 @@ public class TestResourceSecurity
     private static final String MANAGEMENT_USER_LOGIN = MANAGEMENT_USER + "@allowed";
     private static final String MANAGEMENT_PASSWORD = "management-password";
     private static final String HMAC_KEY = Resources.getResource("hmac_key.txt").getPath();
+    private static final String JWK_KEY_ID = "test-rsa";
     private static final PrivateKey JWK_PRIVATE_KEY;
     private static final ObjectMapper json = new ObjectMapper();
 
@@ -505,7 +508,7 @@ public class TestResourceSecurity
 
             String token = Jwts.builder()
                     .signWith(SignatureAlgorithm.RS256, JWK_PRIVATE_KEY)
-                    .setHeaderParam(JwsHeader.KEY_ID, "test-rsa")
+                    .setHeaderParam(JwsHeader.KEY_ID, JWK_KEY_ID)
                     .setSubject("test-user")
                     .setExpiration(Date.from(ZonedDateTime.now().plusMinutes(5).toInstant()))
                     .compact();
@@ -540,55 +543,16 @@ public class TestResourceSecurity
                 .cookieJar(new JavaNetCookieJar(cookieManager))
                 .build();
 
-        Date tokenExpiration = Date.from(ZonedDateTime.now().plusMinutes(5).toInstant());
-        JwtBuilder tokenBuilder = Jwts.builder()
-                .signWith(SignatureAlgorithm.RS256, JWK_PRIVATE_KEY)
-                .setAudience("trino_oauth_rest")
-                .setHeaderParam(JwsHeader.KEY_ID, "test-rsa")
-                .setExpiration(tokenExpiration);
-        if (principalField.isPresent()) {
-            tokenBuilder.claim(principalField.get(), "test-user");
-        }
-        else {
-            tokenBuilder.setSubject("test-user");
-        }
-        String token = tokenBuilder.compact();
-
-        TestingHttpServer jwkServer = createTestingJwkServer();
-        jwkServer.start();
-        try (TestingTrinoServer server = TestingTrinoServer.builder()
-                .setProperties(ImmutableMap.<String, String>builder()
-                        .putAll(SECURE_PROPERTIES)
-                        .put("http-server.authentication.type", "oauth2")
-                        .put("web-ui.enabled", String.valueOf(webUiEnabled))
-                        .put("http-server.authentication.oauth2.jwks-url", jwkServer.getBaseUrl().toString())
-                        .put("http-server.authentication.oauth2.state-key", "test-state-key")
-                        .put("http-server.authentication.oauth2.auth-url", "http://example.com/")
-                        .put("http-server.authentication.oauth2.token-url", "http://example.com/")
-                        .put("http-server.authentication.oauth2.client-id", "client")
-                        .put("http-server.authentication.oauth2.client-secret", "client-secret")
-                        .put("http-server.authentication.oauth2.principal-field", principalField.orElse("sub"))
-                        .build())
-                .setAdditionalModule(binder -> newOptionalBinder(binder, OAuth2Client.class)
-                        .setBinding()
-                        .toInstance(new OAuth2Client()
-                        {
-                            @Override
-                            public URI getAuthorizationUri(String state, URI callbackUri, Optional<String> nonceHash)
-                            {
-                                return URI.create("http://example.com/authorize?" + state);
-                            }
-
-                            @Override
-                            public AccessToken getAccessToken(String code, URI callbackUri)
-                            {
-                                if (!"TEST_CODE".equals(code)) {
-                                    throw new IllegalArgumentException("Expected TEST_CODE");
-                                }
-                                return new AccessToken(token, Optional.empty(), Optional.empty());
-                            }
-                        }))
-                .build()) {
+        try (TokenServer tokenServer = new TokenServer(principalField);
+                TestingTrinoServer server = TestingTrinoServer.builder()
+                        .setProperties(ImmutableMap.<String, String>builder()
+                                .putAll(SECURE_PROPERTIES)
+                                .put("web-ui.enabled", String.valueOf(webUiEnabled))
+                                .putAll(getOAuth2Properties(tokenServer))
+                                .put("http-server.authentication.oauth2.principal-field", principalField.orElse("sub"))
+                                .build())
+                        .setAdditionalModule(oauth2Module(tokenServer))
+                        .build()) {
             server.getInstance(Key.get(AccessControlManager.class)).addSystemAccessControl(TestSystemAccessControl.NO_IMPERSONATION);
             HttpServerInfo httpServerInfo = server.getInstance(Key.get(HttpServerInfo.class));
 
@@ -597,8 +561,8 @@ public class TestResourceSecurity
             // not logged in
             URI baseUri = httpServerInfo.getHttpsUri();
             assertOk(client, getPublicLocation(baseUri));
-            OAuthBearer bearer = assertAuthenticateOAuth2Bearer(client, getAuthorizedUserLocation(baseUri), "http://example.com/authorize");
             assertAuthenticateOAuth2Bearer(client, getManagementLocation(baseUri), "http://example.com/authorize");
+            OAuthBearer bearer = assertAuthenticateOAuth2Bearer(client, getAuthorizedUserLocation(baseUri), "http://example.com/authorize");
             assertResponseCode(client, getInternalLocation(baseUri), SC_FORBIDDEN);
 
             // login with the callback endpoint
@@ -609,12 +573,12 @@ public class TestResourceSecurity
                             .addParameter("code", "TEST_CODE")
                             .addParameter("state", bearer.getState())
                             .toString());
-            assertEquals(getOauthToken(client, bearer.getTokenServer()), token);
+            assertEquals(getOauthToken(client, bearer.getTokenServer()), tokenServer.getAccessToken());
 
             // if Web UI is using oauth so we should get a cookie
             if (webUiEnabled) {
                 HttpCookie cookie = getOnlyElement(cookieManager.getCookieStore().getCookies());
-                assertEquals(cookie.getValue(), token);
+                assertEquals(cookie.getValue(), tokenServer.getAccessToken());
                 assertEquals(cookie.getPath(), "/ui/");
                 assertEquals(cookie.getDomain(), baseUri.getHost());
                 assertTrue(cookie.getMaxAge() > 0 && cookie.getMaxAge() < MINUTES.toSeconds(5));
@@ -628,13 +592,10 @@ public class TestResourceSecurity
 
             OkHttpClient clientWithOAuthToken = client.newBuilder()
                     .authenticator((route, response) -> response.request().newBuilder()
-                            .header(AUTHORIZATION, "Bearer " + token)
+                            .header(AUTHORIZATION, "Bearer " + tokenServer.getAccessToken())
                             .build())
                     .build();
             assertAuthenticationAutomatic(httpServerInfo.getHttpsUri(), clientWithOAuthToken);
-        }
-        finally {
-            jwkServer.stop();
         }
     }
 
@@ -677,6 +638,29 @@ public class TestResourceSecurity
         }
     }
 
+    private static Module oauth2Module(TokenServer tokenServer)
+    {
+        return binder -> {
+            jaxrsBinder(binder).bind(TestResource.class);
+            newOptionalBinder(binder, OAuth2Client.class)
+                    .setBinding()
+                    .toInstance(tokenServer.getOAuth2Client());
+        };
+    }
+
+    private static Map<String, String> getOAuth2Properties(TokenServer tokenServer)
+    {
+        return ImmutableMap.<String, String>builder()
+                .put("http-server.authentication.type", "oauth2")
+                .put("http-server.authentication.oauth2.jwks-url", tokenServer.getJwksUrl())
+                .put("http-server.authentication.oauth2.state-key", "test-state-key")
+                .put("http-server.authentication.oauth2.auth-url", tokenServer.getIssuer())
+                .put("http-server.authentication.oauth2.token-url", tokenServer.getIssuer())
+                .put("http-server.authentication.oauth2.client-id", tokenServer.getClientId())
+                .put("http-server.authentication.oauth2.client-secret", tokenServer.getClientSecret())
+                .build();
+    }
+
     private static String getOauthToken(OkHttpClient client, String url)
             throws IOException
     {
@@ -686,6 +670,96 @@ public class TestResourceSecurity
         try (Response response = client.newCall(request).execute()) {
             String body = requireNonNull(response.body()).string();
             return json.readValue(body, TokenDTO.class).token;
+        }
+    }
+
+    private static class TokenServer
+            implements AutoCloseable
+    {
+        private final String issuer = "http://example.com/";
+        private final String clientId = "clientID";
+        private final Date tokenExpiration = Date.from(ZonedDateTime.now().plusMinutes(5).toInstant());
+        private final Optional<String> principalField;
+        private final TestingHttpServer jwkServer;
+        private final String accessToken;
+
+        public TokenServer(Optional<String> principalField)
+                throws Exception
+        {
+            this.principalField = requireNonNull(principalField, "principalField is null");
+            jwkServer = createTestingJwkServer();
+            jwkServer.start();
+            accessToken = issueAccessToken();
+        }
+
+        @Override
+        public void close()
+                throws Exception
+        {
+            jwkServer.stop();
+        }
+
+        public OAuth2Client getOAuth2Client()
+        {
+            return new OAuth2Client()
+            {
+                @Override
+                public URI getAuthorizationUri(String state, URI callbackUri, Optional<String> nonceHash)
+                {
+                    return URI.create("http://example.com/authorize?" + state);
+                }
+
+                @Override
+                public AccessToken getAccessToken(String code, URI callbackUri)
+                {
+                    if (!"TEST_CODE".equals(code)) {
+                        throw new IllegalArgumentException("Expected TEST_CODE");
+                    }
+                    return new AccessToken(accessToken, Optional.empty(), Optional.empty());
+                }
+            };
+        }
+
+        public String getIssuer()
+        {
+            return issuer;
+        }
+
+        public String getJwksUrl()
+        {
+            return jwkServer.getBaseUrl().toString();
+        }
+
+        public String getClientId()
+        {
+            return clientId;
+        }
+
+        public String getClientSecret()
+        {
+            return "clientSecret";
+        }
+
+        public String getAccessToken()
+        {
+            return accessToken;
+        }
+
+        private String issueAccessToken()
+        {
+            JwtBuilder accessToken = Jwts.builder()
+                    .signWith(SignatureAlgorithm.RS256, JWK_PRIVATE_KEY)
+                    .setHeaderParam(JwsHeader.KEY_ID, JWK_KEY_ID)
+                    .setIssuer(issuer)
+                    .setAudience(clientId)
+                    .setExpiration(tokenExpiration);
+            if (principalField.isPresent()) {
+                accessToken.claim(principalField.get(), TEST_USER);
+            }
+            else {
+                accessToken.setSubject(TEST_USER);
+            }
+            return accessToken.compact();
         }
     }
 
