@@ -49,8 +49,7 @@ public class TestIcebergHiveTablesCompatibility
         onTrino().executeQuery("CREATE TABLE iceberg.default." + tableName + "(a bigint)");
 
         assertQueryFailure(() -> onTrino().executeQuery("SELECT * FROM hive.default." + tableName))
-                // TODO (https://github.com/trinodb/trino/issues/8693) throw specific exception message
-                .hasMessageMatching("Query failed \\(#\\w+\\):\\Q Unable to create input format org.apache.hadoop.mapred.FileInputFormat");
+                .hasMessageContaining("Not a Hive table 'default." + tableName);
 
         assertQueryFailure(() -> onTrino().executeQuery("SELECT * FROM hive.default.\"" + tableName + "$partitions\""))
                 .hasMessageMatching("Query failed \\(#\\w+\\):\\Q line 1:15: Table 'hive.default." + tableName + "$partitions' does not exist");
