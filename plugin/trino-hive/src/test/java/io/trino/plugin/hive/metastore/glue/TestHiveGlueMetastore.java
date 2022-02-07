@@ -13,7 +13,13 @@
  */
 package io.trino.plugin.hive.metastore.glue;
 
+import com.amazonaws.services.glue.AWSGlueAsync;
+import com.amazonaws.services.glue.AWSGlueAsyncClientBuilder;
+import com.amazonaws.services.glue.model.CreateTableRequest;
+import com.amazonaws.services.glue.model.DeleteTableRequest;
+import com.amazonaws.services.glue.model.TableInput;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.airlift.concurrent.BoundedExecutor;
 import io.airlift.slice.Slice;
 import io.trino.plugin.hive.AbstractTestHiveLocal;
@@ -63,11 +69,17 @@ import java.util.concurrent.Executor;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
 import static io.airlift.slice.Slices.utf8Slice;
+import static io.trino.plugin.hive.HiveMetadata.DELTA_LAKE_PROVIDER;
+import static io.trino.plugin.hive.HiveMetadata.SPARK_TABLE_PROVIDER_KEY;
 import static io.trino.plugin.hive.HiveStorageFormat.ORC;
 import static io.trino.plugin.hive.HiveStorageFormat.TEXTFILE;
 import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 import static io.trino.plugin.hive.metastore.glue.PartitionFilterBuilder.DECIMAL_TYPE;
 import static io.trino.plugin.hive.metastore.glue.PartitionFilterBuilder.decimalOf;
+import static io.trino.plugin.hive.util.HiveUtil.ICEBERG_TABLE_TYPE_NAME;
+import static io.trino.plugin.hive.util.HiveUtil.ICEBERG_TABLE_TYPE_VALUE;
+import static io.trino.plugin.hive.util.HiveUtil.isDeltaLakeTable;
+import static io.trino.plugin.hive.util.HiveUtil.isIcebergTable;
 import static io.trino.spi.statistics.ColumnStatisticType.MAX_VALUE;
 import static io.trino.spi.statistics.ColumnStatisticType.MIN_VALUE;
 import static io.trino.spi.statistics.ColumnStatisticType.NUMBER_OF_DISTINCT_VALUES;
@@ -77,6 +89,7 @@ import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 import static java.util.UUID.randomUUID;
 import static org.apache.hadoop.hive.common.FileUtils.makePartName;
+import static org.apache.hadoop.hive.metastore.TableType.EXTERNAL_TABLE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -785,6 +798,51 @@ public class TestHiveGlueMetastore
         }
         finally {
             dropTable(tableName);
+        }
+    }
+
+    @Test
+    public void testTableWithoutStorageDescriptor()
+    {
+        // StorageDescriptor is an Optional field for Glue tables. Iceberg and Delta Lake tables may not have it set.
+        SchemaTableName table = temporaryTable("test_missing_storage_descriptor");
+        DeleteTableRequest deleteTableRequest = new DeleteTableRequest()
+                .withDatabaseName(table.getSchemaName())
+                .withName(table.getTableName());
+        HiveIdentity identity = new HiveIdentity(SESSION);
+        AWSGlueAsync glueClient = AWSGlueAsyncClientBuilder.defaultClient();
+        try {
+            TableInput tableInput = new TableInput()
+                    .withName(table.getTableName())
+                    .withTableType(EXTERNAL_TABLE.name());
+            glueClient.createTable(new CreateTableRequest()
+                    .withDatabaseName(database)
+                    .withTableInput(tableInput));
+
+            assertThatThrownBy(() -> getMetastoreClient().getTable(identity, table.getSchemaName(), table.getTableName()))
+                    .hasMessageStartingWith("Table StorageDescriptor is null for table");
+            glueClient.deleteTable(deleteTableRequest);
+
+            // Iceberg table
+            tableInput = tableInput.withParameters(ImmutableMap.of(ICEBERG_TABLE_TYPE_NAME, ICEBERG_TABLE_TYPE_VALUE));
+            glueClient.createTable(new CreateTableRequest()
+                    .withDatabaseName(database)
+                    .withTableInput(tableInput));
+            assertTrue(isIcebergTable(getMetastoreClient().getTable(identity, table.getSchemaName(), table.getTableName()).orElseThrow()));
+            glueClient.deleteTable(deleteTableRequest);
+
+            // Delta Lake table
+            tableInput = tableInput.withParameters(ImmutableMap.of(SPARK_TABLE_PROVIDER_KEY, DELTA_LAKE_PROVIDER));
+            glueClient.createTable(new CreateTableRequest()
+                    .withDatabaseName(database)
+                    .withTableInput(tableInput));
+            assertTrue(isDeltaLakeTable(getMetastoreClient().getTable(identity, table.getSchemaName(), table.getTableName()).orElseThrow()));
+        }
+        finally {
+            // Table cannot be dropped through HiveMetastore since a TableHandle cannot be created
+            glueClient.deleteTable(new DeleteTableRequest()
+                    .withDatabaseName(table.getSchemaName())
+                    .withName(table.getTableName()));
         }
     }
 

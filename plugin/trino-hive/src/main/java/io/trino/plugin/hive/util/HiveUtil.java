@@ -90,6 +90,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Properties;
@@ -180,8 +181,8 @@ public final class HiveUtil
 
     private static final Splitter COLUMN_NAMES_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
-    private static final String ICEBERG_TABLE_TYPE_NAME = "table_type";
-    private static final String ICEBERG_TABLE_TYPE_VALUE = "iceberg";
+    public static final String ICEBERG_TABLE_TYPE_NAME = "table_type";
+    public static final String ICEBERG_TABLE_TYPE_VALUE = "iceberg";
 
     static {
         DateTimeParser[] timestampWithoutTimeZoneParser = {
@@ -1035,12 +1036,22 @@ public final class HiveUtil
 
     public static boolean isDeltaLakeTable(Table table)
     {
-        return table.getParameters().containsKey(SPARK_TABLE_PROVIDER_KEY)
-                && table.getParameters().get(SPARK_TABLE_PROVIDER_KEY).toLowerCase(ENGLISH).equals(DELTA_LAKE_PROVIDER);
+        return isDeltaLakeTable(table.getParameters());
+    }
+
+    public static boolean isDeltaLakeTable(Map<String, String> tableParameters)
+    {
+        return tableParameters.containsKey(SPARK_TABLE_PROVIDER_KEY)
+                && tableParameters.get(SPARK_TABLE_PROVIDER_KEY).toLowerCase(ENGLISH).equals(DELTA_LAKE_PROVIDER);
     }
 
     public static boolean isIcebergTable(Table table)
     {
-        return ICEBERG_TABLE_TYPE_VALUE.equalsIgnoreCase(table.getParameters().get(ICEBERG_TABLE_TYPE_NAME));
+        return isIcebergTable(table.getParameters());
+    }
+
+    public static boolean isIcebergTable(Map<String, String> tableParameters)
+    {
+        return ICEBERG_TABLE_TYPE_VALUE.equalsIgnoreCase(tableParameters.get(ICEBERG_TABLE_TYPE_NAME));
     }
 }

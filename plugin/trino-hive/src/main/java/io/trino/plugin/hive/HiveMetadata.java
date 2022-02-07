@@ -242,6 +242,7 @@ import static io.trino.plugin.hive.util.HiveUtil.columnExtraInfo;
 import static io.trino.plugin.hive.util.HiveUtil.getPartitionKeyColumnHandles;
 import static io.trino.plugin.hive.util.HiveUtil.getRegularColumnHandles;
 import static io.trino.plugin.hive.util.HiveUtil.hiveColumnHandles;
+import static io.trino.plugin.hive.util.HiveUtil.isIcebergTable;
 import static io.trino.plugin.hive.util.HiveUtil.toPartitionValues;
 import static io.trino.plugin.hive.util.HiveUtil.verifyPartitionTypeSupported;
 import static io.trino.plugin.hive.util.HiveWriteUtils.checkTableIsWritable;
@@ -570,6 +571,10 @@ public class HiveMetadata
     {
         Table table = metastore.getTable(new HiveIdentity(session), tableName.getSchemaName(), tableName.getTableName())
                 .orElseThrow(() -> new TableNotFoundException(tableName));
+
+        if (isIcebergTable(table) || isDeltaLakeTable(table)) {
+            throw new TrinoException(HIVE_UNSUPPORTED_FORMAT, format("Not a Hive table '%s'", tableName));
+        }
 
         if (!translateHiveViews && isHiveOrPrestoView(table)) {
             throw new TableNotFoundException(tableName);
