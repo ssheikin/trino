@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newConcurrentHashSet;
@@ -76,8 +77,8 @@ public class DirectExchangeClient
     private long successfulRequests;
     @GuardedBy("this")
     private long averageBytesPerRequest;
-    @GuardedBy("this")
-    private boolean closed;
+
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     private final LocalMemoryContext memoryContext;
     private final Executor pageBufferClientCallbackExecutor;
@@ -143,7 +144,7 @@ public class DirectExchangeClient
 
         // Ignore new locations after close
         // NOTE: this MUST happen before checking no more locations is checked
-        if (closed) {
+        if (closed.get()) {
             return;
         }
 
@@ -211,22 +212,19 @@ public class DirectExchangeClient
     {
         assertNotHoldsLock();
 
+        if (closed.get()) {
+            return null;
+        }
+
         Slice page = buffer.pollPage();
 
         if (page == null) {
             return null;
         }
 
-        synchronized (this) {
-            if (!closed) {
-                memoryContext.setBytes(buffer.getRetainedSizeInBytes());
-                scheduleRequestIfNecessary();
-            }
-        }
+        memoryContext.setBytes(buffer.getRetainedSizeInBytes());
+        scheduleRequestIfNecessary();
 
-        // Return the page even if the client is closed.
-        // A concurrent thread may have responded to the `isFinished` change
-        // triggered by polling this page and may have closed the client.
         return page;
     }
 
@@ -238,10 +236,9 @@ public class DirectExchangeClient
     @Override
     public synchronized void close()
     {
-        if (closed) {
+        if (!closed.compareAndSet(false, true)) {
             return;
         }
-        closed = true;
 
         for (HttpPageBufferClient client : allClients.values()) {
             closeQuietly(client);
@@ -294,23 +291,23 @@ public class DirectExchangeClient
         checkState(!completedClients.contains(client), "client is already marked as completed");
         // Compute stats before acquiring the lock
         long responseSize = 0;
-        if (!pages.isEmpty()) {
-            for (Slice page : pages) {
-                responseSize += page.length();
-            }
-            // Buffer may already be closed at this point. In such situation the buffer is expected to simply ignore this call.
-            buffer.addPages(client.getRemoteTaskId(), pages);
+        for (Slice page : pages) {
+            responseSize += page.length();
         }
 
         synchronized (this) {
-            if (closed || buffer.isFinished() || buffer.isFailed()) {
+            if (closed.get() || buffer.isFinished() || buffer.isFailed()) {
                 return false;
             }
 
             successfulRequests++;
             // AVG_n = AVG_(n-1) * (n-1)/n + VALUE_n / n
             averageBytesPerRequest = (long) (1.0 * averageBytesPerRequest * (successfulRequests - 1) / successfulRequests + responseSize / successfulRequests);
+        }
 
+        // add pages outside of the lock
+        if (!pages.isEmpty()) {
+            buffer.addPages(client.getRemoteTaskId(), pages);
             memoryContext.setBytes(buffer.getRetainedSizeInBytes());
         }
 
