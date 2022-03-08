@@ -3541,25 +3541,12 @@ public class LocalExecutionPlanner
                 }
             }
 
-            OptionalInt maskChannel = aggregation.getMask().stream()
-                    .mapToInt(value -> source.getLayout().get(value))
-                    .findAny();
             AggregationMetadata aggregationMetadata = metadata.getAggregateFunctionImplementation(aggregation.getResolvedFunction());
-            List<LambdaExpression> lambdaExpressions = aggregation.getArguments().stream()
-                    .filter(LambdaExpression.class::isInstance)
-                    .map(LambdaExpression.class::cast)
-                    .collect(toImmutableList());
-            List<FunctionType> functionTypes = aggregation.getResolvedFunction().getSignature().getArgumentTypes().stream()
-                    .filter(FunctionType.class::isInstance)
-                    .map(FunctionType.class::cast)
-                    .collect(toImmutableList());
-            List<LambdaProvider> lambdaProviders = makeLambdaProviders(lambdaExpressions, aggregationMetadata.getLambdaInterfaces(), functionTypes);
 
             AccumulatorFactory accumulatorFactory = generateAccumulatorFactory(
                     aggregation.getResolvedFunction().getSignature(),
                     aggregationMetadata,
-                    aggregation.getResolvedFunction().getFunctionNullability(),
-                    lambdaProviders);
+                    aggregation.getResolvedFunction().getFunctionNullability());
 
             if (aggregation.isDistinct()) {
                 accumulatorFactory = new DistinctAccumulatorFactory(
@@ -3611,6 +3598,20 @@ public class LocalExecutionPlanner
             Type intermediateType = (intermediateTypes.size() == 1) ? getOnlyElement(intermediateTypes) : RowType.anonymous(intermediateTypes);
             Type finalType = aggregation.getResolvedFunction().getSignature().getReturnType();
 
+            OptionalInt maskChannel = aggregation.getMask().stream()
+                    .mapToInt(value -> source.getLayout().get(value))
+                    .findAny();
+
+            List<LambdaExpression> lambdaExpressions = aggregation.getArguments().stream()
+                    .filter(LambdaExpression.class::isInstance)
+                    .map(LambdaExpression.class::cast)
+                    .collect(toImmutableList());
+            List<FunctionType> functionTypes = aggregation.getResolvedFunction().getSignature().getArgumentTypes().stream()
+                    .filter(FunctionType.class::isInstance)
+                    .map(FunctionType.class::cast)
+                    .collect(toImmutableList());
+            List<LambdaProvider> lambdaProviders = makeLambdaProviders(lambdaExpressions, aggregationMetadata.getLambdaInterfaces(), functionTypes);
+
             return new AggregatorFactory(
                     accumulatorFactory,
                     step,
@@ -3618,7 +3619,8 @@ public class LocalExecutionPlanner
                     finalType,
                     argumentChannels,
                     maskChannel,
-                    !aggregation.isDistinct() && aggregation.getOrderingScheme().isEmpty());
+                    !aggregation.isDistinct() && aggregation.getOrderingScheme().isEmpty(),
+                    lambdaProviders);
         }
 
         private List<LambdaProvider> makeLambdaProviders(List<LambdaExpression> lambdaExpressions, List<Class<?>> lambdaInterfaces, List<FunctionType> functionTypes)
