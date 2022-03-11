@@ -35,7 +35,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -43,6 +42,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.SystemSessionProperties.getMaxUnacknowledgedSplitsPerTask;
 import static io.trino.metadata.NodeState.ACTIVE;
+import static io.trino.plugin.base.cache.CacheUtils.uncheckedCacheGet;
 import static io.trino.plugin.base.cache.SafeCaches.buildNonEvictableCache;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -164,12 +164,6 @@ public class UniformNodeSelectorFactory
     private boolean markInaccessibleNode(InternalNode node)
     {
         Object marker = new Object();
-        try {
-            return inaccessibleNodeLogCache.get(node, () -> marker) == marker;
-        }
-        catch (ExecutionException e) {
-            // impossible
-            throw new RuntimeException(e);
-        }
+        return uncheckedCacheGet(inaccessibleNodeLogCache, node, () -> marker) == marker;
     }
 }

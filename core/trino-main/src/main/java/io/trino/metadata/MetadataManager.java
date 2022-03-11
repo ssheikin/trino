@@ -125,7 +125,6 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -147,6 +146,7 @@ import static io.trino.metadata.RedirectionAwareTableHandle.noRedirection;
 import static io.trino.metadata.RedirectionAwareTableHandle.withRedirectionTo;
 import static io.trino.metadata.Signature.mangleOperatorName;
 import static io.trino.metadata.SignatureBinder.applyBoundVariables;
+import static io.trino.plugin.base.cache.CacheUtils.uncheckedCacheGet;
 import static io.trino.plugin.base.cache.SafeCaches.buildNonEvictableCache;
 import static io.trino.spi.StandardErrorCode.FUNCTION_IMPLEMENTATION_ERROR;
 import static io.trino.spi.StandardErrorCode.FUNCTION_IMPLEMENTATION_MISSING;
@@ -1705,7 +1705,9 @@ public final class MetadataManager
                 .map(Variable::getName)
                 .filter(variableName -> !assignedVariables.contains(variableName))
                 .findAny()
-                .ifPresent(variableName -> { throw new IllegalStateException("Unbound variable: " + variableName); });
+                .ifPresent(variableName -> {
+                    throw new IllegalStateException("Unbound variable: " + variableName);
+                });
     }
 
     @Override
@@ -2088,13 +2090,10 @@ public final class MetadataManager
     {
         try {
             // todo we should not be caching functions across session
-            return operatorCache.get(new OperatorCacheKey(operatorType, argumentTypes), () -> {
+            return uncheckedCacheGet(operatorCache, new OperatorCacheKey(operatorType, argumentTypes), () -> {
                 String name = mangleOperatorName(operatorType);
                 return resolvedFunctionInternal(session, QualifiedName.of(name), fromTypes(argumentTypes));
             });
-        }
-        catch (ExecutionException e) {
-            throw new UncheckedExecutionException(e);
         }
         catch (UncheckedExecutionException e) {
             if (e.getCause() instanceof TrinoException) {
@@ -2120,15 +2119,12 @@ public final class MetadataManager
         checkArgument(operatorType == OperatorType.CAST || operatorType == OperatorType.SATURATED_FLOOR_CAST);
         try {
             // todo we should not be caching functions across session
-            return coercionCache.get(new CoercionCacheKey(operatorType, fromType, toType), () -> {
+            return uncheckedCacheGet(coercionCache, new CoercionCacheKey(operatorType, fromType, toType), () -> {
                 String name = mangleOperatorName(operatorType);
                 Signature signature = new Signature(name, toType.getTypeSignature(), ImmutableList.of(fromType.getTypeSignature()));
                 FunctionBinding functionBinding = functionResolver.resolveCoercion(session, functions.get(QualifiedName.of(name)), signature);
                 return resolve(session, functionBinding);
             });
-        }
-        catch (ExecutionException e) {
-            throw new UncheckedExecutionException(e);
         }
         catch (UncheckedExecutionException e) {
             if (e.getCause() instanceof TrinoException) {
