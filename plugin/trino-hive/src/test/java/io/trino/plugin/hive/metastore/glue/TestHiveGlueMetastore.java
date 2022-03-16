@@ -312,6 +312,64 @@ public class TestHiveGlueMetastore
     }
 
     @Test
+    public void testGetPartitionsWithFilterUsingReservedKeywordsAsColumnName()
+            throws Exception
+    {
+        SchemaTableName tableName = temporaryTable("get_partitions_with_filter_using_reserved_keyword_column_name");
+        try {
+            String reservedKeywordPartitionColumnName = "key";
+            String regularColumnPartitionName = "int_partition";
+            List<ColumnMetadata> columns = ImmutableList.<ColumnMetadata>builder()
+                    .add(new ColumnMetadata("t_string", VARCHAR))
+                    .add(new ColumnMetadata(reservedKeywordPartitionColumnName, VARCHAR))
+                    .add(new ColumnMetadata(regularColumnPartitionName, BIGINT))
+                    .build();
+            List<String> partitionedBy = ImmutableList.of(reservedKeywordPartitionColumnName, regularColumnPartitionName);
+
+            doCreateEmptyTable(tableName, ORC, columns, partitionedBy);
+
+            HiveMetastoreClosure metastoreClient = new HiveMetastoreClosure(getMetastoreClient());
+            HiveIdentity identity = new HiveIdentity(HiveTestUtils.SESSION);
+            Table table = metastoreClient.getTable(identity, tableName.getSchemaName(), tableName.getTableName())
+                    .orElseThrow(() -> new TableNotFoundException(tableName));
+
+            String partitionName1 = makePartName(ImmutableList.of(reservedKeywordPartitionColumnName, regularColumnPartitionName), ImmutableList.of("value1", "1"));
+            String partitionName2 = makePartName(ImmutableList.of(reservedKeywordPartitionColumnName, regularColumnPartitionName), ImmutableList.of("value2", "2"));
+
+            List<PartitionWithStatistics> partitions = ImmutableList.of(partitionName1, partitionName2)
+                    .stream()
+                    .map(partitionName -> new PartitionWithStatistics(createDummyPartition(table, partitionName), partitionName, PartitionStatistics.empty()))
+                    .collect(toImmutableList());
+            metastoreClient.addPartitions(identity, tableName.getSchemaName(), tableName.getTableName(), partitions);
+            metastoreClient.updatePartitionStatistics(identity, tableName.getSchemaName(), tableName.getTableName(), partitionName1, currentStatistics -> EMPTY_TABLE_STATISTICS);
+            metastoreClient.updatePartitionStatistics(identity, tableName.getSchemaName(), tableName.getTableName(), partitionName2, currentStatistics -> EMPTY_TABLE_STATISTICS);
+
+            Optional<List<String>> partitionNames = metastoreClient.getPartitionNamesByFilter(
+                    identity,
+                    tableName.getSchemaName(),
+                    tableName.getTableName(),
+                    ImmutableList.of(reservedKeywordPartitionColumnName, regularColumnPartitionName),
+                    TupleDomain.withColumnDomains(ImmutableMap.of(regularColumnPartitionName, Domain.singleValue(BIGINT, 2L))));
+            assertTrue(partitionNames.isPresent());
+            assertEquals(partitionNames.get(), ImmutableList.of("key=value2/int_partition=2"));
+
+            // KEY is a reserved keyword in the grammar of the SQL parser used internally by Glue API
+            // and therefore should not be used in the partition filter
+            partitionNames = metastoreClient.getPartitionNamesByFilter(
+                    identity,
+                    tableName.getSchemaName(),
+                    tableName.getTableName(),
+                    ImmutableList.of(reservedKeywordPartitionColumnName, regularColumnPartitionName),
+                    TupleDomain.withColumnDomains(ImmutableMap.of(reservedKeywordPartitionColumnName, Domain.singleValue(VARCHAR, utf8Slice("value1")))));
+            assertTrue(partitionNames.isPresent());
+            assertEquals(partitionNames.get(), ImmutableList.of("key=value1/int_partition=1", "key=value2/int_partition=2"));
+        }
+        finally {
+            dropTable(tableName);
+        }
+    }
+
+    @Test
     public void testGetDatabasesLogsStats()
     {
         GlueHiveMetastore metastore = (GlueHiveMetastore) getMetastoreClient();
