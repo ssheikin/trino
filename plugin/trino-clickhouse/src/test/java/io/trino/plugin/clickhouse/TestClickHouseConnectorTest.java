@@ -79,6 +79,7 @@ public class TestClickHouseConnectorTest
 
             case SUPPORTS_CREATE_TABLE_WITH_TABLE_COMMENT:
             case SUPPORTS_CREATE_TABLE_WITH_COLUMN_COMMENT:
+            case SUPPORTS_ADD_COLUMN_WITH_COMMENT:
             case SUPPORTS_COMMENT_ON_TABLE:
             case SUPPORTS_COMMENT_ON_COLUMN:
                 return false;

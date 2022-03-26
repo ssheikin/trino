@@ -66,6 +66,7 @@ public abstract class BaseOracleConnectorTest
                 return false;
 
             case SUPPORTS_CREATE_TABLE_WITH_COLUMN_COMMENT:
+            case SUPPORTS_ADD_COLUMN_WITH_COMMENT:
                 return false;
 
             case SUPPORTS_ARRAY:
