@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -139,8 +140,14 @@ public class SyncPartitionMetadataProcedure
 
         try {
             FileSystem fileSystem = hdfsEnvironment.getFileSystem(hdfsContext, tableLocation);
-            List<String> partitionsInMetastore = metastore.getPartitionNames(identity, schemaName, tableName)
+            List<String> partitionsNamesInMetastore = metastore.getPartitionNames(identity, schemaName, tableName)
                     .orElseThrow(() -> new TableNotFoundException(schemaTableName));
+            List<String> partitionsInMetastore = metastore.getPartitionsByNames(identity, schemaName, tableName, partitionsNamesInMetastore).values().stream()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(partition -> new Path(partition.getStorage().getLocation()).toUri())
+                    .map(uri -> tableLocation.toUri().relativize(uri).getPath())
+                    .collect(toImmutableList());
             List<String> partitionsInFileSystem = listDirectory(fileSystem, fileSystem.getFileStatus(tableLocation), table.getPartitionColumns(), table.getPartitionColumns().size(), caseSensitive).stream()
                     .map(fileStatus -> fileStatus.getPath().toUri())
                     .map(uri -> tableLocation.toUri().relativize(uri).getPath())
