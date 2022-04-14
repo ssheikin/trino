@@ -13,6 +13,8 @@
  */
 package io.trino.sql.planner;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 import io.trino.Session;
@@ -46,8 +48,11 @@ import io.trino.sql.tree.TimeLiteral;
 import io.trino.sql.tree.TimestampLiteral;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import static io.airlift.slice.Slices.utf8Slice;
+import static io.trino.plugin.base.cache.CacheUtils.uncheckedCacheGet;
+import static io.trino.plugin.base.cache.SafeCaches.buildNonEvictableCache;
 import static io.trino.spi.StandardErrorCode.INVALID_LITERAL;
 import static io.trino.spi.StandardErrorCode.TYPE_NOT_FOUND;
 import static io.trino.spi.type.VarcharType.VARCHAR;
@@ -68,6 +73,8 @@ public final class LiteralInterpreter
     private final Session session;
     private final ConnectorSession connectorSession;
     private final InterpretedFunctionInvoker functionInvoker;
+
+    private final Cache<String, Function<GenericLiteral, Object>> genericLiteralEvaluatorCache = buildNonEvictableCache(CacheBuilder.newBuilder().maximumSize(1000));
 
     public LiteralInterpreter(PlannerContext plannerContext, Session session)
     {
@@ -146,26 +153,36 @@ public final class LiteralInterpreter
         @Override
         protected Object visitGenericLiteral(GenericLiteral node, Void context)
         {
-            Type type;
-            try {
-                type = plannerContext.getTypeManager().fromSqlType(node.getType());
-            }
-            catch (TypeNotFoundException e) {
-                throw semanticException(TYPE_NOT_FOUND, node, "Unknown type: %s", node.getType());
-            }
-
-            if (JSON.equals(type)) {
-                ResolvedFunction resolvedFunction = plannerContext.getMetadata().resolveFunction(session, QualifiedName.of("json_parse"), fromTypes(VARCHAR));
-                return functionInvoker.invoke(resolvedFunction, connectorSession, ImmutableList.of(utf8Slice(node.getValue())));
-            }
-
-            try {
-                ResolvedFunction resolvedFunction = plannerContext.getMetadata().getCoercion(session, VARCHAR, type);
-                return functionInvoker.invoke(resolvedFunction, connectorSession, ImmutableList.of(utf8Slice(node.getValue())));
-            }
-            catch (IllegalArgumentException e) {
-                throw semanticException(INVALID_LITERAL, node, "No literal form for type %s", type);
-            }
+            Function<GenericLiteral, Object> evaluator = uncheckedCacheGet(genericLiteralEvaluatorCache, node.getType(), () -> {
+                Type type;
+                try {
+                    type = plannerContext.getTypeManager().fromSqlType(node.getType());
+                }
+                catch (TypeNotFoundException e) {
+                    throw semanticException(TYPE_NOT_FOUND, node, "Unknown type: %s", node.getType());
+                }
+                boolean isJson = JSON.equals(type);
+                ResolvedFunction resolvedFunction;
+                if (isJson) {
+                    resolvedFunction = plannerContext.getMetadata().resolveFunction(session, QualifiedName.of("json_parse"), fromTypes(VARCHAR));
+                }
+                else {
+                    resolvedFunction = plannerContext.getMetadata().getCoercion(session, VARCHAR, type);
+                }
+                return evaluatedNode -> {
+                    try {
+                        return functionInvoker.invoke(resolvedFunction, connectorSession, ImmutableList.of(utf8Slice(evaluatedNode.getValue())));
+                    }
+                    catch (IllegalArgumentException e) {
+                        if (isJson) {
+                            // TODO it may be not correct to propagate this exceptiion as-is in JSON case
+                            throw e;
+                        }
+                        throw semanticException(INVALID_LITERAL, evaluatedNode, "No literal form for type %s", type);
+                    }
+                };
+            });
+            return evaluator.apply(node);
         }
 
         @Override
