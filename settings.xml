@@ -3,7 +3,7 @@
         <!-- Starburst Maven Snapshot Repository -->
         <server>
             <id>starburstdata.snapshots</id>
-            <username>maven</username>
+            <username>${env.mavenUser}</username>
             <password>${env.mavenCredentials}</password>
             <configuration>
                 <httpConfiguration>
@@ -17,7 +17,7 @@
         <!-- Starburst Maven Release Repository -->
         <server>
             <id>starburstdata.releases</id>
-            <username>maven</username>
+            <username>${env.mavenUser}</username>
             <password>${env.mavenCredentials}</password>
             <configuration>
                 <httpConfiguration>
@@ -48,10 +48,10 @@
                 <gpg.skip>true</gpg.skip>
                 <air.repository.snapshot.id>starburstdata.snapshots</air.repository.snapshot.id>
                 <air.repository.snapshot.name>Starburstdata Snapshots</air.repository.snapshot.name>
-                <air.repository.snapshot.url>https://maven.starburstdata.net/starburstdata-artifacts-testing/snapshots</air.repository.snapshot.url>
+                <air.repository.snapshot.url>https://starburstdata-sep-cicd-843985043183.d.codeartifact.us-east-2.amazonaws.com/maven/snapshots/</air.repository.snapshot.url>
                 <air.repository.release.id>starburstdata.releases</air.repository.release.id>
                 <air.repository.release.name>Starburstdata Releases</air.repository.release.name>
-                <air.repository.release.url>https://maven.starburstdata.net/starburstdata-artifacts-testing/releases</air.repository.release.url>
+                <air.repository.release.url>https://starburstdata-sep-cicd-843985043183.d.codeartifact.us-east-2.amazonaws.com/maven/releases/</air.repository.release.url>
             </properties>
         </profile>
     </profiles>

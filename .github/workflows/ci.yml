@@ -16,7 +16,6 @@ env:
   MAVEN_TEST: "-B -Dair.check.skip-all --fail-at-end"
   RETRY: .github/bin/retry
   MAVEN_CONFIG: "-s settings.xml"
-  mavenCredentials: ${{ secrets.mavenCredentials }}
   dockerCredentials: ${{ secrets.dockerCredentials }}
 
 jobs:
@@ -34,6 +33,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Checks
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -55,6 +61,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -86,6 +99,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -111,6 +131,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Install Hive Module
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -199,6 +226,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -251,6 +285,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -266,6 +307,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -286,6 +334,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -381,6 +436,13 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
