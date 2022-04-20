@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   maven-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     strategy:
       fail-fast: false
       matrix:
@@ -73,7 +73,7 @@ jobs:
         run: core/docker/build-local.sh
 
   error-prone-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -99,7 +99,7 @@ jobs:
             -pl '!:trino-docs,!:trino-server,!:trino-server-rpm'
 
   web-ui-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -107,7 +107,7 @@ jobs:
         run: core/trino-main/bin/check_webui.sh
 
   test-jdbc-compatibility:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -152,7 +152,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   hive-tests:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-medium]
     strategy:
       fail-fast: false
       matrix:
@@ -273,7 +273,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   test-other-modules:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
@@ -339,7 +339,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     strategy:
       fail-fast: false
       matrix:
@@ -415,7 +415,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   test-memsql:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -427,9 +427,6 @@ jobs:
       - name: Configure Problem Matchers
         run: |
           echo "::add-matcher::.github/problem-matcher.json"
-      - name: Cleanup node
-        # This is required as a virtual environment update 20210219.1 left too little space for MemSQL to work
-        run: .github/bin/cleanup-node.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -463,7 +460,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   test-bigquery:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -517,7 +514,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   pt:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     # explicitly define the name to avoid adding the value of the `ignore exclusion if` matrix item
     name: pt (${{ matrix.config }}, ${{ matrix.suite }}, ${{ matrix.jdk }})
     strategy:
@@ -616,11 +613,6 @@ jobs:
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
           $RETRY $MAVEN install ${MAVEN_FAST_INSTALL} -pl '!:trino-docs,!:trino-server-rpm'
-      - name: Free Disk Space
-        run: |
-          docker image prune -af
-          sudo apt-get clean
-          rm -rf ~/.m2/repository
       - name: Product Tests
         run: |
           testing/bin/ptl suite run \
