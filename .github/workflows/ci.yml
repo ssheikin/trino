@@ -374,12 +374,11 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   test:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ${{ matrix.runners }}
     strategy:
       fail-fast: false
       matrix:
         modules:
-          - ":trino-main"
           - ":trino-tests"
           - ":trino-raptor-legacy"
           - ":trino-accumulo"
@@ -403,6 +402,12 @@ jobs:
           - ":trino-iceberg"
           - ":trino-phoenix,:trino-phoenix5"
           - ":trino-jdbc,:trino-base-jdbc,:trino-thrift,:trino-memory"
+        runners:
+          - [sep-cicd, gha-fleet-small]
+        include:
+          - modules: ":trino-main"
+            runners: [ sep-cicd, gha-fleet-large ]
+
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
