@@ -35,7 +35,7 @@ concurrency:
 
 jobs:
   maven-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     strategy:
       fail-fast: false
       matrix:
@@ -66,7 +66,7 @@ jobs:
         run: core/docker/build-local.sh
 
   error-prone-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -88,7 +88,7 @@ jobs:
             -pl '!:trino-docs,!:trino-server,!:trino-server-rpm'
 
   web-ui-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -96,7 +96,7 @@ jobs:
         run: core/trino-main/bin/check_webui.sh
 
   test-jdbc-compatibility:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -117,7 +117,7 @@ jobs:
         run: $MAVEN test ${MAVEN_TEST} -pl :trino-test-jdbc-compatibility-old-server
 
   hive-tests:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-medium]
     strategy:
       fail-fast: false
       matrix:
@@ -222,7 +222,7 @@ jobs:
             **/target/checkstyle-*
 
   test-other-modules:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
@@ -264,7 +264,7 @@ jobs:
             **/target/checkstyle-*
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     strategy:
       fail-fast: false
       matrix:
@@ -316,7 +316,7 @@ jobs:
             **/target/checkstyle-*
 
   test-memsql:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -324,9 +324,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 11
-      - name: Cleanup node
-        # This is required as a virtual environment update 20210219.1 left too little space for MemSQL to work
-        run: .github/bin/cleanup-node.sh
       - name: Maven Install
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
@@ -348,7 +345,7 @@ jobs:
             **/target/checkstyle-*
 
   test-bigquery:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -386,7 +383,7 @@ jobs:
             **/target/checkstyle-*
 
   pt:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     strategy:
       fail-fast: false
       matrix:
@@ -482,11 +479,6 @@ jobs:
         run: |
           export MAVEN_OPTS="${MAVEN_INSTALL_OPTS}"
           $RETRY $MAVEN install ${MAVEN_FAST_INSTALL} -pl '!:trino-docs,!:trino-server-rpm'
-      - name: Free Disk Space
-        run: |
-          docker image prune -af
-          sudo apt-get clean
-          rm -rf ~/.m2/repository
       - name: Product Tests
         run: |
           testing/bin/ptl suite run \
