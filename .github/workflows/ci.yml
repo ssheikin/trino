@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   maven-checks:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -64,7 +64,7 @@ jobs:
         run: core/docker/build-local.sh
 
   error-prone-checks:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -86,7 +86,7 @@ jobs:
             -pl '!:trino-docs,!:trino-server,!:trino-server-rpm'
 
   web-ui-checks:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -94,7 +94,7 @@ jobs:
         run: core/trino-main/bin/check_webui.sh
 
   test-jdbc-compatibility:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -115,7 +115,7 @@ jobs:
         run: ./mvnw test ${MAVEN_TEST} -pl :trino-test-jdbc-compatibility-old-server
 
   hive-tests:
-    runs-on: [sep-cicd, gha-fleet-medium]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -211,7 +211,7 @@ jobs:
             plugin/trino-hive-hadoop2/bin/run_hive_alluxio_tests.sh
 
   test-other-modules:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
@@ -244,7 +244,7 @@ jobs:
             !:trino-bigquery'
 
   test:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -279,7 +279,7 @@ jobs:
         run: ./mvnw test ${MAVEN_TEST} -pl ${{ matrix.modules }}
 
   test-memsql:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -303,7 +303,7 @@ jobs:
           fi
 
   test-bigquery:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -333,7 +333,7 @@ jobs:
           fi
 
   pt:
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
