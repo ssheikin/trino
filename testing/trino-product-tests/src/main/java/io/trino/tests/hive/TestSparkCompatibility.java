@@ -70,9 +70,9 @@ public class TestSparkCompatibility
                         row(1, "2022-04-13"),
                         row(2, "2022-04-13"),
                         row(3, "2022-04-13"),
-                        row(4, "+12345-06-07"),
+                        row(4, null),
                         row(5, null),
-                        row(6, "-0001-01-01")));
+                        row(6, null)));
 
         // Use date_format function to avoid exception due to java.sql.Date.valueOf() with 5 digit year
         assertThat(onHive().executeQuery("SELECT value, date_format(dt, 'yyyy-MM-dd') FROM " + sparkTableName))
@@ -94,7 +94,7 @@ public class TestSparkCompatibility
                         row(5, "0123-04-05"),
                         row(6, "-0001-01-01")));
 
-        onTrino().executeQuery("DROP TABLE " + trinoTableName);
+        onSpark().executeQuery("DROP TABLE " + sparkTableName);
     }
 
     @Test(groups = {HIVE_SPARK, PROFILE_SPECIFIC_TESTS}, dataProvider = "unsupportedPartitionDates")
@@ -115,9 +115,9 @@ public class TestSparkCompatibility
 
         // Trino throws an exception if the date is invalid format or not a whole round date
         assertThat(() -> onTrino().executeQuery("SELECT value, dt FROM " + trinoTableName))
-                .failsWithMessageMatching("Invalid partition value.*");
+                .failsWithMessageMatching(".*Invalid partition value.*");
 
-        onTrino().executeQuery("DROP TABLE " + trinoTableName);
+        onSpark().executeQuery("DROP TABLE " + sparkTableName);
     }
 
     @DataProvider
