@@ -55,6 +55,13 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
       - name: Maven Checks
@@ -87,6 +94,13 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
       - name: Maven Install
@@ -126,6 +140,13 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
       - name: Maven Install
@@ -186,6 +207,13 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
       - name: Install Hive Module
@@ -302,6 +330,13 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
       - name: Maven Install
@@ -439,6 +474,13 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Configure Problem Matchers
         run: echo "::add-matcher::.github/problem-matcher.json"
       - name: Cleanup node
@@ -541,6 +583,13 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Maven login
+        run: .github/bin/maven-login.sh
       - name: Check secrets
         run: |
           if [[ 'container' != "" && \
