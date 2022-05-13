@@ -2175,8 +2175,8 @@
         <profile>
             <id>gib</id>
             <properties>
-                <!-- the *local* master, not refs/remotes/... -->
-                <gib.referenceBranch>master</gib.referenceBranch>
+                <!-- the *local* branch, not refs/remotes/... -->
+                <gib.referenceBranch>release-402-e</gib.referenceBranch>
             </properties>
             <build>
                 <plugins>
@@ -2186,7 +2186,7 @@
                         <version>4.1.1</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <disableIfBranchMatches>master</disableIfBranchMatches>
+                            <disableIfBranchMatches>master|release-.*</disableIfBranchMatches>
                             <compareToMergeBase>true</compareToMergeBase>
                             <uncommitted>true</uncommitted>
                             <untracked>true</untracked>
