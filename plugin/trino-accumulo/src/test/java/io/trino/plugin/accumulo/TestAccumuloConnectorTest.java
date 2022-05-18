@@ -67,6 +67,9 @@ public class TestAccumuloConnectorTest
             case SUPPORTS_ADD_COLUMN:
                 return false;
 
+            case SUPPORTS_CREATE_TABLE_WITH_TABLE_COMMENT:
+                return false;
+
             case SUPPORTS_COMMENT_ON_TABLE:
             case SUPPORTS_COMMENT_ON_COLUMN:
                 return false;

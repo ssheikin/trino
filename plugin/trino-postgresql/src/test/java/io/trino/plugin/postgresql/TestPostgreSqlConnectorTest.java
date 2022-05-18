@@ -99,6 +99,7 @@ public class TestPostgreSqlConnectorTest
             case SUPPORTS_JOIN_PUSHDOWN:
                 return true;
 
+            case SUPPORTS_CREATE_TABLE_WITH_TABLE_COMMENT:
             case SUPPORTS_COMMENT_ON_TABLE:
                 return false;
 
