@@ -20,20 +20,24 @@ import io.airlift.concurrent.MoreFutures;
 import org.gaul.modernizer_maven_annotations.SuppressModernizer;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
@@ -42,6 +46,7 @@ import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
@@ -137,6 +142,91 @@ public class TestEvictableLoadingCache
         assertEquals(entry.getKey(), second);
         assertNotSame(entry.getKey(), first);
         assertSame(entry.getKey(), second);
+    }
+
+    /**
+     * Test that the loader is invoked only once for concurrent invocations of {{@link LoadingCache#get(Object, Callable)} with equal keys.
+     * This is a behavior of Guava Cache as well. While this is necessarily desirable behavior (see
+     * <a href="https://github.com/trinodb/trino/issues/11067">https://github.com/trinodb/trino/issues/11067</a>),
+     * the test exists primarily to document current state and support discussion, should the current state change.
+     */
+    @Test(timeOut = TEST_TIMEOUT_MILLIS)
+    public void testConcurrentGetWithCallableShareLoad()
+            throws Exception
+    {
+        LoadingCache<Integer, Integer> cache = EvictableLoadingCache.build(
+                OptionalLong.empty(),
+                OptionalLong.empty(),
+                10_000,
+                false,
+                CacheLoader.from(key -> {
+                    throw new RuntimeException("Shouldn't be called in this test");
+                }));
+
+        // Note: the test has been backported, but in this branch, the get() with Callable is not supported.
+        // For completeness, the test is retained (asserting the operation is not supported). Should the support
+        // for get() with Callable be backported in the future, it should come with a re-backport of this test.
+        assertThatThrownBy(() -> cache.get(42, () -> 43))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage(null);
+    }
+
+    /**
+     * Test that the loader is invoked only once for concurrent invocations of {{@link LoadingCache#get(Object)} with equal keys.
+     */
+    @Test(timeOut = TEST_TIMEOUT_MILLIS)
+    public void testConcurrentGetShareLoad()
+            throws Exception
+    {
+        AtomicInteger loads = new AtomicInteger();
+        AtomicInteger concurrentInvocations = new AtomicInteger();
+
+        LoadingCache<Integer, Integer> cache = EvictableLoadingCache.build(
+                OptionalLong.empty(),
+                OptionalLong.empty(),
+                10_000,
+                false,
+                new CacheLoader<>()
+                {
+                    @Override
+                    public Integer load(Integer key)
+                            throws Exception
+                    {
+                        loads.incrementAndGet();
+                        int invocations = concurrentInvocations.incrementAndGet();
+                        checkState(invocations == 1, "There should be no concurrent invocations, cache should do load sharing when get() invoked for same key");
+                        Thread.sleep(1);
+                        concurrentInvocations.decrementAndGet();
+                        return -key;
+                    }
+                });
+
+        int threads = 2;
+        int invocationsPerThread = 100;
+        ExecutorService executor = newFixedThreadPool(threads);
+        try {
+            CyclicBarrier barrier = new CyclicBarrier(threads);
+            List<Future<?>> futures = new ArrayList<>();
+            for (int i = 0; i < threads; i++) {
+                futures.add(executor.submit(() -> {
+                    for (int invocation = 0; invocation < invocationsPerThread; invocation++) {
+                        barrier.await(10, SECONDS);
+                        assertEquals((int) cache.get(invocation), -invocation);
+                    }
+                    return null;
+                }));
+            }
+
+            for (Future<?> future : futures) {
+                future.get(10, SECONDS);
+            }
+            assertThat(loads).as("loads")
+                    .hasValueBetween(invocationsPerThread, threads * invocationsPerThread - 1 /* inclusive */);
+        }
+        finally {
+            executor.shutdownNow();
+            executor.awaitTermination(10, SECONDS);
+        }
     }
 
     /**
