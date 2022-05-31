@@ -24,17 +24,20 @@ import io.trino.spi.type.Type;
 import io.trino.sql.planner.Plan;
 import io.trino.sql.planner.assertions.PlanAssert;
 import io.trino.sql.planner.assertions.PlanMatchPattern;
+import io.trino.sql.planner.optimizations.PlanNodeSearcher;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.TableScanNode;
 import io.trino.testing.LocalQueryRunner;
 import io.trino.testing.MaterializedResult;
 import io.trino.testing.MaterializedRow;
 import io.trino.testing.QueryRunner;
+import io.trino.util.MorePredicates;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.AssertProvider;
 import org.assertj.core.api.ListAssert;
 import org.assertj.core.presentation.Representation;
 import org.assertj.core.presentation.StandardRepresentation;
+import org.assertj.core.util.CanIgnoreReturnValue;
 import org.intellij.lang.annotations.Language;
 
 import java.io.Closeable;
@@ -42,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -407,7 +411,7 @@ public class QueryAssertions
         }
 
         /**
-         * Verifies query is fully pushed down and verifies the results are the same as when the pushdown is disabled.
+         * Verifies query is fully pushed down and that results are the same as when pushdown is fully disabled.
          */
         public QueryAssert isFullyPushedDown()
         {
@@ -434,7 +438,7 @@ public class QueryAssertions
         }
 
         /**
-         * Verifies query is not fully pushed down and verifies the results are the same as when the pushdown is fully disabled.
+         * Verifies query is not fully pushed down and that results are the same as when pushdown is fully disabled.
          * <p>
          * <b>Note:</b> the primary intent of this assertion is to ensure the test is updated to {@link #isFullyPushedDown()}
          * when pushdown capabilities are improved.
@@ -451,7 +455,7 @@ public class QueryAssertions
         }
 
         /**
-         * Verifies query is not fully pushed down and verifies the results are the same as when the pushdown is fully disabled.
+         * Verifies query is not fully pushed down and that results are the same as when pushdown is fully disabled.
          * <p>
          * <b>Note:</b> the primary intent of this assertion is to ensure the test is updated to {@link #isFullyPushedDown()}
          * when pushdown capabilities are improved.
@@ -460,6 +464,27 @@ public class QueryAssertions
         {
             PlanMatchPattern expectedPlan = PlanMatchPattern.anyTree(retainedSubplan);
 
+            return hasPlan(expectedPlan, plan -> {
+                if (PlanNodeSearcher.searchFrom(plan.getRoot())
+                        .where(MorePredicates.isInstanceOfAny(TableScanNode.class))
+                        .findFirst().isEmpty()) {
+                    throw new IllegalArgumentException("Incorrect use of isNotFullyPushedDown: the actual plan matched the expected despite not having a TableScanNode left " +
+                            "in the plan. Use hasPlan() instead");
+                }
+            });
+        }
+
+        /**
+         * Verifies query has the expected plan and that results are the same as when pushdown is fully disabled.
+         */
+        @CanIgnoreReturnValue
+        public final QueryAssert hasPlan(PlanMatchPattern expectedPlan)
+        {
+            return hasPlan(expectedPlan, plan -> {});
+        }
+
+        private final QueryAssert hasPlan(PlanMatchPattern expectedPlan, Consumer<Plan> additionalPlanVerification)
+        {
             transaction(runner.getTransactionManager(), runner.getAccessControl())
                     .execute(session, session -> {
                         Plan plan = runner.createPlan(session, query, WarningCollector.NOOP);
@@ -469,6 +494,7 @@ public class QueryAssertions
                                 noopStatsCalculator(),
                                 plan,
                                 expectedPlan);
+                        additionalPlanVerification.accept(plan);
                     });
 
             if (!skipResultsCorrectnessCheckForPushdown) {
