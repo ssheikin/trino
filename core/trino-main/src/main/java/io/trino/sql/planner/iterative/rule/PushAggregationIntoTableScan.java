@@ -40,6 +40,7 @@ import io.trino.sql.planner.plan.Assignments;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.ProjectNode;
 import io.trino.sql.planner.plan.TableScanNode;
+import io.trino.sql.planner.plan.ValuesNode;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.SymbolReference;
 
@@ -125,6 +126,11 @@ public class PushAggregationIntoTableScan
             Map<Symbol, AggregationNode.Aggregation> aggregations,
             List<Symbol> groupingKeys)
     {
+        if (groupingKeys.isEmpty() && aggregations.isEmpty()) {
+            // Global aggregation with no aggregation functions
+            return Optional.of(new ValuesNode(aggregationNode.getId(), 1));
+        }
+
         Map<String, ColumnHandle> assignments = tableScan.getAssignments()
                 .entrySet().stream()
                 .collect(toImmutableMap(entry -> entry.getKey().getName(), Entry::getValue));
