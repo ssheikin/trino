@@ -2721,8 +2721,8 @@ public abstract class BaseIcebergConnectorTest
         assertUpdate("DROP TABLE test_all_types");
     }
 
-    @Test
-    public void testLocalDynamicFilteringWithSelectiveBuildSizeJoin()
+    @Test(timeOut = 25_000)
+    public void testLocalDynamicFilteringWithSelectiveBuildSideJoin()
     {
         long fullTableScan = (Long) computeActual("SELECT count(*) FROM lineitem").getOnlyValue();
         // Pick a value for totalprice where file level stats will not be able to filter out any data
@@ -2736,6 +2736,7 @@ public abstract class BaseIcebergConnectorTest
 
         Session session = Session.builder(getSession())
                 .setSystemProperty(JOIN_DISTRIBUTION_TYPE, FeaturesConfig.JoinDistributionType.BROADCAST.name())
+                .setCatalogSessionProperty(ICEBERG_CATALOG, "dynamic_filtering_wait_timeout", "1h")
                 .build();
 
         ResultWithQueryId<MaterializedResult> result = getDistributedQueryRunner().executeWithQueryId(
