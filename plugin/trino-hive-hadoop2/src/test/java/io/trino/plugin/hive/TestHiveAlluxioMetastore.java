@@ -156,6 +156,12 @@ public class TestHiveAlluxioMetastore
     }
 
     @Override
+    public void testGetPartitionsWithFilter()
+    {
+        // Alluxio metastore returns incorrect results
+    }
+
+    @Override
     public void testGetPartitionSplitsTableOfflinePartition()
     {
         if (getHiveVersionMajor() >= 2) {
