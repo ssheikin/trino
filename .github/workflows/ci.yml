@@ -216,9 +216,10 @@ jobs:
       - name: Run Hive Azure WASB Tests
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
-          WASB_CONTAINER: ${{ secrets.WASB_TESTS_CONTAINER }}
-          WASB_ACCOUNT: ${{ secrets.WASB_TESTS_ACCOUNT }}
-          WASB_ACCESS_KEY: ${{ secrets.WASB_TESTS_ACCESS_KEY }}
+          # Use the same MS Azure storage account as for the ABFS tests
+          WASB_CONTAINER: 'container'
+          WASB_ACCOUNT: ${{ secrets.ABFS_TESTS_ABFS_ACCOUNT }}
+          WASB_ACCESS_KEY: ${{ secrets.ABFS_TESTS_ABFS_ACCESS_KEY }}
         run: |
           if [ "${WASB_CONTAINER}" != "" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
