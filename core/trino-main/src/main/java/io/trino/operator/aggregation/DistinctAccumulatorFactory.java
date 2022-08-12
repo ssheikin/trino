@@ -232,7 +232,7 @@ public class DistinctAccumulatorFactory
                 columnIndexes[i] = i + 1;
             }
             Page filtered = filteredWithGroup.getColumns(columnIndexes);
-
+            // NOTE: the accumulator must be called even if the filtered page is empty to inform the accumulator about the group count
             accumulator.addInput(groupIds, filtered, Optional.of(distinctMask));
         }
 
