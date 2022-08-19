@@ -21,6 +21,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import java.util.List;
+
+import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.aggregation;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.anyTree;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.functionCall;
@@ -109,6 +112,20 @@ public class TestJoin
                 "FROM t " +
                 "WHERE x = 10 AND z = 'b'"))
                 .matches("VALUES (10, CAST('b' AS varchar(2)))");
+    }
+
+    @Test
+    public void testAliasingOfNullCasts()
+    {
+        // Test for https://github.com/trinodb/trino/issues/13565
+        assertThat(assertions.query("" +
+                "WITH t AS (\n" +
+                "    SELECT CAST(null AS varchar) AS x, CAST(null AS varchar) AS y\n" +
+                "    FROM (VALUES 1) t(a) JOIN (VALUES 1) u(a) USING (a))\n" +
+                "SELECT * FROM t\n" +
+                "WHERE CAST(x AS bigint) IS NOT NULL AND y = 'hello'\n"))
+                .hasOutputTypes(List.of(VARCHAR, VARCHAR))
+                .returnsEmptyResult();
     }
 
     @Test
