@@ -80,6 +80,7 @@ public class TestSpiBackwardCompatibility
     private static Set<String> getBackwardIncompatibleChanges()
     {
         String version = new ConnectorContext() {}.getSpiVersion().replace("-SNAPSHOT", "");
+        version = version.substring(0, 3);
         return BACKWARD_INCOMPATIBLE_CHANGES.get(version);
     }
 
