@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   maven-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     strategy:
       fail-fast: false
       matrix:
@@ -81,7 +81,7 @@ jobs:
         run: core/docker/build-local.sh
 
   error-prone-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -117,7 +117,7 @@ jobs:
             -pl '!:trino-docs,!:trino-server,!:trino-server-rpm'
 
   web-ui-checks:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -127,7 +127,7 @@ jobs:
         run: core/trino-main/bin/check_webui.sh
 
   test-jdbc-compatibility:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v2
@@ -186,7 +186,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   hive-tests:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-large]
     strategy:
       fail-fast: false
       matrix:
@@ -318,7 +318,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   test-other-modules:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
@@ -396,7 +396,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   build-test-matrix:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -420,44 +420,44 @@ jobs:
           touch gib-impacted.log
           cat <<EOF > .github/test-matrix.yaml
           include:
-            - { modules: core/trino-main }
-            - { modules: testing/trino-tests }
-            - { modules: plugin/trino-raptor-legacy }
-            - { modules: plugin/trino-accumulo }
-            - { modules: plugin/trino-cassandra }
-            - { modules: plugin/trino-clickhouse }
-            - { modules: plugin/trino-delta-lake }
-            - { modules: plugin/trino-delta-lake, profile: test-failure-recovery }
-            - { modules: plugin/trino-hive }
-            - { modules: plugin/trino-hive, profile: test-parquet }
-            - { modules: plugin/trino-hive, profile: test-failure-recovery }
-            - { modules: plugin/trino-hive, profile: test-fault-tolerant-execution }
-            - { modules: plugin/trino-elasticsearch }
-            - { modules: plugin/trino-elasticsearch, profile: test-stats }
-            - { modules: plugin/trino-mongodb }
-            - { modules: plugin/trino-kafka }
-            - { modules: plugin/trino-pinot }
-            - { modules: plugin/trino-redis }
-            - { modules: plugin/trino-mysql }
-            - { modules: plugin/trino-postgresql }
-            - { modules: plugin/trino-sqlserver }
-            - { modules: plugin/trino-singlestore }
-            - { modules: plugin/trino-mariadb }
-            - { modules: plugin/trino-oracle }
-            - { modules: plugin/trino-kudu }
-            - { modules: plugin/trino-druid }
-            - { modules: plugin/trino-iceberg }
-            - { modules: plugin/trino-iceberg, profile: test-failure-recovery }
-            - { modules: [ plugin/trino-phoenix, plugin/trino-phoenix5 ] }
-            - { modules: [ client/trino-jdbc, plugin/trino-base-jdbc, plugin/trino-thrift, plugin/trino-memory ] }
-            - { modules: plugin/trino-bigquery }
+            - { modules: core/trino-main, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: testing/trino-tests, runners:[ sep-cicd, gha-fleet-large ] }
+            - { modules: plugin/trino-raptor-legacy, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-accumulo, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-cassandra, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-clickhouse, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-delta-lake, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-delta-lake, profile: test-failure-recovery, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-hive, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-hive, profile: test-parquet, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-hive, profile: test-failure-recovery, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-hive, profile: test-fault-tolerant-execution, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-elasticsearch, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-elasticsearch, profile: test-stats, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-mongodb, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-kafka, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-pinot, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-redis, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-mysql, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-postgresql, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-sqlserver, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-singlestore, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-mariadb, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-oracle, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-kudu, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-druid, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-iceberg, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-iceberg, profile: test-failure-recovery, runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: [ plugin/trino-phoenix, plugin/trino-phoenix5 ], runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: [ client/trino-jdbc, plugin/trino-base-jdbc, plugin/trino-thrift, plugin/trino-memory ], runners:[ sep-cicd, gha-fleet-small ] }
+            - { modules: plugin/trino-bigquery, runners:[ sep-cicd, gha-fleet-small ] }
           EOF
           ./.github/bin/build-matrix-from-impacted.py -v -i gib-impacted.log -m .github/test-matrix.yaml -o matrix.json
           echo "Matrix: $(jq '.' matrix.json)"
           echo "::set-output name=matrix::$(jq -c '.' matrix.json)"
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runners }}
     needs: build-test-matrix
     if: needs.build-test-matrix.outputs.matrix != '{}'
     strategy:
@@ -570,7 +570,7 @@ jobs:
           retention-days: ${{ env.TEST_REPORT_RETENTION_DAYS }}
 
   build-pt:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     outputs:
       have_azure_secrets: ${{ steps.check-secrets.outputs.have_azure_secrets }}
     steps:
@@ -632,7 +632,7 @@ jobs:
           retention-days: 1
 
   pt:
-    runs-on: ubuntu-latest
+    runs-on: [sep-cicd, gha-fleet-small]
     # explicitly define the name to avoid adding the value of the `ignore exclusion if` matrix item
     name: pt (${{ matrix.config }}, ${{ matrix.suite }}, ${{ matrix.jdk }})
     strategy:
