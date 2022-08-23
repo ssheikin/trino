@@ -358,7 +358,7 @@ public final class HiveUtil
     private static Class<? extends InputFormat<?, ?>> getInputFormatClass(JobConf conf, String inputFormatName)
             throws ClassNotFoundException
     {
-        // legacy names for Parquet
+        // CDH uses different names for Parquet
         if ("parquet.hive.DeprecatedParquetInputFormat".equals(inputFormatName) ||
                 "parquet.hive.MapredParquetInputFormat".equals(inputFormatName)) {
             return MapredParquetInputFormat.class;
@@ -462,7 +462,7 @@ public final class HiveUtil
 
     private static Class<? extends Deserializer> getDeserializerClass(String name)
     {
-        // legacy name for Parquet
+        // CDH uses different names for Parquet
         if ("parquet.hive.serde.ParquetHiveSerDe".equals(name)) {
             return ParquetHiveSerDe.class;
         }

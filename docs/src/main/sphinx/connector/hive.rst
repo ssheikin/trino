@@ -40,7 +40,8 @@ The Hive connector requires a Hive metastore service (HMS), or a compatible
 implementation of the Hive metastore, such as
 `AWS Glue Data Catalog <https://aws.amazon.com/glue/>`_.
 
-Apache Hadoop HDFS 2.x and 3.x are supported.
+Apache Hadoop 2.x and 3.x are supported, along with derivative distributions,
+including Cloudera CDH 5 and Hortonworks Data Platform (HDP).
 
 Many distributed storage systems including HDFS,
 :doc:`Amazon S3 <hive-s3>` or S3-compatible systems,
