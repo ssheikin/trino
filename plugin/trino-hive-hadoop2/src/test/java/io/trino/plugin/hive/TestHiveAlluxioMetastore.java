@@ -24,25 +24,50 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 
 public class TestHiveAlluxioMetastore
         extends AbstractTestHive
 {
-    @Parameters({"test.alluxio.host", "test.alluxio.port"})
+    private static final String SCHEMA = "default";
+
+    private String alluxioAddress;
+    private int hiveVersionMajor;
+
+    @Parameters({
+            "hive.hadoop2.alluxio.host",
+            "hive.hadoop2.alluxio.port",
+            "hive.hadoop2.hiveVersionMajor",
+            "hive.hadoop2.timeZone",
+    })
     @BeforeClass
-    public void setup(String host, String port)
+    public void setup(String host, String port, int hiveVersionMajor, String timeZone)
     {
+        checkArgument(hiveVersionMajor > 0, "Invalid hiveVersionMajor: %s", hiveVersionMajor);
+        timeZone = hiveVersionMajor >= 3 ? "UTC" : timeZone;
+
+        this.alluxioAddress = host + ":" + port;
+        this.hiveVersionMajor = hiveVersionMajor;
+
         System.setProperty(PropertyKey.Name.SECURITY_LOGIN_USERNAME, "presto");
         System.setProperty(PropertyKey.Name.MASTER_HOSTNAME, host);
         HiveConfig hiveConfig = new HiveConfig()
-                .setParquetTimeZone("UTC")
-                .setRcfileTimeZone("UTC");
+                .setParquetTimeZone(timeZone)
+                .setRcfileTimeZone(timeZone);
 
         AlluxioHiveMetastoreConfig alluxioConfig = new AlluxioHiveMetastoreConfig();
-        alluxioConfig.setMasterAddress(host + ":" + port);
+        alluxioConfig.setMasterAddress(this.alluxioAddress);
         TableMasterClient client = AlluxioMetastoreModule.createCatalogMasterClient(alluxioConfig);
-        setup("default", hiveConfig, new AlluxioHiveMetastore(client, new HiveMetastoreConfig()), HDFS_ENVIRONMENT);
+        hdfsEnvironment = HDFS_ENVIRONMENT;
+        setup(SCHEMA, hiveConfig, new AlluxioHiveMetastore(client, new HiveMetastoreConfig()), hdfsEnvironment);
+    }
+
+    private int getHiveVersionMajor()
+    {
+        checkState(hiveVersionMajor > 0, "hiveVersionMajor not set");
+        return hiveVersionMajor;
     }
 
     @Override
@@ -140,6 +165,16 @@ public class TestHiveAlluxioMetastore
     public void testGetPartitionsWithFilter()
     {
         // Alluxio metastore returns incorrect results
+    }
+
+    @Override
+    public void testGetPartitionSplitsTableOfflinePartition()
+    {
+        if (getHiveVersionMajor() >= 2) {
+            throw new SkipException("ALTER TABLE .. ENABLE OFFLINE was removed in Hive 2.0 and this is a prerequisite for this test");
+        }
+
+        super.testGetPartitionSplitsTableOfflinePartition();
     }
 
     @Override

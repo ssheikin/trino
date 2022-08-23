@@ -620,6 +620,7 @@ public abstract class AbstractTestHive
     protected SchemaTableName tableUnpartitioned;
     protected SchemaTableName tablePartitionedWithNull;
     protected SchemaTableName tableOffline;
+    protected SchemaTableName tableOfflinePartition;
     protected SchemaTableName tableNotReadable;
     protected SchemaTableName view;
     protected SchemaTableName invalidTable;
@@ -699,6 +700,7 @@ public abstract class AbstractTestHive
         tableUnpartitioned = new SchemaTableName(database, "trino_test_unpartitioned");
         tablePartitionedWithNull = new SchemaTableName(database, "trino_test_partitioned_with_null");
         tableOffline = new SchemaTableName(database, "trino_test_offline");
+        tableOfflinePartition = new SchemaTableName(database, "trino_test_offline_partition");
         tableNotReadable = new SchemaTableName(database, "trino_test_not_readable");
         view = new SchemaTableName(database, "trino_test_view");
         invalidTable = new SchemaTableName(database, INVALID_TABLE);
@@ -779,16 +781,16 @@ public abstract class AbstractTestHive
         tableUnpartitionedProperties = new ConnectorTableProperties();
     }
 
-    protected final void setup(HostAndPort metastoreAddress, String databaseName)
+    protected final void setup(String host, int port, String databaseName, String timeZone)
     {
         HiveConfig hiveConfig = getHiveConfig()
-                .setParquetTimeZone("UTC")
-                .setRcfileTimeZone("UTC");
+                .setParquetTimeZone(timeZone)
+                .setRcfileTimeZone(timeZone);
 
         hdfsEnvironment = HDFS_ENVIRONMENT;
         HiveMetastore metastore = cachingHiveMetastore(
                 new BridgingHiveMetastore(testingThriftHiveMetastoreBuilder()
-                        .metastoreClient(metastoreAddress)
+                        .metastoreClient(HostAndPort.fromParts(host, port))
                         .hiveConfig(hiveConfig)
                         .thriftMetastoreConfig(new ThriftMetastoreConfig()
                                 .setAssumeCanonicalPartitionKeys(true))
@@ -1418,6 +1420,19 @@ public abstract class AbstractTestHive
     }
 
     @Test
+    public void testGetTableSchemaOfflinePartition()
+    {
+        try (Transaction transaction = newTransaction()) {
+            ConnectorMetadata metadata = transaction.getMetadata();
+            ConnectorTableHandle tableHandle = getTableHandle(metadata, tableOfflinePartition);
+            ConnectorTableMetadata tableMetadata = metadata.getTableMetadata(newSession(), tableHandle);
+            Map<String, ColumnMetadata> map = uniqueIndex(tableMetadata.getColumns(), ColumnMetadata::getName);
+
+            assertPrimitiveField(map, "t_string", createUnboundedVarcharType(), false);
+        }
+    }
+
+    @Test
     public void testGetTableSchemaNotReadablePartition()
     {
         try (Transaction transaction = newTransaction()) {
@@ -1605,6 +1620,35 @@ public abstract class AbstractTestHive
             }
             catch (TableOfflineException e) {
                 assertEquals(e.getTableName(), tableOffline);
+            }
+        }
+    }
+
+    @Test
+    public void testGetPartitionSplitsTableOfflinePartition()
+    {
+        try (Transaction transaction = newTransaction()) {
+            ConnectorMetadata metadata = transaction.getMetadata();
+            ConnectorSession session = newSession();
+            metadata.beginQuery(session);
+
+            ConnectorTableHandle tableHandle = getTableHandle(metadata, tableOfflinePartition);
+            assertNotNull(tableHandle);
+
+            ColumnHandle dsColumn = metadata.getColumnHandles(session, tableHandle).get("ds");
+            assertNotNull(dsColumn);
+
+            Domain domain = Domain.singleValue(createUnboundedVarcharType(), utf8Slice("2012-12-30"));
+            TupleDomain<ColumnHandle> tupleDomain = TupleDomain.withColumnDomains(ImmutableMap.of(dsColumn, domain));
+            tableHandle = applyFilter(metadata, tableHandle, new Constraint(tupleDomain));
+
+            try {
+                getSplitCount(getSplits(splitManager, transaction, session, tableHandle));
+                fail("Expected PartitionOfflineException");
+            }
+            catch (PartitionOfflineException e) {
+                assertEquals(e.getTableName(), tableOfflinePartition);
+                assertEquals(e.getPartition(), "ds=2012-12-30");
             }
         }
     }
