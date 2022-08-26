@@ -1199,10 +1199,7 @@ public abstract class AbstractTestDistributedQueries
 
     private void testColumnName(String columnName, boolean delimited)
     {
-        String nameInSql = columnName;
-        if (delimited) {
-            nameInSql = "\"" + columnName.replace("\"", "\"\"") + "\"";
-        }
+        String nameInSql = toColumnNameInSql(columnName, delimited);
         String tableName = "tcn_" + nameInSql.toLowerCase(ENGLISH).replaceAll("[^a-z0-9]", "") + randomTableSuffix();
 
         try {
@@ -1232,6 +1229,15 @@ public abstract class AbstractTestDistributedQueries
         finally {
             assertUpdate("DROP TABLE " + tableName);
         }
+    }
+
+    public static String toColumnNameInSql(String columnName, boolean delimited)
+    {
+        String nameInSql = columnName;
+        if (delimited) {
+            nameInSql = "\"" + columnName.replace("\"", "\"\"") + "\"";
+        }
+        return nameInSql;
     }
 
     protected boolean isColumnNameRejected(Exception exception, String columnName, boolean delimited)
