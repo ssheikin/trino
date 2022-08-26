@@ -85,6 +85,34 @@ public abstract class AbstractKuduConnectorTest
         }
     }
 
+    @Override
+    public void testAddAndDropColumnName(String columnName)
+    {
+        // TODO: Enable this test
+        assertThatThrownBy(() -> super.testAddAndDropColumnName(columnName))
+                .hasMessage("Table partitioning must be specified using setRangePartitionColumns or addHashPartitions");
+        throw new SkipException("TODO");
+    }
+
+    @Override
+    public void testRenameColumnName(String columnName)
+    {
+        // TODO: Enable this test
+        assertThatThrownBy(() -> super.testRenameColumnName(columnName))
+                .hasMessage("Table partitioning must be specified using setRangePartitionColumns or addHashPartitions");
+        throw new SkipException("TODO");
+    }
+
+    @Override
+    protected Optional<String> filterColumnNameTestData(String columnName)
+    {
+        // TODO: Investigate why a\backslash allows creating a table, but it throws an exception when selecting
+        if (columnName.equals("a\\backslash`")) {
+            return Optional.empty();
+        }
+        return Optional.of(columnName);
+    }
+
     @Test
     @Override
     public void testDescribeTable()

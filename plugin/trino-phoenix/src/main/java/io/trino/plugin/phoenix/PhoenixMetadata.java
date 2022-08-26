@@ -205,7 +205,7 @@ public class PhoenixMetadata
         phoenixClient.execute(session, format(
                 "ALTER TABLE %s ADD %s %s",
                 getEscapedTableName(handle.getSchemaName(), handle.getTableName()),
-                column.getName(),
+                phoenixClient.quoted(column.getName()),
                 phoenixClient.toWriteMapping(session, column.getType()).getDataType()));
     }
 
@@ -217,7 +217,7 @@ public class PhoenixMetadata
         phoenixClient.execute(session, format(
                 "ALTER TABLE %s DROP COLUMN %s",
                 getEscapedTableName(handle.getSchemaName(), handle.getTableName()),
-                columnHandle.getColumnName()));
+                phoenixClient.quoted(columnHandle.getColumnName())));
     }
 
     @Override

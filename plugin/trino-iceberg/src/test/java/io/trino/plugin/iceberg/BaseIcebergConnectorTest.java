@@ -163,6 +163,17 @@ public abstract class BaseIcebergConnectorTest
         }
     }
 
+    @Override
+    public void testAddAndDropColumnName(String columnName)
+    {
+        if (columnName.equals("a.dot")) {
+            assertThatThrownBy(() -> super.testAddAndDropColumnName(columnName))
+                    .hasMessageContaining("Cannot add column with ambiguous name");
+            return;
+        }
+        super.testAddAndDropColumnName(columnName);
+    }
+
     @Test
     public void testDeleteOnV1Table()
     {
