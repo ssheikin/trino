@@ -14,9 +14,11 @@
 package io.trino.plugin.hive.s3;
 
 import com.google.common.net.HostAndPort;
+import io.airlift.units.Duration;
 import io.trino.plugin.hive.HiveQueryRunner;
 import io.trino.plugin.hive.containers.HiveMinioDataLake;
 import io.trino.plugin.hive.metastore.thrift.BridgingHiveMetastore;
+import io.trino.plugin.hive.metastore.thrift.TestingMetastoreLocator;
 import io.trino.testing.DistributedQueryRunner;
 
 import java.util.Locale;
@@ -78,6 +80,7 @@ public final class S3HiveQueryRunner
             extends HiveQueryRunner.Builder<Builder>
     {
         private HostAndPort hiveMetastoreEndpoint;
+        private Duration thriftMetastoreTimeout = TestingMetastoreLocator.TIMEOUT;
         private String s3Endpoint;
         private String s3AccessKey;
         private String s3SecretKey;
@@ -86,6 +89,12 @@ public final class S3HiveQueryRunner
         public Builder setHiveMetastoreEndpoint(HostAndPort hiveMetastoreEndpoint)
         {
             this.hiveMetastoreEndpoint = requireNonNull(hiveMetastoreEndpoint, "hiveMetastoreEndpoint is null");
+            return this;
+        }
+
+        public Builder setThriftMetastoreTimeout(Duration thriftMetastoreTimeout)
+        {
+            this.thriftMetastoreTimeout = requireNonNull(thriftMetastoreTimeout, "thriftMetastoreTimeout is null");
             return this;
         }
 
@@ -131,7 +140,7 @@ public final class S3HiveQueryRunner
             addHiveProperty("hive.s3.path-style-access", "true");
             setMetastore(distributedQueryRunner -> new BridgingHiveMetastore(
                     testingThriftHiveMetastoreBuilder()
-                            .metastoreClient(hiveMetastoreEndpoint)
+                            .metastoreClient(hiveMetastoreEndpoint, thriftMetastoreTimeout)
                             .build()));
             setInitialSchemasLocationBase("s3a://" + bucketName); // cannot use s3:// as Hive metastore is not configured to accept it
             return super.build();
