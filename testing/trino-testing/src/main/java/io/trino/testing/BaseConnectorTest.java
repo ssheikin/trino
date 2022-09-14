@@ -37,13 +37,16 @@ import static io.trino.sql.planner.planprinter.PlanPrinter.textLogicalPlan;
 import static io.trino.testing.DataProviders.toDataProvider;
 import static io.trino.testing.QueryAssertions.assertContains;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ADD_COLUMN;
+import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ADD_COLUMN_WITH_COMMENT;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_ARRAY;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_COMMENT_ON_COLUMN;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_COMMENT_ON_TABLE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_CREATE_MATERIALIZED_VIEW;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_CREATE_SCHEMA;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_CREATE_TABLE;
+import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_CREATE_TABLE_WITH_COLUMN_COMMENT;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_CREATE_TABLE_WITH_DATA;
+import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_CREATE_TABLE_WITH_TABLE_COMMENT;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_CREATE_VIEW;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_DELETE;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_DROP_COLUMN;
@@ -63,6 +66,7 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.util.Collections.nCopies;
 import static java.util.Locale.ENGLISH;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertFalse;
@@ -1305,6 +1309,91 @@ public abstract class BaseConnectorTest
             assertUpdate("DELETE FROM " + table.getName() + " WHERE regionkey = 2", 1);
             assertQuery("SELECT count(*) FROM " + table.getName(), "VALUES 4");
         }
+    }
+
+    @Test(dataProvider = "testCommentDataProvider")
+    public void testCreateTableWithTableCommentSpecialCharacter(String comment)
+    {
+        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_TABLE_COMMENT));
+
+        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_create_", "(a bigint) COMMENT " + varcharLiteral(comment))) {
+            assertEquals(getTableComment(table.getName()), comment);
+        }
+    }
+
+    @Test(dataProvider = "testCommentDataProvider")
+    public void testCreateTableAsSelectWithTableCommentSpecialCharacter(String comment)
+    {
+        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA) && hasBehavior(SUPPORTS_CREATE_TABLE_WITH_TABLE_COMMENT));
+
+        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_create_", " COMMENT " + varcharLiteral(comment) + " AS SELECT 1 a")) {
+            assertEquals(getTableComment(table.getName()), comment);
+        }
+    }
+
+    @Test(dataProvider = "testCommentDataProvider")
+    public void testCreateTableWithColumnCommentSpecialCharacter(String comment)
+    {
+        skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_COLUMN_COMMENT));
+
+        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_create_", " (a bigint COMMENT " + varcharLiteral(comment) + ")")) {
+            assertEquals(getColumnComment(table.getName(), "a"), comment);
+        }
+    }
+
+    @Test(dataProvider = "testCommentDataProvider")
+    public void testAddColumnWithCommentSpecialCharacter(String comment)
+    {
+        skipTestUnless(hasBehavior(SUPPORTS_ADD_COLUMN_WITH_COMMENT));
+
+        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_add_col_", "(a_varchar varchar)")) {
+            assertUpdate("ALTER TABLE " + table.getName() + " ADD COLUMN b_varchar varchar COMMENT " + varcharLiteral(comment));
+            assertEquals(getColumnComment(table.getName(), "b_varchar"), comment);
+        }
+    }
+
+    @Test(dataProvider = "testCommentDataProvider")
+    public void testCommentTableSpecialCharacter(String comment)
+    {
+        skipTestUnless(hasBehavior(SUPPORTS_COMMENT_ON_TABLE));
+
+        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_comment_table_", "(a integer)")) {
+            assertUpdate("COMMENT ON TABLE " + table.getName() + " IS " + varcharLiteral(comment));
+            assertEquals(getTableComment(table.getName()), comment);
+        }
+    }
+
+    @Test(dataProvider = "testCommentDataProvider")
+    public void testCommentColumnSpecialCharacter(String comment)
+    {
+        skipTestUnless(hasBehavior(SUPPORTS_COMMENT_ON_COLUMN));
+
+        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_comment_column_", "(a integer)")) {
+            assertUpdate("COMMENT ON COLUMN " + table.getName() + ".a IS " + varcharLiteral(comment));
+            assertEquals(getColumnComment(table.getName(), "a"), comment);
+        }
+    }
+
+    @DataProvider
+    public Object[][] testCommentDataProvider()
+    {
+        return new Object[][] {
+                {"a;semicolon"},
+                {"an@at"},
+                {"a\"quote"},
+                {"an'apostrophe"},
+                {"a`backtick`"},
+                {"a/slash"},
+                {"a\\backslash"},
+                {"a?question"},
+                {"[square bracket]"},
+        };
+    }
+
+    protected static String varcharLiteral(String value)
+    {
+        requireNonNull(value, "value is null");
+        return "'" + value.replace("'", "''") + "'";
     }
 
     @Test(dataProvider = "testColumnNameDataProvider")

@@ -58,6 +58,7 @@ import static io.trino.spi.type.DecimalType.createDecimalType;
 import static io.trino.spi.type.TimestampType.TIMESTAMP_MILLIS;
 import static java.lang.Math.max;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 public class RedshiftClient
         extends BaseJdbcClient
@@ -134,12 +135,19 @@ public class RedshiftClient
     @Override
     public void setColumnComment(ConnectorSession session, JdbcTableHandle handle, JdbcColumnHandle column, Optional<String> comment)
     {
+        // Redshift doesn't support prepared statement for COMMENT statement
         String sql = format(
                 "COMMENT ON COLUMN %s.%s IS %s",
                 quoted(handle.asPlainTable().getRemoteTableName()),
                 quoted(column.getColumnName()),
-                comment.isPresent() ? format("'%s'", comment.get()) : "NULL");
+                comment.map(RedshiftClient::redshiftVarcharLiteral).orElse("NULL"));
         execute(session, sql);
+    }
+
+    private static String redshiftVarcharLiteral(String value)
+    {
+        requireNonNull(value, "value is null");
+        return "'" + value.replace("'", "''").replace("\\", "\\\\") + "'";
     }
 
     private static Optional<ColumnMapping> legacyDefaultColumnMapping(JdbcTypeHandle typeHandle)

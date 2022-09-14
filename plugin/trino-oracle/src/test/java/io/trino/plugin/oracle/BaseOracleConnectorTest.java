@@ -23,6 +23,7 @@ import io.trino.testing.MaterializedResult;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.TestTable;
 import io.trino.testing.sql.TestView;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
@@ -34,6 +35,7 @@ import static io.trino.testing.assertions.Assert.assertEquals;
 import static io.trino.testing.sql.TestTable.randomTableSuffix;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
@@ -161,6 +163,18 @@ public abstract class BaseOracleConnectorTest
         assertUpdate("COMMENT ON COLUMN " + tableName + ".a IS 'new comment'");
         // without remarksReporting Oracle does not return comments set
         assertThat((String) computeActual("SHOW CREATE TABLE " + tableName).getOnlyValue()).doesNotContain("COMMENT 'new comment'");
+    }
+
+    /**
+     * See {@link TestOraclePoolRemarksReportingConnectorSmokeTest#testCommentColumnSpecialCharacter(String comment)}
+     */
+    @Override
+    public void testCommentColumnSpecialCharacter(String comment)
+    {
+        // Oracle connector doesn't return column comments by default
+        assertThatThrownBy(() -> super.testCommentColumnSpecialCharacter(comment))
+                .hasMessageContaining(format("expected [%s] but found [null]", comment));
+        throw new SkipException("The test is covered in TestOraclePoolRemarksReportingConnectorSmokeTest");
     }
 
     @Override
