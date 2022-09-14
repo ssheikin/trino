@@ -31,7 +31,6 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -367,15 +366,10 @@ public abstract class AbstractTestDistributedQueries
         }
     }
 
-    private String getTableComment(String tableName)
+    protected String getTableComment(String tableName)
     {
-        // TODO use information_schema.tables.table_comment
-        String result = (String) computeActual("SHOW CREATE TABLE " + tableName).getOnlyValue();
-        Matcher matcher = Pattern.compile("COMMENT '([^']*)'").matcher(result);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return null;
+        String sql = format("SELECT comment FROM system.metadata.table_comments WHERE catalog_name = '%s' AND schema_name = '%s' AND table_name = '%s'", getSession().getCatalog().orElseThrow(), getSession().getSchema().orElseThrow(), tableName);
+        return (String) computeActual(sql).getOnlyValue();
     }
 
     @Test
@@ -413,7 +407,7 @@ public abstract class AbstractTestDistributedQueries
 //        assertUpdate("DROP TABLE " + tableName);
     }
 
-    private String getColumnComment(String tableName, String columnName)
+    protected String getColumnComment(String tableName, String columnName)
     {
         MaterializedResult materializedResult = computeActual(format(
                 "SELECT comment FROM information_schema.columns WHERE table_schema = '%s' AND table_name = '%s' AND column_name = '%s'",

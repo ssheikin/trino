@@ -140,6 +140,8 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.System.arraycopy;
 import static java.time.ZoneOffset.UTC;
+import static java.util.Objects.requireNonNull;
+import static ru.yandex.clickhouse.ClickHouseUtil.escape;
 
 public class ClickHouseClient
         extends BaseJdbcClient
@@ -335,11 +337,17 @@ public class ClickHouseClient
     public void setColumnComment(ConnectorSession session, JdbcTableHandle handle, JdbcColumnHandle column, Optional<String> comment)
     {
         String sql = format(
-                "ALTER TABLE %s COMMENT COLUMN %s '%s'",
+                "ALTER TABLE %s COMMENT COLUMN %s %s",
                 quoted(handle.asPlainTable().getRemoteTableName()),
                 quoted(column.getColumnName()),
-                comment.orElse(""));
+                clickhouseVarcharLiteral(comment.orElse("")));
         execute(session, sql);
+    }
+
+    private static String clickhouseVarcharLiteral(String value)
+    {
+        requireNonNull(value, "value is null");
+        return "'" + escape(value) + "'";
     }
 
     @Override
