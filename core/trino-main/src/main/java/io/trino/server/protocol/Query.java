@@ -338,6 +338,13 @@ class Query
         return Futures.transform(futureStateChange, ignored -> getNextResult(token, uriInfo, targetResultSize), resultsProcessorExecutor);
     }
 
+    public synchronized void markResultsConsumedIfReady()
+    {
+        if (!resultsConsumed && exchangeClient.isFinished()) {
+            queryManager.resultsConsumed(queryId);
+        }
+    }
+
     private synchronized ListenableFuture<Void> getFutureStateChange()
     {
         // if the exchange client is open, wait for data
@@ -419,7 +426,7 @@ class Query
             updateCount = updatedRowsCount.orElse(null);
         }
 
-        if (queryInfo.getOutputStage().isEmpty() || (exchangeClient.isFinished() && resultRows.isEmpty())) {
+        if (queryInfo.getOutputStage().isEmpty() || exchangeClient.isFinished()) {
             queryManager.resultsConsumed(queryId);
             resultsConsumed = true;
             // update query since the query might have been transitioned to the FINISHED state
