@@ -338,6 +338,19 @@ public abstract class AbstractKuduConnectorTest
         assertUpdate("DROP TABLE " + tableName);
     }
 
+    @Override
+    public void testAddColumnWithCommentSpecialCharacter(String comment)
+    {
+        // Override because Kudu connector doesn't support creating a new table without partition columns
+        try (TestTable table = new TestTable(
+                getQueryRunner()::execute,
+                "test_add_col_",
+                "(id INT WITH (primary_key=true), a_varchar varchar) WITH (partition_by_hash_columns = ARRAY['id'], partition_by_hash_buckets = 2)")) {
+            assertUpdate("ALTER TABLE " + table.getName() + " ADD COLUMN b_varchar varchar COMMENT " + varcharLiteral(comment));
+            assertEquals(getColumnComment(table.getName(), "b_varchar"), comment);
+        }
+    }
+
     @Test
     @Override
     public void testInsert()
