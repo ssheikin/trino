@@ -412,6 +412,7 @@
                                 <exclude>**/TestSharedGlueMetastore.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogAccessOperations.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogMaterializedViewTest.java</exclude>
+                                <exclude>**/TestIcebergGlueTableOperationsInsertFailure.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -433,6 +434,7 @@
                                 <include>**/TestSharedGlueMetastore.java</include>
                                 <include>**/TestIcebergGlueCatalogAccessOperations.java</include>
                                 <include>**/TestIcebergGlueCatalogMaterializedViewTest.java</include>
+                                <include>**/TestIcebergGlueTableOperationsInsertFailure.java</include>
                             </includes>
                         </configuration>
                     </plugin>
