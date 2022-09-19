@@ -34,7 +34,6 @@ import io.trino.plugin.hive.NodeVersion;
 import io.trino.plugin.hive.authentication.HdfsAuthenticationModule;
 import io.trino.plugin.hive.azure.HiveAzureModule;
 import io.trino.plugin.hive.gcs.HiveGcsModule;
-import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.plugin.hive.s3.HiveS3Module;
 import io.trino.plugin.iceberg.catalog.IcebergCatalogModule;
 import io.trino.spi.NodeManager;
@@ -67,7 +66,7 @@ public final class InternalIcebergConnectorFactory
             Map<String, String> config,
             ConnectorContext context,
             Module module,
-            Optional<HiveMetastore> metastore,
+            Optional<Module> icebergCatalogModule,
             Optional<FileIoProvider> fileIoProvider)
     {
         ClassLoader classLoader = InternalIcebergConnectorFactory.class.getClassLoader();
@@ -79,7 +78,7 @@ public final class InternalIcebergConnectorFactory
                     new JsonModule(),
                     new IcebergModule(),
                     new IcebergSecurityModule(),
-                    new IcebergCatalogModule(metastore),
+                    icebergCatalogModule.orElse(new IcebergCatalogModule()),
                     new HiveHdfsModule(),
                     new HiveS3Module(),
                     new HiveGcsModule(),
