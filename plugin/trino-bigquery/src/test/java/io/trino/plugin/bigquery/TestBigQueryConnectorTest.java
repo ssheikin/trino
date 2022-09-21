@@ -21,6 +21,7 @@ import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.TestTable;
 import io.trino.testing.sql.TestView;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -503,6 +504,13 @@ public class TestBigQueryConnectorTest
                         "   shippriority bigint NOT NULL,\n" +
                         "   comment varchar NOT NULL\n" +
                         ")");
+    }
+
+    @Override
+    public void testReadMetadataWithRelationsConcurrentModifications()
+    {
+        // TODO: Enable this test after fixing "Task did not completed before timeout" (https://github.com/trinodb/trino/issues/14230)
+        throw new SkipException("Test fails with a timeout sometimes and is flaky");
     }
 
     @Test
