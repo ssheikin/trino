@@ -222,8 +222,9 @@ public enum BigQueryType
     static String stringToStringConverter(Object value)
     {
         Slice slice = (Slice) value;
-        return "'%s'".formatted(slice.toStringUtf8()
+        return format("'%s'", slice.toStringUtf8()
                 .replace("\\", "\\\\")
+                .replace("\n", "\\n")
                 .replace("'", "\\'"));
     }
 
