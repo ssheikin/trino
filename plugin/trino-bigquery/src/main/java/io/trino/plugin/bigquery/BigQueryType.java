@@ -226,6 +226,7 @@ public enum BigQueryType
         Slice slice = (Slice) value;
         return "'%s'".formatted(slice.toStringUtf8()
                 .replace("\\", "\\\\")
+                .replace("\n", "\\n")
                 .replace("'", "\\'"));
     }
 
