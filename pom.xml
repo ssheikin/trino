@@ -10,7 +10,7 @@
 
     <groupId>io.trino</groupId>
     <artifactId>trino-root</artifactId>
-    <version>364-e.14</version>
+    <version>364-e.15-SNAPSHOT</version>
 
     <name>trino-root</name>
     <description>Trino</description>
@@ -30,7 +30,7 @@
     <scm>
         <connection>scm:git:git://github.com/starburstdata/presto-lts.git</connection>
         <url>https://github.com/starburstdata/presto-lts</url>
-      <tag>364-e.14</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <properties>
