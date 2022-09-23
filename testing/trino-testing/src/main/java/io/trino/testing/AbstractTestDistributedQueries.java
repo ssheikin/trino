@@ -1383,7 +1383,8 @@ public abstract class AbstractTestDistributedQueries
                 .add(new DataMappingTestSetup("timestamp(3) with time zone", "TIMESTAMP '2020-02-12 15:03:00 +01:00'", "TIMESTAMP '9999-12-31 23:59:59.999 +12:00'"))
                 .add(new DataMappingTestSetup("char(3)", "'ab'", "'zzz'"))
                 .add(new DataMappingTestSetup("varchar(3)", "'de'", "'zzz'"))
-                .add(new DataMappingTestSetup("varchar", "'a \\backslash'", "'a a'")) // `a` sorts after `\`
+                .add(new DataMappingTestSetup("varchar", "'a \\backslash'", "'a a'")) // `a` sorts after `\`; \b may be interpreted as an escape sequence
+                .add(new DataMappingTestSetup("varchar", "'end backslash \\'", "'end backslash a'")) // `a` sorts after `\`; final \ before end quote may confuse a parser
                 .add(new DataMappingTestSetup("varchar", "'łąka for the win'", "'ŻŻŻŻŻŻŻŻŻŻ'"))
                 .add(new DataMappingTestSetup("varbinary", "X'12ab3f'", "X'ffffffffffffffffffff'"))
                 .build();
