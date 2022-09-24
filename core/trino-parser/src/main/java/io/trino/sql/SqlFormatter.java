@@ -900,7 +900,7 @@ public final class SqlFormatter
             if (node.isExists()) {
                 builder.append("IF EXISTS ");
             }
-            builder.append(node.getName());
+            builder.append(formatName(node.getName()));
 
             return null;
         }
