@@ -107,7 +107,7 @@ public class KafkaInternalFieldManager
             return type;
         }
 
-        KafkaColumnHandle getColumnHandle(boolean hidden)
+        KafkaColumnHandle getColumnHandle(int index, boolean hidden)
         {
             return new KafkaColumnHandle(
                     getColumnName(),

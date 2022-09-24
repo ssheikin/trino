@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -133,11 +134,13 @@ public class KafkaMetadata
 
         ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
 
+        AtomicInteger index = new AtomicInteger(0);
+
         kafkaTopicDescription.getKey().ifPresent(key -> {
             List<KafkaTopicFieldDescription> fields = key.getFields();
             if (fields != null) {
                 for (KafkaTopicFieldDescription kafkaTopicFieldDescription : fields) {
-                    columnHandles.put(kafkaTopicFieldDescription.getName(), kafkaTopicFieldDescription.getColumnHandle(true));
+                    columnHandles.put(kafkaTopicFieldDescription.getName(), kafkaTopicFieldDescription.getColumnHandle(true, index.getAndIncrement()));
                 }
             }
         });
@@ -146,13 +149,13 @@ public class KafkaMetadata
             List<KafkaTopicFieldDescription> fields = message.getFields();
             if (fields != null) {
                 for (KafkaTopicFieldDescription kafkaTopicFieldDescription : fields) {
-                    columnHandles.put(kafkaTopicFieldDescription.getName(), kafkaTopicFieldDescription.getColumnHandle(false));
+                    columnHandles.put(kafkaTopicFieldDescription.getName(), kafkaTopicFieldDescription.getColumnHandle(false, index.getAndIncrement()));
                 }
             }
         });
 
         for (KafkaInternalFieldManager.InternalField kafkaInternalField : kafkaInternalFieldManager.getInternalFields().values()) {
-            columnHandles.put(kafkaInternalField.getColumnName(), kafkaInternalField.getColumnHandle(hideInternalColumns));
+            columnHandles.put(kafkaInternalField.getColumnName(), kafkaInternalField.getColumnHandle(index.getAndIncrement(), hideInternalColumns));
         }
 
         return columnHandles.buildOrThrow();
