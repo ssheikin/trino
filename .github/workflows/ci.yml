@@ -26,8 +26,6 @@ env:
   TESTCONTAINERS_PULL_PAUSE_TIMEOUT: 600
   TEST_REPORT_RETENTION_DAYS: 5
   MAVEN_CONFIG: "-s settings.xml"
-  mavenCredentials: ${{ secrets.mavenCredentials }}
-  dockerCredentials: ${{ secrets.dockerCredentials }}
 
 # Cancel previous PR builds.
 concurrency:
@@ -197,6 +195,12 @@ jobs:
           aws-region: us-east-2
       - name: Maven login
         run: .github/bin/maven-login.sh
+      - name: Fetch secrets
+        uses: t-botz/aws-secrets-manager-read-action@v2
+        with:
+          secret-id: ${{ secrets.AWS_SECRET_ARN }}
+          keys-as-env-vars: true
+          mask-json-values: true
       - name: Configure Problem Matchers
         run: |
           echo "::add-matcher::.github/problem-matcher.json"
@@ -232,8 +236,8 @@ jobs:
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
           ABFS_CONTAINER: 'container'
-          ABFS_ACCOUNT: ${{ secrets.ABFS_TESTS_ABFS_ACCOUNT }}
-          ABFS_ACCESS_KEY: ${{ secrets.ABFS_TESTS_ABFS_ACCESS_KEY }}
+          ABFS_ACCOUNT: ${{ env.ABFS_TESTS_ABFS_ACCOUNT }}
+          ABFS_ACCESS_KEY: ${{ env.ABFS_TESTS_ABFS_ACCESS_KEY }}
         run: |
           if [ "${ABFS_CONTAINER}" != "" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
@@ -243,10 +247,10 @@ jobs:
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
           ABFS_CONTAINER: 'container'
-          ABFS_ACCOUNT: ${{ secrets.ABFS_OAUTH_TESTS_ACCOUNT }}
-          ABFS_OAUTH_ENDPOINT: ${{ secrets.ABFS_OAUTH_TESTS_OAUTH_ENDPOINT }}
-          ABFS_OAUTH_CLIENTID: ${{ secrets.ABFS_OAUTH_TESTS_CLIENT_ID }}
-          ABFS_OAUTH_SECRET: ${{ secrets.ABFS_OAUTH_TESTS_OAUTH_SECRET }}
+          ABFS_ACCOUNT: ${{ env.ABFS_OAUTH_TESTS_ACCOUNT }}
+          ABFS_OAUTH_ENDPOINT: ${{ env.ABFS_OAUTH_TESTS_OAUTH_ENDPOINT }}
+          ABFS_OAUTH_CLIENTID: ${{ env.ABFS_OAUTH_TESTS_CLIENT_ID }}
+          ABFS_OAUTH_SECRET: ${{ env.ABFS_OAUTH_TESTS_OAUTH_SECRET }}
         run: |
           if [ -n "${ABFS_OAUTH_CLIENTID}" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
@@ -257,8 +261,8 @@ jobs:
         env:
           # Use the same MS Azure storage account as for the ABFS tests
           WASB_CONTAINER: 'container'
-          WASB_ACCOUNT: ${{ secrets.ABFS_TESTS_ABFS_ACCOUNT }}
-          WASB_ACCESS_KEY: ${{ secrets.ABFS_TESTS_ABFS_ACCESS_KEY }}
+          WASB_ACCOUNT: ${{ env.ABFS_TESTS_ABFS_ACCOUNT }}
+          WASB_ACCESS_KEY: ${{ env.ABFS_TESTS_ABFS_ACCESS_KEY }}
         run: |
           if [ "${WASB_CONTAINER}" != "" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
@@ -267,10 +271,10 @@ jobs:
       - name: Run Hive Azure ADL Tests
         if: matrix.config != 'config-empty' # Hive 1.x does not support Azure storage
         env:
-          ADL_NAME: ${{ secrets.ADL_TESTS_NAME }}
-          ADL_CLIENT_ID: ${{ secrets.ADL_TESTS_CLIENT_ID }}
-          ADL_CREDENTIAL: ${{ secrets.ADL_TESTS_CREDENTIAL }}
-          ADL_REFRESH_URL: ${{ secrets.ADL_TESTS_REFRESH_URL }}
+          ADL_NAME: ${{ env.ADL_TESTS_NAME }}
+          ADL_CLIENT_ID: ${{ env.ADL_TESTS_CLIENT_ID }}
+          ADL_CREDENTIAL: ${{ env.ADL_TESTS_CREDENTIAL }}
+          ADL_REFRESH_URL: ${{ env.ADL_TESTS_REFRESH_URL }}
         run: |
           if [ "${ADL_NAME}" != "" ]; then
             source plugin/trino-hive-hadoop2/conf/hive-tests-${{ matrix.config }}.sh &&
@@ -424,6 +428,12 @@ jobs:
           aws-region: us-east-2
       - name: Maven login
         run: .github/bin/maven-login.sh
+      - name: Fetch secrets
+        uses: t-botz/aws-secrets-manager-read-action@v2
+        with:
+          secret-id: ${{ secrets.AWS_SECRET_ARN }}
+          keys-as-env-vars: true
+          mask-json-values: true
       - name: Configure Problem Matchers
         run: |
           echo "::add-matcher::.github/problem-matcher.json"
@@ -479,7 +489,14 @@ jobs:
           aws-region: us-east-2
       - name: Maven login
         run: .github/bin/maven-login.sh
+      - name: Fetch secrets
+        uses: t-botz/aws-secrets-manager-read-action@v2
+        with:
+          secret-id: ${{ secrets.AWS_SECRET_ARN }}
+          keys-as-env-vars: true
+          mask-json-values: true
       - name: Configure Problem Matchers
+      - name: Check secrets
         run: |
           echo "::add-matcher::.github/problem-matcher.json"
       - name: Maven Install
@@ -488,7 +505,7 @@ jobs:
           $RETRY $MAVEN install ${MAVEN_FAST_INSTALL} -am -pl :trino-memsql
       - name: Memsql Tests
         env:
-          MEMSQL_LICENSE: ${{ secrets.MEMSQL_LICENSE }}
+          MEMSQL_LICENSE: ${{ env.MEMSQL_LICENSE }}
         run: |
           if [ "${MEMSQL_LICENSE}" != "" ]; then
             $MAVEN test ${MAVEN_TEST} -pl :trino-memsql -Dmemsql.license=${MEMSQL_LICENSE}
@@ -542,14 +559,14 @@ jobs:
         run: $MAVEN test ${MAVEN_TEST} -pl :trino-bigquery
       - name: Cloud BigQuery Tests
         env:
-          BIGQUERY_CREDENTIALS_KEY: ${{ secrets.BIGQUERY_CREDENTIALS_KEY }}
+          BIGQUERY_CREDENTIALS_KEY: ${{ env.BIGQUERY_CREDENTIALS_KEY }}
         run: |
           if [ "${BIGQUERY_CREDENTIALS_KEY}" != "" ]; then
             $MAVEN test ${MAVEN_TEST} -pl :trino-bigquery -Pcloud-tests -Dbigquery.credentials-key="${BIGQUERY_CREDENTIALS_KEY}"
           fi
       - name: Cloud BigQuery Case Insensitive Mapping Tests
         env:
-          BIGQUERY_CREDENTIALS_KEY: ${{ secrets.BIGQUERY_CASE_INSENSITIVE_CREDENTIALS_KEY }}
+          BIGQUERY_CREDENTIALS_KEY: ${{ env.BIGQUERY_CASE_INSENSITIVE_CREDENTIALS_KEY }}
         run: |
           if [ "${BIGQUERY_CREDENTIALS_KEY}" != "" ]; then
             $MAVEN test ${MAVEN_TEST} -pl :trino-bigquery -Pcloud-tests-case-insensitive-mapping -Dbigquery.credentials-key="${BIGQUERY_CREDENTIALS_KEY}"
