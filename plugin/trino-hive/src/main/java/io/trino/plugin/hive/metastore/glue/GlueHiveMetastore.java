@@ -20,6 +20,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.handlers.RequestHandler2;
 import com.amazonaws.metrics.RequestMetricCollector;
@@ -61,6 +62,7 @@ import com.amazonaws.services.glue.model.TableInput;
 import com.amazonaws.services.glue.model.UpdateDatabaseRequest;
 import com.amazonaws.services.glue.model.UpdatePartitionRequest;
 import com.amazonaws.services.glue.model.UpdateTableRequest;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -243,10 +245,24 @@ public class GlueHiveMetastore
             provider = DefaultAWSCredentialsProviderChain.getInstance();
         }
         if (config.getIamRole().isPresent()) {
+            AWSSecurityTokenServiceClientBuilder stsClientBuilder = AWSSecurityTokenServiceClientBuilder
+                    .standard()
+                    .withCredentials(provider);
+
+            if (config.getGlueStsEndpointUrl().isPresent() && config.getGlueStsRegion().isPresent()) {
+                stsClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(config.getGlueStsEndpointUrl().get(), config.getGlueStsRegion().get()));
+            }
+            else if (config.getGlueStsRegion().isPresent()) {
+                stsClientBuilder.setRegion(config.getGlueStsRegion().get());
+            }
+            else if (config.getPinGlueClientToCurrentRegion()) {
+                stsClientBuilder.setRegion(getCurrentRegionFromEC2Metadata().getName());
+            }
+
             provider = new STSAssumeRoleSessionCredentialsProvider
                     .Builder(config.getIamRole().get(), "trino-session")
                     .withExternalId(config.getExternalId().orElse(null))
-                    .withLongLivedCredentialsProvider(provider)
+                    .withStsClient(stsClientBuilder.build())
                     .build();
         }
         return provider;
