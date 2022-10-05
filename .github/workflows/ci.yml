@@ -496,7 +496,6 @@ jobs:
           keys-as-env-vars: true
           mask-json-values: true
       - name: Configure Problem Matchers
-      - name: Check secrets
         run: |
           echo "::add-matcher::.github/problem-matcher.json"
       - name: Maven Install
