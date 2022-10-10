@@ -333,6 +333,7 @@ public class HiveMetadata
     private static final String NULL_FORMAT_KEY = serdeConstants.SERIALIZATION_NULL_FORMAT;
 
     public static final String AVRO_SCHEMA_URL_KEY = "avro.schema.url";
+    public static final String AVRO_SCHEMA_LITERAL_KEY = "avro.schema.literal";
 
     private static final String CSV_SEPARATOR_KEY = OpenCSVSerde.SEPARATORCHAR;
     private static final String CSV_QUOTE_KEY = OpenCSVSerde.QUOTECHAR;
@@ -1203,6 +1204,9 @@ public class HiveMetadata
                 .orElseThrow(() -> new TableNotFoundException(handle.getSchemaTableName()));
         if (table.getParameters().containsKey(AVRO_SCHEMA_URL_KEY) || table.getStorage().getSerdeParameters().containsKey(AVRO_SCHEMA_URL_KEY)) {
             throw new TrinoException(NOT_SUPPORTED, "ALTER TABLE not supported when Avro schema url is set");
+        }
+        if (table.getParameters().containsKey(AVRO_SCHEMA_LITERAL_KEY) || table.getStorage().getSerdeParameters().containsKey(AVRO_SCHEMA_LITERAL_KEY)) {
+            throw new TrinoException(NOT_SUPPORTED, "ALTER TABLE not supported when Avro schema literal is set");
         }
     }
 
