@@ -259,6 +259,8 @@ public class DeltaLakeMetadata
     public static final String ISOLATION_LEVEL = "WriteSerializable";
     private static final int READER_VERSION = 1;
     private static final int WRITER_VERSION = 2;
+    // This constant should be used only for a new table
+    private static final ProtocolEntry DEFAULT_PROTOCOL = new ProtocolEntry(READER_VERSION, WRITER_VERSION);
     // Matches the dummy column Databricks stores in the metastore
     private static final List<Column> DUMMY_DATA_COLUMNS = ImmutableList.of(
             new Column("col", HiveType.toHiveType(new ArrayType(VarcharType.createUnboundedVarcharType())), Optional.empty()));
@@ -708,7 +710,8 @@ public class DeltaLakeMetadata
                         session,
                         nodeVersion,
                         nodeId,
-                        tableMetadata.getComment());
+                        tableMetadata.getComment(),
+                        DEFAULT_PROTOCOL);
 
                 setRollback(() -> deleteRecursivelyIfExists(new HdfsContext(session), hdfsEnvironment, deltaLogDirectory));
                 transactionLogWriter.flush();
@@ -976,7 +979,8 @@ public class DeltaLakeMetadata
                     session,
                     nodeVersion,
                     nodeId,
-                    handle.getComment());
+                    handle.getComment(),
+                    DEFAULT_PROTOCOL);
             appendAddFileEntries(transactionLogWriter, dataFileInfos, handle.getPartitionedBy(), true);
             transactionLogWriter.flush();
             PrincipalPrivileges principalPrivileges = buildInitialPrivilegeSet(table.getOwner().orElseThrow());
@@ -1055,7 +1059,8 @@ public class DeltaLakeMetadata
                     session,
                     nodeVersion,
                     nodeId,
-                    comment);
+                    comment,
+                    getProtocolEntry(session, handle.getSchemaTableName()));
             transactionLogWriter.flush();
         }
         catch (Exception e) {
@@ -1102,7 +1107,8 @@ public class DeltaLakeMetadata
                     session,
                     nodeVersion,
                     nodeId,
-                    Optional.ofNullable(deltaLakeTableHandle.getMetadataEntry().getDescription()));
+                    Optional.ofNullable(deltaLakeTableHandle.getMetadataEntry().getDescription()),
+                    getProtocolEntry(session, deltaLakeTableHandle.getSchemaTableName()));
             transactionLogWriter.flush();
         }
         catch (Exception e) {
@@ -1160,7 +1166,8 @@ public class DeltaLakeMetadata
                     session,
                     nodeVersion,
                     nodeId,
-                    Optional.ofNullable(handle.getMetadataEntry().getDescription()));
+                    Optional.ofNullable(handle.getMetadataEntry().getDescription()),
+                    getProtocolEntry(session, handle.getSchemaTableName()));
             transactionLogWriter.flush();
         }
         catch (Exception e) {
@@ -1182,7 +1189,8 @@ public class DeltaLakeMetadata
             ConnectorSession session,
             String nodeVersion,
             String nodeId,
-            Optional<String> comment)
+            Optional<String> comment,
+            ProtocolEntry protocolEntry)
     {
         long createdTime = System.currentTimeMillis();
         transactionLogWriter.appendCommitInfoEntry(
@@ -1200,7 +1208,7 @@ public class DeltaLakeMetadata
                         ISOLATION_LEVEL,
                         true));
 
-        transactionLogWriter.appendProtocolEntry(new ProtocolEntry(READER_VERSION, WRITER_VERSION));
+        transactionLogWriter.appendProtocolEntry(protocolEntry);
 
         transactionLogWriter.appendMetadataEntry(
                 new MetadataEntry(
@@ -1800,12 +1808,17 @@ public class DeltaLakeMetadata
 
     private void checkSupportedWriterVersion(ConnectorSession session, SchemaTableName schemaTableName)
     {
-        int requiredWriterVersion = metastore.getProtocol(session, metastore.getSnapshot(schemaTableName, session)).getMinWriterVersion();
+        int requiredWriterVersion = getProtocolEntry(session, schemaTableName).getMinWriterVersion();
         if (requiredWriterVersion > WRITER_VERSION) {
             throw new TrinoException(
                     NOT_SUPPORTED,
                     format("Table %s requires Delta Lake writer version %d which is not supported", schemaTableName, requiredWriterVersion));
         }
+    }
+
+    private ProtocolEntry getProtocolEntry(ConnectorSession session, SchemaTableName schemaTableName)
+    {
+        return metastore.getProtocol(session, metastore.getSnapshot(schemaTableName, session));
     }
 
     private List<DeltaLakeColumnHandle> getUnmodifiedColumns(DeltaLakeTableHandle tableHandle, List<ColumnHandle> updatedColumns)
