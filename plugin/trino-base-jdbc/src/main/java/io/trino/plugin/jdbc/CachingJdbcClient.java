@@ -413,6 +413,7 @@ public class CachingJdbcClient
     {
         delegate.setColumnComment(session, handle, column, comment);
         invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
+        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
     }
 
     @Override
@@ -420,6 +421,7 @@ public class CachingJdbcClient
     {
         delegate.addColumn(session, handle, column);
         invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
+        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
     }
 
     @Override
@@ -427,6 +429,7 @@ public class CachingJdbcClient
     {
         delegate.dropColumn(session, handle, column);
         invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
+        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
     }
 
     @Override
@@ -434,6 +437,7 @@ public class CachingJdbcClient
     {
         delegate.renameColumn(session, handle, jdbcColumn, newColumnName);
         invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
+        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
     }
 
     @Override
