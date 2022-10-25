@@ -412,32 +412,63 @@ public class CachingJdbcClient
     public void setColumnComment(ConnectorSession session, JdbcTableHandle handle, JdbcColumnHandle column, Optional<String> comment)
     {
         delegate.setColumnComment(session, handle, column, comment);
-        invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
-        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
+
+        // invalidateTableCaches will do the job, but let's try to make it less invasive
+        // tableHandlesByQueryCache - is used only for caching table handles for table functions (on time of writing this comment).
+        // tableNamesCache - table name is not changed
+        // statisticsCache - is dirty, but it does not really change TableStatistics -> ColumnStatistics, as comment does not change statistics
+        SchemaTableName schemaTableName= handle.asPlainTable().getSchemaTableName();
+        invalidateColumnsCache(schemaTableName);
+        // tableHandle contains columns
+        invalidateCache(tableHandlesByNameCache, key -> key.tableName.equals(schemaTableName));
     }
 
     @Override
     public void addColumn(ConnectorSession session, JdbcTableHandle handle, ColumnMetadata column)
     {
         delegate.addColumn(session, handle, column);
-        invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
-        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
+
+        // invalidateTableCaches will do the job, but let's try to make it less invasive
+        // tableHandlesByQueryCache - is used only for caching table handles for table functions (on time of writing this comment).
+        // tableNamesCache - table name is not changed
+        SchemaTableName schemaTableName= handle.asPlainTable().getSchemaTableName();
+        invalidateColumnsCache(schemaTableName);
+        // tableHandle contains columns
+        invalidateCache(tableHandlesByNameCache, key -> key.tableName.equals(schemaTableName));
+        // statistics for new column has to be calculated
+        invalidateCache(statisticsCache, key -> key.mayReference(schemaTableName));
     }
 
     @Override
     public void dropColumn(ConnectorSession session, JdbcTableHandle handle, JdbcColumnHandle column)
     {
         delegate.dropColumn(session, handle, column);
-        invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
-        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
+
+        // invalidateTableCaches will do the job, but let's try to make it less invasive
+        // tableHandlesByQueryCache - is used only for caching table handles for table functions (on time of writing this comment).
+        // tableNamesCache - table name is not changed
+        SchemaTableName schemaTableName= handle.asPlainTable().getSchemaTableName();
+        invalidateColumnsCache(schemaTableName);
+        // tableHandle contains columns
+        invalidateCache(tableHandlesByNameCache, key -> key.tableName.equals(schemaTableName));
+        // statistics for deleted column has to be removed
+        invalidateCache(statisticsCache, key -> key.mayReference(schemaTableName));
     }
 
     @Override
     public void renameColumn(ConnectorSession session, JdbcTableHandle handle, JdbcColumnHandle jdbcColumn, String newColumnName)
     {
         delegate.renameColumn(session, handle, jdbcColumn, newColumnName);
-        invalidateColumnsCache(handle.asPlainTable().getSchemaTableName());
-        invalidateTableCaches(handle.asPlainTable().getSchemaTableName());
+
+        // invalidateTableCaches will do the job, but let's try to make it less invasive
+        // tableHandlesByQueryCache - is used only for caching table handles for table functions (on time of writing this comment).
+        // tableNamesCache - table name is not changed
+        SchemaTableName schemaTableName= handle.asPlainTable().getSchemaTableName();
+        invalidateColumnsCache(schemaTableName);
+        // tableHandle contains columns
+        invalidateCache(tableHandlesByNameCache, key -> key.tableName.equals(schemaTableName));
+        // statistics for renamed column has to be remapped to new table handle
+        invalidateCache(statisticsCache, key -> key.mayReference(schemaTableName));
     }
 
     @Override
