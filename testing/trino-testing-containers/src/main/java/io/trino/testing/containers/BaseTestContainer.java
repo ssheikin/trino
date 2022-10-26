@@ -19,11 +19,13 @@ import com.google.common.net.HostAndPort;
 import io.airlift.log.Logger;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.startupcheck.IsRunningStartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.HostAndPort.fromParts;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 import static org.testcontainers.utility.MountableFile.forHostPath;
@@ -122,6 +125,29 @@ public abstract class BaseTestContainer
     public void stop()
     {
         container.stop();
+    }
+
+    public String executeInContainerFailOnError(String... commandAndArgs)
+    {
+        Container.ExecResult execResult = executeInContainer(commandAndArgs);
+        if (execResult.getExitCode() != 0) {
+            String message = format("Command [%s] exited with %s", String.join(" ", commandAndArgs), execResult.getExitCode());
+            log.error("%s", message);
+            log.error("stderr: %s", execResult.getStderr());
+            log.error("stdout: %s", execResult.getStdout());
+            throw new RuntimeException(message);
+        }
+        return execResult.getStdout();
+    }
+
+    public Container.ExecResult executeInContainer(String... commandAndArgs)
+    {
+        try {
+            return container.execInContainer(commandAndArgs);
+        }
+        catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Exception while running command: " + String.join(" ", commandAndArgs), e);
+        }
     }
 
     @Override

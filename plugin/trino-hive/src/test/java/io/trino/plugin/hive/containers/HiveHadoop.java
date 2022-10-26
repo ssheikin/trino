@@ -80,6 +80,11 @@ public class HiveHadoop
         log.info("Hive container started with addresses for metastore: %s", getHiveMetastoreEndpoint());
     }
 
+    public String runOnMetastore(String query)
+    {
+        return executeInContainerFailOnError("mysql", "-D", "metastore", "-uroot", "-proot", "--batch", "--column-names=false", "-e", query);
+    }
+
     public HostAndPort getHiveMetastoreEndpoint()
     {
         return getMappedHostAndPortForExposedPort(HIVE_METASTORE_PORT);
