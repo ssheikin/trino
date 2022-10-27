@@ -264,7 +264,7 @@ public class TestDeltaLakeAlterTableCompatibility
         }
     }
 
-    @Test(groups = {DELTA_LAKE_DATABRICKS, DELTA_LAKE_OSS, PROFILE_SPECIFIC_TESTS})
+    @Test(groups = {DELTA_LAKE_DATABRICKS, DELTA_LAKE_OSS, DELTA_LAKE_EXCLUDE_73, PROFILE_SPECIFIC_TESTS})
     public void testTrinoPreservesReaderAndWriterVersions()
     {
         String tableName = "test_trino_preserves_versions_" + randomTableSuffix();
