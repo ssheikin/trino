@@ -26,6 +26,7 @@ import com.amazonaws.handlers.RequestHandler2;
 import com.amazonaws.metrics.RequestMetricCollector;
 import com.amazonaws.services.glue.AWSGlueAsync;
 import com.amazonaws.services.glue.AWSGlueAsyncClientBuilder;
+import com.amazonaws.services.glue.model.AccessDeniedException;
 import com.amazonaws.services.glue.model.AlreadyExistsException;
 import com.amazonaws.services.glue.model.BatchCreatePartitionRequest;
 import com.amazonaws.services.glue.model.BatchCreatePartitionResult;
@@ -485,8 +486,8 @@ public class GlueHiveMetastore
                 return tableNames;
             });
         }
-        catch (EntityNotFoundException e) {
-            // database does not exist
+        catch (EntityNotFoundException | AccessDeniedException e) {
+            // database does not exist or permission denied
             return ImmutableList.of();
         }
         catch (AmazonServiceException e) {
@@ -521,8 +522,8 @@ public class GlueHiveMetastore
                 return views;
             });
         }
-        catch (EntityNotFoundException e) {
-            // database does not exist
+        catch (EntityNotFoundException | AccessDeniedException e) {
+            // database does not exist or permission denied
             return ImmutableList.of();
         }
         catch (AmazonServiceException e) {
