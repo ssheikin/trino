@@ -763,9 +763,9 @@ jobs:
             # suite-4 does not exist
             - suite-5
             - suite-azure
-            # - suite-delta-lake-databricks73
-            # - suite-delta-lake-databricks91
-            # - suite-delta-lake-databricks104
+            - suite-delta-lake-databricks73
+            - suite-delta-lake-databricks91
+            - suite-delta-lake-databricks104
             - suite-gcs
           exclude:
             - config: default
@@ -780,12 +780,12 @@ jobs:
               config: default
             - suite: suite-gcs
               config: default
-            # - suite: suite-delta-lake-databricks73
-            #   config: hdp3
-            # - suite: suite-delta-lake-databricks91
-            #   config: hdp3
-            # - suite: suite-delta-lake-databricks104
-            #   config: hdp3
+            - suite: suite-delta-lake-databricks73
+              config: hdp3
+            - suite: suite-delta-lake-databricks91
+              config: hdp3
+            - suite: suite-delta-lake-databricks104
+              config: hdp3
 
           ignore exclusion if:
             # Do not use this property outside of the matrix configuration.
@@ -929,7 +929,7 @@ jobs:
           ABFS_ACCOUNT: ${{ env.ABFS_TESTS_ABFS_ACCOUNT }}
           ABFS_ACCESS_KEY: ${{ env.ABFS_TESTS_ABFS_ACCESS_KEY }}
           S3_BUCKET: starburstdata-test
-          AWS_REGION: us-east-2
+          AWS_REGION: us-east-1
           DATABRICKS_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           DATABRICKS_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           DATABRICKS_73_JDBC_URL: ${{ env.DATABRICKS_73_JDBC_URL }}
