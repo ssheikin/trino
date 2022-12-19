@@ -142,7 +142,7 @@ jobs:
 
   test-jdbc-compatibility:
     runs-on: [sep-cicd, gha-fleet-small]
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
         with:
