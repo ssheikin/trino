@@ -10,7 +10,7 @@
 
     <groupId>io.trino</groupId>
     <artifactId>trino-root</artifactId>
-    <version>403-e.1-SNAPSHOT</version>
+    <version>403-e.1</version>
 
     <name>trino-root</name>
     <description>Trino</description>
@@ -30,7 +30,8 @@
     <scm>
         <connection>scm:git:git://github.com/starburstdata/trino-lts.git</connection>
         <url>https://github.com/starburstdata/trino-lts</url>
-    </scm>
+      <tag>403-e.1</tag>
+  </scm>
 
     <properties>
         <air.main.basedir>${project.basedir}</air.main.basedir>
