@@ -134,7 +134,20 @@ public class DynamicFilterSourceOperator
         @Override
         public OperatorFactory duplicate()
         {
-            throw new UnsupportedOperationException("duplicate() is not supported for DynamicFilterSourceOperatorFactory");
+            // A duplicate factory may be required for DynamicFilterSourceOperatorFactory in fault tolerant execution mode
+            // by LocalExecutionPlanner#addLookupOuterDrivers to add a new driver to output the unmatched rows in an outer join.
+            // Since the logic for tracking partitions count for dynamicPredicateConsumer requires there to be only one DynamicFilterSourceOperatorFactory,
+            // we turn off dynamic filtering and provide a duplicate factory which will act as pass through to allow the query to succeed.
+            dynamicPredicateConsumer.accept(TupleDomain.all());
+            return new DynamicFilterSourceOperatorFactory(
+                    operatorId,
+                    planNodeId,
+                    tupleDomain -> {},
+                    channels,
+                    0,
+                    DataSize.ofBytes(0),
+                    0,
+                    blockTypeOperators);
         }
     }
 
