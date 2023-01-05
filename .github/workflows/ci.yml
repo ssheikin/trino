@@ -59,7 +59,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
@@ -146,7 +146,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
@@ -196,7 +196,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
@@ -265,7 +265,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
@@ -403,7 +403,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
@@ -560,7 +560,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
@@ -712,7 +712,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
@@ -912,7 +912,7 @@ jobs:
           !contains(github.event.pull_request.labels.*.name, 'tests:all') &&
           !contains(github.event.pull_request.labels.*.name, 'tests:all-product')
         run: echo "PTL_OPTS=--impacted-features impacted-features.log" >> $GITHUB_ENV
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.ENGINEERING_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENGINEERING_AWS_SECRET_ACCESS_KEY }}
