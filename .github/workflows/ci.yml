@@ -459,7 +459,7 @@ jobs:
           EOF
           ./.github/bin/build-matrix-from-impacted.py -v -i gib-impacted.log -m .github/test-matrix.yaml -o matrix.json
           echo "Matrix: $(jq '.' matrix.json)"
-          echo "::set-output name=matrix::$(jq -c '.' matrix.json)"
+          echo "matrix=$(jq -c '.' matrix.json)" >> $GITHUB_OUTPUT
 
   test:
     runs-on: ${{ matrix.runners }}
@@ -616,10 +616,10 @@ jobs:
           ]]; \
           then
             echo "Secrets to run product tests were configured in the repo"
-            echo "::set-output name=have_azure_secrets::true"
+            echo "have_azure_secrets=true" >> $GITHUB_OUTPUT
           else
             echo "Secrets to run product tests were not configured in the repo"
-            echo "::set-output name=have_azure_secrets::false"
+            echo "have_azure_secrets=false" >> $GITHUB_OUTPUT
           fi
         id: check-secrets
       - name: Maven Install
