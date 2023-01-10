@@ -113,7 +113,8 @@ public class TestHiveConfig
                 .setSizeBasedSplitWeightsEnabled(true)
                 .setMinimumAssignedSplitWeight(0.05)
                 .setDeltaLakeCatalogName(null)
-                .setAutoPurge(false));
+                .setAutoPurge(false)
+                .setAcidModificationEnabled(false));
     }
 
     @Test
@@ -198,6 +199,7 @@ public class TestHiveConfig
                 .put("hive.minimum-assigned-split-weight", "1.0")
                 .put("hive.delta-lake-catalog-name", "delta")
                 .put("hive.auto-purge", "true")
+                .put("hive.acid-modification-enabled", "true")
                 .buildOrThrow();
 
         HiveConfig expected = new HiveConfig()
@@ -278,7 +280,8 @@ public class TestHiveConfig
                 .setSizeBasedSplitWeightsEnabled(false)
                 .setMinimumAssignedSplitWeight(1.0)
                 .setDeltaLakeCatalogName("delta")
-                .setAutoPurge(true);
+                .setAutoPurge(true)
+                .setAcidModificationEnabled(true);
 
         assertFullMapping(properties, expected);
     }

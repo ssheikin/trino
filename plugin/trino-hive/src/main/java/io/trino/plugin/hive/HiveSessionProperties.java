@@ -117,6 +117,7 @@ public final class HiveSessionProperties
     public static final String SIZE_BASED_SPLIT_WEIGHTS_ENABLED = "size_based_split_weights_enabled";
     public static final String MINIMUM_ASSIGNED_SPLIT_WEIGHT = "minimum_assigned_split_weight";
     public static final String NON_TRANSACTIONAL_OPTIMIZE_ENABLED = "non_transactional_optimize_enabled";
+    public static final String ACID_MODIFICATION_ENABLED = "acid_modification_enabled";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -499,7 +500,12 @@ public final class HiveSessionProperties
                         hiveConfig.getDeltaLakeCatalogName().orElse(null),
                         // Session-level redirections configuration does not work well with views, as view body is analyzed in context
                         // of a session with properties stripped off. Thus, this property is more of a test-only, or at most POC usefulness.
-                        true));
+                        true),
+                booleanProperty(
+                        ACID_MODIFICATION_ENABLED,
+                        "Enable performing UPDATE/DELETE on Hive ACID transactional tables, can lead to correctness issues when modifying large number of rows",
+                        hiveConfig.isAcidModificationEnabled(),
+                        false));
     }
 
     @Override
@@ -830,5 +836,10 @@ public final class HiveSessionProperties
     public static Optional<String> getDeltaLakeCatalogName(ConnectorSession session)
     {
         return Optional.ofNullable(session.getProperty(DELTA_LAKE_CATALOG_NAME, String.class));
+    }
+
+    public static boolean isAcidModificationEnabled(ConnectorSession session)
+    {
+        return session.getProperty(ACID_MODIFICATION_ENABLED, Boolean.class);
     }
 }
