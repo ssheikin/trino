@@ -194,6 +194,7 @@ import static io.trino.plugin.hive.HiveSessionProperties.getIcebergCatalogName;
 import static io.trino.plugin.hive.HiveSessionProperties.getInsertExistingPartitionsBehavior;
 import static io.trino.plugin.hive.HiveSessionProperties.getQueryPartitionFilterRequiredSchemas;
 import static io.trino.plugin.hive.HiveSessionProperties.getTimestampPrecision;
+import static io.trino.plugin.hive.HiveSessionProperties.isAcidModificationEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isBucketExecutionEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isCollectColumnStatisticsOnWrite;
 import static io.trino.plugin.hive.HiveSessionProperties.isCreateEmptyBucketFiles;
@@ -349,6 +350,8 @@ public class HiveMetadata
     private static final String CSV_ESCAPE_KEY = OpenCSVSerde.ESCAPECHAR;
 
     private static final String AUTO_PURGE_KEY = "auto.purge";
+
+    public static final String ACID_UPDATE_DELETE_MESSAGE = "%s on ACID transactional tables is disabled.";
 
     private final CatalogName catalogName;
     private final SemiTransactionalHiveMetastore metastore;
@@ -1722,6 +1725,9 @@ public class HiveMetadata
         if (isSparkBucketedTable(table)) {
             throw new TrinoException(NOT_SUPPORTED, "Updating Spark bucketed tables is not supported");
         }
+        if (isFullAcidTable(table.getParameters()) && !isAcidModificationEnabled(session)) {
+            throw new TrinoException(NOT_SUPPORTED, ACID_UPDATE_DELETE_MESSAGE.formatted("UPDATE"));
+        }
 
         // Verify that none of the updated columns are partition columns or bucket columns
 
@@ -2634,6 +2640,9 @@ public class HiveMetadata
         }
         if (isSparkBucketedTable(table)) {
             throw new TrinoException(NOT_SUPPORTED, "Deleting from Spark bucketed tables is not supported");
+        }
+        if (isFullAcidTable(table.getParameters()) && !isAcidModificationEnabled(session)) {
+            throw new TrinoException(NOT_SUPPORTED, ACID_UPDATE_DELETE_MESSAGE.formatted("DELETE"));
         }
 
         LocationHandle locationHandle = locationService.forExistingTable(metastore, session, table);

@@ -176,6 +176,8 @@ public class HiveConfig
 
     private boolean partitionProjectionEnabled;
 
+    private boolean acidModificationEnabled;
+
     public boolean isSingleStatementWritesOnly()
     {
         return singleStatementWritesOnly;
@@ -1239,6 +1241,19 @@ public class HiveConfig
     public HiveConfig setPartitionProjectionEnabled(boolean enabledAthenaPartitionProjection)
     {
         this.partitionProjectionEnabled = enabledAthenaPartitionProjection;
+        return this;
+    }
+
+    public boolean isAcidModificationEnabled()
+    {
+        return acidModificationEnabled;
+    }
+
+    @Config("hive.acid-modification-enabled")
+    @ConfigDescription("Enable performing UPDATE/DELETE on Hive ACID transactional tables, can lead to correctness issues when modifying large number of rows")
+    public HiveConfig setAcidModificationEnabled(boolean acidModificationEnabled)
+    {
+        this.acidModificationEnabled = acidModificationEnabled;
         return this;
     }
 }
