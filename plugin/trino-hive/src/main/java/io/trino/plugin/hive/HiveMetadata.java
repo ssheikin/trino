@@ -188,6 +188,7 @@ import static io.trino.plugin.hive.HiveSessionProperties.getHiveStorageFormat;
 import static io.trino.plugin.hive.HiveSessionProperties.getInsertExistingPartitionsBehavior;
 import static io.trino.plugin.hive.HiveSessionProperties.getQueryPartitionFilterRequiredSchemas;
 import static io.trino.plugin.hive.HiveSessionProperties.getTimestampPrecision;
+import static io.trino.plugin.hive.HiveSessionProperties.isAcidModificationEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isBucketExecutionEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isCollectColumnStatisticsOnWrite;
 import static io.trino.plugin.hive.HiveSessionProperties.isCreateEmptyBucketFiles;
@@ -340,6 +341,8 @@ public class HiveMetadata
     private static final String CSV_ESCAPE_KEY = OpenCSVSerde.ESCAPECHAR;
 
     private static final String AUTO_PURGE_KEY = "auto.purge";
+
+    public static final String ACID_UPDATE_DELETE_MESSAGE = "%s on ACID transactional tables is disabled.";
 
     private final CatalogName catalogName;
     private final SemiTransactionalHiveMetastore metastore;
@@ -1635,6 +1638,9 @@ public class HiveMetadata
         if (!autoCommit) {
             throw new TrinoException(NOT_SUPPORTED, "Updating transactional tables is not supported in explicit transactions (use autocommit mode)");
         }
+        if (isFullAcidTable(table.getParameters()) && !isAcidModificationEnabled(session)) {
+            throw new TrinoException(NOT_SUPPORTED, format(ACID_UPDATE_DELETE_MESSAGE, "UPDATE"));
+        }
 
         // Verify that none of the updated columns are partition columns or bucket columns
 
@@ -2440,6 +2446,9 @@ public class HiveMetadata
         }
         if (!autoCommit) {
             throw new TrinoException(NOT_SUPPORTED, "Deleting from Hive transactional tables is not supported in explicit transactions (use autocommit mode)");
+        }
+        if (isFullAcidTable(table.getParameters()) && !isAcidModificationEnabled(session)) {
+            throw new TrinoException(NOT_SUPPORTED, format(ACID_UPDATE_DELETE_MESSAGE, "DELETE"));
         }
 
         LocationHandle locationHandle = locationService.forExistingTable(metastore, session, table);

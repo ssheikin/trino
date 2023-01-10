@@ -166,6 +166,8 @@ public class HiveConfig
     private boolean sizeBasedSplitWeightsEnabled = true;
     private double minimumAssignedSplitWeight = 0.05;
 
+    private boolean acidModificationEnabled;
+
     public boolean isSingleStatementWritesOnly()
     {
         return singleStatementWritesOnly;
@@ -1164,5 +1166,18 @@ public class HiveConfig
     public double getMinimumAssignedSplitWeight()
     {
         return minimumAssignedSplitWeight;
+    }
+
+    public boolean isAcidModificationEnabled()
+    {
+        return acidModificationEnabled;
+    }
+
+    @Config("hive.acid-modification-enabled")
+    @ConfigDescription("Enable performing UPDATE/DELETE on Hive ACID transactional tables, can lead to correctness issues when modifying large number of rows")
+    public HiveConfig setAcidModificationEnabled(boolean acidModificationEnabled)
+    {
+        this.acidModificationEnabled = acidModificationEnabled;
+        return this;
     }
 }
