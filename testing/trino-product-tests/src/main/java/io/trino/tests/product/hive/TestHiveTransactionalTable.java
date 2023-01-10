@@ -52,6 +52,7 @@ import java.util.stream.Stream;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.plugin.hive.HiveMetadata.ACID_UPDATE_DELETE_MESSAGE;
 import static io.trino.tempto.assertions.QueryAssert.Row.row;
 import static io.trino.tempto.assertions.QueryAssert.assertQueryFailure;
 import static io.trino.tempto.assertions.QueryAssert.assertThat;
@@ -74,6 +75,7 @@ import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -2013,6 +2015,137 @@ public class TestHiveTransactionalTable
             assertEquals(sizeOnHiveWithWhere, sizeOnTrinoWithWhere);
             assertEquals(sizeOnTrinoWithWhere, sizeOnTrinoWithoutWhere);
             assertTrue(sizeBeforeDeletion > sizeOnTrinoWithoutWhere);
+        });
+    }
+
+    @Test(groups = HIVE_TRANSACTIONAL)
+    public void testDeleteDisallowedOnAcidTables()
+    {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+        onTrino().executeQuery("SET SESSION hive.acid_modification_enabled = false");
+        withTemporaryTable("delete_disallow", true, true, NONE, table -> {
+            onTrino().executeQuery("CREATE TABLE %s WITH (transactional=true, partitioned_by=ARRAY['regionkey']) AS SELECT nationkey, regionkey FROM tpch.tiny.nation".formatted(table));
+            assertThat(onTrino().executeQuery("SELECT COUNT(1) FROM " + table)).containsOnly(row(25));
+
+            // metadata delete
+            assertThatThrownBy(() -> onTrino().executeQuery("DELETE FROM %s WHERE regionkey = 1".formatted(table)))
+                    .hasStackTraceContaining(ACID_UPDATE_DELETE_MESSAGE.formatted("DELETE"));
+
+            // row-by-row delete
+            assertThatThrownBy(() -> onTrino().executeQuery("DELETE FROM %s WHERE nationkey %% 2 = 0".formatted(table)))
+                    .hasStackTraceContaining(ACID_UPDATE_DELETE_MESSAGE.formatted("DELETE"));
+        });
+    }
+
+    @Test(groups = HIVE_TRANSACTIONAL)
+    public void testUpdateDisallowedOnAcidTables()
+    {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+        onTrino().executeQuery("SET SESSION hive.acid_modification_enabled = false");
+        withTemporaryTable("update_disallow", true, true, NONE, table -> {
+            onTrino().executeQuery("CREATE TABLE %s WITH (transactional=true, partitioned_by=ARRAY['regionkey']) AS SELECT nationkey, comment, regionkey FROM tpch.tiny.nation".formatted(table));
+            assertThat(onTrino().executeQuery("SELECT COUNT(1) FROM " + table)).containsOnly(row(25));
+
+            // entire partition update
+            assertThatThrownBy(() -> onTrino().executeQuery("UPDATE %s SET comment = 'updated' WHERE regionkey = 1".formatted(table)))
+                    .hasStackTraceContaining(ACID_UPDATE_DELETE_MESSAGE.formatted("UPDATE"));
+
+            // row-by-row update
+            assertThatThrownBy(() -> onTrino().executeQuery("UPDATE %s SET comment = 'updated' WHERE nationkey %% 2 = 0".formatted(table)))
+                    .hasStackTraceContaining(ACID_UPDATE_DELETE_MESSAGE.formatted("UPDATE"));
+        });
+    }
+
+    /**
+     * Test for https://github.com/trinodb/trino/issues/12731
+     */
+    @Test(groups = HIVE_TRANSACTIONAL)
+    public void testLargePartitionedDelete()
+    {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+        onTrino().executeQuery("SET SESSION hive.acid_modification_enabled = true");
+        assertThatThrownBy(() -> largePartitionedDelete("large_delete_"))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageMatching(".*\\QCould not find rows:\n[0]\n\nactual rows:\n[900100]\\E.*");
+    }
+
+    private void largePartitionedDelete(String rootName)
+    {
+        withTemporaryTable(rootName + "stage1", false, false, NONE, tableStage1 -> {
+            onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 9001), SEQUENCE(1, 9001)) AS t(a, b)".formatted(tableStage1));
+            withTemporaryTable(rootName + "stage2", false, false, NONE, tableStage2 -> {
+                onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 100), SEQUENCE(1, 100)) AS t(a, b)".formatted(tableStage2));
+                withTemporaryTable(rootName + "new", true, true, NONE, tableNew -> {
+                    onTrino().executeQuery("""
+                            CREATE TABLE %s WITH (transactional=true, partitioned_by=ARRAY['d'])
+                            AS (SELECT stage1.a as a, stage1.b as b, stage1.d AS d FROM %s stage1, %s stage2 WHERE stage1.d = stage2.d)
+                            """.formatted(tableNew, tableStage1, tableStage2));
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "d IS NOT NULL", row(900100));
+                    onTrino().executeQuery("DELETE FROM %s WHERE d = 20220101".formatted(tableNew));
+
+                    // Verify no rows
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "d IS NOT NULL", row(0));
+
+                    onTrino().executeQuery("INSERT INTO %s SELECT stage1.a AS a, stage1.b AS b, stage1.d AS d FROM %s stage1, %s stage2 WHERE stage1.d = stage2.d".formatted(tableNew, tableStage1, tableStage2));
+
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "d IS NOT NULL", row(900100));
+                    onTrino().executeQuery("DELETE FROM %s WHERE d = 20220101".formatted(tableNew));
+
+                    // Verify no rows
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "d IS NOT NULL", row(0));
+                });
+            });
+        });
+    }
+
+    /**
+     * Test for https://github.com/trinodb/trino/issues/12731
+     */
+    @Test(groups = HIVE_TRANSACTIONAL)
+    public void testLargePartitionedUpdate()
+    {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+        onTrino().executeQuery("SET SESSION hive.acid_modification_enabled = true");
+        assertThatThrownBy(() -> largePartitionedUpdate("large_update_"))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageMatching(".*\\QCould not find rows:\n[1800200]\n\nactual rows:\n[900100]\\E.*");
+    }
+
+    private void largePartitionedUpdate(String rootName)
+    {
+        withTemporaryTable(rootName + "stage1", false, false, NONE, tableStage1 -> {
+            onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 9001), SEQUENCE(1, 9001)) AS t(a, b)".formatted(tableStage1));
+            withTemporaryTable(rootName + "stage2", false, false, NONE, tableStage2 -> {
+                onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 100), SEQUENCE(1, 100)) AS t(a, b)".formatted(tableStage2));
+                withTemporaryTable(rootName + "new", true, true, NONE, tableNew -> {
+                    onTrino().executeQuery("""
+                            CREATE TABLE %s WITH (transactional=true, partitioned_by=ARRAY['d'])
+                            AS (SELECT stage1.a as a, stage1.b as b, stage1.d AS d FROM %s stage1, %s stage2 WHERE stage1.d = stage2.d)
+                            """.formatted(tableNew, tableStage1, tableStage2));
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "d IS NOT NULL", row(900100));
+                    onTrino().executeQuery("UPDATE %s SET a = 0 WHERE d = 20220101".formatted(tableNew));
+
+                    // Verify all rows updated
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "a = 0", row(900100));
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "d IS NOT NULL", row(900100));
+
+                    onTrino().executeQuery("INSERT INTO %s SELECT stage1.a AS a, stage1.b AS b, stage1.d AS d FROM %s stage1, %s stage2 WHERE stage1.d = stage2.d".formatted(tableNew, tableStage1, tableStage2));
+
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "d IS NOT NULL", row(1800200));
+                    onTrino().executeQuery("UPDATE %s SET a = 0 WHERE d = 20220101".formatted(tableNew));
+
+                    // Verify all matching rows updated
+                    verifySelectForTrinoAndHive("SELECT count(1) FROM %s".formatted(tableNew), "a = 0", row(1800200));
+                });
+            });
         });
     }
 
