@@ -32,6 +32,10 @@ import io.trino.plugin.hive.metastore.thrift.TestingMetastoreLocator;
 import io.trino.plugin.hive.metastore.thrift.ThriftHiveMetastore;
 import io.trino.plugin.hive.metastore.thrift.ThriftMetastoreConfig;
 import io.trino.plugin.hive.s3.S3HiveQueryRunner;
+import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.connector.TableNotFoundException;
+import io.trino.spi.predicate.NullableValue;
+import io.trino.spi.predicate.TupleDomain;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
 import org.testng.annotations.BeforeClass;
@@ -43,7 +47,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.airlift.slice.Slices.utf8Slice;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
+import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.testing.MaterializedResult.resultBuilder;
 import static io.trino.testing.sql.TestTable.randomTableSuffix;
 import static java.lang.String.format;
@@ -279,6 +286,84 @@ public abstract class BaseTestHiveOnDataLake
         testWriteWithFileSize(testTable, 150, partSizeInBytes * 2 + 1, partSizeInBytes * 3);
 
         computeActual(format("DROP TABLE %s", testTable));
+    }
+
+    @Test
+    public void testAnalyzePartitionedTableWithCanonicalization()
+    {
+        String tableName = "test_analyze_table_canonicalization_" + randomTableSuffix();
+        assertUpdate(format("CREATE TABLE %s (a_varchar varchar, month varchar) WITH (partitioned_by = ARRAY['month'])", getTestTableName(tableName)));
+
+        assertUpdate("INSERT INTO " + getTestTableName(tableName) + " VALUES ('A', '01'), ('B', '01'), ('C', '02'), ('D', '03')", 4);
+
+        String tableLocation = (String) computeActual("SELECT DISTINCT regexp_replace(\"$path\", '/[^/]*/[^/]*$', '') FROM " + getTestTableName(tableName)).getOnlyValue();
+
+        String externalTableName = "external_" + tableName;
+        List<String> partitionColumnNames = List.of("month");
+        assertUpdate("" +
+                "CREATE TABLE " + getTestTableName(externalTableName) + "(\n" +
+                "  a_varchar varchar,\n" +
+                "  month integer)\n" +
+                "WITH (\n" +
+                "   partitioned_by = ARRAY['month'],\n" +
+                "   external_location='" + tableLocation + "')");
+
+        addPartitions(tableName, externalTableName, partitionColumnNames, TupleDomain.all());
+        assertQuery("SELECT * FROM " + HIVE_TEST_SCHEMA + ".\"" + externalTableName + "$partitions\"", "VALUES 1, 2, 3");
+        assertUpdate("ANALYZE " + getTestTableName(externalTableName), 4);
+        assertQuery("SHOW STATS FOR " + getTestTableName(externalTableName),
+                "VALUES \n" +
+                        "('a_varchar', 4.0, 2.0, 0.0, null, null, null),\n" +
+                        "('month', null, 3.0, 0.0, null, 1, 3),\n" +
+                        "(null, null, null, null, 4.0, null, null)");
+
+        assertUpdate("INSERT INTO " + getTestTableName(tableName) + " VALUES ('E', '04')", 1);
+        addPartitions(
+                tableName,
+                externalTableName,
+                partitionColumnNames,
+                TupleDomain.fromFixedValues(Map.of("month", new NullableValue(VARCHAR, utf8Slice("04")))));
+        assertUpdate("CALL system.flush_metadata_cache(schema_name => '" + HIVE_TEST_SCHEMA + "', table_name => '" + externalTableName + "', partition_column => ARRAY['month'], partition_value => ARRAY['04'])");
+        assertQuery("SELECT * FROM " + HIVE_TEST_SCHEMA + ".\"" + externalTableName + "$partitions\"", "VALUES 1, 2, 3, 4");
+        assertUpdate("ANALYZE " + getTestTableName(externalTableName) + " WITH (partitions = ARRAY[ARRAY['04']])", 1);
+        assertQuery("SHOW STATS FOR " + getTestTableName(externalTableName),
+                "VALUES\n" +
+                        "('a_varchar', 5.0, 2.0, 0.0, null, null, null),\n" +
+                        "('month', null, 4.0, 0.0, null, 1, 4),\n" +
+                        "(null, null, null, null, 5.0, null, null)");
+        // TODO (https://github.com/trinodb/trino/issues/15998) fix selective ANALYZE for table with non-canonical partition values
+        assertQueryFails("ANALYZE " + getTestTableName(externalTableName) + " WITH (partitions = ARRAY[ARRAY['4']])", "Partition no longer exists: month=4");
+
+        assertUpdate("DROP TABLE " + getTestTableName(externalTableName));
+        assertUpdate("DROP TABLE " + getTestTableName(tableName));
+    }
+
+    private void addPartitions(
+            String sourceTableName,
+            String destinationExternalTableName,
+            List<String> columnNames,
+            TupleDomain<String> partitionsKeyFilter)
+    {
+        Optional<List<String>> partitionNames = metastoreClient.getPartitionNamesByFilter(HIVE_TEST_SCHEMA, sourceTableName, columnNames, partitionsKeyFilter);
+        if (partitionNames.isEmpty()) {
+            // nothing to add
+            return;
+        }
+        Table table = metastoreClient.getTable(HIVE_TEST_SCHEMA, sourceTableName)
+                .orElseThrow(() -> new TableNotFoundException(new SchemaTableName(HIVE_TEST_SCHEMA, sourceTableName)));
+        Map<String, Optional<Partition>> partitionsByNames = metastoreClient.getPartitionsByNames(table, partitionNames.get());
+
+        metastoreClient.addPartitions(
+                HIVE_TEST_SCHEMA,
+                destinationExternalTableName,
+                partitionsByNames.entrySet().stream()
+                        .map(e -> new PartitionWithStatistics(
+                                e.getValue()
+                                        .map(p -> Partition.builder(p).setTableName(destinationExternalTableName).build())
+                                        .orElseThrow(),
+                                e.getKey(),
+                                PartitionStatistics.empty()))
+                        .collect(toImmutableList()));
     }
 
     private void renamePartitionResourcesOutsideTrino(String tableName, String partitionColumn, String regionKey)
