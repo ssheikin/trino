@@ -10,7 +10,7 @@
 
     <groupId>io.trino</groupId>
     <artifactId>trino-root</artifactId>
-    <version>393-e.10</version>
+    <version>393-e.11-SNAPSHOT</version>
 
     <name>trino-root</name>
     <description>Trino</description>
@@ -30,7 +30,7 @@
     <scm>
         <connection>scm:git:git://github.com/starburstdata/trino-lts.git</connection>
         <url>https://github.com/starburstdata/trino-lts</url>
-      <tag>393-e.10</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <properties>
