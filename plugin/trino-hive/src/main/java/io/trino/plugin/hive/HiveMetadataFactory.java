@@ -77,6 +77,7 @@ public class HiveMetadataFactory
     private final long perTransactionFileStatusCacheMaximumSize;
     private final PartitionProjectionService partitionProjectionService;
     private final boolean allowTableRename;
+    private final HiveTimestampPrecision hiveViewsTimestampPrecision;
 
     @Inject
     public HiveMetadataFactory(
@@ -134,7 +135,8 @@ public class HiveMetadataFactory
                 directoryLister,
                 hiveConfig.getPerTransactionFileStatusCacheMaximumSize(),
                 partitionProjectionService,
-                allowTableRename);
+                allowTableRename,
+                hiveConfig.getTimestampPrecision());
     }
 
     public HiveMetadataFactory(
@@ -170,7 +172,8 @@ public class HiveMetadataFactory
             DirectoryLister directoryLister,
             long perTransactionFileStatusCacheMaximumSize,
             PartitionProjectionService partitionProjectionService,
-            boolean allowTableRename)
+            boolean allowTableRename,
+            HiveTimestampPrecision hiveViewsTimestampPrecision)
     {
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
         this.skipDeletionForAlter = skipDeletionForAlter;
@@ -212,6 +215,7 @@ public class HiveMetadataFactory
         this.perTransactionFileStatusCacheMaximumSize = perTransactionFileStatusCacheMaximumSize;
         this.partitionProjectionService = requireNonNull(partitionProjectionService, "partitionProjectionService is null");
         this.allowTableRename = allowTableRename;
+        this.hiveViewsTimestampPrecision = requireNonNull(hiveViewsTimestampPrecision, "hiveViewsTimestampPrecision is null");
     }
 
     @Override
@@ -259,6 +263,7 @@ public class HiveMetadataFactory
                 directoryLister,
                 partitionProjectionService,
                 allowTableRename,
-                maxPartitionDropsPerQuery);
+                maxPartitionDropsPerQuery,
+                hiveViewsTimestampPrecision);
     }
 }
