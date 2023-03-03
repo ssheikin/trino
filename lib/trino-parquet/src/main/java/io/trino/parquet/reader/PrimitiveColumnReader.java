@@ -54,6 +54,8 @@ import static io.trino.parquet.ValuesType.DEFINITION_LEVEL;
 import static io.trino.parquet.ValuesType.REPETITION_LEVEL;
 import static io.trino.parquet.ValuesType.VALUES;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.spi.type.VarbinaryType.VARBINARY;
+import static io.trino.spi.type.VarcharType.VARCHAR;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Objects.requireNonNull;
@@ -137,6 +139,9 @@ public abstract class PrimitiveColumnReader
                 }
                 if (isLogicalUuid(primitiveType)) {
                     return new UuidColumnReader(field);
+                }
+                if (VARBINARY.equals(field.getType()) || VARCHAR.equals(field.getType())) {
+                    return new BinaryColumnReader(field);
                 }
                 if (primitiveType.getLogicalTypeAnnotation() == null) {
                     // Iceberg 0.11.1 writes UUID as FIXED_LEN_BYTE_ARRAY without logical type annotation (see https://github.com/apache/iceberg/pull/2913)
