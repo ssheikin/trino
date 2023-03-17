@@ -67,6 +67,8 @@ public class QueryInfo
     private final Map<String, SelectedRole> setRoles;
     private final Map<String, String> addedPreparedStatements;
     private final Set<String> deallocatedPreparedStatements;
+    private final Optional<String> resultsCacheResultStatus;
+    private final Optional<Long> resultsCacheResultSize;
     private final Optional<TransactionId> startedTransactionId;
     private final boolean clearTransactionId;
     private final String updateType;
@@ -106,6 +108,8 @@ public class QueryInfo
             @JsonProperty("setRoles") Map<String, SelectedRole> setRoles,
             @JsonProperty("addedPreparedStatements") Map<String, String> addedPreparedStatements,
             @JsonProperty("deallocatedPreparedStatements") Set<String> deallocatedPreparedStatements,
+            @JsonProperty("resultsCacheResultStatus") Optional<String> resultsCacheResultStatus,
+            @JsonProperty("resultsCacheResultSize") Optional<Long> resultsCacheResultSize,
             @JsonProperty("startedTransactionId") Optional<TransactionId> startedTransactionId,
             @JsonProperty("clearTransactionId") boolean clearTransactionId,
             @JsonProperty("updateType") String updateType,
@@ -138,6 +142,8 @@ public class QueryInfo
         requireNonNull(resetSessionProperties, "resetSessionProperties is null");
         requireNonNull(addedPreparedStatements, "addedPreparedStatements is null");
         requireNonNull(deallocatedPreparedStatements, "deallocatedPreparedStatements is null");
+        requireNonNull(resultsCacheResultStatus, "resultsCacheResultStatus is null");
+        requireNonNull(resultsCacheResultSize, "resultsCacheResultSize is null");
         requireNonNull(startedTransactionId, "startedTransactionId is null");
         requireNonNull(query, "query is null");
         requireNonNull(preparedQuery, "preparedQuery is null");
@@ -170,6 +176,8 @@ public class QueryInfo
         this.setRoles = ImmutableMap.copyOf(setRoles);
         this.addedPreparedStatements = ImmutableMap.copyOf(addedPreparedStatements);
         this.deallocatedPreparedStatements = ImmutableSet.copyOf(deallocatedPreparedStatements);
+        this.resultsCacheResultStatus = resultsCacheResultStatus;
+        this.resultsCacheResultSize = resultsCacheResultSize;
         this.startedTransactionId = startedTransactionId;
         this.clearTransactionId = clearTransactionId;
         this.updateType = updateType;
@@ -315,6 +323,18 @@ public class QueryInfo
     public Set<String> getDeallocatedPreparedStatements()
     {
         return deallocatedPreparedStatements;
+    }
+
+    @JsonProperty
+    public Optional<String> getResultsCacheResultStatus()
+    {
+        return resultsCacheResultStatus;
+    }
+
+    @JsonProperty
+    public Optional<Long> getResultsCacheResultSize()
+    {
+        return resultsCacheResultSize;
     }
 
     @JsonProperty

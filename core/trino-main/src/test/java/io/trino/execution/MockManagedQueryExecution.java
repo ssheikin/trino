@@ -268,6 +268,8 @@ public class MockManagedQueryExecution
                 ImmutableMap.of(),
                 ImmutableSet.of(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 false,
                 "",
                 Optional.empty(),

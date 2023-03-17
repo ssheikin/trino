@@ -42,6 +42,9 @@ public class QueryMetadata
     private final List<TableInfo> tables;
     private final List<RoutineInfo> routines;
 
+    private final Optional<String> resultsCacheResultStatus;
+    private final Optional<Long> resultsCacheResultSize;
+
     private final Optional<String> plan;
     private final Optional<String> jsonPlan;
 
@@ -59,6 +62,8 @@ public class QueryMetadata
             List<TableInfo> tables,
             List<RoutineInfo> routines,
             URI uri,
+            Optional<String> resultsCacheResultStatus,
+            Optional<Long> resultsCacheResultSize,
             Optional<String> plan,
             Optional<String> jsonPlan,
             Optional<String> payload)
@@ -73,6 +78,8 @@ public class QueryMetadata
                 tables,
                 routines,
                 uri,
+                resultsCacheResultStatus,
+                resultsCacheResultSize,
                 plan,
                 jsonPlan,
                 () -> payload);
@@ -88,6 +95,8 @@ public class QueryMetadata
             List<TableInfo> tables,
             List<RoutineInfo> routines,
             URI uri,
+            Optional<String> resultsCacheResultStatus,
+            Optional<Long> resultsCacheResultSize,
             Optional<String> plan,
             Optional<String> jsonPlan,
             Supplier<Optional<String>> payloadProvider)
@@ -101,6 +110,8 @@ public class QueryMetadata
         this.tables = requireNonNull(tables, "tables is null");
         this.routines = requireNonNull(routines, "routines is null");
         this.uri = requireNonNull(uri, "uri is null");
+        this.resultsCacheResultStatus = requireNonNull(resultsCacheResultStatus, "resultsCacheResultStatus is null");
+        this.resultsCacheResultSize = requireNonNull(resultsCacheResultSize, "resultsCacheResultSize is null");
         this.plan = requireNonNull(plan, "plan is null");
         this.jsonPlan = requireNonNull(jsonPlan, "jsonPlan is null");
         this.payloadProvider = requireNonNull(payloadProvider, "payloadProvider is null");
@@ -158,6 +169,18 @@ public class QueryMetadata
     public URI getUri()
     {
         return uri;
+    }
+
+    @JsonProperty
+    public Optional<String> getResultsCacheResultStatus()
+    {
+        return resultsCacheResultStatus;
+    }
+
+    @JsonProperty
+    public Optional<Long> getResultsCacheResultSize()
+    {
+        return resultsCacheResultSize;
     }
 
     @JsonProperty

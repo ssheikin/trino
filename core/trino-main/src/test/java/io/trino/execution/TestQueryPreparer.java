@@ -52,6 +52,7 @@ public class TestQueryPreparer
                 .build();
         PreparedQuery preparedQuery = QUERY_PREPARER.prepareQuery(session, "EXECUTE my_query");
         assertThat(preparedQuery.getStatement()).isEqualTo(simpleQuery(selectList(new AllColumns()), table(QualifiedName.of("foo"))));
+        assertThat(preparedQuery.isExecuteStatement()).isTrue();
     }
 
     @Test
@@ -59,6 +60,7 @@ public class TestQueryPreparer
     {
         PreparedQuery preparedQuery = QUERY_PREPARER.prepareQuery(TEST_SESSION, "EXECUTE IMMEDIATE 'SELECT * FROM foo'");
         assertThat(preparedQuery.getStatement()).isEqualTo(simpleQuery(selectList(new AllColumns()), table(QualifiedName.of("foo"))));
+        assertThat(preparedQuery.isExecuteStatement()).isFalse();
     }
 
     @Test

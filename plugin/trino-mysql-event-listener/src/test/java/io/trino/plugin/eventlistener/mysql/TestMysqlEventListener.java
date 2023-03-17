@@ -80,6 +80,8 @@ public class TestMysqlEventListener
             // not stored
             List.of(),
             URI.create("http://localhost"),
+            Optional.empty(),
+            Optional.empty(),
             Optional.of("plan"),
             Optional.of("jsonplan"),
             Optional.of("stageInfo"));
@@ -237,6 +239,8 @@ public class TestMysqlEventListener
             // not stored
             List.of(),
             URI.create("http://localhost"),
+            Optional.empty(),
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             Optional.empty());

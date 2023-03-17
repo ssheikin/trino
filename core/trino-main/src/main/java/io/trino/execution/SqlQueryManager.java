@@ -32,6 +32,8 @@ import io.trino.memory.ClusterMemoryManager;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.ResultQueryInfo;
 import io.trino.server.protocol.Slug;
+import io.trino.server.resultscache.ActiveResultsCacheEntry;
+import io.trino.server.resultscache.ResultsCacheState;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
 import io.trino.sql.planner.Plan;
@@ -210,6 +212,13 @@ public class SqlQueryManager
     }
 
     @Override
+    public void registerResultsCacheEntry(QueryId queryId, ActiveResultsCacheEntry resultsCacheEntry)
+            throws NoSuchElementException
+    {
+        queryTracker.getQuery(queryId).registerResultsCacheEntry(resultsCacheEntry);
+    }
+
+    @Override
     public Session getQuerySession(QueryId queryId)
             throws NoSuchElementException
     {
@@ -301,6 +310,12 @@ public class SqlQueryManager
 
         queryTracker.tryGetQuery(stageId.getQueryId())
                 .ifPresent(query -> query.cancelStage(stageId));
+    }
+
+    @Override
+    public Optional<ResultsCacheState> getResultsCacheState(QueryId queryId)
+    {
+        return queryTracker.getQuery(queryId).getResultsCacheState();
     }
 
     @Managed(description = "Query scheduler executor")

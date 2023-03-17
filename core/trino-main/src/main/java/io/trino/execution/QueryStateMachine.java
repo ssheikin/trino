@@ -43,6 +43,9 @@ import io.trino.security.AccessControl;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.BasicQueryStats;
 import io.trino.server.ResultQueryInfo;
+import io.trino.server.resultscache.EmptyResultsCacheEntry;
+import io.trino.server.resultscache.ResultsCacheEntry;
+import io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult;
 import io.trino.spi.ErrorCode;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
@@ -117,6 +120,10 @@ public class QueryStateMachine
 {
     private static final Logger QUERY_STATE_LOG = Logger.get(QueryStateMachine.class);
 
+    // Static singular definition of an EmptyResultsCacheEntry to be used as the initial value for ResultsCacheEntry
+    // This is used for the compareAndSet method call for the AtomicReference
+    private static final ResultsCacheEntry EMPTY_RESULTS_CACHE_ENTRY = new EmptyResultsCacheEntry();
+
     private final QueryId queryId;
     private final String query;
     private final Optional<String> preparedQuery;
@@ -186,6 +193,7 @@ public class QueryStateMachine
 
     private final AtomicBoolean committed = new AtomicBoolean();
     private final AtomicBoolean consumed = new AtomicBoolean();
+    private final AtomicReference<ResultsCacheEntry> resultsCacheEntry = new AtomicReference<>(EMPTY_RESULTS_CACHE_ENTRY);
 
     private final NodeVersion version;
 
@@ -584,6 +592,8 @@ public class QueryStateMachine
         QueryStats queryStats = getQueryStats(rootStage, allStages);
         boolean finalInfo = state.isDone() && allStages.stream().allMatch(StageInfo::isFinalStageInfo);
 
+        Optional<ResultsCacheResult> resultsCacheResult = resultsCacheEntry.get().getEntryResult();
+
         return new QueryInfo(
                 queryId,
                 session.toSessionRepresentation(),
@@ -603,6 +613,8 @@ public class QueryStateMachine
                 setRoles,
                 addedPreparedStatements,
                 deallocatedPreparedStatements,
+                resultsCacheResult.map(finalResult -> finalResult.status().getDisplay()),
+                resultsCacheResult.map(ResultsCacheResult::resultSetSize),
                 Optional.ofNullable(startedTransactionId.get()),
                 clearTransactionId.get(),
                 updateType.get(),
@@ -1166,6 +1178,12 @@ public class QueryStateMachine
             return;
         }
 
+        // The purpose of waiting on the ResultsCacheEntry to be done is so that the final state is what is
+        // populated in the final QueryInfo.
+        if (!resultsCacheEntry.get().isDone()) {
+            return;
+        }
+
         queryStateTimer.endQuery();
 
         queryState.setIf(FINISHED, currentState -> !currentState.isDone());
@@ -1396,6 +1414,8 @@ public class QueryStateMachine
                 queryInfo.getSetRoles(),
                 queryInfo.getAddedPreparedStatements(),
                 queryInfo.getDeallocatedPreparedStatements(),
+                queryInfo.getResultsCacheResultStatus(),
+                queryInfo.getResultsCacheResultSize(),
                 queryInfo.getStartedTransactionId(),
                 queryInfo.isClearTransactionId(),
                 queryInfo.getUpdateType(),
@@ -1414,6 +1434,24 @@ public class QueryStateMachine
                 true,
                 version);
         finalQueryInfo.compareAndSet(finalInfo, Optional.of(prunedQueryInfo));
+    }
+
+    public void setResultsCacheEntry(ResultsCacheEntry resultsCacheEntry)
+    {
+        requireNonNull(resultsCacheEntry, "resultsCacheEntry is null");
+        boolean isAlreadyDone = !resultsCacheEntry.addTransitionToDoneCallback(() -> resultsCacheEntryDone());
+        if (!this.resultsCacheEntry.compareAndSet(EMPTY_RESULTS_CACHE_ENTRY, resultsCacheEntry)) {
+            throw new IllegalStateException("ResultsCacheEntry cannot be set twice");
+        }
+
+        if (isAlreadyDone) {
+            transitionToFinishedIfReady();
+        }
+    }
+
+    public void resultsCacheEntryDone()
+    {
+        transitionToFinishedIfReady();
     }
 
     private static QueryStats pruneQueryStats(QueryStats queryStats)

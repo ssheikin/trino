@@ -16,6 +16,7 @@ package io.trino.server.protocol;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -45,6 +46,8 @@ import io.trino.execution.buffer.PagesSerdeFactory;
 import io.trino.memory.context.SimpleLocalMemoryContext;
 import io.trino.operator.DirectExchangeClientSupplier;
 import io.trino.server.ResultQueryInfo;
+import io.trino.server.resultscache.ActiveResultsCacheEntry;
+import io.trino.server.resultscache.ResultsCacheEntry;
 import io.trino.spi.ErrorCode;
 import io.trino.spi.Page;
 import io.trino.spi.QueryId;
@@ -172,6 +175,8 @@ class Query
     @GuardedBy("this")
     private Long updateCount;
 
+    private final Optional<ActiveResultsCacheEntry> resultsCacheEntry;
+
     public static Query create(
             Session session,
             Slug slug,
@@ -181,6 +186,7 @@ class Query
             ExchangeManagerRegistry exchangeManagerRegistry,
             Executor dataProcessorExecutor,
             ScheduledExecutorService timeoutExecutor,
+            Optional<ActiveResultsCacheEntry> resultsCacheEntry,
             BlockEncodingSerde blockEncodingSerde)
     {
         ExchangeDataSource exchangeDataSource = new LazyExchangeDataSource(
@@ -193,7 +199,7 @@ class Query
                 getRetryPolicy(session),
                 exchangeManagerRegistry);
 
-        Query result = new Query(session, slug, queryManager, queryInfoUrl, exchangeDataSource, dataProcessorExecutor, timeoutExecutor, blockEncodingSerde);
+        Query result = new Query(session, slug, queryManager, queryInfoUrl, resultsCacheEntry, exchangeDataSource, dataProcessorExecutor, timeoutExecutor, blockEncodingSerde);
 
         result.queryManager.setOutputInfoListener(result.getQueryId(), result::setQueryOutputInfo);
 
@@ -214,6 +220,7 @@ class Query
             Slug slug,
             QueryManager queryManager,
             Optional<URI> queryInfoUrl,
+            Optional<ActiveResultsCacheEntry> resultsCacheEntry,
             ExchangeDataSource exchangeDataSource,
             Executor resultsProcessorExecutor,
             ScheduledExecutorService timeoutExecutor,
@@ -223,6 +230,7 @@ class Query
         requireNonNull(slug, "slug is null");
         requireNonNull(queryManager, "queryManager is null");
         requireNonNull(queryInfoUrl, "queryInfoUrl is null");
+        requireNonNull(resultsCacheEntry, "resultsCacheEntry is null");
         requireNonNull(exchangeDataSource, "exchangeDataSource is null");
         requireNonNull(resultsProcessorExecutor, "resultsProcessorExecutor is null");
         requireNonNull(timeoutExecutor, "timeoutExecutor is null");
@@ -233,6 +241,7 @@ class Query
         this.session = session;
         this.slug = slug;
         this.queryInfoUrl = queryInfoUrl;
+        this.resultsCacheEntry = resultsCacheEntry;
         this.exchangeDataSource = exchangeDataSource;
         this.resultsProcessorExecutor = resultsProcessorExecutor;
         this.timeoutExecutor = timeoutExecutor;
@@ -432,7 +441,12 @@ class Query
             updateCount = updatedRowsCount.orElse(null);
         }
 
+        resultsCacheEntry.ifPresent(entry -> entry.appendResults(resultRows.getColumns().orElse(null), resultRows));
+
         if (isStarted && (queryInfo.outputStage().isEmpty() || exchangeDataSource.isFinished())) {
+            if (queryInfo.state() != FAILED) {
+                resultsCacheEntry.ifPresent(ResultsCacheEntry::done);
+            }
             queryManager.resultsConsumed(queryId);
             resultsConsumed = true;
             // update query since the query might have been transitioned to the FINISHED state
@@ -669,7 +683,7 @@ class Query
 
         // attempt to find a cancelable sub stage
         // check in reverse order since build side of a join will be later in the list
-        for (BasicStageInfo subStage : stage.getSubStages().reversed()) {
+        for (BasicStageInfo subStage : Lists.reverse(stage.getSubStages())) {
             Optional<Integer> leafStage = findCancelableLeafStage(subStage);
             if (leafStage.isPresent()) {
                 return leafStage;

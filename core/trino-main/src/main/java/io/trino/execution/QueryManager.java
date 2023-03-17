@@ -19,10 +19,13 @@ import io.trino.execution.StateMachine.StateChangeListener;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.ResultQueryInfo;
 import io.trino.server.protocol.Slug;
+import io.trino.server.resultscache.ActiveResultsCacheEntry;
+import io.trino.server.resultscache.ResultsCacheState;
 import io.trino.spi.QueryId;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public interface QueryManager
@@ -86,6 +89,12 @@ public interface QueryManager
     /**
      * @throws NoSuchElementException if query does not exist
      */
+    void registerResultsCacheEntry(QueryId queryId, ActiveResultsCacheEntry resultsCacheEntry)
+            throws NoSuchElementException;
+
+    /**
+     * @throws NoSuchElementException if query does not exist
+     */
     Session getQuerySession(QueryId queryId);
 
     /**
@@ -129,4 +138,10 @@ public interface QueryManager
      * state, the call is ignored.  If the query does not exist, the call is ignored.
      */
     void cancelStage(StageId stageId);
+
+    /**
+     * @throws NoSuchElementException if query does not exist
+     */
+    Optional<ResultsCacheState> getResultsCacheState(QueryId queryId)
+            throws NoSuchElementException;
 }

@@ -26,6 +26,7 @@ import io.trino.execution.warnings.WarningCollector;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.ResultQueryInfo;
 import io.trino.server.protocol.Slug;
+import io.trino.server.resultscache.ResultsCacheEntry;
 import io.trino.spi.type.Type;
 import io.trino.sql.planner.Plan;
 
@@ -58,6 +59,8 @@ public interface QueryExecution
     QueryInfo getQueryInfo();
 
     ResultQueryInfo getResultQueryInfo();
+
+    void registerResultsCacheEntry(ResultsCacheEntry resultsCacheEntry);
 
     Slug getSlug();
 
