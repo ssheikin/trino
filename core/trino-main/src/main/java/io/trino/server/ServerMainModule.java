@@ -509,6 +509,8 @@ public class ServerMainModule
         // TODO: remove this when system tables are bound separately for coordinator and worker
         newOptionalBinder(binder, RuleStatsRecorder.class);
 
+        newSetBinder(binder, ServerLoadableComponent.class);
+
         // cleanup
         closingBinder(binder)
                 .registerExecutor(ScheduledExecutorService.class, ForExchange.class)
