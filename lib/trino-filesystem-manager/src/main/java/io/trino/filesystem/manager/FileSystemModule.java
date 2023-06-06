@@ -22,6 +22,8 @@ import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
+import io.trino.filesystem.DecoratingTrinoFileSystemFactory;
+import io.trino.filesystem.TrinoFileSystemDecorator;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.alluxio.AlluxioFileSystemCacheModule;
 import io.trino.filesystem.azure.AzureFileSystemFactory;
@@ -42,8 +44,10 @@ import io.trino.spi.NodeManager;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static java.util.Objects.requireNonNull;
 
@@ -111,6 +115,7 @@ public class FileSystemModule
         if (config.isCacheEnabled()) {
             install(new AlluxioFileSystemCacheModule(nodeManager.getCurrentNode().isCoordinator()));
         }
+        newSetBinder(binder, TrinoFileSystemDecorator.class);
     }
 
     @Provides
@@ -121,6 +126,7 @@ public class FileSystemModule
             Map<String, TrinoFileSystemFactory> factories,
             Optional<TrinoFileSystemCache> fileSystemCache,
             Optional<CacheKeyProvider> keyProvider,
+            Set<TrinoFileSystemDecorator> decorators,
             Tracer tracer)
     {
         Optional<TrinoFileSystemFactory> hdfsFactory = hdfsFileSystemLoader.map(HdfsFileSystemLoader::create);
@@ -129,6 +135,9 @@ public class FileSystemModule
         TrinoFileSystemFactory delegate = new SwitchingFileSystemFactory(hdfsFactory, factories);
         if (fileSystemCache.isPresent()) {
             delegate = new CacheFileSystemFactory(tracer, delegate, fileSystemCache.orElseThrow(), keyProvider.orElseThrow());
+        }
+        if (!decorators.isEmpty()) {
+            delegate = new DecoratingTrinoFileSystemFactory(delegate, decorators);
         }
         return new TracingFileSystemFactory(tracer, delegate);
     }
