@@ -231,9 +231,9 @@ public final class SystemSessionProperties
     public static final String DYNAMIC_ROW_FILTERING_SELECTIVITY_THRESHOLD = "dynamic_row_filtering_selectivity_threshold";
     public static final String DYNAMIC_ROW_FILTERING_WAIT_TIMEOUT = "dynamic_row_filtering_wait_timeout";
     public static final String PAGE_PARTITIONING_BUFFER_POOL_SIZE = "page_partitioning_buffer_pool_size";
-    public static final String COLUMNAR_FILTER_EVALUATION_ENABLED = "columnar_filter_evaluation_enabled";
     public static final String IDLE_WRITER_MIN_DATA_SIZE_THRESHOLD = "idle_writer_min_data_size_threshold";
     public static final String CLOSE_IDLE_WRITERS_TRIGGER_DURATION = "close_idle_writers_trigger_duration";
+    public static final String COLUMNAR_FILTER_EVALUATION_ENABLED = "columnar_filter_evaluation_enabled";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -1148,6 +1148,11 @@ public final class SystemSessionProperties
                         featuresConfig.isForceSpillingJoin(),
                         false),
                 booleanProperty(
+                        COLUMNAR_FILTER_EVALUATION_ENABLED,
+                        "Enables columnar evaluation of filters",
+                        featuresConfig.isColumnarFilterEvaluationEnabled(),
+                        false),
+                booleanProperty(
                         CACHE_ENABLED,
                         "Enables subquery caching",
                         cacheConfig.isEnabled(),
@@ -1177,11 +1182,6 @@ public final class SystemSessionProperties
                         "Max size of cached split",
                         cacheConfig.getMaxSplitSize(),
                         true),
-                booleanProperty(
-                        COLUMNAR_FILTER_EVALUATION_ENABLED,
-                        "Enables columnar evaluation of filters",
-                        featuresConfig.isColumnarFilterEvaluationEnabled(),
-                        false),
                 booleanProperty(
                         DYNAMIC_ROW_FILTERING_ENABLED,
                         "Enable dynamic row filtering on worker nodes",
@@ -2164,5 +2164,10 @@ public final class SystemSessionProperties
     public static Duration getCloseIdleWritersTriggerDuration(Session session)
     {
         return session.getSystemProperty(CLOSE_IDLE_WRITERS_TRIGGER_DURATION, Duration.class);
+    }
+
+    public static boolean isColumnarFilterEvaluationEnabled(Session session)
+    {
+        return session.getSystemProperty(COLUMNAR_FILTER_EVALUATION_ENABLED, Boolean.class);
     }
 }
