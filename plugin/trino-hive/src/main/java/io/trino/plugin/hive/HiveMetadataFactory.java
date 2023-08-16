@@ -28,7 +28,6 @@ import io.trino.plugin.hive.metastore.cache.CachingHiveMetastore;
 import io.trino.plugin.hive.security.AccessControlMetadataFactory;
 import io.trino.plugin.hive.statistics.MetastoreHiveStatisticsProvider;
 import io.trino.spi.catalog.CatalogName;
-import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.type.TypeManager;
 
@@ -53,15 +52,14 @@ public class HiveMetadataFactory
     private final boolean createsOfNonManagedTablesEnabled;
     private final boolean deleteSchemaLocationsFallback;
     private final boolean translateHiveViews;
-    private final boolean hiveViewsRunAsInvoker;
     private final boolean hideDeltaLakeTables;
     private final long perTransactionCacheMaximumSize;
     private final HiveMetastoreFactory metastoreFactory;
     private final Set<HiveFileWriterFactory> fileWriterFactories;
     private final TrinoFileSystemFactory fileSystemFactory;
+    private final HiveViewReaderFactory hiveViewReaderFactory;
     private final HivePartitionManager partitionManager;
     private final TypeManager typeManager;
-    private final MetadataProvider metadataProvider;
     private final LocationService locationService;
     private final JsonCodec<PartitionUpdate> partitionUpdateCodec;
     private final BoundedExecutor fileSystemExecutor;
@@ -78,7 +76,6 @@ public class HiveMetadataFactory
     private final TransactionScopeCachingDirectoryListerFactory transactionScopeCachingDirectoryListerFactory;
     private final boolean partitionProjectionEnabled;
     private final boolean allowTableRename;
-    private final HiveTimestampPrecision hiveViewsTimestampPrecision;
 
     @Inject
     public HiveMetadataFactory(
@@ -89,11 +86,11 @@ public class HiveMetadataFactory
             HiveMetastoreFactory metastoreFactory,
             Set<HiveFileWriterFactory> fileWriterFactories,
             TrinoFileSystemFactory fileSystemFactory,
+            HiveViewReaderFactory hiveViewReaderFactory,
             HivePartitionManager partitionManager,
             ExecutorService executorService,
             @ForHiveTransactionHeartbeats ScheduledExecutorService heartbeatService,
             TypeManager typeManager,
-            MetadataProvider metadataProvider,
             LocationService locationService,
             JsonCodec<PartitionUpdate> partitionUpdateCodec,
             NodeVersion nodeVersion,
@@ -110,6 +107,7 @@ public class HiveMetadataFactory
                 metastoreFactory,
                 fileWriterFactories,
                 fileSystemFactory,
+                hiveViewReaderFactory,
                 partitionManager,
                 hiveConfig.getMaxConcurrentFileSystemOperations(),
                 hiveConfig.getMaxConcurrentMetastoreDrops(),
@@ -121,12 +119,10 @@ public class HiveMetadataFactory
                 hiveConfig.getCreatesOfNonManagedTablesEnabled(),
                 hiveConfig.isDeleteSchemaLocationsFallback(),
                 hiveConfig.isTranslateHiveViews(),
-                hiveConfig.isHiveViewsRunAsInvoker(),
                 hiveConfig.getPerTransactionMetastoreCacheMaximumSize(),
                 hiveConfig.getHiveTransactionHeartbeatInterval(),
                 hiveMetastoreConfig.isHideDeltaLakeTables(),
                 typeManager,
-                metadataProvider,
                 locationService,
                 partitionUpdateCodec,
                 executorService,
@@ -138,8 +134,7 @@ public class HiveMetadataFactory
                 directoryLister,
                 transactionScopeCachingDirectoryListerFactory,
                 hiveConfig.isPartitionProjectionEnabled(),
-                allowTableRename,
-                hiveConfig.getTimestampPrecision());
+                allowTableRename);
     }
 
     public HiveMetadataFactory(
@@ -148,6 +143,7 @@ public class HiveMetadataFactory
             HiveMetastoreFactory metastoreFactory,
             Set<HiveFileWriterFactory> fileWriterFactories,
             TrinoFileSystemFactory fileSystemFactory,
+            HiveViewReaderFactory hiveViewReaderFactory,
             HivePartitionManager partitionManager,
             int maxConcurrentFileSystemOperations,
             int maxConcurrentMetastoreDrops,
@@ -159,12 +155,10 @@ public class HiveMetadataFactory
             boolean createsOfNonManagedTablesEnabled,
             boolean deleteSchemaLocationsFallback,
             boolean translateHiveViews,
-            boolean hiveViewsRunAsInvoker,
             long perTransactionCacheMaximumSize,
             Optional<Duration> hiveTransactionHeartbeatInterval,
             boolean hideDeltaLakeTables,
             TypeManager typeManager,
-            MetadataProvider metadataProvider,
             LocationService locationService,
             JsonCodec<PartitionUpdate> partitionUpdateCodec,
             ExecutorService executorService,
@@ -176,8 +170,7 @@ public class HiveMetadataFactory
             DirectoryLister directoryLister,
             TransactionScopeCachingDirectoryListerFactory transactionScopeCachingDirectoryListerFactory,
             boolean partitionProjectionEnabled,
-            boolean allowTableRename,
-            HiveTimestampPrecision hiveViewsTimestampPrecision)
+            boolean allowTableRename)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
@@ -187,16 +180,15 @@ public class HiveMetadataFactory
         this.createsOfNonManagedTablesEnabled = createsOfNonManagedTablesEnabled;
         this.deleteSchemaLocationsFallback = deleteSchemaLocationsFallback;
         this.translateHiveViews = translateHiveViews;
-        this.hiveViewsRunAsInvoker = hiveViewsRunAsInvoker;
         this.hideDeltaLakeTables = hideDeltaLakeTables;
         this.perTransactionCacheMaximumSize = perTransactionCacheMaximumSize;
 
         this.metastoreFactory = requireNonNull(metastoreFactory, "metastoreFactory is null");
         this.fileWriterFactories = ImmutableSet.copyOf(requireNonNull(fileWriterFactories, "fileWriterFactories is null"));
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.hiveViewReaderFactory = requireNonNull(hiveViewReaderFactory, "hiveViewReaderFactory is null");
         this.partitionManager = requireNonNull(partitionManager, "partitionManager is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
-        this.metadataProvider = requireNonNull(metadataProvider, "metadataProvider is null");
         this.locationService = requireNonNull(locationService, "locationService is null");
         this.partitionUpdateCodec = requireNonNull(partitionUpdateCodec, "partitionUpdateCodec is null");
         this.trinoVersion = requireNonNull(trinoVersion, "trinoVersion is null");
@@ -220,7 +212,6 @@ public class HiveMetadataFactory
         this.transactionScopeCachingDirectoryListerFactory = requireNonNull(transactionScopeCachingDirectoryListerFactory, "transactionScopeCachingDirectoryListerFactory is null");
         this.partitionProjectionEnabled = partitionProjectionEnabled;
         this.allowTableRename = allowTableRename;
-        this.hiveViewsTimestampPrecision = requireNonNull(hiveViewsTimestampPrecision, "hiveViewsTimestampPrecision is null");
     }
 
     @Override
@@ -250,14 +241,13 @@ public class HiveMetadataFactory
                 autoCommit,
                 fileWriterFactories,
                 fileSystemFactory,
+                hiveViewReaderFactory,
                 partitionManager,
                 writesToNonManagedTablesEnabled,
                 createsOfNonManagedTablesEnabled,
                 translateHiveViews,
-                hiveViewsRunAsInvoker,
                 hideDeltaLakeTables,
                 typeManager,
-                metadataProvider,
                 locationService,
                 partitionUpdateCodec,
                 trinoVersion,
@@ -268,7 +258,6 @@ public class HiveMetadataFactory
                 directoryLister,
                 partitionProjectionEnabled,
                 allowTableRename,
-                maxPartitionDropsPerQuery,
-                hiveViewsTimestampPrecision);
+                maxPartitionDropsPerQuery);
     }
 }
