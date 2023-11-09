@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closer;
+import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.json.JsonCodec;
 import io.airlift.json.JsonCodecFactory;
 import io.airlift.json.ObjectMapperProvider;
@@ -403,7 +404,8 @@ public class PlanTester
                 transactionManager,
                 typeManager,
                 nodeSchedulerConfig,
-                optimizerConfig));
+                optimizerConfig,
+                new ConfigurationFactory(ImmutableMap.of())));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
         this.pageSourceManager = new PageSourceManager(createPageSourceProvider(catalogManager), new DynamicRowFilteringPageSourceProvider(new DynamicPageFilterCache(typeOperators)));
         this.dynamicRowFilteringPageSourceProvider = new DynamicRowFilteringPageSourceProvider(new DynamicPageFilterCache(typeOperators));

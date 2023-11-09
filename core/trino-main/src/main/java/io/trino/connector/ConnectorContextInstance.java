@@ -13,6 +13,7 @@
  */
 package io.trino.connector;
 
+import com.google.common.collect.ImmutableMap;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.trino.spi.NodeManager;
@@ -23,6 +24,8 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.type.TypeManager;
+
+import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
@@ -38,6 +41,7 @@ public class ConnectorContextInstance
     private final PageSorter pageSorter;
     private final PageIndexerFactory pageIndexerFactory;
     private final CatalogHandle catalogHandle;
+    private final Map<String, String> serverProperties;
 
     public ConnectorContextInstance(
             CatalogHandle catalogHandle,
@@ -48,7 +52,8 @@ public class ConnectorContextInstance
             TypeManager typeManager,
             MetadataProvider metadataProvider,
             PageSorter pageSorter,
-            PageIndexerFactory pageIndexerFactory)
+            PageIndexerFactory pageIndexerFactory,
+            Map<String, String> serverProperties)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -59,6 +64,7 @@ public class ConnectorContextInstance
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
         this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
+        this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
     }
 
     @Override
@@ -113,5 +119,11 @@ public class ConnectorContextInstance
     public PageIndexerFactory getPageIndexerFactory()
     {
         return pageIndexerFactory;
+    }
+
+    @Override
+    public Map<String, String> getServerProperties()
+    {
+        return serverProperties;
     }
 }

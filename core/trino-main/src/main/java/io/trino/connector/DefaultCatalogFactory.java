@@ -15,6 +15,7 @@ package io.trino.connector;
 
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.inject.Inject;
+import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.node.NodeInfo;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
@@ -69,6 +70,7 @@ public class DefaultCatalogFactory
 
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
+    private final Map<String, String> serverProperties;
 
     private final ConcurrentMap<ConnectorName, ConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
 
@@ -85,7 +87,8 @@ public class DefaultCatalogFactory
             TransactionManager transactionManager,
             TypeManager typeManager,
             NodeSchedulerConfig nodeSchedulerConfig,
-            OptimizerConfig optimizerConfig)
+            OptimizerConfig optimizerConfig,
+            ConfigurationFactory configurationFactory)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
@@ -99,6 +102,7 @@ public class DefaultCatalogFactory
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
+        this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
     }
 
     @Override
@@ -196,7 +200,8 @@ public class DefaultCatalogFactory
                 typeManager,
                 new InternalMetadataProvider(metadata, typeManager),
                 pageSorter,
-                pageIndexerFactory);
+                pageIndexerFactory,
+                serverProperties);
 
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
             return connectorFactory.create(catalogName, properties, context);

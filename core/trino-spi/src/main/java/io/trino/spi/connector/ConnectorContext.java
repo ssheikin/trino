@@ -21,6 +21,8 @@ import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.type.TypeManager;
 
+import java.util.Map;
+
 public interface ConnectorContext
 {
     default CatalogHandle getCatalogHandle()
@@ -75,6 +77,11 @@ public interface ConnectorContext
     }
 
     default PageIndexerFactory getPageIndexerFactory()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default Map<String, String> getServerProperties()
     {
         throw new UnsupportedOperationException();
     }

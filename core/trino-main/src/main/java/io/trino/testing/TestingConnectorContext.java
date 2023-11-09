@@ -13,6 +13,7 @@
  */
 package io.trino.testing;
 
+import com.google.common.collect.ImmutableMap;
 import io.airlift.tracing.Tracing;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
@@ -32,6 +33,8 @@ import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
 import io.trino.util.EmbedVersion;
+
+import java.util.Map;
 
 import static io.trino.spi.connector.MetadataProvider.NOOP_METADATA_PROVIDER;
 import static io.trino.testing.TestingHandles.TEST_CATALOG_HANDLE;
@@ -103,5 +106,11 @@ public final class TestingConnectorContext
     public PageIndexerFactory getPageIndexerFactory()
     {
         return pageIndexerFactory;
+    }
+
+    @Override
+    public Map<String, String> getServerProperties()
+    {
+        return ImmutableMap.of();
     }
 }
