@@ -1,0 +1,37 @@
+{
+  "rootGroups": [
+    {
+      "name": "global",
+      "softMemoryLimit": "1MB",
+      "hardConcurrencyLimit": 100,
+      "maxQueued": 1000,
+      "softCpuLimit": "1h",
+      "hardCpuLimit": "1d",
+      "subGroups": [
+        {
+          "name": "table_${tableName}",
+          "softMemoryLimit": "2MB",
+          "hardConcurrencyLimit": 3,
+          "maxQueued": 4
+        },
+        {
+          "name": "other",
+          "softMemoryLimit": "2MB",
+          "hardConcurrencyLimit": 3,
+          "maxQueued": 4
+        }
+      ]
+    }
+  ],
+  "selectors": [
+    {
+      "queryText": "(?i).* from (?<tableName>.*)",
+      "group": "global.table_${tableName}"
+    },
+    {
+      "group": "global.other"
+    }
+  ],
+  "cpuQuotaPeriod": "1h"
+}
+

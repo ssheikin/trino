@@ -78,6 +78,7 @@ final class TestingResourceGroups
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
+                        Optional.empty(),
                         groupIdTemplate));
     }
 
@@ -104,6 +105,7 @@ final class TestingResourceGroups
                             Optional.of(matchLiterals(users)),
                             spec.getUserGroupRegex(),
                             spec.getSourceRegex(),
+                            spec.getQueryTextRegex(),
                             spec.getQueryType(),
                             spec.getClientTags(),
                             spec.getResourceEstimate(),
@@ -117,6 +119,21 @@ final class TestingResourceGroups
                             spec.getUserRegex(),
                             Optional.of(matchLiterals(groups)),
                             spec.getSourceRegex(),
+                            spec.getQueryTextRegex(),
+                            spec.getQueryType(),
+                            spec.getClientTags(),
+                            spec.getResourceEstimate(),
+                            spec.getGroup()));
+        }
+
+        public SelectorSpecBuilder queryText(String... queryTexts)
+        {
+            return new SelectorSpecBuilder(
+                    new SelectorSpec(
+                            spec.getUserRegex(),
+                            spec.getUserGroupRegex(),
+                            spec.getSourceRegex(),
+                            Optional.of(Pattern.compile(String.join("|", queryTexts))),
                             spec.getQueryType(),
                             spec.getClientTags(),
                             spec.getResourceEstimate(),

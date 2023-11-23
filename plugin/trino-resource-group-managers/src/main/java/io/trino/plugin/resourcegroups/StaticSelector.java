@@ -43,6 +43,7 @@ public class StaticSelector
     private final Optional<Pattern> userRegex;
     private final Optional<Pattern> userGroupRegex;
     private final Optional<Pattern> sourceRegex;
+    private final Optional<Pattern> queryTextRegex;
     private final Set<String> clientTags;
     private final Optional<SelectorResourceEstimate> selectorResourceEstimate;
     private final Optional<String> queryType;
@@ -53,6 +54,7 @@ public class StaticSelector
             Optional<Pattern> userRegex,
             Optional<Pattern> userGroupRegex,
             Optional<Pattern> sourceRegex,
+            Optional<Pattern> queryTextRegex,
             Optional<List<String>> clientTags,
             Optional<SelectorResourceEstimate> selectorResourceEstimate,
             Optional<String> queryType,
@@ -61,6 +63,7 @@ public class StaticSelector
         this.userRegex = requireNonNull(userRegex, "userRegex is null");
         this.userGroupRegex = requireNonNull(userGroupRegex, "userGroupRegex is null");
         this.sourceRegex = requireNonNull(sourceRegex, "sourceRegex is null");
+        this.queryTextRegex = requireNonNull(queryTextRegex, "queryTextRegex is null");
         requireNonNull(clientTags, "clientTags is null");
         this.clientTags = ImmutableSet.copyOf(clientTags.orElse(ImmutableList.of()));
         this.selectorResourceEstimate = requireNonNull(selectorResourceEstimate, "selectorResourceEstimate is null");
@@ -70,6 +73,7 @@ public class StaticSelector
         HashSet<String> variableNames = new HashSet<>(ImmutableList.of(USER_VARIABLE, SOURCE_VARIABLE));
         userRegex.ifPresent(u -> addNamedGroups(u, variableNames));
         sourceRegex.ifPresent(s -> addNamedGroups(s, variableNames));
+        queryTextRegex.ifPresent(q -> addNamedGroups(q, variableNames));
         this.variableNames = ImmutableSet.copyOf(variableNames);
 
         Set<String> unresolvedVariables = Sets.difference(group.getVariableNames(), variableNames);
@@ -105,6 +109,15 @@ public class StaticSelector
 
         if (!clientTags.isEmpty() && !criteria.getTags().containsAll(clientTags)) {
             return Optional.empty();
+        }
+
+        if (queryTextRegex.isPresent()) {
+            String queryText = criteria.getQueryText();
+            if (!queryTextRegex.get().matcher(queryText).matches()) {
+                return Optional.empty();
+            }
+
+            addVariableValues(queryTextRegex.get(), queryText, variables);
         }
 
         if (selectorResourceEstimate.isPresent() && !selectorResourceEstimate.get().match(criteria.getResourceEstimates())) {

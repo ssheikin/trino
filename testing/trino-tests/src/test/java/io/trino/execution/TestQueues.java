@@ -298,6 +298,52 @@ public class TestQueues
         }
     }
 
+    @Test
+    @Timeout(240)
+    public void testQueryTextBasedSelection()
+            throws Exception
+    {
+        try (QueryRunner queryRunner = TpchQueryRunnerBuilder.builder().build()) {
+            queryRunner.installPlugin(new ResourceGroupManagerPlugin());
+            queryRunner.getCoordinator().getResourceGroupManager().get()
+                    .setConfigurationManager("file", ImmutableMap.of("resource-groups.config-file", getResourceFilePath("resource_groups_query_text_based_config.json")));
+            assertResourceGroup(queryRunner, newAdhocSession(), "SELECT * FROM nation LIMIT 1", createResourceGroupId("global", "nation"));
+            assertResourceGroup(queryRunner, newAdhocSession(), "SELECT * FROM region LIMIT 1", createResourceGroupId("global", "region"));
+            assertResourceGroup(queryRunner, newAdhocSession(), "SELECT partkey FROM part LIMIT 1", createResourceGroupId("global", "partkey"));
+            assertResourceGroup(queryRunner, newAdhocSession(), "SELECT * FROM part LIMIT 1", createResourceGroupId("global", "part"));
+            assertResourceGroup(queryRunner, newAdhocSession(), "SELECT * FROM supplier LIMIT 1", createResourceGroupId("global", "other"));
+        }
+    }
+
+    @Test
+    @Timeout(240)
+    public void testQueryTextBasedSelectionWhenTwoGroupsHaveSameQueryTextPattern()
+            throws Exception
+    {
+        try (QueryRunner queryRunner = TpchQueryRunnerBuilder.builder().build()) {
+            queryRunner.installPlugin(new ResourceGroupManagerPlugin());
+            queryRunner.getCoordinator().getResourceGroupManager().get()
+                    .setConfigurationManager("file", ImmutableMap.of("resource-groups.config-file", getResourceFilePath("resource_groups_query_text_based_config.json")));
+            //two groups with same queryText pattern: customer2, customer1
+            assertResourceGroup(queryRunner, newAdhocSession(), "SELECT * FROM customer LIMIT 1", createResourceGroupId("global", "customer2"));
+        }
+    }
+
+    @Test
+    @Timeout(240)
+    public void testQueryTextBasedSelectionWithVariable()
+            throws Exception
+    {
+        try (QueryRunner queryRunner = TpchQueryRunnerBuilder.builder().build()) {
+            queryRunner.installPlugin(new ResourceGroupManagerPlugin());
+            queryRunner.getCoordinator().getResourceGroupManager().get()
+                    .setConfigurationManager("file", ImmutableMap.of("resource-groups.config-file", getResourceFilePath("resource_groups_query_text_based_config_with_variable.json")));
+            assertResourceGroup(queryRunner, newTinyAdhocSession(), "SELECT * FROM customer", createResourceGroupId("global", "table_customer"));
+            assertResourceGroup(queryRunner, newTinyAdhocSession(), "SELECT * FROM nation", createResourceGroupId("global", "table_nation"));
+            assertResourceGroup(queryRunner, newTinyAdhocSession(), "SELECT * FROM region", createResourceGroupId("global", "table_region"));
+        }
+    }
+
     private void assertResourceGroup(QueryRunner queryRunner, Session session, String query, ResourceGroupId expectedResourceGroup)
             throws InterruptedException
     {
@@ -362,6 +408,15 @@ public class TestQueues
     private static Session newAdhocSession()
     {
         return newSession("adhoc", ImmutableSet.of(), null);
+    }
+
+    private static Session newTinyAdhocSession()
+    {
+        return testSessionBuilder()
+                .setCatalog("tpch")
+                .setSchema("tiny")
+                .setSource("adhoc")
+                .build();
     }
 
     private static Session newRejectionSession()
