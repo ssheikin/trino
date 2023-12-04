@@ -54,11 +54,11 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 public abstract class BaseElasticsearchConnectorTest
         extends BaseConnectorTest
 {
-    private final String catalogName;
-    private ElasticsearchServer server;
-    private RestHighLevelClient client;
+    protected final String catalogName;
+    protected ElasticsearchServer server;
+    protected RestHighLevelClient client;
 
-    BaseElasticsearchConnectorTest(ElasticsearchServer server, String catalogName)
+    public BaseElasticsearchConnectorTest(ElasticsearchServer server, String catalogName)
     {
         this.server = requireNonNull(server, "server is null");
         this.catalogName = catalogName;
