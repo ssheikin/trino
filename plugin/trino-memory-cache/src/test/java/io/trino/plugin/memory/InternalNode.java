@@ -83,6 +83,13 @@ public class InternalNode
     }
 
     @Override
+    @Deprecated
+    public URI getHttpUri()
+    {
+        return getInternalUri();
+    }
+
+    @Override
     public String getVersion()
     {
         return nodeVersion.getVersion();
