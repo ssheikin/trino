@@ -55,6 +55,6 @@ public class MongoPageSourceProvider
             handles.add((MongoColumnHandle) handle);
         }
 
-        return new MongoPageSource(mongoSessionProvider.getMongoSession(), tableHandle, handles.build());
+        return new MongoPageSource(mongoSessionProvider.getMongoSession(session.getIdentity()), tableHandle, handles.build());
     }
 }

@@ -44,7 +44,7 @@ public class MongoSplitManager
             DynamicFilter dynamicFilter,
             Constraint constraint)
     {
-        MongoSplit split = new MongoSplit(serverDetailsProvider.getServerAddress());
+        MongoSplit split = new MongoSplit(serverDetailsProvider.getServerAddress(session.getIdentity()));
 
         return new FixedSplitSource(split);
     }

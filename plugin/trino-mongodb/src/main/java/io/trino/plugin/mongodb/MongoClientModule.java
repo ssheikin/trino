@@ -57,7 +57,7 @@ public class MongoClientModule
         install(conditionalModule(
                 MongoClientConfig.class,
                 MongoClientConfig::isAllowLocalScheduling,
-                internalBinder -> internalBinder.bind(MongoServerDetailsProvider.class).toInstance(ImmutableList::of),
+                internalBinder -> internalBinder.bind(MongoServerDetailsProvider.class).toInstance(identity -> ImmutableList.of()),
                 internalBinder -> internalBinder.bind(MongoServerDetailsProvider.class).to(SessionBasedMongoServerDetailsProvider.class).in(Scopes.SINGLETON)));
 
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(Query.class).in(Scopes.SINGLETON);
