@@ -332,6 +332,11 @@ public class MongoMetadata
         mongoSession.setColumnType(table, column.getBaseName(), type);
     }
 
+    public void close()
+    {
+        // SEP will implement this method
+    }
+
     private static boolean canChangeColumnType(Type sourceType, Type newType)
     {
         if (sourceType.equals(newType)) {
