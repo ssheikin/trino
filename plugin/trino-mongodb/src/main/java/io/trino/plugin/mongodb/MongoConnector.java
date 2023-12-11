@@ -36,7 +36,6 @@ import static java.util.Objects.requireNonNull;
 public class MongoConnector
         implements Connector
 {
-    private final MongoSession mongoSession;
     private final MongoTransactionManager transactionManager;
     private final MongoSplitManager splitManager;
     private final MongoPageSourceProvider pageSourceProvider;
@@ -46,7 +45,6 @@ public class MongoConnector
 
     @Inject
     public MongoConnector(
-            MongoSession mongoSession,
             MongoTransactionManager transactionManager,
             MongoSplitManager splitManager,
             MongoPageSourceProvider pageSourceProvider,
@@ -54,7 +52,6 @@ public class MongoConnector
             Set<ConnectorTableFunction> connectorTableFunctions,
             Set<SessionPropertiesProvider> sessionPropertiesProviders)
     {
-        this.mongoSession = mongoSession;
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
@@ -117,11 +114,5 @@ public class MongoConnector
     public List<PropertyMetadata<?>> getSessionProperties()
     {
         return sessionProperties;
-    }
-
-    @Override
-    public void shutdown()
-    {
-        mongoSession.shutdown();
     }
 }

@@ -31,12 +31,12 @@ import static java.util.Objects.requireNonNull;
 public class MongoPageSourceProvider
         implements ConnectorPageSourceProvider
 {
-    private final MongoSession mongoSession;
+    private final MongoSessionProvider mongoSessionProvider;
 
     @Inject
-    public MongoPageSourceProvider(MongoSession mongoSession)
+    public MongoPageSourceProvider(MongoSessionProvider mongoSessionProvider)
     {
-        this.mongoSession = requireNonNull(mongoSession, "mongoSession is null");
+        this.mongoSessionProvider = requireNonNull(mongoSessionProvider, "mongoSessionProvider is null");
     }
 
     @Override
@@ -55,6 +55,6 @@ public class MongoPageSourceProvider
             handles.add((MongoColumnHandle) handle);
         }
 
-        return new MongoPageSource(mongoSession, tableHandle, handles.build());
+        return new MongoPageSource(mongoSessionProvider.getMongoSession(), tableHandle, handles.build());
     }
 }

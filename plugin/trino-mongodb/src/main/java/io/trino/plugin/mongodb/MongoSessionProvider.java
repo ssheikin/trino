@@ -13,24 +13,7 @@
  */
 package io.trino.plugin.mongodb;
 
-import com.google.inject.Inject;
-
-import static java.util.Objects.requireNonNull;
-
-public class DefaultMongoMetadataFactory
-        implements MongoMetadataFactory
+public interface MongoSessionProvider
 {
-    private final MongoSessionProvider mongoSessionProvider;
-
-    @Inject
-    public DefaultMongoMetadataFactory(MongoSessionProvider mongoSessionProvider)
-    {
-        this.mongoSessionProvider = requireNonNull(mongoSessionProvider, "mongoSessionProvider is null");
-    }
-
-    @Override
-    public MongoMetadata create()
-    {
-        return new MongoMetadata(mongoSessionProvider.getMongoSession());
-    }
+    MongoSession getMongoSession();
 }
