@@ -50,7 +50,7 @@ public class ActiveResultsCacheEntry
     private final Optional<String> queryType;
     private final Optional<String> updateType;
     private final long maximumSize;
-    private final ResultsCacheClient client;
+    private final CacheClient cacheClient;
     private final ListeningExecutorService executorService;
     @GuardedBy("this")
     private final List<DoneCallback> doneCallbacks = new ArrayList<>();
@@ -74,7 +74,7 @@ public class ActiveResultsCacheEntry
             Optional<String> queryType,
             Optional<String> updateType,
             long maximumSize,
-            ResultsCacheClient client,
+            CacheClient cacheClient,
             ListeningExecutorService executorService)
     {
         this.cacheKey = requireNonNull(cacheKey, "key is null");
@@ -87,7 +87,7 @@ public class ActiveResultsCacheEntry
         this.updateType = requireNonNull(updateType, "updateType is null");
         checkArgument(maximumSize > 0, "maximumSize is <= 0");
         this.maximumSize = maximumSize;
-        this.client = requireNonNull(client, "client is null");
+        this.cacheClient = requireNonNull(cacheClient, "cacheClient is null");
         this.executorService = requireNonNull(executorService, "executorService is null");
     }
 
@@ -203,17 +203,18 @@ public class ActiveResultsCacheEntry
         checkState(valid, "attempting to upload results in invalid state");
 
         ListenableFuture<?> submitFuture = executorService.submit(() ->
-                client.uploadResultsCacheEntry(
+                cacheClient.insertCacheEntry(new CacheEntry(
                         cacheKey,
-                        queryId,
+                        queryId.toString(),
                         query,
                         sessionCatalog,
                         sessionSchema,
                         queryType,
                         updateType,
+                        sessionCatalog.stream().toList(),
                         resultsData.columns,
                         resultsData.data,
-                        createdTime));
+                        createdTime)));
         MoreFutures.addExceptionCallback(submitFuture, throwable ->
                 log.error(throwable, "Upload to cache failed"));
     }

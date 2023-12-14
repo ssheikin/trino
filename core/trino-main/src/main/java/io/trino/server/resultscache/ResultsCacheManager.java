@@ -32,14 +32,14 @@ public class ResultsCacheManager
 {
     private static final Logger log = Logger.get(ResultsCacheManager.class);
     private final long configuredMaxSize;
-    private final ResultsCacheClient resultsCacheClient;
+    private final CacheClient cacheClient;
     private final ListeningExecutorService executorService;
 
     @Inject
     public ResultsCacheManager(CacheClient cacheClient, ResultsCacheConfig config)
     {
         this.configuredMaxSize = config.getMaxResultsSize().toBytes();
-        this.resultsCacheClient = new ResultsCacheClient(requireNonNull(cacheClient, "cacheClient is null"));
+        this.cacheClient = requireNonNull(cacheClient, "cacheClient is null");
         this.executorService = listeningDecorator(newFixedThreadPool(config.getCacheUploadThreads(), threadsNamed("resultscache-upload-%s")));
     }
 
@@ -71,7 +71,7 @@ public class ResultsCacheManager
                 queryType,
                 updateType,
                 maximumSizeBytes,
-                resultsCacheClient,
+                cacheClient,
                 executorService);
     }
 
