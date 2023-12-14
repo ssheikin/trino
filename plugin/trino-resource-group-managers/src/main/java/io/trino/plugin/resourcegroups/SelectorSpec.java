@@ -98,15 +98,15 @@ public class SelectorSpec
             return false;
         }
         SelectorSpec that = (SelectorSpec) other;
-        return (group.equals(that.group) &&
-                userRegex.map(Pattern::pattern).equals(that.userRegex.map(Pattern::pattern)) &&
-                userRegex.map(Pattern::flags).equals(that.userRegex.map(Pattern::flags)) &&
-                userGroupRegex.map(Pattern::pattern).equals(that.userGroupRegex.map(Pattern::pattern)) &&
-                userGroupRegex.map(Pattern::flags).equals(that.userGroupRegex.map(Pattern::flags)) &&
-                sourceRegex.map(Pattern::pattern).equals(that.sourceRegex.map(Pattern::pattern))) &&
-                sourceRegex.map(Pattern::flags).equals(that.sourceRegex.map(Pattern::flags)) &&
-                queryType.equals(that.queryType) &&
-                clientTags.equals(that.clientTags);
+        return group.equals(that.group) &&
+               userRegex.map(Pattern::pattern).equals(that.userRegex.map(Pattern::pattern)) &&
+               userRegex.map(Pattern::flags).equals(that.userRegex.map(Pattern::flags)) &&
+               userGroupRegex.map(Pattern::pattern).equals(that.userGroupRegex.map(Pattern::pattern)) &&
+               userGroupRegex.map(Pattern::flags).equals(that.userGroupRegex.map(Pattern::flags)) &&
+               sourceRegex.map(Pattern::pattern).equals(that.sourceRegex.map(Pattern::pattern)) &&
+               sourceRegex.map(Pattern::flags).equals(that.sourceRegex.map(Pattern::flags)) &&
+               queryType.equals(that.queryType) &&
+               clientTags.equals(that.clientTags);
     }
 
     @Override
