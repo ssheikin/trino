@@ -14,7 +14,6 @@
 
 package io.trino.server.resultscache;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.airlift.log.Logger;
 import io.trino.client.Column;
 import io.trino.spi.QueryId;
@@ -50,31 +49,8 @@ public class ResultsCacheClient
             Instant creation)
     {
         log.debug("Sending cache entry %s for query %s to results cache", key, queryId);
-        try {
-            cacheClient.insertCacheEntry(
-                    cacheBaseUri,
-                    createCacheEntry(key, queryId, query, sessionCatalog, sessionSchema, queryType, updateType, columns, data, creation));
-        }
-        catch (JsonProcessingException ex) {
-            throw new RuntimeException("Error serializing results to JSON", ex);
-        }
-    }
-
-    private static CacheEntry createCacheEntry(
-            String cacheKey,
-            QueryId queryId,
-            String query,
-            Optional<String> sessionCatalog,
-            Optional<String> sessionSchema,
-            Optional<String> queryType,
-            Optional<String> updateType,
-            List<Column> columns,
-            List<List<Object>> data,
-            Instant creation)
-            throws JsonProcessingException
-    {
-        return new CacheEntry(
-                cacheKey,
+        cacheClient.insertCacheEntry(cacheBaseUri, new CacheEntry(
+                key,
                 queryId.toString(),
                 query,
                 sessionCatalog,
@@ -84,6 +60,6 @@ public class ResultsCacheClient
                 sessionCatalog.stream().toList(),
                 columns,
                 data,
-                creation);
+                creation));
     }
 }
