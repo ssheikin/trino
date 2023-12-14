@@ -30,7 +30,7 @@ public class ResultsCacheModule
     {
         newSetBinder(binder, SystemSessionPropertiesProvider.class).addBinding().to(ResultsCacheSessionProperties.class);
         configBinder(binder).bindConfig(ResultsCacheConfig.class);
-        binder.bind(CacheClient.class).toInstance((cacheBaseUri, cacheEntry) -> {});
+        binder.bind(CacheClient.class).toInstance((cacheEntry) -> {});
         binder.bind(ResultsCacheManager.class).in(SINGLETON);
         binder.bind(ResultsCacheAnalyzerFactory.class).in(SINGLETON);
     }

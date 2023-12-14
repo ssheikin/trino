@@ -39,9 +39,7 @@ public class ResultsCacheManager
     public ResultsCacheManager(CacheClient cacheClient, ResultsCacheConfig config)
     {
         this.configuredMaxSize = config.getMaxResultsSize().toBytes();
-        this.resultsCacheClient = new ResultsCacheClient(
-                config.getCacheEndpoint(),
-                requireNonNull(cacheClient, "cacheClient is null"));
+        this.resultsCacheClient = new ResultsCacheClient(requireNonNull(cacheClient, "cacheClient is null"));
         this.executorService = listeningDecorator(newFixedThreadPool(config.getCacheUploadThreads(), threadsNamed("resultscache-upload-%s")));
     }
 
@@ -83,6 +81,7 @@ public class ResultsCacheManager
             log.debug("QueryId: %s, statement had cache key %s", session.getQueryId(), cacheKey);
             return new ResultsCacheState(
                     cacheKey,
-                    ResultsCacheSessionProperties.getResultsCacheEntryMaxSizeBytes(session)); });
+                    ResultsCacheSessionProperties.getResultsCacheEntryMaxSizeBytes(session));
+        });
     }
 }

@@ -27,12 +27,10 @@ import static java.util.Objects.requireNonNull;
 public class ResultsCacheClient
 {
     private static final Logger log = Logger.get(ResultsCacheClient.class);
-    private final String cacheBaseUri;
     private final CacheClient cacheClient;
 
-    public ResultsCacheClient(String cacheBaseUri, CacheClient cacheClient)
+    public ResultsCacheClient(CacheClient cacheClient)
     {
-        this.cacheBaseUri = requireNonNull(cacheBaseUri, "cacheBaseUri is null");
         this.cacheClient = requireNonNull(cacheClient, "cacheClient is null");
     }
 
@@ -49,7 +47,7 @@ public class ResultsCacheClient
             Instant creation)
     {
         log.debug("Sending cache entry %s for query %s to results cache", key, queryId);
-        cacheClient.insertCacheEntry(cacheBaseUri, new CacheEntry(
+        cacheClient.insertCacheEntry(new CacheEntry(
                 key,
                 queryId.toString(),
                 query,

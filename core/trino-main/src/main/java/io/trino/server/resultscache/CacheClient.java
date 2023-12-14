@@ -15,5 +15,5 @@ package io.trino.server.resultscache;
 
 public interface CacheClient
 {
-    void insertCacheEntry(String cacheBaseUri, CacheEntry cacheEntry);
+    void insertCacheEntry(CacheEntry cacheEntry);
 }

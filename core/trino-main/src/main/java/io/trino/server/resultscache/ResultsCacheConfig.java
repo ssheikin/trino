@@ -25,7 +25,6 @@ import static io.airlift.units.DataSize.Unit.MEGABYTE;
 public class ResultsCacheConfig
 {
     private int cacheUploadThreads = 5;
-    private String cacheEndpoint = "http://results-cache.trino-results-cache.svc:8080";
     private DataSize maxResultsSize = DataSize.of(1, MEGABYTE);
 
     @Positive
@@ -39,20 +38,6 @@ public class ResultsCacheConfig
     public ResultsCacheConfig setCacheUploadThreads(int cacheUploadThreads)
     {
         this.cacheUploadThreads = cacheUploadThreads;
-        return this;
-    }
-
-    @NotNull
-    public String getCacheEndpoint()
-    {
-        return cacheEndpoint;
-    }
-
-    @Config("galaxy-results-cache.upload.endpoint")
-    @ConfigDescription("Endpoint of local ResultSet Cache Instance")
-    public ResultsCacheConfig setCacheEndpoint(String cacheEndpoint)
-    {
-        this.cacheEndpoint = cacheEndpoint;
         return this;
     }
 
