@@ -28,6 +28,7 @@ import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.type.TypeManager;
 
@@ -65,6 +66,8 @@ public class KuduModule
 
         binder.bind(RangePartitionProcedures.class).in(Scopes.SINGLETON);
         Multibinder.newSetBinder(binder, Procedure.class);
+
+        Multibinder.newSetBinder(binder, TableProcedureMetadata.class);
 
         binder.bind(KuduScannerAliveKeeper.class).in(Scopes.SINGLETON);
 

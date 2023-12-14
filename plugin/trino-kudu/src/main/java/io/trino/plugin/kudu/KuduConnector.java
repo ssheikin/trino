@@ -25,6 +25,7 @@ import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.session.PropertyMetadata;
 import io.trino.spi.transaction.IsolationLevel;
@@ -46,6 +47,7 @@ public class KuduConnector
     private final KuduTableProperties tableProperties;
     private final ConnectorPageSinkProvider pageSinkProvider;
     private final Set<Procedure> procedures;
+    private final Set<TableProcedureMetadata> tableProcedures;
     private final ConnectorNodePartitioningProvider nodePartitioningProvider;
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -58,6 +60,7 @@ public class KuduConnector
             ConnectorPageSourceProvider pageSourceProvider,
             ConnectorPageSinkProvider pageSinkProvider,
             Set<Procedure> procedures,
+            Set<TableProcedureMetadata> tableProcedures,
             ConnectorNodePartitioningProvider nodePartitioningProvider,
             KuduSessionProperties sessionProperties)
     {
@@ -68,6 +71,7 @@ public class KuduConnector
         this.tableProperties = requireNonNull(tableProperties, "tableProperties is null");
         this.pageSinkProvider = requireNonNull(pageSinkProvider, "pageSinkProvider is null");
         this.procedures = ImmutableSet.copyOf(requireNonNull(procedures, "procedures is null"));
+        this.tableProcedures = ImmutableSet.copyOf(requireNonNull(tableProcedures, "tableProcedures is null"));
         this.nodePartitioningProvider = requireNonNull(nodePartitioningProvider, "nodePartitioningProvider is null");
         this.sessionProperties = sessionProperties.getSessionProperties();
     }
@@ -119,6 +123,12 @@ public class KuduConnector
     public Set<Procedure> getProcedures()
     {
         return procedures;
+    }
+
+    @Override
+    public Set<TableProcedureMetadata> getTableProcedures()
+    {
+        return tableProcedures;
     }
 
     @Override
