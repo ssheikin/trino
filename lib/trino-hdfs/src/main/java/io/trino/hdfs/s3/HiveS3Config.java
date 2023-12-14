@@ -25,6 +25,7 @@ import io.airlift.units.Duration;
 import io.airlift.units.MaxDataSize;
 import io.airlift.units.MinDataSize;
 import io.airlift.units.MinDuration;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -55,6 +56,7 @@ public class HiveS3Config
     private String s3EncryptionMaterialsProvider;
     private String s3KmsKeyId;
     private String s3SseKmsKeyId;
+    private String s3SseCustomerKey;
     private int s3MaxClientRetries = 5;
     private int s3MaxErrorRetries = 10;
     private Duration s3MaxBackoffTime = new Duration(10, TimeUnit.MINUTES);
@@ -285,6 +287,38 @@ public class HiveS3Config
     {
         this.s3SseType = s3SseType;
         return this;
+    }
+
+    public String getS3SseCustomerKey()
+    {
+        return s3SseCustomerKey;
+    }
+
+    @Config("hive.s3.sse.customer-key")
+    @ConfigDescription("Customer Key to use for S3 server-side encryption with Customer key (SSE-C)")
+    @ConfigSecuritySensitive
+    public HiveS3Config setS3SseCustomerKey(String s3SseCustomerKey)
+    {
+        this.s3SseCustomerKey = s3SseCustomerKey;
+        return this;
+    }
+
+    @AssertTrue(message = "hive.s3.sse.customer-key has to be set for server-side encryption with customer-provided key")
+    public boolean isSseWithCustomerKeyConfigValid()
+    {
+        if (s3SseEnabled && s3SseType == TrinoS3SseType.CUSTOMER) {
+            return s3SseCustomerKey != null;
+        }
+        return true;
+    }
+
+    @AssertTrue(message = "hive.s3.ssl.enabled has to be enabled for server-side encryption with customer-provided key")
+    public boolean isSslEnabledForSseCustomerKey()
+    {
+        if (s3SseEnabled && s3SseType == TrinoS3SseType.CUSTOMER) {
+            return s3SslEnabled;
+        }
+        return true;
     }
 
     @Min(0)

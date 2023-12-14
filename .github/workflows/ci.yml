@@ -854,6 +854,10 @@ jobs:
           contains(matrix.modules, 'trino-hdfs') && contains(matrix.profile, 'cloud-tests') &&
           (env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || env.AWS_ACCESS_KEY_ID != '' || env.AWS_SECRET_ACCESS_KEY != '')
         run: |
+          # Create an empty S3 bucket for HDFS S3 filesystem cloud tests and add the bucket name to GitHub environment variables
+          .github/bin/s3/setup-empty-s3-bucket.sh
+          EMPTY_S3_BUCKET=$(cat .github/bin/s3/.bucket-identifier)
+          export EMPTY_S3_BUCKET
           $MAVEN test ${MAVEN_TEST} -pl :trino-hdfs -P cloud-tests
       - name: S3 FileSystem Cloud Tests
         id: tests-s3

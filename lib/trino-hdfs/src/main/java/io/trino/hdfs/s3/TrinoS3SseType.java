@@ -15,5 +15,5 @@ package io.trino.hdfs.s3;
 
 public enum TrinoS3SseType
 {
-    KMS, S3
+    KMS, S3, CUSTOMER
 }

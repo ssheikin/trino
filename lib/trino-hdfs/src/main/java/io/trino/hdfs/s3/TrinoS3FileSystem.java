@@ -69,6 +69,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
+import com.amazonaws.services.s3.model.SSECustomerKey;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
 import com.amazonaws.services.s3.transfer.Transfer;
@@ -197,6 +198,7 @@ public class TrinoS3FileSystem
     public static final String S3_SSE_ENABLED = "trino.s3.sse.enabled";
     public static final String S3_SSE_KMS_KEY_ID = "trino.s3.sse.kms-key-id";
     public static final String S3_KMS_KEY_ID = "trino.s3.kms-key-id";
+    public static final String S3_SSE_CUSTOMER_KEY = "trino.s3.sse.customer-key";
     public static final String S3_ENCRYPTION_MATERIALS_PROVIDER = "trino.s3.encryption-materials-provider";
     public static final String S3_PIN_CLIENT_TO_CURRENT_REGION = "trino.s3.pin-client-to-current-region";
     public static final String S3_MULTIPART_MIN_PART_SIZE = "trino.s3.multipart.min-part-size";
@@ -271,6 +273,7 @@ public class TrinoS3FileSystem
     private boolean sseEnabled;
     private TrinoS3SseType sseType;
     private String sseKmsKeyId;
+    private String sseCustomerKey;
     private boolean isPathStyleAccess;
     private long multiPartUploadMinFileSize;
     private long multiPartUploadMinPartSize;
@@ -323,6 +326,7 @@ public class TrinoS3FileSystem
         this.sseEnabled = conf.getBoolean(S3_SSE_ENABLED, defaults.isS3SseEnabled());
         this.sseType = TrinoS3SseType.valueOf(conf.get(S3_SSE_TYPE, defaults.getS3SseType().name()));
         this.sseKmsKeyId = conf.get(S3_SSE_KMS_KEY_ID, defaults.getS3SseKmsKeyId());
+        this.sseCustomerKey = conf.get(S3_SSE_CUSTOMER_KEY, defaults.getS3SseCustomerKey());
         this.s3AclType = TrinoS3AclType.valueOf(conf.get(S3_ACL_TYPE, defaults.getS3AclType().name()));
         String userAgentPrefix = conf.get(S3_USER_AGENT_PREFIX, defaults.getS3UserAgentPrefix());
         this.skipGlacierObjects = conf.getBoolean(S3_SKIP_GLACIER_OBJECTS, defaults.isSkipGlacierObjects());
@@ -1118,6 +1122,7 @@ public class TrinoS3FileSystem
                     return switch (sseType) {
                         case S3 -> handleSseS3(request);
                         case KMS -> handleSseKMS(request);
+                        case CUSTOMER -> handleSseConsumerKey(request);
                     };
                 }
                 return request;
@@ -1160,6 +1165,39 @@ public class TrinoS3FileSystem
         if (amazonWebServiceRequest instanceof PutObjectRequest putObjectRequest) {
             putObjectRequest.getMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
             return putObjectRequest;
+        }
+        return amazonWebServiceRequest;
+    }
+
+    AmazonWebServiceRequest handleSseConsumerKey(AmazonWebServiceRequest amazonWebServiceRequest)
+    {
+        if (amazonWebServiceRequest instanceof GetObjectRequest getObjectRequest) {
+            return getObjectRequest.withSSECustomerKey(new SSECustomerKey(sseCustomerKey));
+        }
+
+        if (amazonWebServiceRequest instanceof GetObjectMetadataRequest getObjectMetadataRequest) {
+            return getObjectMetadataRequest.withSSECustomerKey(new SSECustomerKey(sseCustomerKey));
+        }
+
+        if (amazonWebServiceRequest instanceof CopyObjectRequest copyObjectRequest) {
+            copyObjectRequest.setSourceSSECustomerKey(new SSECustomerKey(sseCustomerKey));
+            return copyObjectRequest.withDestinationSSECustomerKey(new SSECustomerKey(sseCustomerKey));
+        }
+
+        if (amazonWebServiceRequest instanceof InitiateMultipartUploadRequest initiateMultipartUploadRequest) {
+            return initiateMultipartUploadRequest.withSSECustomerKey(new SSECustomerKey(sseCustomerKey));
+        }
+
+        if (amazonWebServiceRequest instanceof UploadPartRequest uploadPartRequest) {
+            return uploadPartRequest.withSSECustomerKey(new SSECustomerKey(sseCustomerKey));
+        }
+
+        if (amazonWebServiceRequest instanceof CompleteMultipartUploadRequest completeMultipartUploadRequest) {
+            return completeMultipartUploadRequest.withSSECustomerKey(new SSECustomerKey(sseCustomerKey));
+        }
+
+        if (amazonWebServiceRequest instanceof PutObjectRequest putObjectRequest) {
+            return putObjectRequest.withSSECustomerKey(new SSECustomerKey(sseCustomerKey));
         }
         return amazonWebServiceRequest;
     }

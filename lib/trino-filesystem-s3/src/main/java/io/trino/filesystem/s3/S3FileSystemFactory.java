@@ -112,6 +112,7 @@ public final class S3FileSystemFactory
                 config.isRequesterPays(),
                 config.getSseType(),
                 config.getSseKmsKeyId(),
+                config.getSseCustomerKey() != null ? S3SseCustomerKey.onAES256(config.getSseCustomerKey()) : null,
                 Optional.empty());
     }
 

@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 // public because it is used in SEP
-public record S3Context(int partSize, boolean requesterPays, S3SseType sseType, String sseKmsKeyId, Optional<AwsCredentialsProvider> credentialsProviderOverride)
+public record S3Context(int partSize, boolean requesterPays, S3SseType sseType, String sseKmsKeyId, S3SseCustomerKey sseCustomerKey, Optional<AwsCredentialsProvider> credentialsProviderOverride)
 {
     private static final int MIN_PART_SIZE = 5 * 1024 * 1024; // S3 requirement
 
@@ -32,7 +32,12 @@ public record S3Context(int partSize, boolean requesterPays, S3SseType sseType, 
     {
         checkArgument(partSize >= MIN_PART_SIZE, "partSize must be at least %s bytes", MIN_PART_SIZE);
         requireNonNull(sseType, "sseType is null");
-        checkArgument((sseType != S3SseType.KMS) || (sseKmsKeyId != null), "sseKmsKeyId is null for SSE-KMS");
+        if (sseType == S3SseType.KMS) {
+            checkArgument(sseKmsKeyId != null, "sseKmsKeyId is null for SSE-KMS");
+        }
+        if (sseType == S3SseType.CUSTOMER) {
+            checkArgument(sseCustomerKey != null, "sseCustomerKey is null for SSE-C");
+        }
         requireNonNull(credentialsProviderOverride, "credentialsProviderOverride is null");
     }
 
@@ -48,6 +53,7 @@ public record S3Context(int partSize, boolean requesterPays, S3SseType sseType, 
                 requesterPays,
                 sseType,
                 sseKmsKeyId,
+                sseCustomerKey,
                 Optional.of(credentialsProviderOverride));
     }
 

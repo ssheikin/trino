@@ -59,7 +59,8 @@ Trino uses its own S3 filesystem for the URI prefixes
   - Use S3 server-side encryption, defaults to `false`.
 * - `hive.s3.sse.type`
   - The type of key management for S3 server-side encryption. Use `S3` for S3
-    managed or `KMS` for KMS-managed keys, defaults to `S3`.
+    managed or `KMS` for KMS-managed keys or `CUSTOMER` for Customer Key,
+    defaults to `S3`.
 * - `hive.s3.sse.kms-key-id`
   - The KMS Key ID to use for S3 server-side encryption with KMS-managed keys.
     If not set, the default key is used.
@@ -67,6 +68,9 @@ Trino uses its own S3 filesystem for the URI prefixes
   - If set, use S3 client-side encryption and use the AWS KMS to store
     encryption keys and use the value of this property as the KMS Key ID for
     newly created objects.
+* - `hive.s3.sse.customer-key`
+  - The customer key (256b secret key, base64 encoded) used for server-side encryption when `hive.s3.sse.type` 
+    set to value `CUSTOMER`
 * - `hive.s3.encryption-materials-provider`
   - If set, use S3 client-side encryption and use the value of this property as
     the fully qualified name of a Java class which implements the AWS SDK's

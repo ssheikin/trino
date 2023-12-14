@@ -204,6 +204,11 @@ final class S3OutputStream
                             case NONE -> { /* ignored */ }
                             case S3 -> builder.serverSideEncryption(AES256);
                             case KMS -> builder.serverSideEncryption(AWS_KMS).ssekmsKeyId(sseKmsKeyId);
+                            case CUSTOMER -> {
+                                builder.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
+                                builder.sseCustomerKey(context.sseCustomerKey().key());
+                                builder.sseCustomerKeyMD5(context.sseCustomerKey().md5());
+                            }
                         }
                     })
                     .build();
@@ -280,6 +285,11 @@ final class S3OutputStream
                             case NONE -> { /* ignored */ }
                             case S3 -> builder.serverSideEncryption(AES256);
                             case KMS -> builder.serverSideEncryption(AWS_KMS).ssekmsKeyId(sseKmsKeyId);
+                            case CUSTOMER -> {
+                                builder.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
+                                builder.sseCustomerKey(context.sseCustomerKey().key());
+                                builder.sseCustomerKeyMD5(context.sseCustomerKey().md5());
+                            }
                         }
                     })
                     .build();
@@ -288,8 +298,14 @@ final class S3OutputStream
         }
 
         currentPartNumber++;
-        UploadPartRequest request = UploadPartRequest.builder()
-                .overrideConfiguration(context::applyCredentialProviderOverride)
+        UploadPartRequest.Builder requestBuilder = UploadPartRequest.builder()
+                .overrideConfiguration(context::applyCredentialProviderOverride);
+        if (sseType == S3FileSystemConfig.S3SseType.CUSTOMER) {
+            requestBuilder.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
+            requestBuilder.sseCustomerKey(context.sseCustomerKey().key());
+            requestBuilder.sseCustomerKeyMD5(context.sseCustomerKey().md5());
+        }
+        UploadPartRequest request = requestBuilder
                 .requestPayer(requestPayer)
                 .bucket(location.bucket())
                 .key(location.key())
@@ -313,16 +329,21 @@ final class S3OutputStream
 
     private void finishUpload(String uploadId)
     {
-        CompleteMultipartUploadRequest request = CompleteMultipartUploadRequest.builder()
+        CompleteMultipartUploadRequest.Builder request = CompleteMultipartUploadRequest.builder()
                 .overrideConfiguration(context::applyCredentialProviderOverride)
                 .requestPayer(requestPayer)
                 .bucket(location.bucket())
                 .key(location.key())
                 .uploadId(uploadId)
-                .multipartUpload(x -> x.parts(parts))
-                .build();
+                .multipartUpload(x -> x.parts(parts));
 
-        client.completeMultipartUpload(request);
+        if (sseType == S3FileSystemConfig.S3SseType.CUSTOMER) {
+            request.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
+            request.sseCustomerKey(context.sseCustomerKey().key());
+            request.sseCustomerKeyMD5(context.sseCustomerKey().md5());
+        }
+
+        client.completeMultipartUpload(request.build());
     }
 
     private void abortUpload()

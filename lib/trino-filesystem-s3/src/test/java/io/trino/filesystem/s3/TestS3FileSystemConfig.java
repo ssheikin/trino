@@ -18,6 +18,7 @@ import com.google.common.net.HostAndPort;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.filesystem.s3.S3FileSystemConfig.S3SseType;
+import jakarta.validation.constraints.AssertTrue;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.Map;
 import static io.airlift.configuration.testing.ConfigAssertions.assertFullMapping;
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
+import static io.airlift.testing.ValidationAssertions.assertFailsValidation;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -46,6 +48,7 @@ public class TestS3FileSystemConfig
                 .setStsRegion(null)
                 .setSseType(S3SseType.NONE)
                 .setSseKmsKeyId(null)
+                .setSseCustomerKey(null)
                 .setStreamingPartSize(DataSize.of(16, MEGABYTE))
                 .setRequesterPays(false)
                 .setMaxConnections(null)
@@ -74,6 +77,7 @@ public class TestS3FileSystemConfig
                 .put("s3.sts.region", "us-west-2")
                 .put("s3.sse.type", "KMS")
                 .put("s3.sse.kms-key-id", "mykey")
+                .put("s3.sse.customer-key", "customerKey")
                 .put("s3.streaming.part-size", "42MB")
                 .put("s3.requester-pays", "true")
                 .put("s3.max-connections", "42")
@@ -100,6 +104,7 @@ public class TestS3FileSystemConfig
                 .setStreamingPartSize(DataSize.of(42, MEGABYTE))
                 .setSseType(S3SseType.KMS)
                 .setSseKmsKeyId("mykey")
+                .setSseCustomerKey("customerKey")
                 .setRequesterPays(true)
                 .setMaxConnections(42)
                 .setConnectionTtl(new Duration(1, MINUTES))
@@ -111,5 +116,15 @@ public class TestS3FileSystemConfig
                 .setHttpProxySecure(true);
 
         assertFullMapping(properties, expected);
+    }
+
+    @Test
+    public void testSSEWithCustomerKeyValidation()
+    {
+        assertFailsValidation(new S3FileSystemConfig()
+                        .setSseType(S3SseType.CUSTOMER),
+                "sseWithCustomerKeyConfigValid",
+                "s3.sse.customer-key has to be set for server-side encryption with customer-provided key",
+                AssertTrue.class);
     }
 }

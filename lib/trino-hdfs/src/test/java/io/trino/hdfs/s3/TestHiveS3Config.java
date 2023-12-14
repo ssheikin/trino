@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import io.airlift.units.DataSize;
 import io.airlift.units.DataSize.Unit;
 import io.airlift.units.Duration;
+import jakarta.validation.constraints.AssertTrue;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -31,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 import static io.airlift.configuration.testing.ConfigAssertions.assertFullMapping;
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
+import static io.airlift.testing.ValidationAssertions.assertFailsValidation;
+import static io.trino.hdfs.s3.TrinoS3SseType.CUSTOMER;
 
 public class TestHiveS3Config
 {
@@ -53,6 +56,7 @@ public class TestHiveS3Config
                 .setS3SseType(TrinoS3SseType.S3)
                 .setS3SseKmsKeyId(null)
                 .setS3KmsKeyId(null)
+                .setS3SseCustomerKey(null)
                 .setS3EncryptionMaterialsProvider(null)
                 .setS3MaxClientRetries(5)
                 .setS3MaxErrorRetries(10)
@@ -104,6 +108,7 @@ public class TestHiveS3Config
                 .put("hive.s3.sse.enabled", "true")
                 .put("hive.s3.sse.type", "KMS")
                 .put("hive.s3.sse.kms-key-id", "KMS_KEY_ID")
+                .put("hive.s3.sse.customer-key", "CUSTOMER_KEY")
                 .put("hive.s3.encryption-materials-provider", "EMP_CLASS")
                 .put("hive.s3.kms-key-id", "KEY_ID")
                 .put("hive.s3.max-client-retries", "9")
@@ -150,6 +155,7 @@ public class TestHiveS3Config
                 .setS3SseEnabled(true)
                 .setS3SseType(TrinoS3SseType.KMS)
                 .setS3SseKmsKeyId("KMS_KEY_ID")
+                .setS3SseCustomerKey("CUSTOMER_KEY")
                 .setS3EncryptionMaterialsProvider("EMP_CLASS")
                 .setS3KmsKeyId("KEY_ID")
                 .setS3MaxClientRetries(9)
@@ -181,5 +187,25 @@ public class TestHiveS3Config
                 .setS3StsRegion("eu-central-1");
 
         assertFullMapping(properties, expected);
+    }
+
+    @Test
+    public void testSSEWithCustomerKeyValidation()
+    {
+        assertFailsValidation(new HiveS3Config()
+                        .setS3SseEnabled(true)
+                        .setS3SseType(CUSTOMER),
+                "sseWithCustomerKeyConfigValid",
+                "hive.s3.sse.customer-key has to be set for server-side encryption with customer-provided key",
+                AssertTrue.class);
+
+        assertFailsValidation(new HiveS3Config()
+                        .setS3SseEnabled(true)
+                        .setS3SseType(CUSTOMER)
+                        .setS3SseCustomerKey("key")
+                        .setS3SslEnabled(false),
+                "sslEnabledForSseCustomerKey",
+                "hive.s3.ssl.enabled has to be enabled for server-side encryption with customer-provided key",
+                AssertTrue.class);
     }
 }

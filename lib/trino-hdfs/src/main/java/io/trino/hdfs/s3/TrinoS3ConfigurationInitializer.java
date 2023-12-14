@@ -55,6 +55,7 @@ import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SIGNER_CLASS;
 import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SIGNER_TYPE;
 import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SKIP_GLACIER_OBJECTS;
 import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SOCKET_TIMEOUT;
+import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SSE_CUSTOMER_KEY;
 import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SSE_ENABLED;
 import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SSE_KMS_KEY_ID;
 import static io.trino.hdfs.s3.TrinoS3FileSystem.S3_SSE_TYPE;
@@ -86,6 +87,7 @@ public class TrinoS3ConfigurationInitializer
     private final String encryptionMaterialsProvider;
     private final String kmsKeyId;
     private final String sseKmsKeyId;
+    private final String sssCustomerKey;
     private final int maxClientRetries;
     private final int maxErrorRetries;
     private final Duration maxBackoffTime;
@@ -134,6 +136,7 @@ public class TrinoS3ConfigurationInitializer
         this.encryptionMaterialsProvider = config.getS3EncryptionMaterialsProvider();
         this.kmsKeyId = config.getS3KmsKeyId();
         this.sseKmsKeyId = config.getS3SseKmsKeyId();
+        this.sssCustomerKey = config.getS3SseCustomerKey();
         this.maxClientRetries = config.getS3MaxClientRetries();
         this.maxErrorRetries = config.getS3MaxErrorRetries();
         this.maxBackoffTime = config.getS3MaxBackoffTime();
@@ -208,6 +211,9 @@ public class TrinoS3ConfigurationInitializer
         }
         if (sseKmsKeyId != null) {
             config.set(S3_SSE_KMS_KEY_ID, sseKmsKeyId);
+        }
+        if (sssCustomerKey != null) {
+            config.set(S3_SSE_CUSTOMER_KEY, sssCustomerKey);
         }
         config.setInt(S3_MAX_CLIENT_RETRIES, maxClientRetries);
         config.setInt(S3_MAX_ERROR_RETRIES, maxErrorRetries);

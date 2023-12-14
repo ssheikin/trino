@@ -149,6 +149,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-filesystem</artifactId>
             <type>test-jar</type>
@@ -206,6 +212,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/TestS3FileSystemAwsS3.java</exclude>
+                                <exclude>**/TestS3FileSystemAwsS3WithSSEC.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -223,6 +230,7 @@
                         <configuration>
                             <includes>
                                 <include>**/TestS3FileSystemAwsS3.java</include>
+                                <include>**/TestS3FileSystemAwsS3WithSSEC.java</include>
                             </includes>
                         </configuration>
                     </plugin>

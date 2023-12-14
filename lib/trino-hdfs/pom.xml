@@ -294,7 +294,9 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/TestFileSystemCache.java</exclude>
+                                <exclude>**/TestHdfsFileSystemS3WithSSEC.java</exclude>
                                 <exclude>**/TestTrinoS3FileSystemAwsS3.java</exclude>
+                                <exclude>**/TestTrinoS3FileSystemAwsS3WithSSEC.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -330,7 +332,9 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <includes>
+                                <include>**/TestHdfsFileSystemS3WithSSEC.java</include>
                                 <include>**/TestTrinoS3FileSystemAwsS3.java</include>
+                                <include>**/TestTrinoS3FileSystemAwsS3WithSSEC.java</include>
                             </includes>
                         </configuration>
                     </plugin>

@@ -40,18 +40,20 @@ final class S3InputStream
     private final S3Client client;
     private final GetObjectRequest request;
     private final Long length;
+    private final S3Context context;
 
     private boolean closed;
     private ResponseInputStream<GetObjectResponse> in;
     private long streamPosition;
     private long nextReadPosition;
 
-    public S3InputStream(Location location, S3Client client, GetObjectRequest request, Long length)
+    public S3InputStream(Location location, S3Client client, GetObjectRequest request, Long length, S3Context context)
     {
         this.location = requireNonNull(location, "location is null");
         this.client = requireNonNull(client, "client is null");
         this.request = requireNonNull(request, "request is null");
         this.length = length;
+        this.context = requireNonNull(context, "context is null");
     }
 
     @Override
@@ -191,7 +193,13 @@ final class S3InputStream
 
         try {
             String range = "bytes=%s-".formatted(nextReadPosition);
-            GetObjectRequest rangeRequest = request.toBuilder().range(range).build();
+            GetObjectRequest.Builder builder = request.toBuilder();
+            if (context.sseType() == S3FileSystemConfig.S3SseType.CUSTOMER) {
+                builder.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
+                builder.sseCustomerKey(context.sseCustomerKey().key());
+                builder.sseCustomerKeyMD5(context.sseCustomerKey().md5());
+            }
+            GetObjectRequest rangeRequest = builder.range(range).build();
             in = client.getObject(rangeRequest);
             streamPosition = nextReadPosition;
         }
