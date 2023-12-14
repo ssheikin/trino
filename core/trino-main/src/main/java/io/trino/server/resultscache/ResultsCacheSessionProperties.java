@@ -22,7 +22,6 @@ import io.trino.spi.session.PropertyMetadata;
 import java.util.List;
 import java.util.Optional;
 
-import static io.trino.plugin.base.session.PropertyMetadataUtil.durationProperty;
 import static io.trino.spi.session.PropertyMetadata.booleanProperty;
 import static io.trino.spi.session.PropertyMetadata.longProperty;
 import static io.trino.spi.session.PropertyMetadata.stringProperty;
@@ -30,14 +29,13 @@ import static io.trino.spi.session.PropertyMetadata.stringProperty;
 public final class ResultsCacheSessionProperties
         implements SystemSessionPropertiesProvider
 {
-    private static final String CACHE_KEY = "galaxy_results_cache_key";
-    private static final String CACHE_ENTRY_MAX_SIZE_BYTES = "galaxy_results_cache_entry_max_size_bytes";
+    public static final String CACHE_KEY = "results_cache_key";
+    public static final String CACHE_ENTRY_MAX_SIZE_BYTES = "results_cache_entry_max_size_bytes";
 
     // These properties are consumed by the dispatcher and not used within Trino
-    private static final String SKIP_RESULTS_CACHE_SESSION_PROPERTY = "skip_results_cache";
-    private static final String RESULTS_CACHE_VISIBILITY_SESSION_PROPERTY = "results_cache_reuse_period";
+    public static final String SKIP_RESULTS_CACHE_SESSION_PROPERTY = "skip_results_cache";
 
-    private static final List<PropertyMetadata<?>> SESSION_PROPERTIES = ImmutableList.of(
+    public static final List<PropertyMetadata<?>> SESSION_PROPERTIES = ImmutableList.of(
             stringProperty(
                     CACHE_KEY,
                     "Unique key to identify the cache entry",
@@ -51,11 +49,6 @@ public final class ResultsCacheSessionProperties
             booleanProperty(
                     SKIP_RESULTS_CACHE_SESSION_PROPERTY,
                     "Skip using the results cache regardless of if cached results are available",
-                    null,
-                    false),
-            durationProperty(
-                    RESULTS_CACHE_VISIBILITY_SESSION_PROPERTY,
-                    "Duration of time where that allows reuse of cached results for a query",
                     null,
                     false));
 
