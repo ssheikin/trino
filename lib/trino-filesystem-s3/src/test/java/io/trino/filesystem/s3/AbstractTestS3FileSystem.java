@@ -74,16 +74,6 @@ public abstract class AbstractTestS3FileSystem
         fileSystemFactory = null;
     }
 
-    protected GetObjectRequest.Builder configure(GetObjectRequest.Builder requestBuilder)
-    {
-        return requestBuilder;
-    }
-
-    protected PutObjectRequest.Builder configure(PutObjectRequest.Builder requestBuilder)
-    {
-        return requestBuilder;
-    }
-
     @Override
     protected final boolean isHierarchical()
     {
@@ -166,7 +156,6 @@ public abstract class AbstractTestS3FileSystem
                             builder.sseCustomerKey(encoded(randomEncryptionKey));
                             builder.sseCustomerKeyMD5(md5Checksum(randomEncryptionKey));
                         }
-                        configure(builder);
                     })
                     .build();
 
@@ -199,7 +188,6 @@ public abstract class AbstractTestS3FileSystem
                                 builder.sseCustomerKey(encoded(randomEncryptionKey));
                                 builder.sseCustomerKeyMD5(md5Checksum(randomEncryptionKey));
                             }
-                            configure(builder);
                         })
                         .build();
 
@@ -284,7 +272,7 @@ public abstract class AbstractTestS3FileSystem
 
         public void create()
         {
-            s3Client.putObject(request -> configure(request).bucket(bucket()).key(path), RequestBody.empty());
+            s3Client.putObject(request -> request.bucket(bucket()).key(path), RequestBody.empty());
         }
 
         @Override

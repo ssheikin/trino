@@ -28,7 +28,7 @@ public record S3SseCustomerKey(String key, String md5, String algorithm)
         requireNonNull(algorithm, "algorithm is null");
     }
 
-    public static S3SseCustomerKey onAES256(String key)
+    public static S3SseCustomerKey onAes256(String key)
     {
         return new S3SseCustomerKey(key, md5AsBase64(fromBase64(key)), SSE_C_ALGORITHM);
     }

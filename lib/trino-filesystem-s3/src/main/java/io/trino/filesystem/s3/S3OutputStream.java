@@ -48,7 +48,7 @@ import static io.trino.filesystem.s3.S3FileSystemConfig.ObjectCannedAcl.getCanne
 import static io.trino.filesystem.s3.S3FileSystemConfig.S3SseType.NONE;
 import static io.trino.filesystem.s3.S3SseCUtils.encoded;
 import static io.trino.filesystem.s3.S3SseCUtils.md5Checksum;
-import static io.trino.filesystem.s3.S3SseRequestConfigurator.addEncryptionSettings;
+import static io.trino.filesystem.s3.S3SseRequestConfigurator.setEncryptionSettings;
 import static java.lang.Math.clamp;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -224,7 +224,7 @@ final class S3OutputStream
                             builder.sseCustomerAlgorithm(encryption.algorithm());
                             builder.sseCustomerKeyMD5(md5Checksum(encryption));
                         });
-                        addEncryptionSettings(builder, context.s3SseContext());
+                        setEncryptionSettings(builder, context.s3SseContext());
                     })
                     .build();
 
@@ -304,39 +304,34 @@ final class S3OutputStream
                     .requestPayer(requestPayer)
                     .bucket(location.bucket())
                     .key(location.key())
-                    .applyMutation(builder -> {
-                        key.ifPresent(encryption -> {
-                            builder.sseCustomerKey(encoded(encryption));
-                            builder.sseCustomerAlgorithm(encryption.algorithm());
-                            builder.sseCustomerKeyMD5(md5Checksum(encryption));
-                        });
-                        addEncryptionSettings(builder, context.s3SseContext());
-                    })
+                    .applyMutation(builder ->
+                        key.ifPresentOrElse(
+                                encryption ->
+                                    builder.sseCustomerKey(encoded(encryption))
+                                            .sseCustomerAlgorithm(encryption.algorithm())
+                                            .sseCustomerKeyMD5(md5Checksum(encryption)),
+                                    () -> setEncryptionSettings(builder, context.s3SseContext())))
                     .build();
 
             uploadId = Optional.of(client.createMultipartUpload(request).uploadId());
         }
 
         currentPartNumber++;
-        UploadPartRequest.Builder requestBuilder = UploadPartRequest.builder()
-                .overrideConfiguration(context::applyCredentialProviderOverride);
-        if (sseType == S3FileSystemConfig.S3SseType.CUSTOMER) {
-            requestBuilder.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
-            requestBuilder.sseCustomerKey(context.sseCustomerKey().key());
-            requestBuilder.sseCustomerKeyMD5(context.sseCustomerKey().md5());
-        }
-        UploadPartRequest request = requestBuilder
+        UploadPartRequest request = UploadPartRequest.builder()
+                .overrideConfiguration(context::applyCredentialProviderOverride)
                 .requestPayer(requestPayer)
                 .bucket(location.bucket())
                 .key(location.key())
                 .contentLength((long) length)
                 .uploadId(uploadId.get())
                 .partNumber(currentPartNumber)
-                .applyMutation(builder -> key.ifPresent(encryption -> {
-                    builder.sseCustomerKey(encoded(encryption));
-                    builder.sseCustomerAlgorithm(encryption.algorithm());
-                    builder.sseCustomerKeyMD5(md5Checksum(encryption));
-                }))
+                .applyMutation(builder ->
+                    key.ifPresentOrElse(
+                            encryption ->
+                                builder.sseCustomerKey(encoded(encryption))
+                                        .sseCustomerAlgorithm(encryption.algorithm())
+                                        .sseCustomerKeyMD5(md5Checksum(encryption)),
+                            () -> setEncryptionSettings(builder, context.s3SseContext())))
                 .build();
 
         ByteBuffer bytes = ByteBuffer.wrap(data, 0, length);
@@ -354,7 +349,7 @@ final class S3OutputStream
 
     private void finishUpload(String uploadId)
     {
-        CompleteMultipartUploadRequest.Builder request = CompleteMultipartUploadRequest.builder()
+        CompleteMultipartUploadRequest request = CompleteMultipartUploadRequest.builder()
                 .overrideConfiguration(context::applyCredentialProviderOverride)
                 .requestPayer(requestPayer)
                 .bucket(location.bucket())
@@ -362,23 +357,19 @@ final class S3OutputStream
                 .uploadId(uploadId)
                 .multipartUpload(x -> x.parts(parts))
                 .applyMutation(builder -> {
-                    key.ifPresent(encodingKey -> {
-                        builder.sseCustomerKey(encoded(encodingKey));
-                        builder.sseCustomerAlgorithm(encodingKey.algorithm());
-                        builder.sseCustomerKeyMD5(md5Checksum(encodingKey));
-                    });
+                    key.ifPresentOrElse(
+                            encryption ->
+                                    builder.sseCustomerKey(encoded(encryption))
+                                            .sseCustomerAlgorithm(encryption.algorithm())
+                                            .sseCustomerKeyMD5(md5Checksum(encryption)),
+                            () -> setEncryptionSettings(builder, context.s3SseContext()));
                     if (exclusiveCreate) {
                         builder.ifNoneMatch("*");
                     }
-                });
+                })
+                .build();
 
-        if (sseType == S3FileSystemConfig.S3SseType.CUSTOMER) {
-            request.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
-            request.sseCustomerKey(context.sseCustomerKey().key());
-            request.sseCustomerKeyMD5(context.sseCustomerKey().md5());
-        }
-
-        client.completeMultipartUpload(request.build());
+        client.completeMultipartUpload(request);
     }
 
     private void abortUpload()

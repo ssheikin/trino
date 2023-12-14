@@ -310,6 +310,18 @@ public class S3FileSystemConfig
         return this;
     }
 
+    public boolean isUseWebIdentityTokenCredentialsProvider()
+    {
+        return useWebIdentityTokenCredentialsProvider;
+    }
+
+    @Config("s3.use-web-identity-token-credentials-provider")
+    public S3FileSystemConfig setUseWebIdentityTokenCredentialsProvider(boolean useWebIdentityTokenCredentialsProvider)
+    {
+        this.useWebIdentityTokenCredentialsProvider = useWebIdentityTokenCredentialsProvider;
+        return this;
+    }
+
     public String getSseCustomerKey()
     {
         return sseCustomerKey;
@@ -331,18 +343,6 @@ public class S3FileSystemConfig
             return sseCustomerKey != null;
         }
         return true;
-    }
-
-    public boolean isUseWebIdentityTokenCredentialsProvider()
-    {
-        return useWebIdentityTokenCredentialsProvider;
-    }
-
-    @Config("s3.use-web-identity-token-credentials-provider")
-    public S3FileSystemConfig setUseWebIdentityTokenCredentialsProvider(boolean useWebIdentityTokenCredentialsProvider)
-    {
-        this.useWebIdentityTokenCredentialsProvider = useWebIdentityTokenCredentialsProvider;
-        return this;
     }
 
     @NotNull

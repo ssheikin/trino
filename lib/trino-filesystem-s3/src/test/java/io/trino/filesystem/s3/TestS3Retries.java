@@ -17,7 +17,6 @@ import com.google.common.io.Closer;
 import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import eu.rekawek.toxiproxy.model.ToxicDirection;
-import io.airlift.units.DataSize;
 import io.trino.filesystem.Location;
 import io.trino.testing.containers.Minio;
 import org.junit.jupiter.api.AfterAll;
@@ -36,11 +35,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Optional;
 
-import static io.airlift.units.DataSize.Unit.MEGABYTE;
 import static io.trino.testing.containers.Minio.MINIO_API_PORT;
-import static java.lang.Math.toIntExact;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -115,16 +111,7 @@ public class TestS3Retries
                 .bucket(location.bucket())
                 .key(location.key())
                 .build();
-        S3Context context = new S3Context(
-                toIntExact(DataSize.of(16, MEGABYTE).toBytes()),
-                false,
-                S3FileSystemConfig.S3SseType.NONE,
-                null,
-                null,
-                Optional.empty(),
-                S3FileSystemConfig.ObjectCannedAcl.NONE,
-                false);
-        S3Input input = new S3Input(location.location(), s3client, request, context);
+        S3Input input = new S3Input(location.location(), s3client, request);
 
         byte[] bytes = new byte[TEST_DATA_SIZE];
         assertThatThrownBy(() -> input.readFully(0, bytes, 0, TEST_DATA_SIZE)).cause()

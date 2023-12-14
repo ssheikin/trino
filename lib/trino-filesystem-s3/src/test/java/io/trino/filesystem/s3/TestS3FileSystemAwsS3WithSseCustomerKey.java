@@ -20,9 +20,11 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.utils.BinaryUtils;
 
 import javax.crypto.KeyGenerator;
@@ -30,11 +32,12 @@ import javax.crypto.SecretKey;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.function.Function;
 
 import static io.trino.filesystem.s3.S3FileSystemConfig.S3SseType.CUSTOMER;
 import static java.util.Objects.requireNonNull;
 
-public class TestS3FileSystemAwsS3WithSSEC
+public class TestS3FileSystemAwsS3WithSseCustomerKey
         extends AbstractTestS3FileSystem
 {
     private static final String CUSTOMER_KEY = generateCustomerKey();
@@ -43,7 +46,7 @@ public class TestS3FileSystemAwsS3WithSSEC
     private String secretKey;
     private String region;
     private String bucket;
-    private S3SseCustomerKey s3SSECustomerKey;
+    private S3SseCustomerKey s3SseCustomerKey;
 
     @Override
     protected void initEnvironment()
@@ -52,7 +55,7 @@ public class TestS3FileSystemAwsS3WithSSEC
         secretKey = environmentVariable("AWS_SECRET_ACCESS_KEY");
         region = environmentVariable("AWS_REGION");
         bucket = environmentVariable("EMPTY_S3_BUCKET");
-        s3SSECustomerKey = S3SseCustomerKey.onAES256(CUSTOMER_KEY);
+        s3SseCustomerKey = S3SseCustomerKey.onAes256(CUSTOMER_KEY);
     }
 
     @Override
@@ -64,28 +67,33 @@ public class TestS3FileSystemAwsS3WithSSEC
     @Override
     protected S3Client createS3Client()
     {
-        return S3Client.builder()
+        S3Client s3Client = S3Client.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
                 .region(Region.of(region))
                 .build();
-    }
 
-    @Override
-    protected PutObjectRequest.Builder configure(PutObjectRequest.Builder requestBuilder)
-    {
-        requestBuilder.sseCustomerAlgorithm(s3SSECustomerKey.algorithm());
-        requestBuilder.sseCustomerKey(s3SSECustomerKey.key());
-        requestBuilder.sseCustomerKeyMD5(s3SSECustomerKey.md5());
-        return requestBuilder;
-    }
-
-    @Override
-    protected GetObjectRequest.Builder configure(GetObjectRequest.Builder requestBuilder)
-    {
-        requestBuilder.sseCustomerAlgorithm(s3SSECustomerKey.algorithm());
-        requestBuilder.sseCustomerKey(s3SSECustomerKey.key());
-        requestBuilder.sseCustomerKeyMD5(s3SSECustomerKey.md5());
-        return requestBuilder;
+        return new DelegatingS3Client(s3Client)
+        {
+            @Override
+            protected <T extends S3Request, ReturnT> ReturnT invokeOperation(T request, Function<T, ReturnT> operation)
+            {
+                if (request instanceof PutObjectRequest putObjectRequest) {
+                    PutObjectRequest.Builder putObjectRequestBuilder = putObjectRequest.toBuilder();
+                    putObjectRequestBuilder.sseCustomerAlgorithm(s3SseCustomerKey.algorithm());
+                    putObjectRequestBuilder.sseCustomerKey(s3SseCustomerKey.key());
+                    putObjectRequestBuilder.sseCustomerKeyMD5(s3SseCustomerKey.md5());
+                    return operation.apply((T) putObjectRequestBuilder.build());
+                }
+                else if (request instanceof GetObjectRequest getObjectRequest) {
+                    GetObjectRequest.Builder getObjectRequestBuilder = getObjectRequest.toBuilder();
+                    getObjectRequestBuilder.sseCustomerAlgorithm(s3SseCustomerKey.algorithm());
+                    getObjectRequestBuilder.sseCustomerKey(s3SseCustomerKey.key());
+                    getObjectRequestBuilder.sseCustomerKeyMD5(s3SseCustomerKey.md5());
+                    return operation.apply((T) getObjectRequestBuilder.build());
+                }
+                return operation.apply(request);
+            }
+        };
     }
 
     @Override
@@ -98,7 +106,7 @@ public class TestS3FileSystemAwsS3WithSSEC
                         .setAwsSecretKey(secretKey)
                         .setRegion(region)
                         .setSseType(CUSTOMER)
-                        .setSseCustomerKey(s3SSECustomerKey.key())
+                        .setSseCustomerKey(s3SseCustomerKey.key())
                         .setStreamingPartSize(DataSize.valueOf("5.5MB")),
                 new S3FileSystemStats());
     }
