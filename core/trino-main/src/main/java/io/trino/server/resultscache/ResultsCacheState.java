@@ -18,24 +18,13 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class ResultsCacheState
+public record ResultsCacheState(
+        String key,
+        Optional<Long> maximumSizeBytes)
 {
-    private final String key;
-    private final Optional<Long> maximumSizeBytes;
-
-    public ResultsCacheState(String key, Optional<Long> maximumSizeBytes)
+    public ResultsCacheState
     {
-        this.key = requireNonNull(key, "key is null");
-        this.maximumSizeBytes = requireNonNull(maximumSizeBytes, "maximumSizeBytes is null");
-    }
-
-    public String key()
-    {
-        return key;
-    }
-
-    public Optional<Long> maximumSizeBytes()
-    {
-        return maximumSizeBytes;
+        requireNonNull(key, "key is null");
+        requireNonNull(maximumSizeBytes, "maximumSizeBytes is null");
     }
 }
