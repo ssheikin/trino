@@ -40,7 +40,7 @@ public class KuduConnector
         implements Connector
 {
     private final LifeCycleManager lifeCycleManager;
-    private final KuduMetadata metadata;
+    private final ConnectorMetadata metadata;
     private final ConnectorSplitManager splitManager;
     private final ConnectorPageSourceProvider pageSourceProvider;
     private final KuduTableProperties tableProperties;
@@ -52,7 +52,7 @@ public class KuduConnector
     @Inject
     public KuduConnector(
             LifeCycleManager lifeCycleManager,
-            KuduMetadata metadata,
+            ConnectorMetadata metadata,
             ConnectorSplitManager splitManager,
             KuduTableProperties tableProperties,
             ConnectorPageSourceProvider pageSourceProvider,
