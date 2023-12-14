@@ -33,7 +33,7 @@ public class ResultsCacheConfig
         return cacheUploadThreads;
     }
 
-    @Config("galaxy.results-cache.upload.threads")
+    @Config("results-cache.upload.threads")
     @ConfigDescription("Size of thread pool for uploading ResultSets to the ResultSet Cache")
     public ResultsCacheConfig setCacheUploadThreads(int cacheUploadThreads)
     {
@@ -47,7 +47,7 @@ public class ResultsCacheConfig
         return maxResultsSize;
     }
 
-    @Config("galaxy-results-cache.max-results-size")
+    @Config("results-cache.max-results-size")
     public ResultsCacheConfig setMaxResultsSize(DataSize maxResultsSize)
     {
         this.maxResultsSize = maxResultsSize;
