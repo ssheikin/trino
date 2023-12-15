@@ -15,6 +15,7 @@ package io.trino.plugin.kafka;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
+import io.trino.plugin.kafka.security.KafkaSecurityModule;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 
@@ -27,7 +28,7 @@ public class KafkaPlugin
 
     public KafkaPlugin()
     {
-        this(ImmutableList.of());
+        this(ImmutableList.of(new KafkaClientsModule(), new KafkaSecurityModule()));
     }
 
     public KafkaPlugin(List<Module> extensions)

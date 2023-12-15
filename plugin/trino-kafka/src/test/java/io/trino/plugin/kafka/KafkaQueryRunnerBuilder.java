@@ -13,10 +13,12 @@
  */
 package io.trino.plugin.kafka;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Module;
 import io.airlift.log.Level;
 import io.airlift.log.Logging;
+import io.trino.plugin.kafka.security.KafkaSecurityModule;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.kafka.TestingKafka;
@@ -35,7 +37,7 @@ public abstract class KafkaQueryRunnerBuilder
 {
     protected final TestingKafka testingKafka;
     protected Map<String, String> extraKafkaProperties = ImmutableMap.of();
-    private final List<Module> extensions = new ArrayList<>();
+    private final List<Module> extensions = new ArrayList<>(ImmutableList.of(new KafkaClientsModule(), new KafkaSecurityModule()));
     private final String catalogName;
 
     public KafkaQueryRunnerBuilder(TestingKafka testingKafka, String defaultSessionName)
@@ -56,6 +58,14 @@ public abstract class KafkaQueryRunnerBuilder
     public KafkaQueryRunnerBuilder setExtraKafkaProperties(Map<String, String> extraKafkaProperties)
     {
         this.extraKafkaProperties = ImmutableMap.copyOf(requireNonNull(extraKafkaProperties, "extraKafkaProperties is null"));
+        return this;
+    }
+
+    public KafkaQueryRunnerBuilder setExtension(Module extension)
+    {
+        requireNonNull(extension, "extension is null");
+        extensions.clear();
+        extensions.add(extension);
         return this;
     }
 
