@@ -54,7 +54,7 @@ import io.trino.server.DynamicFilterService;
 import io.trino.server.ResultQueryInfo;
 import io.trino.server.protocol.Slug;
 import io.trino.server.resultscache.FilteredResultsCacheEntry;
-import io.trino.server.resultscache.ResultsCacheAnalyzerFactory;
+import io.trino.server.resultscache.ResultsCacheAnalyzer;
 import io.trino.server.resultscache.ResultsCacheEntry;
 import io.trino.server.resultscache.ResultsCacheState;
 import io.trino.spi.QueryId;
@@ -153,6 +153,7 @@ public class SqlQueryExecution
     private final TaskDescriptorStorage taskDescriptorStorage;
     private final PlanOptimizersStatsCollector planOptimizersStatsCollector;
     private final Optional<ResultsCacheState> resultsCacheState;
+    private final ResultsCacheAnalyzer resultsCacheAnalyzer = new ResultsCacheAnalyzer();
     private final ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker;
 
     private SqlQueryExecution(
@@ -191,7 +192,6 @@ public class SqlQueryExecution
             SqlTaskManager coordinatorTaskManager,
             ExchangeManagerRegistry exchangeManagerRegistry,
             EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory,
-            ResultsCacheAnalyzerFactory resultsCacheAnalyzerFactory,
             TaskDescriptorStorage taskDescriptorStorage)
     {
         try (SetThreadName ignored = new SetThreadName("Query-%s", stateMachine.getQueryId())) {
@@ -262,8 +262,7 @@ public class SqlQueryExecution
                 //   If a filter criterion is met, a FilteredResultCacheEntry will be returned that can be registered
                 //     with the QueryStateMachine in order to report this in QueryInfo.
                 Optional<FilteredResultsCacheEntry> filteredResultsCacheEntry = potentialResultsCacheState.flatMap(state ->
-                        resultsCacheAnalyzerFactory.createResultsCacheAnalyzer(
-                                stateMachine.getSession().toSecurityContext()).isStatementCacheable(stateMachine.getQueryId(), preparedQuery, analysis));
+                        resultsCacheAnalyzer.isStatementCacheable(stateMachine.getQueryId(), preparedQuery, analysis));
 
                 if (filteredResultsCacheEntry.isPresent()) {
                     stateMachine.setResultsCacheEntry(filteredResultsCacheEntry.get());
@@ -861,7 +860,6 @@ public class SqlQueryExecution
         private final SqlTaskManager coordinatorTaskManager;
         private final ExchangeManagerRegistry exchangeManagerRegistry;
         private final EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory;
-        private final ResultsCacheAnalyzerFactory resultsCacheAnalyzerFactory;
         private final TaskDescriptorStorage taskDescriptorStorage;
 
         @Inject
@@ -894,7 +892,6 @@ public class SqlQueryExecution
                 SqlTaskManager coordinatorTaskManager,
                 ExchangeManagerRegistry exchangeManagerRegistry,
                 EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory,
-                ResultsCacheAnalyzerFactory resultsCacheAnalyzerFactory,
                 TaskDescriptorStorage taskDescriptorStorage)
         {
             this.tracer = requireNonNull(tracer, "tracer is null");
@@ -927,7 +924,6 @@ public class SqlQueryExecution
             this.coordinatorTaskManager = requireNonNull(coordinatorTaskManager, "coordinatorTaskManager is null");
             this.exchangeManagerRegistry = requireNonNull(exchangeManagerRegistry, "exchangeManagerRegistry is null");
             this.eventDrivenTaskSourceFactory = requireNonNull(eventDrivenTaskSourceFactory, "eventDrivenTaskSourceFactory is null");
-            this.resultsCacheAnalyzerFactory = requireNonNull(resultsCacheAnalyzerFactory, "resultsCacheAnalyzerFactory is null");
             this.taskDescriptorStorage = requireNonNull(taskDescriptorStorage, "taskDescriptorStorage is null");
         }
 
@@ -980,7 +976,6 @@ public class SqlQueryExecution
                     coordinatorTaskManager,
                     exchangeManagerRegistry,
                     eventDrivenTaskSourceFactory,
-                    resultsCacheAnalyzerFactory,
                     taskDescriptorStorage);
         }
     }

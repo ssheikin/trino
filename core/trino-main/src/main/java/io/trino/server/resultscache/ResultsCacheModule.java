@@ -32,6 +32,5 @@ public class ResultsCacheModule
         configBinder(binder).bindConfig(ResultsCacheConfig.class);
         binder.bind(CacheClient.class).toInstance((cacheEntry) -> {});
         binder.bind(ResultsCacheManager.class).in(SINGLETON);
-        binder.bind(ResultsCacheAnalyzerFactory.class).in(SINGLETON);
     }
 }
