@@ -15,11 +15,15 @@
 package io.trino.server.resultscache;
 
 import io.airlift.log.Logger;
+import io.trino.connector.system.SystemTableHandle;
 import io.trino.execution.QueryPreparer.PreparedQuery;
 import io.trino.metadata.TableHandle;
 import io.trino.spi.QueryId;
 import io.trino.sql.analyzer.Analysis;
 import io.trino.sql.tree.Query;
+import io.trino.sql.tree.ShowColumns;
+import io.trino.sql.tree.ShowSchemas;
+import io.trino.sql.tree.ShowTables;
 
 import java.util.Optional;
 
@@ -38,19 +42,21 @@ public class ResultsCacheAnalyzer
             return Optional.of(new FilteredResultsCacheEntry(EXECUTE_STATEMENT));
         }
 
-        if (!(preparedQuery.getStatement() instanceof Query)) {
+        // only Query, or `SHOW (SCHEMAS|TABLES|COLUMNS)` should be cached
+        // other `SHOW` statements should not as it might be faster to execute them
+        if (!(preparedQuery.getStatement() instanceof Query
+                || preparedQuery.getStatement() instanceof ShowSchemas
+                || preparedQuery.getStatement() instanceof ShowTables
+                || preparedQuery.getStatement() instanceof ShowColumns)) {
             log.debug("QueryId: %s, statement is not a Query, not caching", queryId);
             return Optional.of(new FilteredResultsCacheEntry(NOT_SELECT));
         }
 
         for (TableHandle tableHandle : analysis.getTables()) {
-            switch (tableHandle.getCatalogHandle().getType()) {
-                case INFORMATION_SCHEMA:
-                case SYSTEM:
-                    log.debug("QueryId: %s, query uses INFORMATION_SCHEMA or SYSTEM table %s, not caching", queryId, tableHandle);
-                    return Optional.of(new FilteredResultsCacheEntry(QUERY_HAS_SYSTEM_TABLE));
-                case NORMAL:
-                    continue;
+            if (tableHandle.getConnectorHandle() instanceof SystemTableHandle systemTableHandle
+                    && !systemTableHandle.getSchemaName().equals("metadata")) {
+                log.debug("QueryId: %s, query uses SYSTEM table %s, not caching", queryId, tableHandle);
+                return Optional.of(new FilteredResultsCacheEntry(QUERY_HAS_SYSTEM_TABLE));
             }
         }
 
