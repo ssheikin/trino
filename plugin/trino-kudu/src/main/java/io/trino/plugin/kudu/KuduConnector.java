@@ -16,6 +16,7 @@ package io.trino.plugin.kudu;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.airlift.bootstrap.LifeCycleManager;
+import io.trino.plugin.kudu.properties.AnalyzePropertiesProvider;
 import io.trino.plugin.kudu.properties.KuduTableProperties;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -33,6 +34,7 @@ import io.trino.spi.transaction.IsolationLevel;
 import java.util.List;
 import java.util.Set;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.spi.transaction.IsolationLevel.READ_COMMITTED;
 import static io.trino.spi.transaction.IsolationLevel.checkConnectorSupports;
 import static java.util.Objects.requireNonNull;
@@ -45,6 +47,7 @@ public class KuduConnector
     private final ConnectorSplitManager splitManager;
     private final ConnectorPageSourceProvider pageSourceProvider;
     private final KuduTableProperties tableProperties;
+    private final List<PropertyMetadata<?>> analyzeProperties;
     private final ConnectorPageSinkProvider pageSinkProvider;
     private final Set<Procedure> procedures;
     private final Set<TableProcedureMetadata> tableProcedures;
@@ -57,6 +60,7 @@ public class KuduConnector
             ConnectorMetadata metadata,
             ConnectorSplitManager splitManager,
             KuduTableProperties tableProperties,
+            Set<AnalyzePropertiesProvider> analyzePropertiesProviders,
             ConnectorPageSourceProvider pageSourceProvider,
             ConnectorPageSinkProvider pageSinkProvider,
             Set<Procedure> procedures,
@@ -69,6 +73,10 @@ public class KuduConnector
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
         this.tableProperties = requireNonNull(tableProperties, "tableProperties is null");
+        this.analyzeProperties = analyzePropertiesProviders.stream()
+                .map(AnalyzePropertiesProvider::getAnalyzeProperties)
+                .flatMap(List::stream)
+                .collect(toImmutableList());
         this.pageSinkProvider = requireNonNull(pageSinkProvider, "pageSinkProvider is null");
         this.procedures = ImmutableSet.copyOf(requireNonNull(procedures, "procedures is null"));
         this.tableProcedures = ImmutableSet.copyOf(requireNonNull(tableProcedures, "tableProcedures is null"));
@@ -111,6 +119,12 @@ public class KuduConnector
     public List<PropertyMetadata<?>> getTableProperties()
     {
         return tableProperties.getTableProperties();
+    }
+
+    @Override
+    public List<PropertyMetadata<?>> getAnalyzeProperties()
+    {
+        return analyzeProperties;
     }
 
     @Override
