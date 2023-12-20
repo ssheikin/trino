@@ -118,6 +118,7 @@ public class TestDeltaLakeConnectorTest
                     .put("hive.metastore", "file")
                     .put("hive.metastore.catalog.dir", queryRunner.getCoordinator().getBaseDataDir().resolve("file-metastore").toString())
                     .put("hive.metastore.disable-location-checks", "true")
+                    .put("hive.metastore-cache-ttl", "0s")
                     .put("hive.s3.aws-access-key", MINIO_ACCESS_KEY)
                     .put("hive.s3.aws-secret-key", MINIO_SECRET_KEY)
                     .put("hive.s3.endpoint", minio.getMinioAddress())

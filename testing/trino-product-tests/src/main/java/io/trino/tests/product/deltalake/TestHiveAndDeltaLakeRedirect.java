@@ -623,6 +623,7 @@ public class TestHiveAndDeltaLakeRedirect
         }
         finally {
             dropDeltaTableWithRetry(format("%s.%s", schemaName, tableName));
+            onTrino().executeQuery("CALL hive.system.flush_metadata_cache();");
             onTrino().executeQuery("DROP SCHEMA " + schemaName);
         }
     }
@@ -711,6 +712,7 @@ public class TestHiveAndDeltaLakeRedirect
         }
         finally {
             dropDeltaTableWithRetry(format("%s.%s", schemaName, tableName));
+            onTrino().executeQuery("CALL hive.system.flush_metadata_cache();");
             onTrino().executeQuery("DROP SCHEMA " + schemaName);
         }
     }

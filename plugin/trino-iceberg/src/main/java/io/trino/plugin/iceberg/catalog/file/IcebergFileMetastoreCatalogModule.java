@@ -52,6 +52,7 @@ public class IcebergFileMetastoreCatalogModule
         configBinder(binder).bindConfigDefaults(CachingHiveMetastoreConfig.class, config -> {
             // ensure caching metastore wrapper isn't created, as it's not leveraged by Iceberg
             config.setStatsCacheTtl(new Duration(0, TimeUnit.SECONDS));
+            config.setMetastoreCacheTtl(Duration.ZERO);
         });
         Multibinder<Procedure> procedures = newSetBinder(binder, Procedure.class);
         procedures.addBinding().toProvider(MigrateProcedure.class).in(Scopes.SINGLETON);

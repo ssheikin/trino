@@ -87,7 +87,10 @@ public class TestDeltaLakeDropTableCompatibility
 
         switch (creator) {
             case TRINO -> onTrino().executeQuery(format("CREATE SCHEMA delta.%s WITH (location = '%s')", schemaName, schemaLocation));
-            case DELTA -> onDelta().executeQuery(format("CREATE SCHEMA %s LOCATION \"%s\"", schemaName, schemaLocation));
+            case DELTA -> {
+                onDelta().executeQuery(format("CREATE SCHEMA %s LOCATION \"%s\"", schemaName, schemaLocation));
+                onTrino().executeQuery("CALL delta.system.flush_metadata_cache();");
+            }
             default -> throw new UnsupportedOperationException("Unsupported engine: " + creator);
         }
         try {
@@ -98,11 +101,14 @@ public class TestDeltaLakeDropTableCompatibility
                         schemaName,
                         tableName,
                         tableLocation.map(location -> "WITH (location = '" + location + "')").orElse("")));
-                case DELTA -> onDelta().executeQuery(format(
-                        "CREATE TABLE %s.%s USING DELTA %s AS VALUES (1, 2), (2, 3), (3, 4)",
-                        schemaName,
-                        tableName,
-                        tableLocation.map(location -> "LOCATION \"" + location + "\"").orElse("")));
+                case DELTA -> {
+                    onDelta().executeQuery(format(
+                            "CREATE TABLE %s.%s USING DELTA %s AS VALUES (1, 2), (2, 3), (3, 4)",
+                            schemaName,
+                            tableName,
+                            tableLocation.map(location -> "LOCATION \"" + location + "\"").orElse("")));
+                    onTrino().executeQuery("CALL delta.system.flush_metadata_cache();");
+                }
                 default -> throw new UnsupportedOperationException("Unsupported engine: " + creator);
             }
 
@@ -125,6 +131,7 @@ public class TestDeltaLakeDropTableCompatibility
         finally {
             dropDeltaTableWithRetry(schemaName + "." + tableName);
             onDelta().executeQuery("DROP SCHEMA " + schemaName);
+            onTrino().executeQuery("CALL delta.system.flush_metadata_cache();");
         }
     }
 }

@@ -224,6 +224,7 @@ public class TestDeltaLakeDeleteCompatibility
                 "         USING delta " +
                 "         LOCATION 's3://" + bucketName + "/databricks-compatibility-test-" + tableName + "' " +
                 "         TBLPROPERTIES ('delta.enableDeletionVectors' = true, 'delta.columnMapping.mode' = '" + mode + "')");
+        onTrino().executeQuery("CALL delta.system.flush_metadata_cache();");
         try {
             onDelta().executeQuery("INSERT INTO default." + tableName + " VALUES (1,11), (2, 22)");
             onDelta().executeQuery("DELETE FROM default." + tableName + " WHERE a = 2");

@@ -63,6 +63,7 @@ public class TestHiveMaterializedView
                 (partitioned ? "PARTITIONED ON (x) " : "") +
                 "STORED AS ORC " +
                 "AS SELECT x, count(*) c FROM test_materialized_view_table GROUP BY x");
+        flushHiveMetadataCache();
 
         // metadata
         assertThat(onTrino().executeQuery("SHOW TABLES"))

@@ -43,7 +43,7 @@ public class TestHiveMetastoreAccessOperations
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        return HiveQueryRunner.create();
+        return HiveQueryRunner.builder().addHiveProperty("hive.metastore-cache-ttl", "0s").build();
     }
 
     @Test

@@ -75,6 +75,7 @@ public abstract class BaseDeltaLakeRegisterTableProcedureTest
         Map<String, String> connectorProperties = ImmutableMap.<String, String>builder()
                 .put("delta.unique-table-location", "true")
                 .put("delta.register-table-procedure.enabled", "true")
+                .put("hive.metastore-cache-ttl", "0s")
                 .buildOrThrow();
 
         queryRunner.createCatalog(DELTA_CATALOG, CONNECTOR_NAME, connectorProperties);

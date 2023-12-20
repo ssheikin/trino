@@ -151,6 +151,7 @@ public class TestAbfsSyncPartitionMetadata
     {
         makeHdfsDirectory(tableLocation);
         onHive().executeQuery("CREATE TABLE " + tableName + " (payload bigint) PARTITIONED BY (col_x string, col_y string) STORED AS ORC LOCATION '" + tableLocation + "'");
+        onTrino().executeQuery("CALL hive.system.flush_metadata_cache();");
     }
 
     // Drop and create a table. Then, return single ORC file path
