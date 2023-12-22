@@ -26,10 +26,8 @@ import io.trino.client.ProtocolHeaders;
 import io.trino.exchange.ExchangeManagerRegistry;
 import io.trino.execution.QueryManager;
 import io.trino.operator.DirectExchangeClientSupplier;
-import io.trino.server.BasicQueryInfo;
 import io.trino.server.ForStatementResource;
 import io.trino.server.ServerConfig;
-import io.trino.server.resultscache.ActiveResultsCacheEntry;
 import io.trino.server.resultscache.ResultsCacheManager;
 import io.trino.server.security.ResourceSecurity;
 import io.trino.spi.QueryId;
@@ -53,7 +51,6 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URLEncoder;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -198,15 +195,6 @@ public class ExecutingStatementResource
             throw queryNotFound();
         }
 
-        BasicQueryInfo queryInfo = queryManager.getQueryInfo(queryId);
-        Optional<ActiveResultsCacheEntry> resultsCacheEntry = queryManager.getResultsCacheState(queryId).map(parameters ->
-                resultsCacheManager.createResultsCacheEntry(
-                        parameters,
-                        queryId,
-                        queryInfo.getQuery()));
-
-        resultsCacheEntry.ifPresent(entry -> queryManager.registerResultsCacheEntry(queryInfo.getQueryId(), entry));
-
         query = queries.computeIfAbsent(queryId, id -> Query.create(
                 session,
                 querySlug,
@@ -216,7 +204,7 @@ public class ExecutingStatementResource
                 exchangeManagerRegistry,
                 responseExecutor,
                 timeoutExecutor,
-                resultsCacheEntry,
+                resultsCacheManager.registerQuery(queryId),
                 blockEncodingSerde));
         return query;
     }

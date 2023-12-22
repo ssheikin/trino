@@ -13,6 +13,7 @@
  */
 package io.trino.server.resultscache;
 
+import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
 import io.trino.Session;
 import io.trino.plugin.tpch.TpchPlugin;
@@ -45,6 +46,7 @@ public class TestResultsCache
             throws Exception
     {
         DistributedQueryRunner queryRunner = DistributedQueryRunner.builder(testSessionBuilder().build())
+                .setCoordinatorProperties(ImmutableMap.of("results-cache.enabled", "true"))
                 .setAdditionalModule(binder -> newOptionalBinder(binder, CacheClient.class).setBinding().toInstance(cacheClient))
                 .build();
 

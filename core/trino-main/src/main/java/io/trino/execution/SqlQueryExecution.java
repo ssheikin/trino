@@ -104,7 +104,7 @@ import static io.trino.execution.ParameterExtractor.bindParameters;
 import static io.trino.execution.QueryState.FAILED;
 import static io.trino.execution.QueryState.PLANNING;
 import static io.trino.server.DynamicFilterService.DynamicFiltersStats;
-import static io.trino.server.resultscache.ResultsCacheManager.createResultsCacheParameters;
+import static io.trino.server.resultscache.ResultsCacheState.createResultsCacheParameters;
 import static io.trino.spi.StandardErrorCode.STACK_OVERFLOW;
 import static io.trino.sql.planner.sanity.PlanSanityChecker.DISTRIBUTED_PLAN_SANITY_CHECKER;
 import static io.trino.tracing.ScopedSpan.scopedSpan;

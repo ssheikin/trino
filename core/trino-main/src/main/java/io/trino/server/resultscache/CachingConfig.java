@@ -13,14 +13,21 @@
  */
 package io.trino.server.resultscache;
 
-import io.trino.spi.QueryId;
+import io.airlift.configuration.Config;
 
-import java.util.Optional;
-
-public interface ResultsCacheManager
+public class CachingConfig
 {
-    default Optional<ActiveResultsCacheEntry> registerQuery(QueryId queryId)
+    private boolean resultsCacheEnabled;
+
+    public boolean isResultsCacheEnabled()
     {
-        return Optional.empty();
+        return resultsCacheEnabled;
+    }
+
+    @Config("results-cache.enabled")
+    public CachingConfig setResultsCacheEnabled(boolean resultsCacheEnabled)
+    {
+        this.resultsCacheEnabled = resultsCacheEnabled;
+        return this;
     }
 }

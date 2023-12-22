@@ -15,22 +15,50 @@
 package io.trino.server.resultscache;
 
 import com.google.inject.Binder;
-import com.google.inject.Module;
+import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.SystemSessionPropertiesProvider;
 
 import static com.google.inject.Scopes.SINGLETON;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 
 public class ResultsCacheModule
-        implements Module
+        extends AbstractConfigurationAwareModule
 {
     @Override
-    public void configure(Binder binder)
+    protected void setup(Binder binder)
     {
-        newSetBinder(binder, SystemSessionPropertiesProvider.class).addBinding().to(ResultsCacheSessionProperties.class);
-        configBinder(binder).bindConfig(ResultsCacheConfig.class);
-        binder.bind(CacheClient.class).toInstance((cacheEntry) -> {});
-        binder.bind(ResultsCacheManager.class).in(SINGLETON);
+        install(conditionalModule(
+                CachingConfig.class,
+                CachingConfig::isResultsCacheEnabled,
+                new EnabledResultsCacheModule(),
+                new DisabledResultsCacheModule()));
+    }
+
+    private static class EnabledResultsCacheModule
+            extends AbstractConfigurationAwareModule
+    {
+        @Override
+        protected void setup(Binder binder)
+        {
+            newSetBinder(binder, SystemSessionPropertiesProvider.class).addBinding().to(ResultsCacheSessionProperties.class);
+            configBinder(binder).bindConfig(ResultsCacheConfig.class);
+            newOptionalBinder(binder, CacheClient.class).setDefault().toInstance(cacheEntry -> {
+                throw new UnsupportedOperationException();
+            });
+            binder.bind(ResultsCacheManager.class).to(ActiveResultsCacheManager.class).in(SINGLETON);
+        }
+    }
+
+    private static class DisabledResultsCacheModule
+            extends AbstractConfigurationAwareModule
+    {
+        @Override
+        protected void setup(Binder binder)
+        {
+            binder.bind(ResultsCacheManager.class).toInstance(new ResultsCacheManager() {});
+        }
     }
 }
