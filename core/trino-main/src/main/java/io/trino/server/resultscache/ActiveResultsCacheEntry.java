@@ -45,10 +45,6 @@ public class ActiveResultsCacheEntry
     private final String cacheKey;
     private final QueryId queryId;
     private final String query;
-    private final Optional<String> sessionCatalog;
-    private final Optional<String> sessionSchema;
-    private final Optional<String> queryType;
-    private final Optional<String> updateType;
     private final long maximumSize;
     private final CacheClient cacheClient;
     private final ListeningExecutorService executorService;
@@ -69,10 +65,6 @@ public class ActiveResultsCacheEntry
             String cacheKey,
             QueryId queryId,
             String query,
-            Optional<String> sessionCatalog,
-            Optional<String> sessionSchema,
-            Optional<String> queryType,
-            Optional<String> updateType,
             long maximumSize,
             CacheClient cacheClient,
             ListeningExecutorService executorService)
@@ -81,10 +73,6 @@ public class ActiveResultsCacheEntry
         this.entryResult = new ResultsCacheResult(CACHING);
         this.queryId = requireNonNull(queryId, "queryId is null");
         this.query = requireNonNull(query, "query is null");
-        this.sessionCatalog = requireNonNull(sessionCatalog, "sessionCatalog is null");
-        this.sessionSchema = requireNonNull(sessionSchema, "sessionSchema is null");
-        this.queryType = requireNonNull(queryType, "queryType is null");
-        this.updateType = requireNonNull(updateType, "updateType is null");
         checkArgument(maximumSize > 0, "maximumSize is <= 0");
         this.maximumSize = maximumSize;
         this.cacheClient = requireNonNull(cacheClient, "cacheClient is null");
@@ -203,18 +191,14 @@ public class ActiveResultsCacheEntry
         checkState(valid, "attempting to upload results in invalid state");
 
         ListenableFuture<?> submitFuture = executorService.submit(() ->
-                cacheClient.insertCacheEntry(new CacheEntry(
-                        cacheKey,
-                        queryId.toString(),
-                        query,
-                        sessionCatalog,
-                        sessionSchema,
-                        queryType,
-                        updateType,
-                        sessionCatalog.stream().toList(),
-                        resultsData.columns,
-                        resultsData.data,
-                        createdTime)));
+                cacheClient.insertCacheEntry(
+                        new CacheEntry(
+                                cacheKey,
+                                createdTime,
+                                queryId.toString(),
+                                query,
+                                resultsData.columns,
+                                resultsData.data)));
         MoreFutures.addExceptionCallback(submitFuture, throwable ->
                 log.error(throwable, "Upload to cache failed"));
     }

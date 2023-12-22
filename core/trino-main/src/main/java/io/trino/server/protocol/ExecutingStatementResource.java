@@ -34,7 +34,6 @@ import io.trino.server.resultscache.ResultsCacheManager;
 import io.trino.server.security.ResourceSecurity;
 import io.trino.spi.QueryId;
 import io.trino.spi.block.BlockEncodingSerde;
-import io.trino.spi.resourcegroups.QueryType;
 import jakarta.annotation.PreDestroy;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -204,11 +203,7 @@ public class ExecutingStatementResource
                 resultsCacheManager.createResultsCacheEntry(
                         parameters,
                         queryId,
-                        queryInfo.getQuery(),
-                        session.getCatalog(),
-                        session.getSchema(),
-                        queryInfo.getQueryType().map(QueryType::name),
-                        queryInfo.getUpdateType()));
+                        queryInfo.getQuery()));
 
         resultsCacheEntry.ifPresent(entry -> queryManager.registerResultsCacheEntry(queryInfo.getQueryId(), entry));
 
