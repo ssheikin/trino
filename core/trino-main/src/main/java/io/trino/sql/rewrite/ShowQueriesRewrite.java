@@ -26,6 +26,7 @@ import io.trino.Session;
 import io.trino.execution.querystats.PlanOptimizersStatsCollector;
 import io.trino.execution.warnings.WarningCollector;
 import io.trino.metadata.CatalogInfo;
+import io.trino.metadata.CatalogManager;
 import io.trino.metadata.ColumnPropertyManager;
 import io.trino.metadata.MaterializedViewDefinition;
 import io.trino.metadata.MaterializedViewPropertyManager;
@@ -42,6 +43,7 @@ import io.trino.metadata.ViewDefinition;
 import io.trino.security.AccessControl;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
+import io.trino.spi.catalog.CatalogProperties;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.CatalogSchemaName;
 import io.trino.spi.connector.ConnectorTableMetadata;
@@ -63,6 +65,7 @@ import io.trino.sql.tree.AstVisitor;
 import io.trino.sql.tree.BooleanLiteral;
 import io.trino.sql.tree.Cast;
 import io.trino.sql.tree.ColumnDefinition;
+import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.CreateMaterializedView;
 import io.trino.sql.tree.CreateSchema;
 import io.trino.sql.tree.CreateTable;
@@ -90,6 +93,7 @@ import io.trino.sql.tree.SelectItem;
 import io.trino.sql.tree.ShowCatalogs;
 import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
+import io.trino.sql.tree.ShowCreateCatalog;
 import io.trino.sql.tree.ShowFunctions;
 import io.trino.sql.tree.ShowGrants;
 import io.trino.sql.tree.ShowRoleGrants;
@@ -125,6 +129,7 @@ import static io.trino.metadata.MetadataUtil.createQualifiedObjectName;
 import static io.trino.metadata.MetadataUtil.getRequiredCatalogHandle;
 import static io.trino.metadata.MetadataUtil.processRoleCommandCatalog;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_FOUND;
+import static io.trino.spi.StandardErrorCode.INVALID_CATALOG_PROPERTY;
 import static io.trino.spi.StandardErrorCode.INVALID_COLUMN_PROPERTY;
 import static io.trino.spi.StandardErrorCode.INVALID_MATERIALIZED_VIEW_PROPERTY;
 import static io.trino.spi.StandardErrorCode.INVALID_SCHEMA_PROPERTY;
@@ -176,6 +181,7 @@ public final class ShowQueriesRewrite
     private final Metadata metadata;
     private final SqlParser parser;
     private final AccessControl accessControl;
+    private final CatalogManager catalogManager;
     private final SessionPropertyManager sessionPropertyManager;
     private final SchemaPropertyManager schemaPropertyManager;
     private final ColumnPropertyManager columnPropertyManager;
@@ -187,6 +193,7 @@ public final class ShowQueriesRewrite
             Metadata metadata,
             SqlParser parser,
             AccessControl accessControl,
+            CatalogManager catalogManager,
             SessionPropertyManager sessionPropertyManager,
             SchemaPropertyManager schemaPropertyManager,
             ColumnPropertyManager columnPropertyManager,
@@ -196,6 +203,7 @@ public final class ShowQueriesRewrite
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.parser = requireNonNull(parser, "parser is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
+        this.catalogManager = requireNonNull(catalogManager, "catalogManager is null");
         this.sessionPropertyManager = requireNonNull(sessionPropertyManager, "sessionPropertyManager is null");
         this.schemaPropertyManager = requireNonNull(schemaPropertyManager, "schemaPropertyManager is null");
         this.columnPropertyManager = requireNonNull(columnPropertyManager, "columnPropertyManager is null");
@@ -217,6 +225,7 @@ public final class ShowQueriesRewrite
                 parser,
                 session,
                 accessControl,
+                catalogManager,
                 sessionPropertyManager,
                 schemaPropertyManager,
                 columnPropertyManager,
@@ -232,6 +241,7 @@ public final class ShowQueriesRewrite
         private final Session session;
         private final SqlParser sqlParser;
         private final AccessControl accessControl;
+        private final CatalogManager catalogManager;
         private final SessionPropertyManager sessionPropertyManager;
         private final SchemaPropertyManager schemaPropertyManager;
         private final ColumnPropertyManager columnPropertyManager;
@@ -243,6 +253,7 @@ public final class ShowQueriesRewrite
                 SqlParser sqlParser,
                 Session session,
                 AccessControl accessControl,
+                CatalogManager catalogManager,
                 SessionPropertyManager sessionPropertyManager,
                 SchemaPropertyManager schemaPropertyManager,
                 ColumnPropertyManager columnPropertyManager,
@@ -253,6 +264,7 @@ public final class ShowQueriesRewrite
             this.sqlParser = requireNonNull(sqlParser, "sqlParser is null");
             this.session = requireNonNull(session, "session is null");
             this.accessControl = requireNonNull(accessControl, "accessControl is null");
+            this.catalogManager = requireNonNull(catalogManager, "catalogManager is null");
             this.sessionPropertyManager = requireNonNull(sessionPropertyManager, "sessionPropertyManager is null");
             this.schemaPropertyManager = requireNonNull(schemaPropertyManager, "schemaPropertyManager is null");
             this.columnPropertyManager = requireNonNull(columnPropertyManager, "columnPropertyManager is null");
@@ -729,7 +741,59 @@ public final class ShowQueriesRewrite
                 return singleValueQuery("Create Schema", formatSql(createSchema).trim());
             }
 
-            throw new UnsupportedOperationException("SHOW CREATE only supported for schemas, tables and views");
+            throw new UnsupportedOperationException("SHOW CREATE only supported for catalogs, schemas, tables and views");
+        }
+
+        @Override
+        protected Node visitShowCreateCatalog(ShowCreateCatalog node, Void context)
+        {
+            String catalogName = node.getName().getValue();
+
+            accessControl.checkCanShowCreateCatalog(session.toSecurityContext(), catalogName);
+
+            CatalogHandle catalogHandle = getRequiredCatalogHandle(metadata, session, node, catalogName);
+            CatalogProperties catalogProperties = catalogManager.getCatalogProperties(catalogHandle)
+                    .orElseThrow(() -> new IllegalStateException("Cannot obtain catalog properties for " + catalogName));
+            Map<String, String> properties = catalogProperties.properties();
+            List<Property> propertyNodes = buildCatalogProperties("catalog " + catalogName, INVALID_CATALOG_PROPERTY, properties);
+
+            CreateCatalog createCatalog = new CreateCatalog(
+                    new Identifier(catalogName),
+                    false,
+                    new Identifier(catalogProperties.connectorName().toString()),
+                    propertyNodes,
+                    Optional.empty(), // TODO catalog owner is not supported yet
+                    Optional.empty()); // TODO catalog comment is not supported yet
+
+            return singleValueQuery("Create Catalog", formatSql(createCatalog).trim());
+        }
+
+        // catalog properties are known to be Strings only
+        private static List<Property> buildCatalogProperties(
+                String propertiesObject,
+                StandardErrorCode errorCode,
+                Map<String, String> properties)
+        {
+            if (properties.isEmpty()) {
+                return ImmutableList.of();
+            }
+
+            ImmutableSortedMap.Builder<String, Expression> sqlProperties = ImmutableSortedMap.naturalOrder();
+
+            for (Map.Entry<String, String> propertyEntry : properties.entrySet()) {
+                String propertyName = propertyEntry.getKey();
+                String value = propertyEntry.getValue();
+                if (value == null) {
+                    throw new TrinoException(errorCode, format("Property %s for %s cannot have a null value", propertyName, propertiesObject));
+                }
+
+                Expression sqlExpression = new StringLiteral(value);
+                sqlProperties.put(propertyName, sqlExpression);
+            }
+
+            return sqlProperties.build().entrySet().stream()
+                    .map(entry -> new Property(new Identifier(entry.getKey()), entry.getValue()))
+                    .collect(toImmutableList());
         }
 
         private static List<Property> buildProperties(

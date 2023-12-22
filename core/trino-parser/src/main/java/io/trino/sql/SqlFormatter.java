@@ -150,6 +150,7 @@ import io.trino.sql.tree.SetViewAuthorization;
 import io.trino.sql.tree.ShowCatalogs;
 import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
+import io.trino.sql.tree.ShowCreateCatalog;
 import io.trino.sql.tree.ShowFunctions;
 import io.trino.sql.tree.ShowGrants;
 import io.trino.sql.tree.ShowRoleGrants;
@@ -1381,6 +1382,14 @@ public final class SqlFormatter
                 builder.append("SHOW CREATE MATERIALIZED VIEW ")
                         .append(formatName(node.getName()));
             }
+            return null;
+        }
+
+        @Override
+        protected Void visitShowCreateCatalog(ShowCreateCatalog node, Integer indent)
+        {
+            builder.append("SHOW CREATE CATALOG ")
+                    .append(formatName(node.getName()));
             return null;
         }
 
