@@ -29,6 +29,7 @@ import io.trino.plugin.hive.security.AccessControlMetadataFactory;
 import io.trino.plugin.hive.statistics.MetastoreHiveStatisticsProvider;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.security.ConnectorIdentity;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Optional;

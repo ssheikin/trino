@@ -15,10 +15,10 @@ package io.trino.plugin.iceberg;
 
 import com.google.inject.Inject;
 import io.airlift.json.JsonCodec;
-import io.trino.plugin.hive.LocationAccessControl;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.security.ConnectorIdentity;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import static java.util.Objects.requireNonNull;
