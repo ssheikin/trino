@@ -42,6 +42,7 @@ import io.trino.spi.function.FunctionKind;
 import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.BasicPrincipal;
 import io.trino.spi.security.Identity;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.security.SystemAccessControl;
 import io.trino.spi.security.SystemAccessControlFactory;
 import io.trino.spi.security.SystemSecurityContext;
@@ -353,6 +354,7 @@ public class TestAccessControlManager
                     .hasMessageMatching("Access control .* must not implement removed method checkCanGrantExecuteFunctionPrivilege\\(.*\\)");
 
             accessControlManager.setSystemAccessControls(ImmutableList.of(new AllowAllSystemAccessControl()));
+            accessControlManager.setLocationAccessControls(ImmutableList.of(LocationAccessControl.ALLOW_ALL));
         }
     }
 
@@ -397,17 +399,17 @@ public class TestAccessControlManager
 
     private static AccessControlManager createAccessControlManager(TransactionManager testTransactionManager)
     {
-        return new AccessControlManager(NodeVersion.UNKNOWN, testTransactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        return new AccessControlManager(NodeVersion.UNKNOWN, testTransactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME, LocationAccessControl.DEFAULT_NAME);
     }
 
     private static AccessControlManager createAccessControlManager(EventListenerManager eventListenerManager, AccessControlConfig config)
     {
-        return new AccessControlManager(NodeVersion.UNKNOWN, createTestTransactionManager(), eventListenerManager, config, OpenTelemetry.noop(), DefaultSystemAccessControl.NAME);
+        return new AccessControlManager(NodeVersion.UNKNOWN, createTestTransactionManager(), eventListenerManager, config, OpenTelemetry.noop(), DefaultSystemAccessControl.NAME, LocationAccessControl.DEFAULT_NAME);
     }
 
     private static AccessControlManager createAccessControlManager(EventListenerManager eventListenerManager, String defaultAccessControlName)
     {
-        return new AccessControlManager(NodeVersion.UNKNOWN, createTestTransactionManager(), eventListenerManager, new AccessControlConfig(), OpenTelemetry.noop(), defaultAccessControlName);
+        return new AccessControlManager(NodeVersion.UNKNOWN, createTestTransactionManager(), eventListenerManager, new AccessControlConfig(), OpenTelemetry.noop(), defaultAccessControlName, LocationAccessControl.DEFAULT_NAME);
     }
 
     private static SystemAccessControlFactory eventListeningSystemAccessControlFactory(String name, EventListener... eventListeners)

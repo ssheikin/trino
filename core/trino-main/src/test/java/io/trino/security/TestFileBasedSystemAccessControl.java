@@ -29,6 +29,7 @@ import io.trino.spi.connector.CatalogSchemaName;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.Identity;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.security.TrinoPrincipal;
 import io.trino.transaction.TransactionManager;
 import org.junit.jupiter.api.Test;
@@ -145,7 +146,8 @@ public class TestFileBasedSystemAccessControl
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
-                DefaultSystemAccessControl.NAME);
+                DefaultSystemAccessControl.NAME,
+                LocationAccessControl.DEFAULT_NAME);
         accessControlManager.loadSystemAccessControl(
                 FileBasedSystemAccessControl.NAME,
                 ImmutableMap.of("security.config-file", new File("../../docs/src/main/sphinx/security/user-impersonation.json").getAbsolutePath()));
@@ -805,7 +807,8 @@ public class TestFileBasedSystemAccessControl
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
-                DefaultSystemAccessControl.NAME);
+                DefaultSystemAccessControl.NAME,
+                LocationAccessControl.DEFAULT_NAME);
         File configFile = newTemporaryFile();
         configFile.deleteOnExit();
         copy(new File(getResourcePath("catalog.json")), configFile);
@@ -871,7 +874,8 @@ public class TestFileBasedSystemAccessControl
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
-                DefaultSystemAccessControl.NAME);
+                DefaultSystemAccessControl.NAME,
+                LocationAccessControl.DEFAULT_NAME);
 
         accessControlManager.loadSystemAccessControl(FileBasedSystemAccessControl.NAME, ImmutableMap.of("security.config-file", getResourcePath(resourceName)));
 

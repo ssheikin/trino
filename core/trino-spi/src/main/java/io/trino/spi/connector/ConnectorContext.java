@@ -19,6 +19,7 @@ import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
@@ -82,6 +83,11 @@ public interface ConnectorContext
     }
 
     default Map<String, String> getServerProperties()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default LocationAccessControl getLocationAccessControl()
     {
         throw new UnsupportedOperationException();
     }

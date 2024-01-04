@@ -173,6 +173,7 @@ public class Server
             injector.getInstance(SessionPropertyDefaults.class).loadConfigurationManager();
             injector.getInstance(ResourceGroupManager.class).loadConfigurationManager();
             injector.getInstance(AccessControlManager.class).loadSystemAccessControl();
+            injector.getInstance(AccessControlManager.class).loadLocationAccessControl();
             injector.getInstance(optionalKey(PasswordAuthenticatorManager.class))
                     .ifPresent(PasswordAuthenticatorManager::loadPasswordAuthenticator);
             injector.getInstance(EventListenerManager.class).loadEventListeners();

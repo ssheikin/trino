@@ -23,6 +23,7 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
@@ -40,6 +41,7 @@ public class ConnectorContextInstance
     private final MetadataProvider metadataProvider;
     private final PageSorter pageSorter;
     private final PageIndexerFactory pageIndexerFactory;
+    private final LocationAccessControl locationAccessControl;
     private final CatalogHandle catalogHandle;
     private final Map<String, String> serverProperties;
 
@@ -51,6 +53,7 @@ public class ConnectorContextInstance
             VersionEmbedder versionEmbedder,
             TypeManager typeManager,
             MetadataProvider metadataProvider,
+            LocationAccessControl locationAccessControl,
             PageSorter pageSorter,
             PageIndexerFactory pageIndexerFactory,
             Map<String, String> serverProperties)
@@ -61,6 +64,7 @@ public class ConnectorContextInstance
         this.versionEmbedder = requireNonNull(versionEmbedder, "versionEmbedder is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.metadataProvider = requireNonNull(metadataProvider, "metadataProvider is null");
+        this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
         this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
@@ -125,5 +129,11 @@ public class ConnectorContextInstance
     public Map<String, String> getServerProperties()
     {
         return serverProperties;
+    }
+
+    @Override
+    public LocationAccessControl getLocationAccessControl()
+    {
+        return locationAccessControl;
     }
 }

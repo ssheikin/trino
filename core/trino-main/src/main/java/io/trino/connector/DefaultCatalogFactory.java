@@ -28,6 +28,7 @@ import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.Metadata;
 import io.trino.security.AccessControl;
+import io.trino.security.AccessControlManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
@@ -70,8 +71,8 @@ public class DefaultCatalogFactory
 
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
+    private final AccessControlManager accessControlManager;
     private final Map<String, String> serverProperties;
-
     private final ConcurrentMap<ConnectorName, ConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
 
     @Inject
@@ -87,6 +88,7 @@ public class DefaultCatalogFactory
             TransactionManager transactionManager,
             TypeManager typeManager,
             NodeSchedulerConfig nodeSchedulerConfig,
+            AccessControlManager accessControlManager,
             OptimizerConfig optimizerConfig,
             ConfigurationFactory configurationFactory)
     {
@@ -101,6 +103,7 @@ public class DefaultCatalogFactory
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
+        this.accessControlManager = requireNonNull(accessControlManager, "accessControlManager is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
     }
@@ -199,6 +202,7 @@ public class DefaultCatalogFactory
                 versionEmbedder,
                 typeManager,
                 new InternalMetadataProvider(metadata, typeManager),
+                accessControlManager,
                 pageSorter,
                 pageIndexerFactory,
                 serverProperties);

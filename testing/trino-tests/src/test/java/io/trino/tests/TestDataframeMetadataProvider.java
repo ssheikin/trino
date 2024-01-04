@@ -44,6 +44,7 @@ import io.trino.security.AccessControlConfig;
 import io.trino.security.AccessControlManager;
 import io.trino.server.dataframe.DataTypeMapper;
 import io.trino.server.dataframe.DataframeMetadataProvider;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.analyzer.AnalyzerFactory;
 import io.trino.sql.analyzer.SessionTimeProvider;
@@ -100,7 +101,8 @@ public class TestDataframeMetadataProvider
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
-                DefaultSystemAccessControl.NAME);
+                DefaultSystemAccessControl.NAME,
+                LocationAccessControl.DEFAULT_NAME);
         accessControlManager.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));
         this.accessControl = accessControlManager;
 

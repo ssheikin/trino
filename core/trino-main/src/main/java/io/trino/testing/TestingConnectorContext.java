@@ -30,6 +30,7 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
 import io.trino.util.EmbedVersion;
@@ -112,5 +113,11 @@ public final class TestingConnectorContext
     public Map<String, String> getServerProperties()
     {
         return ImmutableMap.of();
+    }
+
+    @Override
+    public LocationAccessControl getLocationAccessControl()
+    {
+        return LocationAccessControl.ALLOW_ALL;
     }
 }

@@ -388,7 +388,8 @@ public class PlanTester
         this.hashStrategyCompiler = new FlatHashStrategyCompiler(typeOperators);
         PageIndexerFactory pageIndexerFactory = new GroupByHashPageIndexerFactory(hashStrategyCompiler);
         EventListenerManager eventListenerManager = new EventListenerManager(new EventListenerConfig());
-        this.accessControl = new TestingAccessControlManager(transactionManager, eventListenerManager);
+        TestingAccessControlManager accessControlManager = new TestingAccessControlManager(transactionManager, eventListenerManager);
+        this.accessControl = accessControlManager;
         accessControl.loadSystemAccessControl(AllowAllSystemAccessControl.NAME, ImmutableMap.of());
 
         NodeInfo nodeInfo = new NodeInfo("test");
@@ -404,6 +405,7 @@ public class PlanTester
                 transactionManager,
                 typeManager,
                 nodeSchedulerConfig,
+                accessControlManager,
                 optimizerConfig,
                 new ConfigurationFactory(ImmutableMap.of())));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());

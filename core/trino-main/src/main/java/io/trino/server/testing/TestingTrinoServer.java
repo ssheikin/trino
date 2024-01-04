@@ -98,6 +98,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.security.GroupProvider;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.security.SystemAccessControl;
 import io.trino.spi.session.PropertyMetadata;
 import io.trino.split.PageSourceManager;
@@ -427,6 +428,7 @@ public class TestingTrinoServer
                     accessControl.loadSystemAccessControl(configuration.factoryName(), configuration.configuration());
                 },
                 () -> accessControl.setSystemAccessControls(systemAccessControls.orElseThrow()));
+        accessControl.setLocationAccessControls(ImmutableList.of(LocationAccessControl.ALLOW_ALL));
 
         EventListenerManager eventListenerManager = injector.getInstance(EventListenerManager.class);
         eventListeners.forEach(eventListenerManager::addEventListener);
