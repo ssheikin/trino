@@ -259,6 +259,15 @@ public class TracingConnectorMetadata
     }
 
     @Override
+    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle table)
+    {
+        Span span = startSpan("getInfo", table);
+        try (var ignored = scopedSpan(span)) {
+            return delegate.getInfo(session, table);
+        }
+    }
+
+    @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName)
     {
         Span span = startSpan("listTables", schemaName);

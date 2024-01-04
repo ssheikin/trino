@@ -227,6 +227,12 @@ public class HudiMetadata
     }
 
     @Override
+    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle table)
+    {
+        return getInfo(table);
+    }
+
+    @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> optionalSchemaName)
     {
         ImmutableList.Builder<SchemaTableName> tableNames = ImmutableList.builder();

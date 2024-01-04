@@ -1769,6 +1769,12 @@ public class IcebergMetadata
     }
 
     @Override
+    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        return getInfo(tableHandle);
+    }
+
+    @Override
     public void dropTable(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         if (tableHandle instanceof CorruptedIcebergTableHandle corruptedTableHandle) {

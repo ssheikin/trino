@@ -2628,6 +2628,12 @@ public class DeltaLakeMetadata
     }
 
     @Override
+    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle table)
+    {
+        return getInfo(table);
+    }
+
+    @Override
     public void dropTable(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         LocatedTableHandle handle = (LocatedTableHandle) tableHandle;

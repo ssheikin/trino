@@ -272,6 +272,11 @@ public interface ConnectorMetadata
         return Optional.empty();
     }
 
+    default Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle table)
+    {
+        return Optional.empty();
+    }
+
     /**
      * List table, view and materialized view names, possibly filtered by schema. An empty list is returned if none match.
      * An empty list is returned also when schema name does not refer to an existing schema.

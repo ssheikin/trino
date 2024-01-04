@@ -288,6 +288,14 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
+    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle table)
+    {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            return delegate.getInfo(session, table);
+        }
+    }
+
+    @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName)
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {

@@ -218,6 +218,12 @@ public class MockPlanAlternativeMetadata
     }
 
     @Override
+    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        return delegate.getInfo(session, getDelegate(tableHandle));
+    }
+
+    @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName)
     {
         return delegate.listTables(session, schemaName);
