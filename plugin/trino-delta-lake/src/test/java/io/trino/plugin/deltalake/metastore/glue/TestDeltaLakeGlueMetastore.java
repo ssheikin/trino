@@ -45,6 +45,7 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.SchemaTablePrefix;
 import io.trino.spi.connector.TableColumnsMetadata;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 import io.trino.testing.TestingConnectorContext;
 import io.trino.testing.TestingConnectorSession;
@@ -124,6 +125,7 @@ public class TestDeltaLakeGlueMetastore
                     binder.bind(NodeVersion.class).toInstance(new NodeVersion("test_version"));
                     binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
                     binder.bind(Tracer.class).toInstance(context.getTracer());
+                    binder.bind(LocationAccessControl.class).toInstance(LocationAccessControl.ALLOW_ALL);
                 },
                 // connector modules
                 new DeltaLakeMetastoreModule(),

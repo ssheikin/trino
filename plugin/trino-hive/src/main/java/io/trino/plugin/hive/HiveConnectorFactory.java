@@ -60,6 +60,7 @@ import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.procedure.Procedure;
+import io.trino.spi.security.LocationAccessControl;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -121,6 +122,7 @@ public class HiveConnectorFactory
                         binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
                         binder.bind(PageSorter.class).toInstance(context.getPageSorter());
                         binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
+                        binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
                     },
                     binder -> newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(HiveSessionProperties.class).in(Scopes.SINGLETON),
                     module);

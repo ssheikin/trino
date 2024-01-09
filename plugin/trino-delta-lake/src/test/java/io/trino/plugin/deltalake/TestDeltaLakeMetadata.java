@@ -57,6 +57,7 @@ import io.trino.spi.expression.FieldDereference;
 import io.trino.spi.expression.Variable;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.BooleanType;
 import io.trino.spi.type.DateType;
 import io.trino.spi.type.DoubleType;
@@ -199,6 +200,7 @@ public class TestDeltaLakeMetadata
                     binder.bind(NodeManager.class).toInstance(context.getNodeManager());
                     binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
                     binder.bind(Tracer.class).toInstance(context.getTracer());
+                    binder.bind(LocationAccessControl.class).toInstance(LocationAccessControl.ALLOW_ALL);
                 },
                 // connector modules
                 new DeltaLakeMetastoreModule(),
