@@ -48,6 +48,7 @@ import io.trino.spi.Plugin;
 import io.trino.spi.QueryId;
 import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.eventlistener.QueryCompletedEvent;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.security.SystemAccessControl;
 import io.trino.split.PageSourceManager;
 import io.trino.split.SplitManager;
@@ -134,6 +135,8 @@ public class DistributedQueryRunner
             Optional<Path> baseDataDir,
             Optional<FactoryConfiguration> systemAccessControlConfiguration,
             Optional<List<SystemAccessControl>> systemAccessControls,
+            Optional<FactoryConfiguration> locationAccessControlConfiguration,
+            Optional<List<LocationAccessControl>> locationAccessControls,
             List<EventListener> eventListeners,
             List<AutoCloseable> extraCloseables,
             TestingTrinoClientFactory testingTrinoClientFactory)
@@ -157,6 +160,8 @@ public class DistributedQueryRunner
                     environment,
                     additionalModule,
                     baseDataDir,
+                    Optional.empty(),
+                    Optional.of(ImmutableList.of()),
                     Optional.empty(),
                     Optional.of(ImmutableList.of()),
                     ImmutableList.of());
@@ -186,6 +191,8 @@ public class DistributedQueryRunner
                     baseDataDir,
                     systemAccessControlConfiguration,
                     systemAccessControls,
+                    locationAccessControlConfiguration,
+                    locationAccessControls,
                     eventListeners);
 
             backupCoordinator = backupCoordinatorProperties.map(properties -> createServer(
@@ -199,6 +206,8 @@ public class DistributedQueryRunner
                     baseDataDir,
                     systemAccessControlConfiguration,
                     systemAccessControls,
+                    locationAccessControlConfiguration,
+                    locationAccessControls,
                     eventListeners));
         }
         catch (Exception e) {
@@ -230,6 +239,8 @@ public class DistributedQueryRunner
             Optional<Path> baseDataDir,
             Optional<FactoryConfiguration> systemAccessControlConfiguration,
             Optional<List<SystemAccessControl>> systemAccessControls,
+            Optional<FactoryConfiguration> locationAccessControlConfiguration,
+            Optional<List<LocationAccessControl>> locationAccessControls,
             List<EventListener> eventListeners)
     {
         TestingTrinoServer server = closer.register(createTestingTrinoServer(
@@ -242,6 +253,8 @@ public class DistributedQueryRunner
                 SimpleSpanProcessor.create(spanExporter),
                 systemAccessControlConfiguration,
                 systemAccessControls,
+                locationAccessControlConfiguration,
+                locationAccessControls,
                 eventListeners));
         servers.add(server);
         functionBundles.forEach(server::addFunctions);
@@ -271,6 +284,8 @@ public class DistributedQueryRunner
             SpanProcessor spanProcessor,
             Optional<FactoryConfiguration> systemAccessControlConfiguration,
             Optional<List<SystemAccessControl>> systemAccessControls,
+            Optional<FactoryConfiguration> locationAccessControlConfiguration,
+            Optional<List<LocationAccessControl>> locationAccessControls,
             List<EventListener> eventListeners)
     {
         long start = System.nanoTime();
@@ -306,6 +321,8 @@ public class DistributedQueryRunner
                 .setSpanProcessor(spanProcessor)
                 .setSystemAccessControlConfiguration(systemAccessControlConfiguration)
                 .setSystemAccessControls(systemAccessControls)
+                .setLocationAccessControlConfiguration(locationAccessControlConfiguration)
+                .setLocationAccessControls(locationAccessControls)
                 .setEventListeners(eventListeners)
                 .build();
 
@@ -648,6 +665,8 @@ public class DistributedQueryRunner
         private Optional<Path> baseDataDir = Optional.empty();
         private Optional<FactoryConfiguration> systemAccessControlConfiguration = Optional.empty();
         private Optional<List<SystemAccessControl>> systemAccessControls = Optional.empty();
+        private Optional<FactoryConfiguration> locationAccessControlConfiguration = Optional.empty();
+        private Optional<List<LocationAccessControl>> locationAccessControls = Optional.empty();
         private List<EventListener> eventListeners = ImmutableList.of();
         private List<AutoCloseable> extraCloseables = ImmutableList.of();
         private TestingTrinoClientFactory testingTrinoClientFactory = TestingTrinoClient::new;
@@ -771,6 +790,20 @@ public class DistributedQueryRunner
             return self();
         }
 
+        @CanIgnoreReturnValue
+        public SELF setLocationAccessControl(LocationAccessControl locationAccessControl)
+        {
+            return setLocationAccessControls(ImmutableList.of(requireNonNull(locationAccessControl, "locationAccessControl is null")));
+        }
+
+        @SuppressWarnings("unused")
+        @CanIgnoreReturnValue
+        public SELF setLocationAccessControls(List<LocationAccessControl> locationAccessControls)
+        {
+            this.locationAccessControls = Optional.of(ImmutableList.copyOf(requireNonNull(locationAccessControls, "locationAccessControls is null")));
+            return self();
+        }
+
         @SuppressWarnings("unused")
         @CanIgnoreReturnValue
         public SELF setEventListener(EventListener eventListener)
@@ -843,6 +876,12 @@ public class DistributedQueryRunner
                 systemAccessControls = Optional.of(ImmutableList.of());
             }
 
+            Optional<FactoryConfiguration> locationAccessControlConfiguration = this.locationAccessControlConfiguration;
+            Optional<List<LocationAccessControl>> locationAccessControls = this.locationAccessControls;
+            if (locationAccessControlConfiguration.isEmpty() && locationAccessControls.isEmpty()) {
+                locationAccessControls = Optional.of(ImmutableList.of());
+            }
+
             DistributedQueryRunner queryRunner = new DistributedQueryRunner(
                     defaultSession,
                     nodeCount,
@@ -854,6 +893,8 @@ public class DistributedQueryRunner
                     baseDataDir,
                     systemAccessControlConfiguration,
                     systemAccessControls,
+                    locationAccessControlConfiguration,
+                    locationAccessControls,
                     eventListeners,
                     extraCloseables,
                     testingTrinoClientFactory);

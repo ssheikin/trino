@@ -247,6 +247,8 @@ public class TestingTrinoServer
             Optional<SpanProcessor> spanProcessor,
             Optional<FactoryConfiguration> systemAccessControlConfiguration,
             Optional<List<SystemAccessControl>> systemAccessControls,
+            Optional<FactoryConfiguration> locationAccessControlConfiguration,
+            Optional<List<LocationAccessControl>> locationAccessControls,
             List<EventListener> eventListeners)
     {
         this.coordinator = coordinator;
@@ -428,7 +430,13 @@ public class TestingTrinoServer
                     accessControl.loadSystemAccessControl(configuration.factoryName(), configuration.configuration());
                 },
                 () -> accessControl.setSystemAccessControls(systemAccessControls.orElseThrow()));
-        accessControl.setLocationAccessControls(ImmutableList.of(LocationAccessControl.ALLOW_ALL));
+
+        locationAccessControlConfiguration.ifPresentOrElse(
+                configuration -> {
+                    checkArgument(locationAccessControls.isEmpty(), "locationAccessControlConfiguration and locationAccessControls cannot be both present");
+                    accessControl.loadLocationAccessControl(configuration.factoryName(), configuration.configuration());
+                },
+                () -> accessControl.setLocationAccessControls(locationAccessControls.orElseThrow()));
 
         EventListenerManager eventListenerManager = injector.getInstance(EventListenerManager.class);
         eventListeners.forEach(eventListenerManager::addEventListener);
@@ -743,6 +751,8 @@ public class TestingTrinoServer
         private Optional<SpanProcessor> spanProcessor = Optional.empty();
         private Optional<FactoryConfiguration> systemAccessControlConfiguration = Optional.empty();
         private Optional<List<SystemAccessControl>> systemAccessControls = Optional.of(ImmutableList.of());
+        private Optional<FactoryConfiguration> locationAccessControlConfiguration = Optional.empty();
+        private Optional<List<LocationAccessControl>> locationAccessControls = Optional.of(ImmutableList.of());
         private List<EventListener> eventListeners = ImmutableList.of();
 
         public Builder setCoordinator(boolean coordinator)
@@ -813,6 +823,23 @@ public class TestingTrinoServer
             return this;
         }
 
+        public Builder setLocationAccessControlConfiguration(Optional<FactoryConfiguration> locationAccessControlConfiguration)
+        {
+            this.locationAccessControlConfiguration = requireNonNull(locationAccessControlConfiguration, "locationAccessControlConfiguration is null");
+            return this;
+        }
+
+        public Builder setLocationAccessControl(LocationAccessControl locationAccessControl)
+        {
+            return setLocationAccessControls(Optional.of(ImmutableList.of(requireNonNull(locationAccessControl, "locationAccessControl is null"))));
+        }
+
+        public Builder setLocationAccessControls(Optional<List<LocationAccessControl>> locationAccessControls)
+        {
+            this.locationAccessControls = locationAccessControls.map(ImmutableList::copyOf);
+            return this;
+        }
+
         public Builder setEventListeners(List<EventListener> eventListeners)
         {
             this.eventListeners = ImmutableList.copyOf(requireNonNull(eventListeners, "eventListeners is null"));
@@ -831,6 +858,8 @@ public class TestingTrinoServer
                     spanProcessor,
                     systemAccessControlConfiguration,
                     systemAccessControls,
+                    locationAccessControlConfiguration,
+                    locationAccessControls,
                     eventListeners);
         }
     }
