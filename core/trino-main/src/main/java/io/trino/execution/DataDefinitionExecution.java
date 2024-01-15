@@ -13,6 +13,7 @@
  */
 package io.trino.execution;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -37,6 +38,7 @@ import org.joda.time.DateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -117,6 +119,12 @@ public class DataDefinitionExecution<T extends Statement>
     public Optional<DateTime> getEndTime()
     {
         return stateMachine.getEndTime();
+    }
+
+    @Override
+    public Map<ScheduledSplitsPerTableTracker.SourceTableId, AtomicLong> getTotalScheduledSplitCount()
+    {
+        return ImmutableMap.of();
     }
 
     @Override
@@ -307,7 +315,8 @@ public class DataDefinitionExecution<T extends Statement>
                 QueryStateMachine stateMachine,
                 Slug slug,
                 WarningCollector warningCollector,
-                PlanOptimizersStatsCollector planOptimizersStatsCollector)
+                PlanOptimizersStatsCollector planOptimizersStatsCollector,
+                ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker)
         {
             return createDataDefinitionExecution(preparedQuery.getStatement(), preparedQuery.getParameters(), stateMachine, slug, warningCollector);
         }

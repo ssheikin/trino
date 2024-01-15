@@ -20,9 +20,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.airlift.log.Logger;
 import io.trino.execution.RemoteTask;
+import io.trino.execution.ScheduledSplitsPerTableTracker;
 import io.trino.execution.TableExecuteContext;
 import io.trino.execution.TableExecuteContextManager;
 import io.trino.metadata.InternalNode;
+import io.trino.metadata.QualifiedObjectName;
 import io.trino.metadata.Split;
 import io.trino.server.DynamicFilterService;
 import io.trino.split.EmptySplit;
@@ -92,6 +94,8 @@ public class SourcePartitionedScheduler
     private final BooleanSupplier anySourceTaskBlocked;
     private final PartitionIdAllocator partitionIdAllocator;
     private final Map<InternalNode, RemoteTask> scheduledTasks;
+    private final Optional<QualifiedObjectName> sourceTable;
+    private final ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker;
     private final Set<Split> pendingSplits = new HashSet<>();
 
     private ListenableFuture<SplitBatch> nextSplitBatchFuture;
@@ -108,7 +112,9 @@ public class SourcePartitionedScheduler
             TableExecuteContextManager tableExecuteContextManager,
             BooleanSupplier anySourceTaskBlocked,
             PartitionIdAllocator partitionIdAllocator,
-            Map<InternalNode, RemoteTask> scheduledTasks)
+            Map<InternalNode, RemoteTask> scheduledTasks,
+            Optional<QualifiedObjectName> sourceTable,
+            ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker)
     {
         this.stageExecution = requireNonNull(stageExecution, "stageExecution is null");
         this.splitSource = requireNonNull(splitSource, "splitSource is null");
@@ -121,6 +127,8 @@ public class SourcePartitionedScheduler
         this.anySourceTaskBlocked = requireNonNull(anySourceTaskBlocked, "anySourceTaskBlocked is null");
         this.partitionIdAllocator = requireNonNull(partitionIdAllocator, "partitionIdAllocator is null");
         this.scheduledTasks = requireNonNull(scheduledTasks, "scheduledTasks is null");
+        this.sourceTable = requireNonNull(sourceTable, "sourceTable is null");
+        this.scheduledSplitsPerTableTracker = requireNonNull(scheduledSplitsPerTableTracker, "scheduledSplitsPerTableCollector is null");
     }
 
     @Override
@@ -144,7 +152,9 @@ public class SourcePartitionedScheduler
             int splitBatchSize,
             DynamicFilterService dynamicFilterService,
             TableExecuteContextManager tableExecuteContextManager,
-            BooleanSupplier anySourceTaskBlocked)
+            BooleanSupplier anySourceTaskBlocked,
+            Optional<QualifiedObjectName> sourceTable,
+            ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker)
     {
         SourcePartitionedScheduler sourcePartitionedScheduler = new SourcePartitionedScheduler(
                 stageExecution,
@@ -156,7 +166,9 @@ public class SourcePartitionedScheduler
                 tableExecuteContextManager,
                 anySourceTaskBlocked,
                 new PartitionIdAllocator(),
-                new HashMap<>());
+                new HashMap<>(),
+                sourceTable,
+                scheduledSplitsPerTableTracker);
 
         return new StageScheduler()
         {
@@ -197,7 +209,9 @@ public class SourcePartitionedScheduler
             TableExecuteContextManager tableExecuteContextManager,
             BooleanSupplier anySourceTaskBlocked,
             PartitionIdAllocator partitionIdAllocator,
-            Map<InternalNode, RemoteTask> scheduledTasks)
+            Map<InternalNode, RemoteTask> scheduledTasks,
+            Optional<QualifiedObjectName> sourceTable,
+            ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker)
     {
         return new SourcePartitionedScheduler(
                 stageExecution,
@@ -209,7 +223,9 @@ public class SourcePartitionedScheduler
                 tableExecuteContextManager,
                 anySourceTaskBlocked,
                 partitionIdAllocator,
-                scheduledTasks);
+                scheduledTasks,
+                sourceTable,
+                scheduledSplitsPerTableTracker);
     }
 
     @Override
@@ -248,6 +264,9 @@ public class SourcePartitionedScheduler
 
                 long start = System.nanoTime();
                 addSuccessCallback(nextSplitBatchFuture, () -> stageExecution.recordGetSplitTime(start));
+                sourceTable.ifPresent(source -> addSuccessCallback(
+                        nextSplitBatchFuture,
+                        (splitBatch) -> scheduledSplitsPerTableTracker.recordScheduledSplitCount(source, partitionedNode, splitBatch.getSplits().size())));
             }
 
             if (nextSplitBatchFuture.isDone()) {

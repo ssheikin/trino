@@ -18,13 +18,16 @@ import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
+import io.trino.ExceededScanLimitException;
 import io.trino.Session;
 import io.trino.execution.QueryTracker.TrackedQuery;
+import io.trino.metadata.QualifiedObjectName;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
 import org.joda.time.DateTime;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
@@ -34,6 +37,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.trino.SystemSessionProperties.getQueryMaxExecutionTime;
@@ -60,16 +64,18 @@ public class QueryTracker<T extends TrackedQuery>
 
     private final ScheduledExecutorService queryManagementExecutor;
 
+    private final MaxSplitsPerTableSpec.MaxSplitsPerTableSpecProvider maxSplitsPerTableSpecProvider;
+
     @GuardedBy("this")
     private ScheduledFuture<?> backgroundTask;
 
-    public QueryTracker(QueryManagerConfig queryManagerConfig, ScheduledExecutorService queryManagementExecutor)
+    public QueryTracker(QueryManagerConfig queryManagerConfig, ScheduledExecutorService queryManagementExecutor, MaxSplitsPerTableSpec.MaxSplitsPerTableSpecProvider maxSplitsPerTableSpecProvider)
     {
         this.minQueryExpireAge = queryManagerConfig.getMinQueryExpireAge();
         this.maxQueryHistory = queryManagerConfig.getMaxQueryHistory();
         this.clientTimeout = queryManagerConfig.getClientTimeout();
-
         this.queryManagementExecutor = requireNonNull(queryManagementExecutor, "queryManagementExecutor is null");
+        this.maxSplitsPerTableSpecProvider = requireNonNull(maxSplitsPerTableSpecProvider, "maxSplitsPerTableSpecProvider is null");
     }
 
     public synchronized void start()
@@ -88,6 +94,14 @@ public class QueryTracker<T extends TrackedQuery>
             }
             catch (Throwable e) {
                 log.error(e, "Error enforcing query timeout limits");
+            }
+
+            try {
+                enforceMaxSplitCountPerTable();
+            }
+            // ignore to avoid getting unscheduled
+            catch (Throwable e) {
+                log.error(e, "Error enforcing max split count per table limits");
             }
 
             try {
@@ -200,6 +214,30 @@ public class QueryTracker<T extends TrackedQuery>
     }
 
     /**
+     * Enforce maximal split count per table
+     */
+    private synchronized void enforceMaxSplitCountPerTable()
+    {
+        Map<QualifiedObjectName, Long> maxAllowedSplitCountPerTable = maxSplitsPerTableSpecProvider.getMaxAllowedSplitCountPerTable();
+        if (maxAllowedSplitCountPerTable.isEmpty()) {
+            return;
+        }
+        for (T query : queries.values()) {
+            if (query.isDone()) {
+                continue;
+            }
+            Map<ScheduledSplitsPerTableTracker.SourceTableId, AtomicLong> totalScheduledSplitCount = query.getTotalScheduledSplitCount();
+
+            for (Map.Entry<ScheduledSplitsPerTableTracker.SourceTableId, AtomicLong> entry : totalScheduledSplitCount.entrySet()) {
+                long limit = maxAllowedSplitCountPerTable.getOrDefault(entry.getKey().tableName(), Long.MAX_VALUE);
+                if (entry.getValue().get() > limit) {
+                    query.fail(ExceededScanLimitException.maxQuerySplitsPerTable(entry.getKey().tableName().toString(), entry.getValue().get(), limit));
+                }
+            }
+        }
+    }
+
+    /**
      * Prune extraneous info from old queries
      */
     private void pruneExpiredQueries()
@@ -302,6 +340,8 @@ public class QueryTracker<T extends TrackedQuery>
         DateTime getLastHeartbeat();
 
         Optional<DateTime> getEndTime();
+
+        Map<ScheduledSplitsPerTableTracker.SourceTableId, AtomicLong> getTotalScheduledSplitCount();
 
         void fail(Throwable cause);
 

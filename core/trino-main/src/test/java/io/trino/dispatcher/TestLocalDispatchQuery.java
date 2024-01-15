@@ -39,6 +39,7 @@ import io.trino.execution.ExecutionFailureInfo;
 import io.trino.execution.QueryPreparer;
 import io.trino.execution.QueryState;
 import io.trino.execution.QueryStateMachine;
+import io.trino.execution.ScheduledSplitsPerTableTracker;
 import io.trino.execution.StageInfo;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.execution.warnings.WarningCollector;
@@ -88,15 +89,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestLocalDispatchQuery
 {
     private CountDownLatch countDownLatch;
+    private final Executor executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
+    private final Metadata metadata = createTestMetadataManager();
+    private final TransactionManager transactionManager = createTestTransactionManager();
+    private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(
+            new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty()), ImmutableList.of(), Optional.empty());
 
     @Test
     public void testSubmittedForDispatchedQuery()
             throws InterruptedException
     {
         countDownLatch = new CountDownLatch(1);
-        Executor executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
-        Metadata metadata = createTestMetadataManager();
-        TransactionManager transactionManager = createTestTransactionManager();
         AccessControlManager accessControl = new AccessControlManager(
                 NodeVersion.UNKNOWN,
                 transactionManager,
@@ -142,8 +145,6 @@ public class TestLocalDispatchQuery
                                 () -> { throw new UnsupportedOperationException(); }),
                         LanguageFunctionProvider.DISABLED),
                 new QueryMonitorConfig());
-        CreateTable createTable = new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty());
-        QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(createTable, ImmutableList.of(), Optional.empty());
         DataDefinitionExecution.DataDefinitionExecutionFactory dataDefinitionExecutionFactory = new DataDefinitionExecution.DataDefinitionExecutionFactory(
                 ImmutableMap.<Class<? extends Statement>, DataDefinitionTask<?>>of(CreateTable.class, new TestCreateTableTask()));
         DataDefinitionExecution dataDefinitionExecution = dataDefinitionExecutionFactory.createQueryExecution(
@@ -151,7 +152,8 @@ public class TestLocalDispatchQuery
                 queryStateMachine,
                 Slug.createNew(),
                 WarningCollector.NOOP,
-                null);
+                null,
+                new ScheduledSplitsPerTableTracker());
         LocalDispatchQuery localDispatchQuery = new LocalDispatchQuery(
                 queryStateMachine,
                 Futures.immediateFuture(dataDefinitionExecution),
@@ -167,6 +169,48 @@ public class TestLocalDispatchQuery
         localDispatchQuery.startWaitingForResources();
         countDownLatch.await();
         assertThat(localDispatchQuery.getDispatchInfo().getCoordinatorLocation().isPresent()).isTrue();
+    }
+
+    @Test
+    public void testDataDefinitionHasNoScheduledSplits()
+    {
+        AccessControlManager accessControl = new AccessControlManager(
+                NodeVersion.UNKNOWN,
+                transactionManager,
+                emptyEventListenerManager(),
+                new AccessControlConfig(),
+                OpenTelemetry.noop(),
+                DefaultSystemAccessControl.NAME,
+                LocationAccessControl.DEFAULT_NAME);
+        accessControl.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));
+        QueryStateMachine queryStateMachine = QueryStateMachine.begin(
+                Optional.empty(),
+                "sql",
+                Optional.empty(),
+                TEST_SESSION,
+                URI.create("fake://fake-query"),
+                new ResourceGroupId("test"),
+                false,
+                transactionManager,
+                accessControl,
+                executor,
+                metadata,
+                WarningCollector.NOOP,
+                createPlanOptimizersStatsCollector(),
+                Optional.of(QueryType.DATA_DEFINITION),
+                true,
+                new NodeVersion("test"));
+
+        DataDefinitionExecution.DataDefinitionExecutionFactory dataDefinitionExecutionFactory = new DataDefinitionExecution.DataDefinitionExecutionFactory(
+                ImmutableMap.of(CreateTable.class, new TestCreateTableTask()));
+        DataDefinitionExecution<? extends Statement> dataDefinitionExecution = dataDefinitionExecutionFactory.createQueryExecution(
+                preparedQuery,
+                queryStateMachine,
+                Slug.createNew(),
+                WarningCollector.NOOP,
+                null,
+                null);
+        assertThat(dataDefinitionExecution.getTotalScheduledSplitCount()).isEmpty();
     }
 
     private static class NoConnectorServicesProvider

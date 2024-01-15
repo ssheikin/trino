@@ -23,6 +23,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.trino.Session;
 import io.trino.event.QueryMonitor;
+import io.trino.execution.MaxSplitsPerTableSpec;
 import io.trino.execution.QueryIdGenerator;
 import io.trino.execution.QueryInfo;
 import io.trino.execution.QueryManagerConfig;
@@ -98,7 +99,8 @@ public class DispatchManager
             Tracer tracer,
             QueryManagerConfig queryManagerConfig,
             DispatchExecutor dispatchExecutor,
-            QueryMonitor queryMonitor)
+            QueryMonitor queryMonitor,
+            MaxSplitsPerTableSpec.MaxSplitsPerTableSpecProvider maxSplitsPerTableSpecProvider)
     {
         this.queryIdGenerator = requireNonNull(queryIdGenerator, "queryIdGenerator is null");
         this.queryPreparer = requireNonNull(queryPreparer, "queryPreparer is null");
@@ -115,7 +117,7 @@ public class DispatchManager
 
         this.dispatchExecutor = dispatchExecutor.getExecutor();
 
-        this.queryTracker = new QueryTracker<>(queryManagerConfig, dispatchExecutor.getScheduledExecutor());
+        this.queryTracker = new QueryTracker<>(queryManagerConfig, dispatchExecutor.getScheduledExecutor(), maxSplitsPerTableSpecProvider);
         this.queryMonitor = requireNonNull(queryMonitor, "queryMonitor is null");
     }
 

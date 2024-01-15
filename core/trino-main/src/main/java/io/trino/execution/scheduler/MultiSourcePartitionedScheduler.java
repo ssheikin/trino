@@ -20,8 +20,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.airlift.log.Logger;
 import io.trino.annotation.NotThreadSafe;
 import io.trino.execution.RemoteTask;
+import io.trino.execution.ScheduledSplitsPerTableTracker;
 import io.trino.execution.TableExecuteContextManager;
 import io.trino.metadata.InternalNode;
+import io.trino.metadata.QualifiedObjectName;
 import io.trino.server.DynamicFilterService;
 import io.trino.split.SplitSource;
 import io.trino.sql.planner.plan.PlanNodeId;
@@ -57,6 +59,8 @@ public class MultiSourcePartitionedScheduler
     public MultiSourcePartitionedScheduler(
             StageExecution stageExecution,
             Map<PlanNodeId, SplitSource> splitSources,
+            Map<PlanNodeId, Optional<QualifiedObjectName>> sourceTables,
+            ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker,
             SplitPlacementPolicy splitPlacementPolicy,
             int splitBatchSize,
             DynamicFilterService dynamicFilterService,
@@ -79,7 +83,9 @@ public class MultiSourcePartitionedScheduler
                     tableExecuteContextManager,
                     anySourceTaskBlocked,
                     partitionIdAllocator,
-                    scheduledTasks);
+                    scheduledTasks,
+                    sourceTables.get(planNodeId),
+                    scheduledSplitsPerTableTracker);
             sourceSchedulers.add(sourceScheduler);
         }
         this.stageExecution = requireNonNull(stageExecution, "stageExecution is null");
