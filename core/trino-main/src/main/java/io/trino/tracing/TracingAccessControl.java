@@ -134,6 +134,15 @@ public class TracingAccessControl
     }
 
     @Override
+    public void checkCanShowCreateCatalog(SecurityContext context, String catalog)
+    {
+        Span span = startSpan("checkCanShowCreateCatalog");
+        try (var ignored = scopedSpan(span)) {
+            delegate.checkCanShowCreateCatalog(context, catalog);
+        }
+    }
+
+    @Override
     public void checkCanCreateCatalog(SecurityContext context, String catalog)
     {
         Span span = startSpan("checkCanCreateCatalog");
@@ -148,6 +157,24 @@ public class TracingAccessControl
         Span span = startSpan("checkCanDropCatalog");
         try (var ignored = scopedSpan(span)) {
             delegate.checkCanDropCatalog(context, catalog);
+        }
+    }
+
+    @Override
+    public void checkCanRenameCatalog(SecurityContext context, String catalog, String newCatalog)
+    {
+        Span span = startSpan("checkCanRenameCatalog");
+        try (var ignored = scopedSpan(span)) {
+            delegate.checkCanRenameCatalog(context, catalog, newCatalog);
+        }
+    }
+
+    @Override
+    public void checkCanSetCatalogProperties(SecurityContext context, String catalog, Map<String, Optional<String>> properties)
+    {
+        Span span = startSpan("checkCanSetCatalogProperties");
+        try (var ignored = scopedSpan(span)) {
+            delegate.checkCanSetCatalogProperties(context, catalog, properties);
         }
     }
 
