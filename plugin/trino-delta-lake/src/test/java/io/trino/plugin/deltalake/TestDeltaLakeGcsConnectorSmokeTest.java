@@ -30,6 +30,8 @@ import io.trino.spi.security.ConnectorIdentity;
 import io.trino.testing.QueryRunner;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.parallel.Execution;
 
@@ -238,5 +240,12 @@ public class TestDeltaLakeGcsConnectorSmokeTest
     protected String bucketUrl()
     {
         return format("gs://%s/%s/", gcpStorageBucket, bucketName);
+    }
+
+    @Test
+    @Override
+    @Disabled("https://starburstdata.atlassian.net/browse/SEP-13023")
+    public void testCreateOrReplaceTableConcurrently()
+    {
     }
 }
