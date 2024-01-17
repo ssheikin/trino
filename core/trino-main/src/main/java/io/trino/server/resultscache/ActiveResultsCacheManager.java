@@ -11,12 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.trino.server.resultscache;
 
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.Session;
 import io.trino.execution.QueryManager;
 import io.trino.server.BasicQueryInfo;
 import io.trino.spi.QueryId;
@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static io.airlift.concurrent.Threads.threadsNamed;
+import static io.trino.server.resultscache.ResultsCacheSessionProperties.getResultsCacheKey;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
@@ -61,6 +62,17 @@ public class ActiveResultsCacheManager
                 queryInfo.getQuery());
         queryManager.registerResultsCacheEntry(queryInfo.getQueryId(), entry);
         return Optional.of(entry);
+    }
+
+    @Override
+    public Optional<ResultsCacheState> createResultsCacheParameters(Session session)
+    {
+        return getResultsCacheKey(session).map(cacheKey -> {
+            log.debug("QueryId: %s, statement had cache key %s", session.getQueryId(), cacheKey);
+            return new ResultsCacheState(
+                    cacheKey,
+                    ResultsCacheSessionProperties.getResultsCacheEntryMaxSizeBytes(session));
+        });
     }
 
     private ActiveResultsCacheEntry createResultsCacheEntry(

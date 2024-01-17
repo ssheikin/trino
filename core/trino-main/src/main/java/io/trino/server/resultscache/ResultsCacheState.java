@@ -14,33 +14,17 @@
 
 package io.trino.server.resultscache;
 
-import io.airlift.log.Logger;
-import io.trino.Session;
-
 import java.util.Optional;
 
-import static io.trino.server.resultscache.ResultsCacheSessionProperties.getResultsCacheKey;
 import static java.util.Objects.requireNonNull;
 
 public record ResultsCacheState(
         String key,
         Optional<Long> maximumSizeBytes)
 {
-    private static final Logger log = Logger.get(ResultsCacheState.class);
-
     public ResultsCacheState
     {
         requireNonNull(key, "key is null");
         requireNonNull(maximumSizeBytes, "maximumSizeBytes is null");
-    }
-
-    public static Optional<ResultsCacheState> createResultsCacheParameters(Session session)
-    {
-        return getResultsCacheKey(session).map(cacheKey -> {
-            log.debug("QueryId: %s, statement had cache key %s", session.getQueryId(), cacheKey);
-            return new ResultsCacheState(
-                    cacheKey,
-                    ResultsCacheSessionProperties.getResultsCacheEntryMaxSizeBytes(session));
-        });
     }
 }

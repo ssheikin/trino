@@ -13,6 +13,7 @@
  */
 package io.trino.server.resultscache;
 
+import io.trino.Session;
 import io.trino.spi.QueryId;
 
 import java.util.Optional;
@@ -20,6 +21,11 @@ import java.util.Optional;
 public interface ResultsCacheManager
 {
     default Optional<ActiveResultsCacheEntry> registerQuery(QueryId queryId)
+    {
+        return Optional.empty();
+    }
+
+    default Optional<ResultsCacheState> createResultsCacheParameters(Session session)
     {
         return Optional.empty();
     }

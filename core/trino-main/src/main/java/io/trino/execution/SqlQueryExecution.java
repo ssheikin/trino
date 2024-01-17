@@ -56,6 +56,7 @@ import io.trino.server.protocol.Slug;
 import io.trino.server.resultscache.FilteredResultsCacheEntry;
 import io.trino.server.resultscache.ResultsCacheAnalyzer;
 import io.trino.server.resultscache.ResultsCacheEntry;
+import io.trino.server.resultscache.ResultsCacheManager;
 import io.trino.server.resultscache.ResultsCacheState;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
@@ -104,7 +105,6 @@ import static io.trino.execution.ParameterExtractor.bindParameters;
 import static io.trino.execution.QueryState.FAILED;
 import static io.trino.execution.QueryState.PLANNING;
 import static io.trino.server.DynamicFilterService.DynamicFiltersStats;
-import static io.trino.server.resultscache.ResultsCacheState.createResultsCacheParameters;
 import static io.trino.spi.StandardErrorCode.STACK_OVERFLOW;
 import static io.trino.sql.planner.sanity.PlanSanityChecker.DISTRIBUTED_PLAN_SANITY_CHECKER;
 import static io.trino.tracing.ScopedSpan.scopedSpan;
@@ -188,6 +188,7 @@ public class SqlQueryExecution
             DynamicFilterService dynamicFilterService,
             WarningCollector warningCollector,
             PlanOptimizersStatsCollector planOptimizersStatsCollector,
+            ResultsCacheManager resultsCacheManager,
             TableExecuteContextManager tableExecuteContextManager,
             SqlTaskManager coordinatorTaskManager,
             ExchangeManagerRegistry exchangeManagerRegistry,
@@ -250,7 +251,7 @@ public class SqlQueryExecution
 
             // The ResultsCacheState, if present, represents the Dispatcher indicating to the Coordinator to cache
             // the results of the query if it meets the criteria.
-            Optional<ResultsCacheState> potentialResultsCacheState = createResultsCacheParameters(stateMachine.getSession());
+            Optional<ResultsCacheState> potentialResultsCacheState = resultsCacheManager.createResultsCacheParameters(stateMachine.getSession());
             if (potentialResultsCacheState.isEmpty()) {
                 this.resultsCacheState = Optional.empty();
             }
@@ -856,6 +857,7 @@ public class SqlQueryExecution
         private final StatsCalculator statsCalculator;
         private final CostCalculator costCalculator;
         private final DynamicFilterService dynamicFilterService;
+        private final ResultsCacheManager resultsCacheManager;
         private final TableExecuteContextManager tableExecuteContextManager;
         private final SqlTaskManager coordinatorTaskManager;
         private final ExchangeManagerRegistry exchangeManagerRegistry;
@@ -888,6 +890,7 @@ public class SqlQueryExecution
                 StatsCalculator statsCalculator,
                 CostCalculator costCalculator,
                 DynamicFilterService dynamicFilterService,
+                ResultsCacheManager resultsCacheManager,
                 TableExecuteContextManager tableExecuteContextManager,
                 SqlTaskManager coordinatorTaskManager,
                 ExchangeManagerRegistry exchangeManagerRegistry,
@@ -920,6 +923,7 @@ public class SqlQueryExecution
             this.statsCalculator = requireNonNull(statsCalculator, "statsCalculator is null");
             this.costCalculator = requireNonNull(costCalculator, "costCalculator is null");
             this.dynamicFilterService = requireNonNull(dynamicFilterService, "dynamicFilterService is null");
+            this.resultsCacheManager = requireNonNull(resultsCacheManager, "resultsCacheManager is null");
             this.tableExecuteContextManager = requireNonNull(tableExecuteContextManager, "tableExecuteContextManager is null");
             this.coordinatorTaskManager = requireNonNull(coordinatorTaskManager, "coordinatorTaskManager is null");
             this.exchangeManagerRegistry = requireNonNull(exchangeManagerRegistry, "exchangeManagerRegistry is null");
@@ -972,6 +976,7 @@ public class SqlQueryExecution
                     dynamicFilterService,
                     warningCollector,
                     planOptimizersStatsCollector,
+                    resultsCacheManager,
                     tableExecuteContextManager,
                     coordinatorTaskManager,
                     exchangeManagerRegistry,
