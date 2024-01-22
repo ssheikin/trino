@@ -29,7 +29,8 @@ public class TestAccessControlConfig
     public void testDefaults()
     {
         ConfigAssertions.assertRecordedDefaults(ConfigAssertions.recordDefaults(AccessControlConfig.class)
-                .setAccessControlFiles(""));
+                .setAccessControlFiles("")
+                .setLocationAccessControlFiles(""));
     }
 
     @Test
@@ -38,12 +39,16 @@ public class TestAccessControlConfig
     {
         Path config1 = Files.createTempFile(null, null);
         Path config2 = Files.createTempFile(null, null);
+        Path config3 = Files.createTempFile(null, null);
 
-        Map<String, String> properties = ImmutableMap.of("access-control.config-files", config1.toString() + "," + config2.toString());
+        Map<String, String> accessControlProperties = ImmutableMap.of(
+                "access-control.config-files", config1.toString() + "," + config2.toString(),
+                "location-access-control.config-files", config1.toString() + "," + config2.toString() + "," + config3.toString());
 
         AccessControlConfig expected = new AccessControlConfig()
-                .setAccessControlFiles(ImmutableList.of(config1.toFile(), config2.toFile()));
+                .setAccessControlFiles(ImmutableList.of(config1.toFile(), config2.toFile()))
+                .setLocationAccessControlFiles(ImmutableList.of(config1.toFile(), config2.toFile(), config3.toFile()));
 
-        ConfigAssertions.assertFullMapping(properties, expected);
+        ConfigAssertions.assertFullMapping(accessControlProperties, expected);
     }
 }

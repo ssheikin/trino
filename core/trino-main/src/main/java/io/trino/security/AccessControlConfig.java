@@ -28,6 +28,7 @@ public class AccessControlConfig
 {
     private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
     private List<File> accessControlFiles = ImmutableList.of();
+    private List<File> locationAccessControlFiles = ImmutableList.of();
 
     @NotNull
     public List<@FileExists File> getAccessControlFiles()
@@ -47,6 +48,26 @@ public class AccessControlConfig
     public AccessControlConfig setAccessControlFiles(List<File> accessControlFiles)
     {
         this.accessControlFiles = ImmutableList.copyOf(accessControlFiles);
+        return this;
+    }
+
+    public List<@FileExists File> getLocationAccessControlFiles()
+    {
+        return locationAccessControlFiles;
+    }
+
+    @Config("location-access-control.config-files")
+    public AccessControlConfig setLocationAccessControlFiles(String locationAccessControlFiles)
+    {
+        this.locationAccessControlFiles = SPLITTER.splitToList(locationAccessControlFiles).stream()
+                .map(File::new)
+                .collect(toImmutableList());
+        return this;
+    }
+
+    public AccessControlConfig setLocationAccessControlFiles(List<File> locationAccessControlFiles)
+    {
+        this.locationAccessControlFiles = locationAccessControlFiles;
         return this;
     }
 }
