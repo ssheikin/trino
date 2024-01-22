@@ -40,12 +40,12 @@ public final class ResultsCacheSessionProperties
                     CACHE_KEY,
                     "Unique key to identify the cache entry",
                     null,
-                    true),
+                    false),
             longProperty(
                     CACHE_ENTRY_MAX_SIZE_BYTES,
                     "Maximum size for a cache entry in bytes",
                     null,
-                    true),
+                    false),
             booleanProperty(
                     SKIP_RESULTS_CACHE_SESSION_PROPERTY,
                     "Skip using the results cache regardless of if cached results are available",
