@@ -16,6 +16,7 @@ package io.trino.hdfs.s3;
 import com.amazonaws.AbortedException;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.Request;
@@ -1108,9 +1109,59 @@ public class TrinoS3FileSystem
             clientBuilder.setForceGlobalBucketAccessEnabled(true);
         }
 
-        clientBuilder.setRequestHandlers(forwardingRequestHandler);
+        RequestHandler2 sseRequestHandler = new RequestHandler2()
+        {
+            @Override
+            public AmazonWebServiceRequest beforeExecution(AmazonWebServiceRequest request)
+            {
+                if (sseEnabled) {
+                    return switch (sseType) {
+                        case S3 -> handleSseS3(request);
+                        case KMS -> handleSseKMS(request);
+                    };
+                }
+                return request;
+            }
+        };
+
+        clientBuilder.setRequestHandlers(forwardingRequestHandler, sseRequestHandler);
 
         return clientBuilder.build();
+    }
+
+    private AmazonWebServiceRequest handleSseKMS(AmazonWebServiceRequest amazonWebServiceRequest)
+    {
+        if (amazonWebServiceRequest instanceof CopyObjectRequest copyObjectRequest) {
+            return copyObjectRequest.withSSEAwsKeyManagementParams(getSseKeyManagementParams());
+        }
+
+        if (amazonWebServiceRequest instanceof InitiateMultipartUploadRequest initiateMultipartUploadRequest) {
+            return initiateMultipartUploadRequest.withSSEAwsKeyManagementParams(getSseKeyManagementParams());
+        }
+
+        if (amazonWebServiceRequest instanceof PutObjectRequest putObjectRequest) {
+            return putObjectRequest.withSSEAwsKeyManagementParams(getSseKeyManagementParams());
+        }
+        return amazonWebServiceRequest;
+    }
+
+    private AmazonWebServiceRequest handleSseS3(AmazonWebServiceRequest amazonWebServiceRequest)
+    {
+        if (amazonWebServiceRequest instanceof InitiateMultipartUploadRequest initiateMultipartUploadRequest) {
+            initiateMultipartUploadRequest.getObjectMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+            return initiateMultipartUploadRequest;
+        }
+
+        if (amazonWebServiceRequest instanceof UploadPartRequest uploadPartRequest) {
+            uploadPartRequest.getObjectMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+            return uploadPartRequest;
+        }
+
+        if (amazonWebServiceRequest instanceof PutObjectRequest putObjectRequest) {
+            putObjectRequest.getMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+            return putObjectRequest;
+        }
+        return amazonWebServiceRequest;
     }
 
     private static Optional<EncryptionMaterialsProvider> createEncryptionMaterialsProvider(Configuration hadoopConfig)
@@ -1247,16 +1298,6 @@ public class TrinoS3FileSystem
         if (request.getMetadata() == null) {
             request.setMetadata(new ObjectMetadata());
         }
-        if (sseEnabled) {
-            switch (sseType) {
-                case KMS:
-                    request.setSSEAwsKeyManagementParams(getSseKeyManagementParams());
-                    break;
-                case S3:
-                    request.getMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
-                    break;
-            }
-        }
         request.setCannedAcl(s3AclType.getCannedACL());
         request.setRequesterPays(requesterPaysEnabled);
         request.setStorageClass(s3StorageClass.getS3StorageClass());
@@ -1277,17 +1318,6 @@ public class TrinoS3FileSystem
                                     .withCannedACL(s3AclType.getCannedACL())
                                     .withRequesterPays(requesterPaysEnabled)
                                     .withStorageClass(s3StorageClass.getS3StorageClass());
-
-                            if (sseEnabled) {
-                                switch (sseType) {
-                                    case KMS:
-                                        request.setSSEAwsKeyManagementParams(getSseKeyManagementParams());
-                                        break;
-                                    case S3:
-                                        request.getObjectMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
-                                        break;
-                                }
-                            }
 
                             return s3.initiateMultipartUpload(request);
                         }
