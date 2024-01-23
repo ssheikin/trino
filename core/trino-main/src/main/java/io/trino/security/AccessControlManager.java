@@ -432,7 +432,7 @@ public class AccessControlManager
     {
         requireNonNull(identity, "identity is null");
 
-        systemAuthorizationCheck(control -> control.checkCanExecuteQuery(identity));
+        systemAuthorizationCheck(control -> control.checkCanExecuteQuery(identity, queryId));
     }
 
     @Override
