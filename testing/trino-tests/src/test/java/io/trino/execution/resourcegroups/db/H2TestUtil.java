@@ -176,7 +176,7 @@ final class H2TestUtil
         dao.insertSelector(7, 100_000, null, null, null, null, EXPLAIN.name(), null, null);
         dao.insertSelector(8, 10_00_000, null, null, null, "(?i).*partkey.*from part.*", null, null, null);
 
-        int expectedSelectors = 6;
+        int expectedSelectors = 7;
         if (environment.equals(TEST_ENVIRONMENT_2)) {
             expectedSelectors = 1;
         }
