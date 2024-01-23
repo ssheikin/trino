@@ -50,6 +50,7 @@ import io.trino.spi.eventlistener.QueryStatistics;
 import io.trino.spi.eventlistener.RoutineInfo;
 import io.trino.spi.eventlistener.TableInfo;
 import io.trino.spi.metrics.Metrics;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.security.ViewExpression;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
@@ -241,6 +242,7 @@ public class TestEventListenerBasic
                             }
                             return ImmutableList.of();
                         })
+                        .withLocationAccessControl(Optional.of(LocationAccessControl.ALLOW_ALL))
                         .withMetrics(schemaTableName -> {
                             if (schemaTableName.equals(new SchemaTableName("tiny", "nation"))) {
                                 return TEST_METRICS;
