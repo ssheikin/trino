@@ -424,7 +424,10 @@ public class FileBasedSystemAccessControl
     public void checkCanRenameCatalog(SystemSecurityContext context, String catalog, String newCatalog)
     {
         if (!canAccessCatalog(context, catalog, OWNER)) {
-            denyRenameCatalog(catalog, newCatalog);
+            denyRenameCatalog(catalog, newCatalog, "Insufficient permissions on the source catalog " + catalog);
+        }
+        if (!canAccessCatalog(context, newCatalog, OWNER)) {
+            denyRenameCatalog(catalog, newCatalog, "Insufficient permissions on the target catalog " + newCatalog);
         }
     }
 

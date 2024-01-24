@@ -745,8 +745,9 @@ public abstract class BaseFileBasedSystemAccessControlTest
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
+        assertAccessDenied(() -> accessControl.checkCanRenameCatalog(ALICE, "alice-catalog", "open-to-all"), RENAME_CATALOG_ACCESS_DENIED_MESSAGE + ": Insufficient permissions on the target catalog open-to-all");
+        assertAccessDenied(() -> accessControl.checkCanRenameCatalog(ALICE, "open-to-all", "alice-catalog"), RENAME_CATALOG_ACCESS_DENIED_MESSAGE + ": Insufficient permissions on the source catalog open-to-all");
         accessControl.checkCanRenameCatalog(ADMIN, "some-catalog-a", "some-catalog-b");
-        assertAccessDenied(() -> accessControl.checkCanRenameCatalog(BOB, "some-catalog-a", "some-catalog-b"), RENAME_CATALOG_ACCESS_DENIED_MESSAGE);
     }
 
     @Test
