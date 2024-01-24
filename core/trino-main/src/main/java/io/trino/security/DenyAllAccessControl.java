@@ -477,7 +477,7 @@ public class DenyAllAccessControl
     }
 
     @Override
-    public void checkCanSetSystemSessionProperty(Identity identity, String propertyName)
+    public void checkCanSetSystemSessionProperty(Identity identity, QueryId queryId, String propertyName)
     {
         denySetSystemSessionProperty(propertyName);
     }

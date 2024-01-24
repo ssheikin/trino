@@ -485,7 +485,7 @@ public interface AccessControl
      *
      * @throws AccessDeniedException if not allowed
      */
-    void checkCanSetSystemSessionProperty(Identity identity, String propertyName);
+    void checkCanSetSystemSessionProperty(Identity identity, QueryId queryId, String propertyName);
 
     /**
      * Check if identity is allowed to set the specified catalog property.
