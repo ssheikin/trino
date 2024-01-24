@@ -39,12 +39,12 @@ public class TestResultsCacheConfig
     {
         Map<String, String> properties = ImmutableMap.<String, String>builder()
                 .put("results-cache.upload.threads", "1")
-                .put("results-cache.max-results-size", "10MB")
+                .put("results-cache.max-results-size", "5MB")
                 .buildOrThrow();
 
         ResultsCacheConfig expected = new ResultsCacheConfig()
                 .setCacheUploadThreads(1)
-                .setMaxResultsSize(DataSize.of(10, MEGABYTE));
+                .setMaxResultsSize(DataSize.of(5, MEGABYTE));
 
         assertFullMapping(properties, expected);
     }

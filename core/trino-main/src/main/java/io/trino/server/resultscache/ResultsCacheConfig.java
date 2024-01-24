@@ -17,6 +17,8 @@ package io.trino.server.resultscache;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
 import io.airlift.units.DataSize;
+import io.airlift.units.MaxDataSize;
+import io.airlift.units.MinDataSize;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -42,6 +44,8 @@ public class ResultsCacheConfig
     }
 
     @NotNull
+    @MinDataSize("1kB")
+    @MaxDataSize("5MB")
     public DataSize getMaxResultsSize()
     {
         return maxResultsSize;
