@@ -27,7 +27,10 @@ import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class ConnectorContextInstance
@@ -41,6 +44,8 @@ public class ConnectorContextInstance
     private final MetadataProvider metadataProvider;
     private final PageSorter pageSorter;
     private final PageIndexerFactory pageIndexerFactory;
+    private final Supplier<ClassLoader> duplicatePluginClassLoaderFactory;
+    private final AtomicBoolean pluginClassLoaderDuplicated = new AtomicBoolean();
     private final LocationAccessControl locationAccessControl;
     private final CatalogHandle catalogHandle;
     private final Map<String, String> serverProperties;
@@ -56,7 +61,8 @@ public class ConnectorContextInstance
             LocationAccessControl locationAccessControl,
             PageSorter pageSorter,
             PageIndexerFactory pageIndexerFactory,
-            Map<String, String> serverProperties)
+            Map<String, String> serverProperties,
+            Supplier<ClassLoader> duplicatePluginClassLoaderFactory)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -67,6 +73,7 @@ public class ConnectorContextInstance
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
+        this.duplicatePluginClassLoaderFactory = requireNonNull(duplicatePluginClassLoaderFactory, "duplicatePluginClassLoaderFactory is null");
         this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
         this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
     }
@@ -123,6 +130,13 @@ public class ConnectorContextInstance
     public PageIndexerFactory getPageIndexerFactory()
     {
         return pageIndexerFactory;
+    }
+
+    @Override
+    public ClassLoader duplicatePluginClassLoader()
+    {
+        checkState(!pluginClassLoaderDuplicated.getAndSet(true), "plugin class loader already duplicated");
+        return duplicatePluginClassLoaderFactory.get();
     }
 
     @Override

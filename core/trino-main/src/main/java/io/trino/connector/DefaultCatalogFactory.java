@@ -14,6 +14,7 @@
 package io.trino.connector;
 
 import com.google.errorprone.annotations.ThreadSafe;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
 import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.node.NodeInfo;
@@ -25,10 +26,12 @@ import io.trino.connector.system.StaticSystemTablesProvider;
 import io.trino.connector.system.SystemConnector;
 import io.trino.connector.system.SystemTablesProvider;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
+import io.trino.metadata.HandleResolver;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.Metadata;
 import io.trino.security.AccessControl;
 import io.trino.security.AccessControlManager;
+import io.trino.server.PluginClassLoader;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
@@ -47,8 +50,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static io.trino.spi.connector.CatalogHandle.createInformationSchemaCatalogHandle;
 import static io.trino.spi.connector.CatalogHandle.createSystemTablesCatalogHandle;
 import static java.util.Objects.requireNonNull;
@@ -59,6 +65,7 @@ public class DefaultCatalogFactory
 {
     private final Metadata metadata;
     private final AccessControl accessControl;
+    private final HandleResolver handleResolver;
 
     private final InternalNodeManager nodeManager;
     private final PageSorter pageSorter;
@@ -73,12 +80,13 @@ public class DefaultCatalogFactory
     private final int maxPrefetchedInformationSchemaPrefixes;
     private final AccessControlManager accessControlManager;
     private final Map<String, String> serverProperties;
-    private final ConcurrentMap<ConnectorName, ConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ConnectorName, InternalConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
 
     @Inject
     public DefaultCatalogFactory(
             Metadata metadata,
             AccessControl accessControl,
+            HandleResolver handleResolver,
             InternalNodeManager nodeManager,
             PageSorter pageSorter,
             PageIndexerFactory pageIndexerFactory,
@@ -94,6 +102,7 @@ public class DefaultCatalogFactory
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
+        this.handleResolver = requireNonNull(handleResolver, "handleResolver is null");
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
@@ -109,10 +118,11 @@ public class DefaultCatalogFactory
     }
 
     @Override
-    public synchronized void addConnectorFactory(ConnectorFactory connectorFactory)
+    public synchronized void addConnectorFactory(ConnectorFactory connectorFactory, Function<CatalogHandle, ClassLoader> duplicatePluginClassLoaderFactory)
     {
-        ConnectorFactory existingConnectorFactory = connectorFactories.putIfAbsent(
-                new ConnectorName(connectorFactory.getName()), connectorFactory);
+        InternalConnectorFactory existingConnectorFactory = connectorFactories.putIfAbsent(
+                new ConnectorName(connectorFactory.getName()),
+                new InternalConnectorFactory(connectorFactory, duplicatePluginClassLoaderFactory));
         checkArgument(existingConnectorFactory == null, "Connector '%s' is already registered", connectorFactory.getName());
     }
 
@@ -121,43 +131,54 @@ public class DefaultCatalogFactory
     {
         requireNonNull(catalogProperties, "catalogProperties is null");
 
-        ConnectorFactory connectorFactory = connectorFactories.get(catalogProperties.connectorName());
-        checkArgument(connectorFactory != null, "No factory for connector '%s'. Available factories: %s", catalogProperties.connectorName(), connectorFactories.keySet());
+        InternalConnectorFactory factory = connectorFactories.get(catalogProperties.connectorName());
+        checkArgument(factory != null, "No factory for connector '%s'.  Available factories: %s", catalogProperties.connectorName(), connectorFactories.keySet());
 
-        Connector connector = createConnector(
-                catalogProperties.catalogHandle().getCatalogName().toString(),
+        CatalogClassLoaderSupplier duplicatePluginClassLoaderFactory = new CatalogClassLoaderSupplier(
                 catalogProperties.catalogHandle(),
-                connectorFactory,
-                catalogProperties.properties());
-
-        return createCatalog(
-                catalogProperties.catalogHandle(),
-                catalogProperties.connectorName(),
-                connector,
-                Optional.of(catalogProperties));
+                factory.getDuplicatePluginClassLoaderFactory(),
+                handleResolver);
+        try {
+            Connector connector = createConnector(
+                    catalogProperties.catalogHandle().getCatalogName().toString(),
+                    catalogProperties.catalogHandle(),
+                    factory.getConnectorFactory(),
+                    duplicatePluginClassLoaderFactory,
+                    catalogProperties.properties());
+            return createCatalog(
+                    catalogProperties.catalogHandle(),
+                    catalogProperties.connectorName(),
+                    connector,
+                    duplicatePluginClassLoaderFactory::destroy,
+                    Optional.of(catalogProperties));
+        }
+        catch (Throwable e) {
+            duplicatePluginClassLoaderFactory.destroy();
+            throw e;
+        }
     }
 
     @Override
     public CatalogConnector createCatalog(CatalogHandle catalogHandle, ConnectorName connectorName, Connector connector)
     {
-        return createCatalog(catalogHandle, connectorName, connector, Optional.empty());
+        return createCatalog(catalogHandle, connectorName, connector, () -> {}, Optional.empty());
     }
 
-    private CatalogConnector createCatalog(CatalogHandle catalogHandle, ConnectorName connectorName, Connector connector, Optional<CatalogProperties> catalogProperties)
+    private CatalogConnector createCatalog(CatalogHandle catalogHandle, ConnectorName connectorName, Connector connector, Runnable destroy, Optional<CatalogProperties> catalogProperties)
     {
         Tracer tracer = createTracer(catalogHandle);
 
-        ConnectorServices catalogConnector = new ConnectorServices(tracer, catalogHandle, connector);
+        ConnectorServices catalogConnector = new ConnectorServices(
+                tracer,
+                catalogHandle,
+                connector,
+                destroy);
 
         ConnectorServices informationSchemaConnector = new ConnectorServices(
                 tracer,
                 createInformationSchemaCatalogHandle(catalogHandle),
-                new InformationSchemaConnector(
-                        catalogHandle.getCatalogName().toString(),
-                        nodeManager,
-                        metadata,
-                        accessControl,
-                        maxPrefetchedInformationSchemaPrefixes));
+                new InformationSchemaConnector(catalogHandle.getCatalogName().toString(), nodeManager, metadata, accessControl, maxPrefetchedInformationSchemaPrefixes),
+                () -> {});
 
         SystemTablesProvider systemTablesProvider;
         if (nodeManager.getCurrentNode().isCoordinator()) {
@@ -177,7 +198,8 @@ public class DefaultCatalogFactory
                 new SystemConnector(
                         nodeManager,
                         systemTablesProvider,
-                        transactionId -> transactionManager.getConnectorTransaction(transactionId, catalogHandle)));
+                        transactionId -> transactionManager.getConnectorTransaction(transactionId, catalogHandle)),
+                () -> {});
 
         return new CatalogConnector(
                 catalogHandle,
@@ -192,6 +214,7 @@ public class DefaultCatalogFactory
             String catalogName,
             CatalogHandle catalogHandle,
             ConnectorFactory connectorFactory,
+            Supplier<ClassLoader> duplicatePluginClassLoaderFactory,
             Map<String, String> properties)
     {
         ConnectorContext context = new ConnectorContextInstance(
@@ -205,7 +228,8 @@ public class DefaultCatalogFactory
                 accessControlManager,
                 pageSorter,
                 pageIndexerFactory,
-                serverProperties);
+                serverProperties,
+                duplicatePluginClassLoaderFactory);
 
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
             return connectorFactory.create(catalogName, properties, context);
@@ -215,5 +239,88 @@ public class DefaultCatalogFactory
     private Tracer createTracer(CatalogHandle catalogHandle)
     {
         return openTelemetry.getTracer("trino.catalog." + catalogHandle.getCatalogName());
+    }
+
+    private static class InternalConnectorFactory
+    {
+        private final ConnectorFactory connectorFactory;
+        private final Function<CatalogHandle, ClassLoader> duplicatePluginClassLoaderFactory;
+
+        public InternalConnectorFactory(ConnectorFactory connectorFactory, Function<CatalogHandle, ClassLoader> duplicatePluginClassLoaderFactory)
+        {
+            this.connectorFactory = connectorFactory;
+            this.duplicatePluginClassLoaderFactory = duplicatePluginClassLoaderFactory;
+        }
+
+        public ConnectorFactory getConnectorFactory()
+        {
+            return connectorFactory;
+        }
+
+        public Function<CatalogHandle, ClassLoader> getDuplicatePluginClassLoaderFactory()
+        {
+            return duplicatePluginClassLoaderFactory;
+        }
+
+        @Override
+        public String toString()
+        {
+            return connectorFactory.getName();
+        }
+    }
+
+    private static class CatalogClassLoaderSupplier
+            implements Supplier<ClassLoader>
+    {
+        private final CatalogHandle catalogHandle;
+        private final Function<CatalogHandle, ClassLoader> duplicatePluginClassLoaderFactory;
+        private final HandleResolver handleResolver;
+
+        @GuardedBy("this")
+        private boolean destroyed;
+
+        @GuardedBy("this")
+        private ClassLoader classLoader;
+
+        public CatalogClassLoaderSupplier(
+                CatalogHandle catalogHandle,
+                Function<CatalogHandle, ClassLoader> duplicatePluginClassLoaderFactory,
+                HandleResolver handleResolver)
+        {
+            this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
+            this.duplicatePluginClassLoaderFactory = requireNonNull(duplicatePluginClassLoaderFactory, "duplicatePluginClassLoaderFactory is null");
+            this.handleResolver = requireNonNull(handleResolver, "handleResolver is null");
+        }
+
+        @Override
+        public ClassLoader get()
+        {
+            ClassLoader classLoader = duplicatePluginClassLoaderFactory.apply(catalogHandle);
+
+            synchronized (this) {
+                // we check this after class loader creation because it reduces the complexity of the synchronization, and this shouldn't happen
+                checkState(this.classLoader == null, "class loader is already a duplicated for catalog " + catalogHandle);
+                checkState(!destroyed, "catalog has been shutdown");
+                this.classLoader = classLoader;
+            }
+
+            if (classLoader instanceof PluginClassLoader) {
+                handleResolver.registerClassLoader((PluginClassLoader) classLoader);
+            }
+            return classLoader;
+        }
+
+        public void destroy()
+        {
+            ClassLoader classLoader;
+            synchronized (this) {
+                checkState(!destroyed, "catalog has been shutdown");
+                classLoader = this.classLoader;
+                destroyed = true;
+            }
+            if (classLoader instanceof PluginClassLoader) {
+                handleResolver.unregisterClassLoader((PluginClassLoader) classLoader);
+            }
+        }
     }
 }

@@ -120,4 +120,10 @@ public final class TestingConnectorContext
     {
         return LocationAccessControl.ALLOW_ALL;
     }
+
+    @Override
+    public ClassLoader duplicatePluginClassLoader()
+    {
+        return getClass().getClassLoader();
+    }
 }

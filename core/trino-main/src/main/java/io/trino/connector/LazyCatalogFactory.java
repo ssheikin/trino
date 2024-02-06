@@ -20,6 +20,7 @@ import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -34,9 +35,10 @@ public class LazyCatalogFactory
     }
 
     @Override
-    public void addConnectorFactory(ConnectorFactory connectorFactory)
+    public void addConnectorFactory(ConnectorFactory connectorFactory,
+            Function<CatalogHandle, ClassLoader> duplicatePluginClassLoaderFactory)
     {
-        getDelegate().addConnectorFactory(connectorFactory);
+        getDelegate().addConnectorFactory(connectorFactory, duplicatePluginClassLoaderFactory);
     }
 
     @Override

@@ -14,14 +14,17 @@
 package io.trino.server;
 
 import com.google.common.collect.ImmutableList;
+import io.trino.spi.connector.CatalogHandle;
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.lang.System.identityHashCode;
 import static java.util.Objects.requireNonNull;
@@ -29,7 +32,9 @@ import static java.util.Objects.requireNonNull;
 public class PluginClassLoader
         extends URLClassLoader
 {
+    private final String id;
     private final String pluginName;
+    private final Optional<CatalogHandle> catalogHandle;
     private final ClassLoader spiClassLoader;
     private final List<String> spiPackages;
     private final List<String> spiResources;
@@ -41,6 +46,7 @@ public class PluginClassLoader
             List<String> spiPackages)
     {
         this(pluginName,
+                Optional.empty(),
                 urls,
                 spiClassLoader,
                 spiPackages,
@@ -51,6 +57,7 @@ public class PluginClassLoader
 
     private PluginClassLoader(
             String pluginName,
+            Optional<CatalogHandle> catalogHandle,
             List<URL> urls,
             ClassLoader spiClassLoader,
             Iterable<String> spiPackages,
@@ -59,20 +66,34 @@ public class PluginClassLoader
         // plugins should not have access to the system (application) class loader
         super(urls.toArray(new URL[0]), getPlatformClassLoader());
         this.pluginName = requireNonNull(pluginName, "pluginName is null");
+        this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
         this.spiClassLoader = requireNonNull(spiClassLoader, "spiClassLoader is null");
         this.spiPackages = ImmutableList.copyOf(spiPackages);
         this.spiResources = ImmutableList.copyOf(spiResources);
+        this.id = pluginName + catalogHandle.map(name -> ":%s:%s".formatted(name.getCatalogName(), name.getVersion())).orElse("");
+    }
+
+    public PluginClassLoader duplicate(CatalogHandle catalogHandle)
+    {
+        checkState(this.catalogHandle.isEmpty(), "class loader is already a duplicate");
+        return new PluginClassLoader(
+                pluginName,
+                Optional.of(requireNonNull(catalogHandle, "catalogHandle is null")),
+                ImmutableList.copyOf(getURLs()),
+                spiClassLoader,
+                spiPackages,
+                spiResources);
     }
 
     public PluginClassLoader withUrl(URL url)
     {
         List<URL> urls = ImmutableList.<URL>builder().add(getURLs()).add(url).build();
-        return new PluginClassLoader(pluginName, urls, spiClassLoader, spiPackages, spiResources);
+        return new PluginClassLoader(pluginName, catalogHandle, urls, spiClassLoader, spiPackages, spiResources);
     }
 
     public String getId()
     {
-        return pluginName;
+        return id;
     }
 
     @Override
@@ -81,6 +102,7 @@ public class PluginClassLoader
         return toStringHelper(this)
                 .omitNullValues()
                 .add("plugin", pluginName)
+                .add("catalog", catalogHandle.orElse(null))
                 .add("identityHash", "@" + Integer.toHexString(identityHashCode(this)))
                 .toString();
     }
