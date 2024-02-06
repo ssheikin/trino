@@ -27,6 +27,7 @@ import io.trino.tempto.query.QueryExecutor;
 import io.trino.tempto.query.QueryResult;
 import io.trino.testng.services.Flaky;
 import io.trino.tests.product.hive.util.TemporaryHiveTable;
+import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -136,6 +137,10 @@ public class TestHiveTransactionalTable
 
     private void doTestReadFullAcid(boolean isPartitioned, BucketingType bucketingType)
     {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+
         try (TemporaryHiveTable table = TemporaryHiveTable.temporaryHiveTable(tableName("read_full_acid", isPartitioned, bucketingType))) {
             String tableName = table.getName();
             onHive().executeQuery("CREATE TABLE " + tableName + " (col INT, fcol INT) " +
@@ -244,6 +249,10 @@ public class TestHiveTransactionalTable
 
     private void testReadInsertOnly(boolean isPartitioned, BucketingType bucketingType, String hiveTableFormatDefinition)
     {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+
         try (TemporaryHiveTable table = TemporaryHiveTable.temporaryHiveTable(tableName("insert_only", isPartitioned, bucketingType))) {
             String tableName = table.getName();
 
@@ -294,6 +303,10 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "partitioningAndBucketingTypeDataProvider", timeOut = TEST_TIMEOUT)
     public void testReadFullAcidWithOriginalFiles(boolean isPartitioned, BucketingType bucketingType)
     {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Trino Hive transactional tables are supported with Hive version 3 or above");
+        }
+
         String tableName = "test_full_acid_acid_converted_table_read";
         onHive().executeQuery("DROP TABLE IF EXISTS " + tableName);
         verify(bucketingType.getHiveTableProperties().isEmpty()); // otherwise we would need to include that in the CREATE TABLE's TBLPROPERTIES
@@ -340,7 +353,7 @@ public class TestHiveTransactionalTable
     @Flaky(issue = RETRYABLE_FAILURES_ISSUES, match = RETRYABLE_FAILURES_MATCH)
     public void testUpdateFullAcidWithOriginalFilesTrinoInserting(boolean isPartitioned, BucketingType bucketingType)
     {
-        withTemporaryTable("trino_update_full_acid_acid_converted_table_read", isPartitioned, bucketingType, tableName -> {
+        withTemporaryTable("trino_update_full_acid_acid_converted_table_read", true, isPartitioned, bucketingType, tableName -> {
             onHive().executeQuery("DROP TABLE IF EXISTS " + tableName);
             verify(bucketingType.getHiveTableProperties().isEmpty()); // otherwise we would need to include that in the CREATE TABLE's TBLPROPERTIES
             onHive().executeQuery("CREATE TABLE " + tableName + " (col INT, fcol INT) " +
@@ -398,7 +411,7 @@ public class TestHiveTransactionalTable
     @Flaky(issue = RETRYABLE_FAILURES_ISSUES, match = RETRYABLE_FAILURES_MATCH)
     public void testUpdateFullAcidWithOriginalFilesTrinoInsertingAndDeleting(boolean isPartitioned, BucketingType bucketingType)
     {
-        withTemporaryTable("trino_update_full_acid_acid_converted_table_read", isPartitioned, bucketingType, tableName -> {
+        withTemporaryTable("trino_update_full_acid_acid_converted_table_read", true, isPartitioned, bucketingType, tableName -> {
             onHive().executeQuery("DROP TABLE IF EXISTS " + tableName);
             verify(bucketingType.getHiveTableProperties().isEmpty()); // otherwise we would need to include that in the CREATE TABLE's TBLPROPERTIES
             onHive().executeQuery("CREATE TABLE " + tableName + " (col INT, fcol INT) " +
@@ -451,6 +464,10 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "partitioningAndBucketingTypeDataProvider", timeOut = TEST_TIMEOUT)
     public void testReadInsertOnlyWithOriginalFiles(boolean isPartitioned, BucketingType bucketingType)
     {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Trino Hive transactional tables are supported with Hive version 3 or above");
+        }
+
         String tableName = "test_insert_only_acid_converted_table_read";
         onHive().executeQuery("DROP TABLE IF EXISTS " + tableName);
         verify(bucketingType.getHiveTableProperties().isEmpty()); // otherwise we would need to include that in the CREATE TABLE's TBLPROPERTIES
@@ -484,6 +501,26 @@ public class TestHiveTransactionalTable
         }
     }
 
+    @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
+    public void testFailAcidBeforeHive3()
+    {
+        if (getHiveVersionMajor() >= 3) {
+            throw new SkipException("This tests behavior of ACID table before Hive 3 ");
+        }
+
+        try (TemporaryHiveTable table = TemporaryHiveTable.temporaryHiveTable("test_fail_acid_before_hive3_" + randomNameSuffix())) {
+            String tableName = table.getName();
+            onHive().executeQuery("" +
+                    "CREATE TABLE " + tableName + "(a bigint) " +
+                    "CLUSTERED BY(a) INTO 4 BUCKETS " +
+                    "STORED AS ORC " +
+                    "TBLPROPERTIES ('transactional'='true')");
+
+            assertQueryFailure(() -> onTrino().executeQuery("SELECT * FROM " + tableName))
+                    .hasMessageContaining("Failed to open transaction. Transactional tables support requires Hive metastore version at least 3.0");
+        }
+    }
+
     @DataProvider
     public Object[][] partitioningAndBucketingTypeDataProvider()
     {
@@ -507,6 +544,10 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "testCreateAcidTableDataProvider")
     public void testCtasAcidTable(boolean isPartitioned, BucketingType bucketingType)
     {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+
         try (TemporaryHiveTable table = TemporaryHiveTable.temporaryHiveTable(format("ctas_transactional_%s", randomNameSuffix()))) {
             String tableName = table.getName();
             onTrino().executeQuery("CREATE TABLE " + tableName + " " +
@@ -526,7 +567,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "testCreateAcidTableDataProvider")
     public void testCreateAcidTable(boolean isPartitioned, BucketingType bucketingType)
     {
-        withTemporaryTable("create_transactional", isPartitioned, bucketingType, tableName -> {
+        withTemporaryTable("create_transactional", true, isPartitioned, bucketingType, tableName -> {
             onTrino().executeQuery("CREATE TABLE " + tableName + " (col INTEGER, fcol INTEGER, partcol INTEGER)" +
                     trinoTableProperties(ACID, isPartitioned, bucketingType));
 
@@ -538,7 +579,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "acidFormatColumnNames")
     public void testAcidTableColumnNameConflict(String columnName)
     {
-        withTemporaryTable("acid_column_name_conflict", true, NONE, tableName -> {
+        withTemporaryTable("acid_column_name_conflict", true, true, NONE, tableName -> {
             onHive().executeQuery("CREATE TABLE " + tableName + " (`" + columnName + "` INTEGER, fcol INTEGER, partcol INTEGER) STORED AS ORC " + hiveTableProperties(ACID, NONE));
             onTrino().executeQuery("INSERT INTO " + tableName + " VALUES (1, 2, 3)");
             assertThat(onTrino().executeQuery("SELECT * FROM " + tableName)).containsOnly(row(1, 2, 3));
@@ -561,7 +602,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testSimpleUnpartitionedTransactionalInsert()
     {
-        withTemporaryTable("unpartitioned_transactional_insert", false, NONE, tableName -> {
+        withTemporaryTable("unpartitioned_transactional_insert", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true)", tableName));
 
             String insertQuery = format("INSERT INTO %s VALUES (11, 100), (12, 200), (13, 300)", tableName);
@@ -583,7 +624,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testTransactionalPartitionInsert()
     {
-        withTemporaryTable("transactional_partition_insert", true, NONE, tableName -> {
+        withTemporaryTable("transactional_partition_insert", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true, partitioned_by = ARRAY['column2'])", tableName));
 
             onTrino().executeQuery(format("INSERT INTO %s (column2, column1) VALUES %s, %s",
@@ -627,7 +668,7 @@ public class TestHiveTransactionalTable
 
     private void testTransactionalBucketedPartitioned(boolean insertOnly)
     {
-        withTemporaryTable("bucketed_partitioned_insert_only", true, BUCKETED_V2, tableName -> {
+        withTemporaryTable("bucketed_partitioned_insert_only", true, true, BUCKETED_V2, tableName -> {
             String insertOnlyProperty = insertOnly ? ", 'transactional_properties'='insert_only'" : "";
             onHive().executeQuery(format("CREATE TABLE %s (purchase STRING) PARTITIONED BY (customer STRING) CLUSTERED BY (purchase) INTO 3 BUCKETS" +
                             " STORED AS ORC TBLPROPERTIES ('transactional' = 'true'%s)",
@@ -654,7 +695,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testTransactionalUnpartitionedDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("unpartitioned_delete", false, NONE, tableName -> {
+        withTemporaryTable("unpartitioned_delete", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INTEGER, column2 BIGINT) WITH (format = 'ORC', transactional = true)", tableName));
             execute(inserter, format("INSERT INTO %s (column1, column2) VALUES (1, 100), (2, 200), (3, 300), (4, 400), (5, 500)", tableName));
             execute(deleter, format("DELETE FROM %s WHERE column2 = 100", tableName));
@@ -672,7 +713,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testMultiDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("unpartitioned_multi_delete", false, NONE, tableName -> {
+        withTemporaryTable("unpartitioned_multi_delete", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true)", tableName));
             execute(inserter, format("INSERT INTO %s VALUES (1, 100), (2, 200), (3, 300), (4, 400), (5, 500)", tableName));
             execute(inserter, format("INSERT INTO %s VALUES (6, 600), (7, 700), (8, 800), (9, 900), (10, 1000)", tableName));
@@ -693,8 +734,8 @@ public class TestHiveTransactionalTable
         // statement id, when filtering out deleted rows.
         //
         // For more context see https://issues.apache.org/jira/browse/HIVE-16832
-        withTemporaryTable("partitioned_multi_insert", true, BucketingType.BUCKETED_V1, tableName -> {
-            withTemporaryTable("tmp_data_table", false, NONE, dataTableName -> {
+        withTemporaryTable("partitioned_multi_insert", true, true, BucketingType.BUCKETED_V1, tableName -> {
+            withTemporaryTable("tmp_data_table", false, false, NONE, dataTableName -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (a int, b int, c varchar(5)) WITH " +
                         "(transactional = true, partitioned_by = ARRAY['c'], bucketed_by = ARRAY['a'], bucket_count = 2)", tableName));
                 onTrino().executeQuery(format("CREATE TABLE %s (x int)", dataTableName));
@@ -715,7 +756,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testTransactionalMetadataDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("metadata_delete", true, NONE, tableName -> {
+        withTemporaryTable("metadata_delete", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true, partitioned_by = ARRAY['column2'])", tableName));
             execute(inserter, format("INSERT INTO %s (column2, column1) VALUES %s, %s",
                     tableName,
@@ -731,7 +772,7 @@ public class TestHiveTransactionalTable
     @Flaky(issue = RETRYABLE_FAILURES_ISSUES, match = RETRYABLE_FAILURES_MATCH)
     public void testNonTransactionalMetadataDelete()
     {
-        withTemporaryTable("non_transactional_metadata_delete", true, NONE, tableName -> {
+        withTemporaryTable("non_transactional_metadata_delete", false, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column2 BIGINT, column1 INT) WITH (partitioned_by = ARRAY['column1'])", tableName));
 
             execute(Engine.TRINO, format("INSERT INTO %s (column1, column2) VALUES %s, %s",
@@ -752,7 +793,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testUnpartitionedDeleteAll(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("unpartitioned_delete_all", false, NONE, tableName -> {
+        withTemporaryTable("unpartitioned_delete_all", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true)", tableName));
             execute(inserter, format("INSERT INTO %s VALUES (1, 100), (2, 200), (3, 300), (4, 400), (5, 500)", tableName));
             execute(deleter, "DELETE FROM " + tableName);
@@ -763,7 +804,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testMultiColumnDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("multi_column_delete", false, NONE, tableName -> {
+        withTemporaryTable("multi_column_delete", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true)", tableName));
             execute(inserter, format("INSERT INTO %s VALUES (1, 100), (2, 200), (3, 300), (4, 400), (5, 500)", tableName));
             String where = " WHERE column1 >= 2 AND column2 <= 400";
@@ -775,7 +816,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testPartitionAndRowsDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("partition_and_rows_delete", true, NONE, tableName -> {
+        withTemporaryTable("partition_and_rows_delete", true, true, NONE, tableName -> {
             onTrino().executeQuery("CREATE TABLE " + tableName +
                     " (column2 BIGINT, column1 INT) WITH (transactional = true, partitioned_by = ARRAY['column1'])");
             execute(inserter, format("INSERT INTO %s (column1, column2) VALUES (1, 100), (1, 200), (2, 300), (2, 400), (2, 500)", tableName));
@@ -788,7 +829,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testPartitionedInsertAndRowLevelDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("partitioned_row_level_delete", true, NONE, tableName -> {
+        withTemporaryTable("partitioned_row_level_delete", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column2 INT, column1 BIGINT) WITH (transactional = true, partitioned_by = ARRAY['column1'])", tableName));
 
             execute(inserter, format("INSERT INTO %s (column1, column2) VALUES %s, %s",
@@ -812,7 +853,7 @@ public class TestHiveTransactionalTable
     @Flaky(issue = RETRYABLE_FAILURES_ISSUES, match = RETRYABLE_FAILURES_MATCH)
     public void testBucketedPartitionedDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("bucketed_partitioned_delete", true, NONE, tableName -> {
+        withTemporaryTable("bucketed_partitioned_delete", true, true, NONE, tableName -> {
             onHive().executeQuery(format("CREATE TABLE %s (purchase STRING) PARTITIONED BY (customer STRING) CLUSTERED BY (purchase) INTO 3 BUCKETS STORED AS ORC TBLPROPERTIES ('transactional' = 'true')", tableName));
 
             execute(inserter, format("INSERT INTO %s (customer, purchase) VALUES", tableName) +
@@ -843,7 +884,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testDeleteAllRowsInPartition()
     {
-        withTemporaryTable("bucketed_partitioned_delete", true, NONE, tableName -> {
+        withTemporaryTable("bucketed_partitioned_delete", true, true, NONE, tableName -> {
             onHive().executeQuery(format("CREATE TABLE %s (purchase STRING) PARTITIONED BY (customer STRING) STORED AS ORC TBLPROPERTIES ('transactional' = 'true')", tableName));
 
             log.info("About to insert");
@@ -860,7 +901,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testDeleteAfterDelete()
     {
-        withTemporaryTable("delete_after_delete", false, NONE, tableName -> {
+        withTemporaryTable("delete_after_delete", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id INT) WITH (transactional = true)", tableName));
 
             onTrino().executeQuery(format("INSERT INTO %s VALUES (1), (2), (3)", tableName));
@@ -878,7 +919,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testDeleteAfterDeleteWithPredicate()
     {
-        withTemporaryTable("delete_after_delete_predicate", false, NONE, tableName -> {
+        withTemporaryTable("delete_after_delete_predicate", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id INT) WITH (transactional = true)", tableName));
 
             onTrino().executeQuery(format("INSERT INTO %s VALUES (1), (2), (3)", tableName));
@@ -897,7 +938,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testBucketedUnpartitionedDelete(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("bucketed_unpartitioned_delete", true, NONE, tableName -> {
+        withTemporaryTable("bucketed_unpartitioned_delete", true, true, NONE, tableName -> {
             onHive().executeQuery(format("CREATE TABLE %s (customer STRING, purchase STRING) CLUSTERED BY (purchase) INTO 3 BUCKETS STORED AS ORC TBLPROPERTIES ('transactional' = 'true')", tableName));
 
             execute(inserter, format("INSERT INTO %s (customer, purchase) VALUES", tableName) +
@@ -927,7 +968,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testDeleteOverManySplits()
     {
-        withTemporaryTable("delete_select", false, NONE, tableName -> {
+        withTemporaryTable("delete_select", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s WITH (transactional = true) AS SELECT * FROM tpch.sf10.orders", tableName));
 
             log.info("About to delete selected rows");
@@ -940,7 +981,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "inserterAndDeleterProvider", timeOut = TEST_TIMEOUT)
     public void testCorrectSelectCountStar(Engine inserter, Engine deleter)
     {
-        withTemporaryTable("select_count_star_delete", true, NONE, tableName -> {
+        withTemporaryTable("select_count_star_delete", true, true, NONE, tableName -> {
             onHive().executeQuery(format("CREATE TABLE %s (col1 INT, col2 BIGINT) PARTITIONED BY (col3 STRING) STORED AS ORC TBLPROPERTIES ('transactional'='true')", tableName));
 
             execute(inserter, format("INSERT INTO %s VALUES (1, 100, 'a'), (2, 200, 'b'), (3, 300, 'c'), (4, 400, 'a'), (5, 500, 'b'), (6, 600, 'c')", tableName));
@@ -953,7 +994,7 @@ public class TestHiveTransactionalTable
     public void testInsertOnlyMultipleWriters(boolean bucketed, Engine inserter1, Engine inserter2)
     {
         log.info("testInsertOnlyMultipleWriters bucketed %s, inserter1 %s, inserter2 %s", bucketed, inserter1, inserter2);
-        withTemporaryTable("insert_only_partitioned", true, NONE, tableName -> {
+        withTemporaryTable("insert_only_partitioned", true, true, NONE, tableName -> {
             onHive().executeQuery(format("CREATE TABLE %s (col1 INT, col2 BIGINT) PARTITIONED BY (col3 STRING) %s STORED AS ORC TBLPROPERTIES ('transactional'='true', 'transactional_properties'='insert_only')",
                     tableName, bucketed ? "CLUSTERED BY (col2) INTO 3 BUCKETS" : ""));
 
@@ -976,7 +1017,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testInsertFailsInExplicitTrinoTransaction()
     {
-        withTemporaryTable("insert_fail_explicit_transaction", false, NONE, tableName -> {
+        withTemporaryTable("insert_fail_explicit_transaction", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (a_string varchar) WITH (format = 'ORC', transactional = true)", tableName));
             onTrino().executeQuery("START TRANSACTION");
             assertQueryFailure(() -> onTrino().executeQuery(format("INSERT INTO %s (a_string) VALUES ('Commander Bun Bun')", tableName)))
@@ -987,7 +1028,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testUpdateFailsInExplicitTrinoTransaction()
     {
-        withTemporaryTable("update_fail_explicit_transaction", false, NONE, tableName -> {
+        withTemporaryTable("update_fail_explicit_transaction", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (a_string varchar) WITH (format = 'ORC', transactional = true)", tableName));
             onTrino().executeQuery("START TRANSACTION");
             assertQueryFailure(() -> onTrino().executeQuery(format("UPDATE %s SET a_string = 'Commander Bun Bun'", tableName)))
@@ -998,7 +1039,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testDeleteFailsInExplicitTrinoTransaction()
     {
-        withTemporaryTable("delete_fail_explicit_transaction", false, NONE, tableName -> {
+        withTemporaryTable("delete_fail_explicit_transaction", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (a_string varchar) WITH (format = 'ORC', transactional = true)", tableName));
             onTrino().executeQuery("START TRANSACTION");
             assertQueryFailure(() -> onTrino().executeQuery(format("DELETE FROM %s WHERE a_string = 'Commander Bun Bun'", tableName)))
@@ -1009,7 +1050,8 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "transactionModeProvider")
     public void testColumnRenamesOrcPartitioned(boolean transactional)
     {
-        withTemporaryTable("test_column_renames_partitioned", false, NONE, tableName -> {
+        ensureSchemaEvolutionSupported();
+        withTemporaryTable("test_column_renames_partitioned", transactional, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id BIGINT, old_name VARCHAR, age INT, old_state VARCHAR)" +
                     " WITH (format = 'ORC', transactional = %s, partitioned_by = ARRAY['old_state'])", tableName, transactional));
             testOrcColumnRenames(tableName);
@@ -1023,7 +1065,8 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "transactionModeProvider")
     public void testColumnRenamesOrcNotPartitioned(boolean transactional)
     {
-        withTemporaryTable("test_orc_column_renames_not_partitioned", false, NONE, tableName -> {
+        ensureSchemaEvolutionSupported();
+        withTemporaryTable("test_orc_column_renames_not_partitioned", transactional, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id BIGINT, old_name VARCHAR, age INT, old_state VARCHAR)" +
                     " WITH (format = 'ORC', transactional = %s)", tableName, transactional));
             testOrcColumnRenames(tableName);
@@ -1055,7 +1098,8 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "transactionModeProvider")
     public void testOrcColumnSwap(boolean transactional)
     {
-        withTemporaryTable("test_orc_column_renames", false, NONE, tableName -> {
+        ensureSchemaEvolutionSupported();
+        withTemporaryTable("test_orc_column_renames", transactional, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (name VARCHAR, state VARCHAR) WITH (format = 'ORC', transactional = %s)", tableName, transactional));
             onTrino().executeQuery(format("INSERT INTO %s VALUES ('Katy', 'CA'), ('Joe', 'WA')", tableName));
             verifySelectForTrinoAndHive("SELECT * FROM " + tableName, row("Katy", "CA"), row("Joe", "WA"));
@@ -1071,7 +1115,8 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testBehaviorOnParquetColumnRenames()
     {
-        withTemporaryTable("test_parquet_column_renames", false, NONE, tableName -> {
+        ensureSchemaEvolutionSupported();
+        withTemporaryTable("test_parquet_column_renames", false, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id BIGINT, old_name VARCHAR, age INT, old_state VARCHAR) WITH (format = 'PARQUET', transactional = false)", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (111, 'Katy', 57, 'CA'), (222, 'Joe', 72, 'WA')", tableName));
             verifySelectForTrinoAndHive("SELECT * FROM " + tableName, row(111, "Katy", 57, "CA"), row(222, "Joe", 72, "WA"));
@@ -1093,7 +1138,8 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "transactionModeProvider")
     public void testOrcColumnDropAdd(boolean transactional)
     {
-        withTemporaryTable("test_orc_add_drop", false, NONE, tableName -> {
+        ensureSchemaEvolutionSupported();
+        withTemporaryTable("test_orc_add_drop", transactional, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id BIGINT, old_name VARCHAR, age INT, old_state VARCHAR) WITH (transactional = %s)", tableName, transactional));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (111, 'Katy', 57, 'CA'), (222, 'Joe', 72, 'WA')", tableName));
             verifySelectForTrinoAndHive("SELECT * FROM " + tableName, row(111, "Katy", 57, "CA"), row(222, "Joe", 72, "WA"));
@@ -1114,7 +1160,8 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, dataProvider = "transactionModeProvider")
     public void testOrcColumnTypeChange(boolean transactional)
     {
-        withTemporaryTable("test_orc_column_type_change", false, NONE, tableName -> {
+        ensureSchemaEvolutionSupported();
+        withTemporaryTable("test_orc_column_type_change", transactional, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id INT, old_name VARCHAR, age TINYINT, old_state VARCHAR) WITH (transactional = %s)", tableName, transactional));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (111, 'Katy', 57, 'CA'), (222, 'Joe', 72, 'WA')", tableName));
             verifySelectForTrinoAndHive("SELECT * FROM " + tableName, row(111, "Katy", 57, "CA"), row(222, "Joe", 72, "WA"));
@@ -1132,7 +1179,8 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testParquetColumnDropAdd()
     {
-        withTemporaryTable("test_parquet_add_drop", false, NONE, tableName -> {
+        ensureSchemaEvolutionSupported();
+        withTemporaryTable("test_parquet_add_drop", false, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (id BIGINT, old_name VARCHAR, age INT, state VARCHAR) WITH (format = 'PARQUET')", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (111, 'Katy', 57, 'CA'), (222, 'Joe', 72, 'WA')", tableName));
             verifySelectForTrinoAndHive("SELECT * FROM " + tableName, row(111, "Katy", 57, "CA"), row(222, "Joe", 72, "WA"));
@@ -1167,7 +1215,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateFailNonTransactional()
     {
-        withTemporaryTable("update_fail_nontransactional", true, NONE, tableName -> {
+        withTemporaryTable("update_fail_nontransactional", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchase VARCHAR)", tableName));
 
             log.info("About to insert");
@@ -1182,7 +1230,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateFailInsertOnlyTable()
     {
-        withTemporaryTable("update_fail_insert_only", false, NONE, tableName -> {
+        withTemporaryTable("update_fail_insert_only", true, false, NONE, tableName -> {
             onHive().executeQuery("CREATE TABLE " + tableName + " (customer STRING, purchase STRING) " +
                     "STORED AS ORC " +
                     hiveTableProperties(INSERT_ONLY, NONE));
@@ -1199,7 +1247,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidDeleteFailNonTransactional()
     {
-        withTemporaryTable("delete_fail_nontransactional", true, NONE, tableName -> {
+        withTemporaryTable("delete_fail_nontransactional", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchase VARCHAR)", tableName));
 
             log.info("About to insert");
@@ -1214,7 +1262,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidDeleteFailInsertOnlyTable()
     {
-        withTemporaryTable("delete_fail_insert_only", false, NONE, tableName -> {
+        withTemporaryTable("delete_fail_insert_only", true, false, NONE, tableName -> {
             onHive().executeQuery("CREATE TABLE " + tableName + " (customer STRING, purchase STRING) " +
                     "STORED AS ORC " +
                     hiveTableProperties(INSERT_ONLY, NONE));
@@ -1231,7 +1279,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateSucceedUpdatingPartitionKey()
     {
-        withTemporaryTable("fail_update_partition_key", true, NONE, tableName -> {
+        withTemporaryTable("fail_update_partition_key", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 INT, col2 VARCHAR, col3 BIGINT) WITH (transactional = true, partitioned_by = ARRAY['col3'])", tableName));
 
             log.info("About to insert");
@@ -1248,7 +1296,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateSucceedUpdatingBucketColumn()
     {
-        withTemporaryTable("fail_update_bucket_column", true, NONE, tableName -> {
+        withTemporaryTable("fail_update_bucket_column", true, true, NONE, tableName -> {
             onHive().executeQuery(format("CREATE TABLE %s (customer STRING, purchase STRING) CLUSTERED BY (purchase) INTO 3 BUCKETS STORED AS ORC TBLPROPERTIES ('transactional' = 'true')", tableName));
 
             log.info("About to insert");
@@ -1265,7 +1313,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateFailOnIllegalCast()
     {
-        withTemporaryTable("fail_update_on_illegal_cast", true, NONE, tableName -> {
+        withTemporaryTable("fail_update_on_illegal_cast", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 INT, col2 VARCHAR, col3 BIGINT) WITH (transactional = true)", tableName));
 
             log.info("About to insert");
@@ -1280,7 +1328,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateSimple()
     {
-        withTemporaryTable("acid_update_simple", true, NONE, tableName -> {
+        withTemporaryTable("acid_update_simple", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (7, 'ONE', 1000, true, 101), (13, 'TWO', 2000, false, 202)", tableName));
@@ -1294,7 +1342,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateSelectedValues()
     {
-        withTemporaryTable("acid_update_simple_selected", true, NONE, tableName -> {
+        withTemporaryTable("acid_update_simple_selected", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (7, 'ONE', 1000, true, 101), (13, 'TWO', 2000, false, 202)", tableName));
@@ -1308,7 +1356,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateCopyColumn()
     {
-        withTemporaryTable("acid_update_copy_column", true, NONE, tableName -> {
+        withTemporaryTable("acid_update_copy_column", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 int, col2 int, col3 VARCHAR) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3) VALUES (7, 15, 'ONE'), (13, 17, 'DEUX')", tableName));
@@ -1322,7 +1370,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateSomeLiteralNullColumnValues()
     {
-        withTemporaryTable("update_some_literal_null_columns", true, NONE, tableName -> {
+        withTemporaryTable("update_some_literal_null_columns", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (1, 'ONE', 1000, true, 101), (2, 'TWO', 2000, false, 202)", tableName));
@@ -1340,7 +1388,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateSomeComputedNullColumnValues()
     {
-        withTemporaryTable("update_some_computed_null_columns", true, NONE, tableName -> {
+        withTemporaryTable("update_some_computed_null_columns", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (1, 'ONE', 1000, true, 101), (2, 'TWO', 2000, false, 202)", tableName));
@@ -1359,7 +1407,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateAllLiteralNullColumnValues()
     {
-        withTemporaryTable("update_all_literal_null_columns", true, NONE, tableName -> {
+        withTemporaryTable("update_all_literal_null_columns", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (1, 'ONE', 1000, true, 101), (2, 'TWO', 2000, false, 202)", tableName));
@@ -1373,7 +1421,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateAllComputedNullColumnValues()
     {
-        withTemporaryTable("update_all_computed_null_columns", true, NONE, tableName -> {
+        withTemporaryTable("update_all_computed_null_columns", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (1, 'ONE', 1000, true, 101), (2, 'TWO', 2000, false, 202)", tableName));
@@ -1388,7 +1436,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateReversed()
     {
-        withTemporaryTable("update_reversed", true, NONE, tableName -> {
+        withTemporaryTable("update_reversed", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (1, 'ONE', 1000, true, 101), (2, 'TWO', 2000, false, 202)", tableName));
@@ -1402,7 +1450,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdatePermuted()
     {
-        withTemporaryTable("update_permuted", true, NONE, tableName -> {
+        withTemporaryTable("update_permuted", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 VARCHAR, col3 BIGINT, col4 BOOLEAN, col5 INT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (1, 'ONE', 1000, true, 101), (2, 'TWO', 2000, false, 202)", tableName));
@@ -1416,7 +1464,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateAllColumnsSetAndDependencies()
     {
-        withTemporaryTable("update_all_columns_set", true, NONE, tableName -> {
+        withTemporaryTable("update_all_columns_set", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 INT, col3 BIGINT, col4 INT, col5 TINYINT) WITH (transactional = true)", tableName));
             log.info("About to insert");
             onTrino().executeQuery(format("INSERT INTO %s (col1, col2, col3, col4, col5) VALUES (1, 2, 3, 4, 5), (21, 22, 23, 24, 25)", tableName));
@@ -1430,7 +1478,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdatePartitioned()
     {
-        withTemporaryTable("update_partitioned", true, NONE, tableName -> {
+        withTemporaryTable("update_partitioned", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 INT, col2 VARCHAR, col3 BIGINT) WITH (transactional = true, partitioned_by = ARRAY['col3'])", tableName));
 
             log.info("About to insert");
@@ -1446,7 +1494,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateBucketed()
     {
-        withTemporaryTable("update_bucketed", true, NONE, tableName -> {
+        withTemporaryTable("update_bucketed", true, true, NONE, tableName -> {
             onHive().executeQuery(format("CREATE TABLE %s (customer STRING, purchase STRING) CLUSTERED BY (customer) INTO 3 BUCKETS STORED AS ORC TBLPROPERTIES ('transactional' = 'true')", tableName));
 
             log.info("About to insert");
@@ -1462,7 +1510,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateMajorCompaction()
     {
-        withTemporaryTable("schema_evolution_column_addition", false, NONE, tableName -> {
+        withTemporaryTable("schema_evolution_column_addition", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 BIGINT) WITH (transactional = true)", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (11, 100)", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (22, 200)", tableName));
@@ -1483,7 +1531,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateWithSubqueryPredicate()
     {
-        withTemporaryTable("test_update_subquery", false, NONE, tableName -> {
+        withTemporaryTable("test_update_subquery", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 varchar) WITH (transactional = true)", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (1, 'x')", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (2, 'y')", tableName));
@@ -1492,7 +1540,7 @@ public class TestHiveTransactionalTable
             onTrino().executeQuery(format("UPDATE %s SET column2 = 'row updated' WHERE column1 = (SELECT min(regionkey) + 1 FROM tpch.tiny.region)", tableName));
             verifySelectForTrinoAndHive("SELECT * FROM " + tableName, row(1, "row updated"), row(2, "y"));
 
-            withTemporaryTable("second_table", false, NONE, secondTable -> {
+            withTemporaryTable("second_table", true, false, NONE, secondTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (regionkey bigint, name varchar(25), comment varchar(152)) WITH (transactional = true)", secondTable));
                 onTrino().executeQuery(format("INSERT INTO %s SELECT * FROM tpch.tiny.region", secondTable));
 
@@ -1513,7 +1561,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateWithSubqueryAssignment()
     {
-        withTemporaryTable("test_update_subquery", false, NONE, tableName -> {
+        withTemporaryTable("test_update_subquery", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (column1 INT, column2 varchar) WITH (transactional = true)", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (1, 'x')", tableName));
             onTrino().executeQuery(format("INSERT INTO %s VALUES (2, 'y')", tableName));
@@ -1522,7 +1570,7 @@ public class TestHiveTransactionalTable
             onTrino().executeQuery(format("UPDATE %s SET column2 = (SELECT max(name) FROM tpch.tiny.region)", tableName));
             verifySelectForTrinoAndHive("SELECT * FROM " + tableName, row(1, "MIDDLE EAST"), row(2, "MIDDLE EAST"));
 
-            withTemporaryTable("second_table", false, NONE, secondTable -> {
+            withTemporaryTable("second_table", true, false, NONE, secondTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (regionkey bigint, name varchar(25), comment varchar(152)) WITH (transactional = true)", secondTable));
                 onTrino().executeQuery(format("INSERT INTO %s SELECT * FROM tpch.tiny.region", secondTable));
 
@@ -1543,7 +1591,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateDuplicateUpdateValue()
     {
-        withTemporaryTable("test_update_bug", false, NONE, tableName -> {
+        withTemporaryTable("test_update_bug", true, false, NONE, tableName -> {
             onTrino().executeQuery(
                     format("CREATE TABLE %s (", tableName) +
                             " yyyy integer," +
@@ -1578,7 +1626,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testAcidUpdateMultipleDuplicateValues()
     {
-        withTemporaryTable("test_update_multiple", false, NONE, tableName -> {
+        withTemporaryTable("test_update_multiple", true, false, NONE, tableName -> {
             onTrino().executeQuery(
                     format("CREATE TABLE %s (c1 int, c2 int, c3 int, c4 int, c5 int, c6 int) WITH (transactional = true)", tableName));
 
@@ -1605,7 +1653,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testInsertDeleteUpdateWithTrinoAndHive()
     {
-        withTemporaryTable("update_insert_delete_trino_hive", true, NONE, tableName -> {
+        withTemporaryTable("update_insert_delete_trino_hive", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 INT, col3 BIGINT, col4 INT, col5 TINYINT) WITH (transactional = true)", tableName));
 
             log.info("Performing first insert on Trino");
@@ -1641,7 +1689,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testDeleteFromOriginalFiles()
     {
-        withTemporaryTable("delete_original_files", true, NONE, tableName -> {
+        withTemporaryTable("delete_original_files", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s WITH (transactional = true, partitioned_by = ARRAY['regionkey'])" +
                     " AS SELECT nationkey, name, regionkey FROM tpch.tiny.nation", tableName));
             verifyOriginalFiles(tableName, "WHERE regionkey = 4");
@@ -1667,7 +1715,7 @@ public class TestHiveTransactionalTable
 
     private void testDeleteWholePartition(boolean withOriginalFiles)
     {
-        withTemporaryTable("delete_partitioned", true, NONE, tableName -> {
+        withTemporaryTable("delete_partitioned", true, true, NONE, tableName -> {
             if (withOriginalFiles) {
                 onTrino().executeQuery(format("CREATE TABLE %s WITH (transactional = true, partitioned_by = ARRAY['regionkey'])" +
                         " AS SELECT nationkey, name, regionkey FROM tpch.tiny.nation", tableName));
@@ -1701,7 +1749,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testUpdateOriginalFilesPartitioned()
     {
-        withTemporaryTable("update_original_files", true, NONE, tableName -> {
+        withTemporaryTable("update_original_files", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s WITH (transactional = true, partitioned_by = ARRAY['regionkey'])" +
                     " AS SELECT nationkey, name, regionkey FROM tpch.tiny.nation", tableName));
             verifyOriginalFiles(tableName, "WHERE regionkey = 4");
@@ -1714,7 +1762,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testUpdateOriginalFilesUnpartitioned()
     {
-        withTemporaryTable("update_original_files", true, NONE, tableName -> {
+        withTemporaryTable("update_original_files", true, true, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s WITH (transactional = true)" +
                     " AS SELECT nationkey, name, regionkey FROM tpch.tiny.nation", tableName));
             verifyOriginalFiles(tableName, "WHERE regionkey = 4");
@@ -1727,7 +1775,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testInsertRowIdCorrectness()
     {
-        withTemporaryTable("test_insert_row_id_correctness", false, NONE, tableName -> {
+        withTemporaryTable("test_insert_row_id_correctness", true, false, NONE, tableName -> {
             // We use tpch.tiny.supplier because it is the smallest table that
             // is written as multiple pages by the ORC writer. If it stops
             // being split into pages, this test won't detect issues arising
@@ -1796,8 +1844,11 @@ public class TestHiveTransactionalTable
         };
     }
 
-    void withTemporaryTable(String rootName, boolean isPartitioned, BucketingType bucketingType, Consumer<String> testRunner)
+    void withTemporaryTable(String rootName, boolean transactional, boolean isPartitioned, BucketingType bucketingType, Consumer<String> testRunner)
     {
+        if (transactional) {
+            ensureTransactionalHive();
+        }
         try (TemporaryHiveTable table = TemporaryHiveTable.temporaryHiveTable(tableName(rootName, isPartitioned, bucketingType) + randomNameSuffix())) {
             testRunner.accept(table.getName());
         }
@@ -1808,6 +1859,10 @@ public class TestHiveTransactionalTable
     public void testFilesForAbortedTransactionsIgnored()
             throws Exception
     {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+
         String tableName = "test_aborted_transaction_table";
         onHive().executeQuery("" +
                 "CREATE TABLE " + tableName + " (col INT) " +
@@ -1862,7 +1917,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testDoubleUpdateAndThenReadFromHive()
     {
-        withTemporaryTable("test_double_update", false, NONE, tableName -> {
+        withTemporaryTable("test_double_update", true, false, NONE, tableName -> {
             onTrino().executeQuery(
                     "CREATE TABLE test_double_update ( " +
                             "column1 INT, " +
@@ -1882,7 +1937,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testDeleteWithOriginalFiles()
     {
-        withTemporaryTable("test_delete_with_original_files", false, NONE, tableName -> {
+        withTemporaryTable("test_delete_with_original_files", true, false, NONE, tableName -> {
             // these 3 properties are necessary to make sure there is more than 1 original file created
             onTrino().executeQuery("SET SESSION scale_writers = true");
             onTrino().executeQuery("SET SESSION writer_scaling_min_data_processed = '4kB'");
@@ -1903,7 +1958,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testDeleteWithOriginalFilesWithWhereClause()
     {
-        withTemporaryTable("test_delete_with_original_files_with_where_clause", false, NONE, tableName -> {
+        withTemporaryTable("test_delete_with_original_files_with_where_clause", true, false, NONE, tableName -> {
             // these 3 properties are necessary to make sure there is more than 1 original file created
             onTrino().executeQuery("SET SESSION scale_writers = true");
             onTrino().executeQuery("SET SESSION writer_scaling_min_data_processed = '4kB'");
@@ -1940,7 +1995,7 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testDeleteAfterMajorCompaction()
     {
-        withTemporaryTable("test_delete_after_major_compaction", false, NONE, tableName -> {
+        withTemporaryTable("test_delete_after_major_compaction", true, false, NONE, tableName -> {
             onTrino().executeQuery(format("CREATE TABLE %s WITH (transactional = true) AS SELECT * FROM tpch.tiny.nation", tableName));
             compactTableAndWait(MAJOR, tableName, "", new Duration(3, MINUTES));
             onTrino().executeQuery(format("DELETE FROM %s", tableName));
@@ -1962,7 +2017,7 @@ public class TestHiveTransactionalTable
 
     private void unbucketedTransactionalTableWithTaskWriterCountGreaterThanOne(boolean isPartitioned)
     {
-        withTemporaryTable(format("test_unbucketed%s_transactional_table_with_task_writer_count_greater_than_one", isPartitioned ? "_partitioned" : ""), isPartitioned, NONE, tableName -> {
+        withTemporaryTable(format("test_unbucketed%s_transactional_table_with_task_writer_count_greater_than_one", isPartitioned ? "_partitioned" : ""), true, isPartitioned, NONE, tableName -> {
             onTrino().executeQuery(format(
                     "CREATE TABLE %s " +
                             "WITH (" +
@@ -2005,11 +2060,14 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testLargePartitionedDelete()
     {
-        withTemporaryTable("large_delete_" + "stage1", false, NONE, tableStage1 -> {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+        withTemporaryTable("large_delete_" + "stage1", false, false, NONE, tableStage1 -> {
             onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 9001), SEQUENCE(1, 9001)) AS t(a, b)".formatted(tableStage1));
-            withTemporaryTable("large_delete_" + "stage2", false, NONE, tableStage2 -> {
+            withTemporaryTable("large_delete_" + "stage2", false, false, NONE, tableStage2 -> {
                 onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 100), SEQUENCE(1, 100)) AS t(a, b)".formatted(tableStage2));
-                withTemporaryTable("large_delete_" + "new", true, NONE, tableNew -> {
+                withTemporaryTable("large_delete_" + "new", true, true, NONE, tableNew -> {
                     onTrino().executeQuery("""
                             CREATE TABLE %s WITH (transactional=true, partitioned_by=ARRAY['d'])
                             AS (SELECT stage1.a as a, stage1.b as b, stage1.d AS d FROM %s stage1, %s stage2 WHERE stage1.d = stage2.d)
@@ -2035,11 +2093,14 @@ public class TestHiveTransactionalTable
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS})
     public void testLargePartitionedUpdate()
     {
-        withTemporaryTable("large_update_" + "stage1", false, NONE, tableStage1 -> {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+        withTemporaryTable("large_update_" + "stage1", false, false, NONE, tableStage1 -> {
             onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 9001), SEQUENCE(1, 9001)) AS t(a, b)".formatted(tableStage1));
-            withTemporaryTable("large_update_" + "stage2", false, NONE, tableStage2 -> {
+            withTemporaryTable("large_update_" + "stage2", false, false, NONE, tableStage2 -> {
                 onTrino().executeQuery("CREATE TABLE %s AS SELECT a, b, 20220101 AS d FROM UNNEST(SEQUENCE(1, 100), SEQUENCE(1, 100)) AS t(a, b)".formatted(tableStage2));
-                withTemporaryTable("large_update_" + "new", true, NONE, tableNew -> {
+                withTemporaryTable("large_update_" + "new", true, true, NONE, tableNew -> {
                     onTrino().executeQuery("""
                             CREATE TABLE %s WITH (transactional=true, partitioned_by=ARRAY['d'])
                             AS (SELECT stage1.a as a, stage1.b as b, stage1.d AS d FROM %s stage1, %s stage2 WHERE stage1.d = stage2.d)
@@ -2248,6 +2309,20 @@ public class TestHiveTransactionalTable
     {
         checkArgument(col2First <= col2Last, "The first value %s must be less or equal to the last %s", col2First, col2Last);
         return IntStream.rangeClosed(col2First, col2Last).mapToObj(i -> format("(%s, %s)", col1Value, i)).collect(Collectors.joining(", "));
+    }
+
+    private void ensureTransactionalHive()
+    {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
+        }
+    }
+
+    private void ensureSchemaEvolutionSupported()
+    {
+        if (getHiveVersionMajor() < 3) {
+            throw new SkipException("Hive schema evolution requires Hive version 3 or above");
+        }
     }
 
     public static void verifySelectForTrinoAndHive(String select, Row... rows)

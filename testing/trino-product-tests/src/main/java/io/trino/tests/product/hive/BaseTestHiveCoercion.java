@@ -418,7 +418,7 @@ public abstract class BaseTestHiveCoercion
         if (Stream.of("rctext", "textfile", "sequencefile").anyMatch(isFormat)) {
             hiveValueForCaseChangeField = "\"lower2uppercase\":2";
         }
-        else if (isFormat.test("orc")) {
+        else if (getHiveVersionMajor() == 3 && isFormat.test("orc")) {
             hiveValueForCaseChangeField = "\"LOWER2UPPERCASE\":null";
             fromVarcharCoercions = ImmutableMap.of(
                     "string_to_boolean", Arrays.asList(null, null),
@@ -913,7 +913,7 @@ public abstract class BaseTestHiveCoercion
 
         Map<String, List<Object>> expectedNestedFieldTrino = ImmutableMap.of("nested_field", ImmutableList.of(2L, 2L));
         Map<String, List<Object>> expectedNestedFieldHive;
-        if (isFormat.test("orc")) {
+        if (getHiveVersionMajor() == 3 && isFormat.test("orc")) {
             expectedNestedFieldHive = ImmutableMap.of("nested_field", Arrays.asList(null, null));
         }
         else {
@@ -936,7 +936,14 @@ public abstract class BaseTestHiveCoercion
         }
         else if (isFormat.test("parquet")) {
             assertQueryResults(Engine.HIVE, subfieldQueryUpperCase, expectedNestedFieldHive, expectedColumns, 2, tableName);
-            assertQueryResults(Engine.HIVE, subfieldQueryLowerCase, expectedNestedFieldHive, expectedColumns, 2, tableName);
+
+            if (getHiveVersionMajor() == 1) {
+                assertThatThrownBy(() -> assertQueryResults(Engine.HIVE, subfieldQueryLowerCase, expectedNestedFieldHive, expectedColumns, 2, tableName))
+                        .hasMessageContaining("java.sql.SQLException");
+            }
+            else {
+                assertQueryResults(Engine.HIVE, subfieldQueryLowerCase, expectedNestedFieldHive, expectedColumns, 2, tableName);
+            }
         }
         else {
             assertQueryResults(Engine.HIVE, subfieldQueryUpperCase, expectedNestedFieldHive, expectedColumns, 2, tableName);
