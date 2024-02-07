@@ -42,6 +42,7 @@ import io.trino.execution.scheduler.faulttolerant.EventDrivenTaskSourceFactory;
 import io.trino.execution.scheduler.faulttolerant.NodeAllocatorService;
 import io.trino.execution.scheduler.faulttolerant.OutputStatsEstimatorFactory;
 import io.trino.execution.scheduler.faulttolerant.PartitionMemoryEstimatorFactory;
+import io.trino.execution.scheduler.faulttolerant.StageExecutionStats;
 import io.trino.execution.scheduler.faulttolerant.TaskDescriptorStorage;
 import io.trino.execution.scheduler.policy.ExecutionPolicy;
 import io.trino.execution.warnings.WarningCollector;
@@ -127,6 +128,7 @@ public class SqlQueryExecution
     private final PartitionMemoryEstimatorFactory partitionMemoryEstimatorFactory;
     private final OutputStatsEstimatorFactory outputStatsEstimatorFactory;
     private final TaskExecutionStats taskExecutionStats;
+    private final StageExecutionStats stageExecutionStats;
     private final List<PlanOptimizer> planOptimizers;
     private final List<PlanOptimizer> alternativeOptimizers;
     private final List<AdaptivePlanOptimizer> adaptivePlanOptimizers;
@@ -170,6 +172,7 @@ public class SqlQueryExecution
             PartitionMemoryEstimatorFactory partitionMemoryEstimatorFactory,
             OutputStatsEstimatorFactory outputStatsEstimatorFactory,
             TaskExecutionStats taskExecutionStats,
+            StageExecutionStats stageExecutionStats,
             List<PlanOptimizer> planOptimizers,
             List<PlanOptimizer> alternativeOptimizers,
             List<AdaptivePlanOptimizer> adaptivePlanOptimizers,
@@ -206,6 +209,7 @@ public class SqlQueryExecution
             this.partitionMemoryEstimatorFactory = requireNonNull(partitionMemoryEstimatorFactory, "partitionMemoryEstimatorFactory is null");
             this.outputStatsEstimatorFactory = requireNonNull(outputStatsEstimatorFactory, "outputDataSizeEstimatorFactory is null");
             this.taskExecutionStats = requireNonNull(taskExecutionStats, "taskExecutionStats is null");
+            this.stageExecutionStats = requireNonNull(stageExecutionStats, "stageExecutionStats is null");
             this.planOptimizers = requireNonNull(planOptimizers, "planOptimizers is null");
             this.alternativeOptimizers = requireNonNull(alternativeOptimizers, "alternativeOptimizers is null");
             this.planFragmenter = requireNonNull(planFragmenter, "planFragmenter is null");
@@ -630,6 +634,7 @@ public class SqlQueryExecution
                                 stateMachine.getWarningCollector(),
                                 planOptimizersStatsCollector,
                                 tableStatsProvider),
+                        stageExecutionStats,
                         plan.getRoot());
                 break;
             default:
@@ -844,6 +849,7 @@ public class SqlQueryExecution
         private final PartitionMemoryEstimatorFactory partitionMemoryEstimatorFactory;
         private final OutputStatsEstimatorFactory outputStatsEstimatorFactory;
         private final TaskExecutionStats taskExecutionStats;
+        private final StageExecutionStats stageExecutionStats;
         private final List<PlanOptimizer> planOptimizers;
         private final List<PlanOptimizer> alternativeOptimizers;
         private final List<AdaptivePlanOptimizer> adaptivePlanOptimizers;
@@ -877,6 +883,7 @@ public class SqlQueryExecution
                 PartitionMemoryEstimatorFactory partitionMemoryEstimatorFactory,
                 OutputStatsEstimatorFactory outputStatsEstimatorFactory,
                 TaskExecutionStats taskExecutionStats,
+                StageExecutionStats stageExecutionStats,
                 PlanOptimizersFactory planOptimizersFactory,
                 @ForAlternatives PlanOptimizersFactory alternativesOptimizersFactory,
                 PlanFragmenter planFragmenter,
@@ -909,6 +916,7 @@ public class SqlQueryExecution
             this.partitionMemoryEstimatorFactory = requireNonNull(partitionMemoryEstimatorFactory, "partitionMemoryEstimatorFactory is null");
             this.outputStatsEstimatorFactory = requireNonNull(outputStatsEstimatorFactory, "outputDataSizeEstimatorFactory is null");
             this.taskExecutionStats = requireNonNull(taskExecutionStats, "taskExecutionStats is null");
+            this.stageExecutionStats = requireNonNull(stageExecutionStats, "stageExecutionStats is null");
             this.planFragmenter = requireNonNull(planFragmenter, "planFragmenter is null");
             this.remoteTaskFactory = requireNonNull(remoteTaskFactory, "remoteTaskFactory is null");
             this.queryExecutor = requireNonNull(queryExecutor, "queryExecutor is null");
@@ -958,6 +966,7 @@ public class SqlQueryExecution
                     partitionMemoryEstimatorFactory,
                     outputStatsEstimatorFactory,
                     taskExecutionStats,
+                    stageExecutionStats,
                     planOptimizers,
                     alternativeOptimizers,
                     adaptivePlanOptimizers,
