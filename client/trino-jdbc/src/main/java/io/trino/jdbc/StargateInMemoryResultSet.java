@@ -13,7 +13,7 @@
  */
 package io.trino.jdbc;
 
-import io.trino.client.Column;
+import io.trino.client.SerializationShim;
 
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -23,19 +23,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.trino.jdbc.CancellableIterator.wrap;
 
-public class InMemoryTrinoResultSet
+// This is a hack to avoid shading issues with relocated client classes
+public class StargateInMemoryResultSet
         extends AbstractTrinoResultSet
 {
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    public InMemoryTrinoResultSet(List<Column> columns, List<List<Object>> results)
+    public StargateInMemoryResultSet(String serializedColumns, Iterator<List<Object>> iterator)
     {
-        this(columns, results.iterator());
-    }
-
-    public InMemoryTrinoResultSet(List<Column> columns, Iterator<List<Object>> iterator)
-    {
-        super(Optional.empty(), columns, wrap(iterator));
+        super(Optional.empty(), SerializationShim.toColumns(serializedColumns), wrap(iterator));
     }
 
     @Override
@@ -47,7 +43,6 @@ public class InMemoryTrinoResultSet
 
     @Override
     public boolean isClosed()
-            throws SQLException
     {
         return closed.get();
     }
