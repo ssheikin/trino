@@ -221,6 +221,12 @@ public class SemiTransactionalHiveMetastore
         return tableActions;
     }
 
+    // required for SEP as it reimplements doGetPartitionNames for HMS impersonation of security definer views
+    public synchronized Map<SchemaTableName, Map<List<String>, Action<PartitionAndMore>>> getPartitionActions()
+    {
+        return partitionActions;
+    }
+
     public synchronized List<String> getAllDatabases()
     {
         checkReadable();
@@ -402,7 +408,7 @@ public class SemiTransactionalHiveMetastore
      * This method can only be called when the table is known to exist
      */
     @GuardedBy("this")
-    private TableSource getTableSource(String databaseName, String tableName)
+    protected TableSource getTableSource(String databaseName, String tableName)
     {
         checkHoldsLock();
 
@@ -769,7 +775,7 @@ public class SemiTransactionalHiveMetastore
     }
 
     @GuardedBy("this")
-    private Optional<List<String>> doGetPartitionNames(
+    protected Optional<List<String>> doGetPartitionNames(
             String databaseName,
             String tableName,
             List<String> columnNames,
@@ -857,7 +863,7 @@ public class SemiTransactionalHiveMetastore
         return resultBuilder.buildOrThrow();
     }
 
-    private static Optional<Partition> getPartitionFromPartitionAction(Action<PartitionAndMore> partitionAction)
+    protected static Optional<Partition> getPartitionFromPartitionAction(Action<PartitionAndMore> partitionAction)
     {
         return switch (partitionAction.type()) {
             case ADD, ALTER, INSERT_EXISTING, MERGE -> Optional.of(partitionAction.data().getAugmentedPartitionForInTransactionRead());
@@ -2594,7 +2600,7 @@ public class SemiTransactionalHiveMetastore
         return Location.of(value);
     }
 
-    private void checkHoldsLock()
+    protected void checkHoldsLock()
     {
         // This method serves a similar purpose at runtime as GuardedBy on method serves during static analysis.
         // This method should not have a significant performance impact. If it does, it may be reasonably to remove this method.
@@ -2623,7 +2629,7 @@ public class SemiTransactionalHiveMetastore
         MERGE,
     }
 
-    private enum TableSource
+    protected enum TableSource
     {
         CREATED_IN_THIS_TRANSACTION,
         PRE_EXISTING_TABLE,
