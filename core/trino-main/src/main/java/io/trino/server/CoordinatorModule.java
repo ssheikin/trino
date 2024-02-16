@@ -373,6 +373,7 @@ public class CoordinatorModule
         binder.bind(TaskExecutionStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(TaskExecutionStats.class).withGeneratedName();
         binder.bind(StageExecutionStats.class).in(Scopes.SINGLETON);
+        newExporter(binder).export(StageExecutionStats.class).withGeneratedName();
 
         configBinder(binder).bindConfig(MaxSplitsPerTableConfig.class);
         binder.bind(Ticker.class).toInstance(Ticker.systemTicker());
