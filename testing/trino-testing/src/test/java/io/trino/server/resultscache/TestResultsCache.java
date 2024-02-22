@@ -72,13 +72,18 @@ public class TestResultsCache
     public Stream<Arguments> cacheableQueries()
     {
         return Stream.of(
-                Arguments.of("testRegularTable", "SELECT * FROM tpch.tiny.nation"),
-                Arguments.of("testInformationSchema", "SELECT * FROM tpch.information_schema.tables"),
-                Arguments.of("testSystemMetadataTable", "SELECT count(*) FROM system.metadata.catalogs"),
-                Arguments.of("testMixedTablesWithoutSystem", "SELECT * FROM tpch.tiny.nation CROSS JOIN tpch.information_schema.tables CROSS JOIN system.metadata.catalogs"),
-                Arguments.of("testShowSchemas", "SHOW SCHEMAS IN tpch"),
-                Arguments.of("testShowTables", "SHOW TABLES IN tpch.tiny"),
-                Arguments.of("testShowColumns", "SHOW COLUMNS IN tpch.tiny.nation"));
+                Arguments.of(
+                        "testRegularTable",
+                        "SELECT * FROM tpch.tiny.nation"),
+                Arguments.of(
+                        "testJoinedTables",
+                        """
+                                SELECT nation.name, customer.name
+                                FROM tpch.tiny.customer
+                                JOIN tpch.tiny.nation ON nation.nationkey = customer.nationkey
+                                JOIN tpch.tiny.orders ON orders.custkey = customer.custkey
+                                LIMIT 10
+                                """));
     }
 
     @ParameterizedTest
@@ -100,7 +105,13 @@ public class TestResultsCache
         return Stream.of(
                 Arguments.of("testSystemTable", "SELECT * FROM system.runtime.nodes"),
                 Arguments.of("testMixedTablesWithSystem", "SELECT count(*) FROM tpch.tiny.nation CROSS JOIN system.runtime.nodes"),
-                Arguments.of("testShowCatalogs", "SHOW catalogs"));
+                Arguments.of("testInformationSchema", "SELECT * FROM tpch.information_schema.tables"),
+                Arguments.of("testSystemMetadataTable", "SELECT count(*) FROM system.metadata.catalogs"),
+                Arguments.of("testMixedTablesWithoutSystem", "SELECT * FROM tpch.tiny.nation CROSS JOIN tpch.information_schema.tables CROSS JOIN system.metadata.catalogs"),
+                Arguments.of("testShowCatalogs", "SHOW catalogs"),
+                Arguments.of("testShowSchemas", "SHOW SCHEMAS IN tpch"),
+                Arguments.of("testShowTables", "SHOW TABLES IN tpch.tiny"),
+                Arguments.of("testShowColumns", "SHOW COLUMNS IN tpch.tiny.nation"));
     }
 
     private static class TestingCacheClient

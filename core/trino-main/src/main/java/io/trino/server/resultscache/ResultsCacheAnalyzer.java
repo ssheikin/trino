@@ -15,15 +15,12 @@
 package io.trino.server.resultscache;
 
 import io.airlift.log.Logger;
-import io.trino.connector.system.SystemTableHandle;
 import io.trino.execution.QueryPreparer.PreparedQuery;
 import io.trino.metadata.TableHandle;
 import io.trino.spi.QueryId;
+import io.trino.spi.connector.CatalogHandle.CatalogHandleType;
 import io.trino.sql.analyzer.Analysis;
 import io.trino.sql.tree.Query;
-import io.trino.sql.tree.ShowColumns;
-import io.trino.sql.tree.ShowSchemas;
-import io.trino.sql.tree.ShowTables;
 
 import java.util.Optional;
 
@@ -42,20 +39,15 @@ public class ResultsCacheAnalyzer
             return Optional.of(new FilteredResultsCacheEntry(EXECUTE_STATEMENT));
         }
 
-        // only Query, or `SHOW (SCHEMAS|TABLES|COLUMNS)` should be cached
-        // other `SHOW` statements should not as it might be faster to execute them
-        if (!(preparedQuery.getStatement() instanceof Query
-                || preparedQuery.getStatement() instanceof ShowSchemas
-                || preparedQuery.getStatement() instanceof ShowTables
-                || preparedQuery.getStatement() instanceof ShowColumns)) {
+        if (!(preparedQuery.getStatement() instanceof Query)) {
             log.debug("QueryId: %s, statement is not a Query, not caching", queryId);
             return Optional.of(new FilteredResultsCacheEntry(NOT_SELECT));
         }
 
         for (TableHandle tableHandle : analysis.getTables()) {
-            if (tableHandle.getConnectorHandle() instanceof SystemTableHandle systemTableHandle
-                    && !systemTableHandle.getSchemaName().equals("metadata")) {
-                log.debug("QueryId: %s, query uses SYSTEM table %s, not caching", queryId, tableHandle);
+            CatalogHandleType type = tableHandle.getCatalogHandle().getType();
+            if (type.isInternal()) {
+                log.debug("QueryId: %s, query uses internal table %s, not caching", queryId, tableHandle);
                 return Optional.of(new FilteredResultsCacheEntry(QUERY_HAS_SYSTEM_TABLE));
             }
         }
