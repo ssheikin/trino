@@ -152,6 +152,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
@@ -391,6 +392,7 @@ public class PlanTester
         TestingAccessControlManager accessControlManager = new TestingAccessControlManager(transactionManager, eventListenerManager);
         this.accessControl = accessControlManager;
         accessControl.loadSystemAccessControl(AllowAllSystemAccessControl.NAME, ImmutableMap.of());
+        accessControl.loadLocationAccessControl(LocationAccessControl.DEFAULT_NAME, ImmutableMap.of());
 
         NodeInfo nodeInfo = new NodeInfo("test");
         catalogFactory.setCatalogFactory(new DefaultCatalogFactory(
