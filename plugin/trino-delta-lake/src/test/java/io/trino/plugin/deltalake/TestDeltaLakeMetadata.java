@@ -317,7 +317,7 @@ public class TestDeltaLakeMetadata
         Optional<ConnectorTableLayout> insertLayout = deltaLakeMetadata
                 .getInsertLayout(
                         SESSION,
-                        deltaLakeMetadata.getTableHandle(SESSION, tableMetadata.getTable()));
+                        deltaLakeMetadata.getTableHandle(SESSION, tableMetadata.getTable(), Optional.empty(), Optional.empty()));
 
         assertThat(insertLayout).isPresent();
 
@@ -355,7 +355,7 @@ public class TestDeltaLakeMetadata
         // should return empty insert layout since table exists but is unpartitioned
         assertThat(deltaLakeMetadata.getInsertLayout(
                 SESSION,
-                deltaLakeMetadata.getTableHandle(SESSION, tableMetadata.getTable())))
+                deltaLakeMetadata.getTableHandle(SESSION, tableMetadata.getTable(), Optional.empty(), Optional.empty())))
                 .isNotPresent();
 
         deltaLakeMetadata.cleanupQuery(SESSION);
@@ -514,7 +514,8 @@ public class TestDeltaLakeMetadata
                 Optional.of(ImmutableList.of(BOOLEAN_COLUMN_HANDLE)),
                 Optional.of(ImmutableList.of(DOUBLE_COLUMN_HANDLE)),
                 Optional.empty(),
-                0);
+                0,
+                false);
     }
 
     private static TupleDomain<DeltaLakeColumnHandle> createConstrainedColumnsTuple(
