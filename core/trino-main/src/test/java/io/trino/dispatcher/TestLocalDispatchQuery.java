@@ -93,7 +93,7 @@ public class TestLocalDispatchQuery
     private final Metadata metadata = createTestMetadataManager();
     private final TransactionManager transactionManager = createTestTransactionManager();
     private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(
-            new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty()), false, ImmutableList.of(), Optional.empty());
+            new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty()), ImmutableList.of(), Optional.empty());
 
     @Test
     public void testSubmittedForDispatchedQuery()

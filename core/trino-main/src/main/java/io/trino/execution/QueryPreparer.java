@@ -68,11 +68,9 @@ public class QueryPreparer
     {
         Statement statement = wrappedStatement;
         Optional<String> prepareSql = Optional.empty();
-        boolean isExecuteStatement = false;
         if (statement instanceof Execute executeStatement) {
             prepareSql = Optional.of(session.getPreparedStatementFromExecute(executeStatement));
             statement = sqlParser.createStatement(prepareSql.get());
-            isExecuteStatement = true;
         }
         else if (statement instanceof ExecuteImmediate executeImmediateStatement) {
             statement = sqlParser.createStatement(
@@ -96,7 +94,7 @@ public class QueryPreparer
         }
         validateParameters(statement, parameters);
 
-        return new PreparedQuery(statement, isExecuteStatement, parameters, prepareSql);
+        return new PreparedQuery(statement, parameters, prepareSql);
     }
 
     private static void validateParameters(Statement node, List<Expression> parameterValues)
@@ -113,14 +111,12 @@ public class QueryPreparer
     public static class PreparedQuery
     {
         private final Statement statement;
-        private final boolean isExecuteStatement;
         private final List<Expression> parameters;
         private final Optional<String> prepareSql;
 
-        public PreparedQuery(Statement statement, boolean isExecuteStatement, List<Expression> parameters, Optional<String> prepareSql)
+        public PreparedQuery(Statement statement, List<Expression> parameters, Optional<String> prepareSql)
         {
             this.statement = requireNonNull(statement, "statement is null");
-            this.isExecuteStatement = isExecuteStatement;
             this.parameters = ImmutableList.copyOf(requireNonNull(parameters, "parameters is null"));
             this.prepareSql = requireNonNull(prepareSql, "prepareSql is null");
         }
@@ -128,11 +124,6 @@ public class QueryPreparer
         public Statement getStatement()
         {
             return statement;
-        }
-
-        public boolean isExecuteStatement()
-        {
-            return isExecuteStatement;
         }
 
         public List<Expression> getParameters()

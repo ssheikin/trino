@@ -24,7 +24,6 @@ import io.trino.sql.tree.Query;
 
 import java.util.Optional;
 
-import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.EXECUTE_STATEMENT;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.NOT_SELECT;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.QUERY_HAS_SYSTEM_TABLE;
 
@@ -34,11 +33,6 @@ public class ResultsCacheAnalyzer
 
     public Optional<FilteredResultsCacheEntry> isStatementCacheable(QueryId queryId, PreparedQuery preparedQuery, Analysis analysis)
     {
-        if (preparedQuery.isExecuteStatement()) {
-            log.debug("QueryId: %s, statement is EXECUTE statement, not caching", queryId);
-            return Optional.of(new FilteredResultsCacheEntry(EXECUTE_STATEMENT));
-        }
-
         if (!(preparedQuery.getStatement() instanceof Query)) {
             log.debug("QueryId: %s, statement is not a Query, not caching", queryId);
             return Optional.of(new FilteredResultsCacheEntry(NOT_SELECT));

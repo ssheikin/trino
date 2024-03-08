@@ -20,6 +20,7 @@ import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -112,6 +113,20 @@ public class TestResultsCache
                 Arguments.of("testShowSchemas", "SHOW SCHEMAS IN tpch"),
                 Arguments.of("testShowTables", "SHOW TABLES IN tpch.tiny"),
                 Arguments.of("testShowColumns", "SHOW COLUMNS IN tpch.tiny.nation"));
+    }
+
+    @Test
+    public void testCacheablePreparedStatement()
+    {
+        String cacheKey = "testPreparedStatementExecute";
+        Session session = testSessionBuilder()
+                .setSystemProperty(CACHE_KEY, cacheKey)
+                .addPreparedStatement("my_query", "SELECT * FROM tpch.tiny.nation")
+                .build();
+
+        getQueryRunner().execute(session, "EXECUTE my_query");
+
+        cacheClient.assertContains(cacheKey);
     }
 
     private static class TestingCacheClient
