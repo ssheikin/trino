@@ -94,6 +94,7 @@ public class IcebergModule
         binder.bind(Key.get(boolean.class, TranslateHiveViews.class)).toInstance(false);
 
         configBinder(binder).bindConfig(IcebergConfig.class);
+        configBinder(binder).bindConfig(GalaxyIcebergConfig.class);
         configBinder(binder).bindConfig(SortingFileWriterConfig.class, "iceberg");
 
         newSetBinder(binder, SystemTable.class);
@@ -164,6 +165,8 @@ public class IcebergModule
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(TableChangesFunctionProvider.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, FunctionProvider.class).setDefault().to(IcebergFunctionProvider.class).in(Scopes.SINGLETON);
         binder.bind(TableChangesFunctionProcessorProviderFactory.class).in(Scopes.SINGLETON);
+
+        newOptionalBinder(binder, WorkScheduler.class).setDefault().toInstance(new NoopWorkScheduler());
 
         newOptionalBinder(binder, IcebergFileSystemFactory.class).setDefault().to(DefaultIcebergFileSystemFactory.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, CacheKeyProvider.class).setBinding().to(IcebergCacheKeyProvider.class).in(Scopes.SINGLETON);
