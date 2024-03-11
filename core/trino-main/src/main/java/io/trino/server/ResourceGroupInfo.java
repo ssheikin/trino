@@ -51,6 +51,8 @@ public class ResourceGroupInfo
 
     private final Optional<List<ResourceGroupInfo>> subGroups;
     private final Optional<List<QueryStateInfo>> runningQueries;
+    private final long softCpuLimitMillis;
+    private final long hardCpuLimitMillis;
 
     public ResourceGroupInfo(
             ResourceGroupId id,
@@ -71,7 +73,9 @@ public class ResourceGroupInfo
             int numEligibleSubGroups,
 
             Optional<List<ResourceGroupInfo>> subGroups,
-            Optional<List<QueryStateInfo>> runningQueries)
+            Optional<List<QueryStateInfo>> runningQueries,
+            long softCpuLimitMillis,
+            long hardCpuLimitMillis)
     {
         this.id = requireNonNull(id, "id is null");
         this.state = requireNonNull(state, "state is null");
@@ -93,6 +97,8 @@ public class ResourceGroupInfo
 
         this.subGroups = subGroups.map(ImmutableList::copyOf);
         this.runningQueries = runningQueries.map(ImmutableList::copyOf);
+        this.softCpuLimitMillis = softCpuLimitMillis;
+        this.hardCpuLimitMillis = hardCpuLimitMillis;
     }
 
     @JsonProperty
@@ -183,5 +189,17 @@ public class ResourceGroupInfo
     public Optional<List<QueryStateInfo>> getRunningQueries()
     {
         return runningQueries;
+    }
+
+    @JsonProperty
+    public long getSoftCpuLimitMillis()
+    {
+        return softCpuLimitMillis;
+    }
+
+    @JsonProperty
+    public long getHardCpuLimitMillis()
+    {
+        return hardCpuLimitMillis;
     }
 }
