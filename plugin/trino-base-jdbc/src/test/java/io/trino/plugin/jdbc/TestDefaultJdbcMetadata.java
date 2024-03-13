@@ -344,7 +344,7 @@ public class TestDefaultJdbcMetadata
                     // as firstDomain has been converted into a PreparedQuery
                     Optional.of(ImmutableMap.of(groupByColumn, secondDomain)));
         assertThat(((JdbcQueryRelationHandle) tableHandleWithFilter.getRelationHandle()).getPreparedQuery().getQuery())
-                .isEqualTo("SELECT \"TEXT\", count(*) AS \"_pfgnrtd_0\" " +
+                .isEqualTo("SELECT \"TEXT\", count(*) AS \"pfgnrtd_0\" " +
                         "FROM \"" + database.getDatabaseName() + "\".\"EXAMPLE\".\"NUMBERS\" " +
                         "WHERE \"TEXT\" IN (?,?) " +
                         "GROUP BY \"TEXT\"");
@@ -370,7 +370,7 @@ public class TestDefaultJdbcMetadata
                 new Constraint(TupleDomain.withColumnDomains(ImmutableMap.of(nonGroupByColumn, domain))));
         assertThat(tableHandleWithFilter.getConstraint().getDomains()).isEqualTo(Optional.of(ImmutableMap.of(nonGroupByColumn, domain)));
         assertThat(((JdbcQueryRelationHandle) tableHandleWithFilter.getRelationHandle()).getPreparedQuery().getQuery())
-                .isEqualTo("SELECT \"TEXT\", count(*) AS \"_pfgnrtd_0\" " +
+                .isEqualTo("SELECT \"TEXT\", count(*) AS \"pfgnrtd_0\" " +
                         "FROM \"" + database.getDatabaseName() + "\".\"EXAMPLE\".\"NUMBERS\" " +
                         "GROUP BY \"TEXT\"");
     }
@@ -396,7 +396,7 @@ public class TestDefaultJdbcMetadata
                 new Constraint(TupleDomain.withColumnDomains(ImmutableMap.of(valueColumn, domain))));
         assertThat(tableHandleWithFilter.getConstraint().getDomains()).isEqualTo(Optional.of(ImmutableMap.of(valueColumn, domain)));
         assertThat(((JdbcQueryRelationHandle) tableHandleWithFilter.getRelationHandle()).getPreparedQuery().getQuery())
-                .isEqualTo("SELECT \"TEXT\", \"VALUE\", count(*) AS \"_pfgnrtd_0\" " +
+                .isEqualTo("SELECT \"TEXT\", \"VALUE\", count(*) AS \"pfgnrtd_0\" " +
                         "FROM \"" + database.getDatabaseName() + "\".\"EXAMPLE\".\"NUMBERS\" " +
                         "GROUP BY GROUPING SETS ((\"TEXT\", \"VALUE\"), (\"TEXT\"))");
     }
@@ -444,7 +444,7 @@ public class TestDefaultJdbcMetadata
                 new AggregateFunction("count", BIGINT, List.of(), List.of(), false, Optional.empty()),
                 JDBC_BIGINT,
                 Integer.MAX_VALUE).getColumnName().length())
-                .isEqualTo(19);
+                .isEqualTo(18);
     }
 
     private static JdbcColumnHandle column(String columnName)
