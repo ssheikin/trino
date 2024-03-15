@@ -153,6 +153,9 @@ public class Server
                 catalogStoreManager.get().loadConfiguredCatalogStore();
             }
 
+            Set<ServerLoadableComponent> loadableComponents = injector.getInstance(Key.get(new TypeLiteral<>() {}));
+            loadableComponents.forEach(ServerLoadableComponent::load);
+
             ConnectorServicesProvider connectorServicesProvider = injector.getInstance(ConnectorServicesProvider.class);
             connectorServicesProvider.loadInitialCatalogs();
 
@@ -185,9 +188,6 @@ public class Server
                     .ifPresent(HeaderAuthenticatorManager::loadHeaderAuthenticator);
 
             injector.getInstance(optionalKey(OAuth2Client.class)).ifPresent(OAuth2Client::load);
-
-            Set<ServerLoadableComponent> loadableComponents = injector.getInstance(Key.get(new TypeLiteral<>() {}));
-            loadableComponents.forEach(ServerLoadableComponent::load);
 
             injector.getInstance(Announcer.class).start();
 
