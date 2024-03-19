@@ -25,6 +25,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.trino.execution.SplitRunner;
 import io.trino.execution.TaskId;
 import io.trino.execution.TaskManagerConfig;
+import io.trino.execution.executor.ExecutionPriority;
 import io.trino.execution.executor.RunningSplitInfo;
 import io.trino.execution.executor.TaskExecutor;
 import io.trino.execution.executor.TaskHandle;
@@ -117,6 +118,7 @@ public class ThreadPerDriverTaskExecutor
     @Override
     public synchronized TaskHandle addTask(
             TaskId taskId,
+            ExecutionPriority taskExecutionPriority,
             DoubleSupplier utilizationSupplier,
             int initialSplitConcurrency,
             Duration splitConcurrencyAdjustFrequency,
