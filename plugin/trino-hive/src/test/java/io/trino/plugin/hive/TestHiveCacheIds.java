@@ -115,7 +115,7 @@ public class TestHiveCacheIds
                         new PropertiesSystemTableProvider()),
                 new DefaultHiveMaterializedViewMetadataFactory(),
                 SqlStandardAccessControlMetadata::new,
-                new FileSystemDirectoryLister(),
+                new FileSystemDirectoryLister(config),
                 new TransactionScopeCachingDirectoryListerFactory(config),
                 true);
 
