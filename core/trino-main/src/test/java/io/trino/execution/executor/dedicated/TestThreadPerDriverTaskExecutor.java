@@ -13,10 +13,12 @@
  */
 package io.trino.execution.executor.dedicated;
 
+import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.airlift.log.Logger;
 import io.airlift.testing.TestingTicker;
 import io.airlift.units.Duration;
 import io.opentelemetry.api.trace.Span;
@@ -24,6 +26,7 @@ import io.trino.execution.SplitRunner;
 import io.trino.execution.StageId;
 import io.trino.execution.TaskId;
 import io.trino.execution.TaskManagerConfig;
+import io.trino.execution.executor.ExecutionPriority;
 import io.trino.execution.executor.TaskHandle;
 import io.trino.execution.executor.scheduler.FairScheduler;
 import org.junit.jupiter.api.Test;
@@ -35,9 +38,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static io.airlift.tracing.Tracing.noopTracer;
 import static io.trino.util.EmbedVersion.testingVersionEmbedder;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -45,6 +53,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestThreadPerDriverTaskExecutor
 {
+    private static final Logger log = Logger.get(TestThreadPerDriverTaskExecutor.class);
+
     @Test
     @Timeout(10)
     public void testCancellationWhileProcessing()
@@ -153,6 +163,66 @@ public class TestThreadPerDriverTaskExecutor
 
             splitDone.get();
             assertThat(split.isFinished()).isTrue();
+        }
+        finally {
+            executor.stop();
+        }
+    }
+
+    @Test
+    @Timeout(20) // this test takes ~15s because of unconfigurable FairScheduler.QUANTUM_NANOS = 1s
+    public void testLowPriorityTask()
+            throws ExecutionException, InterruptedException
+    {
+        FairScheduler scheduler = new FairScheduler(1, "Runner-%d", Ticker.systemTicker());
+        ThreadPerDriverTaskExecutor executor = new ThreadPerDriverTaskExecutor(noopTracer(), testingVersionEmbedder(), scheduler, 1, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        executor.start();
+
+        try {
+            TaskHandle normalPriorityTask = executor.addTask(new TaskId(new StageId("normal", 1), 1, 1),
+                    ExecutionPriority.NORMAL,
+                    () -> 0, 10, new Duration(1, MILLISECONDS), OptionalInt.empty());
+
+            TaskHandle lowPriorityTask = executor.addTask(new TaskId(new StageId("low", 1), 1, 1),
+                    ExecutionPriority.fromResourcePercentage(0.01),
+                    () -> 0, 10, new Duration(1, MILLISECONDS), OptionalInt.empty());
+
+            SplitRunner normalPrioritySplit = new TestingSplitRunner(IntStream.range(0, 10)
+                    .mapToObj(invocation -> (Function<Duration, ListenableFuture<Void>>) duration -> {
+                        log.info("processing normalPrioritySplit");
+                        sleepUninterruptibly(duration.toJavaTime());
+                        return Futures.immediateVoidFuture();
+                    }).collect(toImmutableList()));
+
+            Semaphore lowPrioritySplitProcessing = new Semaphore(1);
+            AtomicInteger lowPrioritySplitInvocations = new AtomicInteger(0);
+            SplitRunner lowPrioritySplit = new TestingSplitRunner(IntStream.range(0, 5)
+                    .mapToObj(invocation -> (Function<Duration, ListenableFuture<Void>>) duration -> {
+                        try {
+                            lowPrioritySplitProcessing.acquire();
+                            log.info("processing lowPrioritySplit");
+                            lowPrioritySplitInvocations.incrementAndGet();
+                            sleepUninterruptibly(duration.toJavaTime());
+                            return Futures.immediateVoidFuture();
+                        }
+                        catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        finally {
+                            lowPrioritySplitProcessing.release();
+                        }
+                    }).collect(toImmutableList()));
+
+            ListenableFuture<Void> lowPrioritySplitDone = executor.enqueueSplits(lowPriorityTask, false, ImmutableList.of(lowPrioritySplit)).get(0);
+            ListenableFuture<Void> normalPrioritySplitDone = executor.enqueueSplits(normalPriorityTask, false, ImmutableList.of(normalPrioritySplit)).get(0);
+
+            normalPrioritySplitDone.get();
+            lowPrioritySplitProcessing.acquire(); // block low-priority split processing for assertions to be deterministic
+            assertThat(normalPrioritySplit.isFinished()).isTrue();
+            assertThat(lowPrioritySplit.isFinished()).isFalse();
+            lowPrioritySplitProcessing.release(); // let low-priority split finish
+            lowPrioritySplitDone.get();
+            assertThat(lowPrioritySplit.isFinished()).isTrue();
         }
         finally {
             executor.stop();

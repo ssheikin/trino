@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.log.Logger;
+import io.trino.execution.executor.ExecutionPriority;
 
 import java.util.Set;
 import java.util.StringJoiner;
@@ -31,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static io.trino.execution.executor.ExecutionPriority.NORMAL;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -126,10 +128,15 @@ public final class FairScheduler
 
     public synchronized Group createGroup(String name)
     {
+        return createGroup(name, NORMAL);
+    }
+
+    public synchronized Group createGroup(String name, ExecutionPriority priority)
+    {
         checkArgument(!closed, "Already closed");
 
         Group group = new Group(name);
-        queue.startGroup(group);
+        queue.startGroup(group, priority);
 
         return group;
     }
