@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static com.google.common.collect.MoreCollectors.onlyElement;
+import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.trino.plugin.hive.metastore.recording.TestRecordingHiveMetastore.createJsonCodec;
 import static java.util.Objects.requireNonNull;
 
@@ -61,7 +62,8 @@ public abstract class BaseHiveCostBasedPlanTest
                 new HiveMetastoreRecording(recordingConfig, createJsonCodec()));
         return new TestingHiveConnectorFactory(
                 Paths.get(".").toAbsolutePath(),
-                Optional.of(metastore));
+                Optional.of(metastore),
+                EMPTY_MODULE);
     }
 
     private static String getSchema(String metadataDir)
