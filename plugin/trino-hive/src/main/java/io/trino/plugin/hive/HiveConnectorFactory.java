@@ -36,6 +36,8 @@ import io.trino.plugin.base.classloader.ClassLoaderSafeNodePartitioningProvider;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
+import io.trino.plugin.hive.fs.CachingDirectoryListerModule;
+import io.trino.plugin.hive.fs.DirectoryLister;
 import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.plugin.hive.metastore.HiveMetastoreModule;
 import io.trino.plugin.hive.procedure.HiveProcedureModule;
@@ -84,7 +86,7 @@ public class HiveConnectorFactory
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         checkStrictSpiVersionMatch(context, this);
-        return createConnector(catalogName, config, context, EMPTY_MODULE, Optional.empty(), Optional.empty());
+        return createConnector(catalogName, config, context, EMPTY_MODULE, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public static Connector createConnector(
@@ -93,7 +95,8 @@ public class HiveConnectorFactory
             ConnectorContext context,
             Module module,
             Optional<HiveMetastore> metastore,
-            Optional<TrinoFileSystemFactory> fileSystemFactory)
+            Optional<TrinoFileSystemFactory> fileSystemFactory,
+            Optional<DirectoryLister> directoryLister)
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
@@ -105,6 +108,7 @@ public class HiveConnectorFactory
                     new JsonModule(),
                     new TypeDeserializerModule(context.getTypeManager()),
                     new HiveModule(),
+                    new CachingDirectoryListerModule(directoryLister),
                     new HiveMetastoreModule(metastore),
                     new HiveSecurityModule(),
                     fileSystemFactory

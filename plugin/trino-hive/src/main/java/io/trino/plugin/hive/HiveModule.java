@@ -28,7 +28,6 @@ import io.trino.plugin.base.ForDecorator;
 import io.trino.plugin.hive.avro.AvroFileWriterFactory;
 import io.trino.plugin.hive.avro.AvroPageSourceFactory;
 import io.trino.plugin.hive.fs.CachingDirectoryLister;
-import io.trino.plugin.hive.fs.DirectoryLister;
 import io.trino.plugin.hive.fs.TransactionScopeCachingDirectoryListerFactory;
 import io.trino.plugin.hive.functions.Unload;
 import io.trino.plugin.hive.line.CsvFileWriterFactory;
@@ -99,7 +98,6 @@ public class HiveModule
 
         binder.bind(CachingDirectoryLister.class).in(Scopes.SINGLETON);
         newExporter(binder).export(CachingDirectoryLister.class).withGeneratedName();
-        binder.bind(DirectoryLister.class).to(CachingDirectoryLister.class).in(Scopes.SINGLETON);
 
         binder.bind(HiveWriterStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(HiveWriterStats.class).withGeneratedName();

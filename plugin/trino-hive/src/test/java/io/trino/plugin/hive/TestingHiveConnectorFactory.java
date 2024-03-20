@@ -19,6 +19,7 @@ import com.google.inject.Module;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.local.LocalFileSystemFactory;
+import io.trino.plugin.hive.fs.DirectoryLister;
 import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
 import io.trino.spi.connector.Connector;
@@ -40,14 +41,19 @@ public class TestingHiveConnectorFactory
 {
     private final Optional<HiveMetastore> metastore;
     private final Module module;
+    private final Optional<DirectoryLister> directoryLister;
 
     public TestingHiveConnectorFactory(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional.empty(), EMPTY_MODULE);
+        this(localFileSystemRootPath, Optional.empty(), EMPTY_MODULE, Optional.empty());
     }
 
     @Deprecated
-    public TestingHiveConnectorFactory(Path localFileSystemRootPath, Optional<HiveMetastore> metastore, Module module)
+    public TestingHiveConnectorFactory(
+            Path localFileSystemRootPath,
+            Optional<HiveMetastore> metastore,
+            Module module,
+            Optional<DirectoryLister> directoryLister)
     {
         this.metastore = requireNonNull(metastore, "metastore is null");
 
@@ -63,6 +69,8 @@ public class TestingHiveConnectorFactory
                 configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, config -> config.setCatalogDirectory("local:///"));
             }
         };
+
+        this.directoryLister = requireNonNull(directoryLister, "directoryLister is null");
     }
 
     @Override
@@ -80,6 +88,8 @@ public class TestingHiveConnectorFactory
         if (metastore.isEmpty() && !config.containsKey("hive.metastore")) {
             configBuilder.put("hive.metastore", "file");
         }
-        return createConnector(catalogName, configBuilder.buildOrThrow(), context, module, metastore, Optional.empty());
+        return createConnector(catalogName, configBuilder.buildOrThrow(), context, module, metastore,
+                Optional.empty(),
+                directoryLister);
     }
 }

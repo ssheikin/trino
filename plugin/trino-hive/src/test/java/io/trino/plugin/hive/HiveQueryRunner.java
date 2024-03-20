@@ -22,6 +22,7 @@ import io.airlift.log.Logging;
 import io.trino.Session;
 import io.trino.connector.alternatives.MockPlanAlternativePlugin;
 import io.trino.metadata.QualifiedObjectName;
+import io.trino.plugin.hive.fs.DirectoryLister;
 import io.trino.plugin.hive.metastore.Database;
 import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.plugin.hive.metastore.HiveMetastoreFactory;
@@ -104,6 +105,7 @@ public final class HiveQueryRunner
         private Optional<String> initialSchemasLocationBase = Optional.empty();
         private Optional<Function<QueryRunner, HiveMetastore>> metastore = Optional.empty();
         private Module module = EMPTY_MODULE;
+        private Optional<DirectoryLister> directoryLister = Optional.empty();
         private boolean tpcdsCatalogEnabled;
         private boolean tpchBucketedCatalogEnabled;
         private boolean createTpchSchemas = true;
@@ -168,6 +170,13 @@ public final class HiveQueryRunner
         public SELF setModule(Module module)
         {
             this.module = requireNonNull(module, "module is null");
+            return self();
+        }
+
+        @CanIgnoreReturnValue
+        public SELF setDirectoryLister(DirectoryLister directoryLister)
+        {
+            this.directoryLister = Optional.ofNullable(directoryLister);
             return self();
         }
 
@@ -246,8 +255,8 @@ public final class HiveQueryRunner
                     hiveProperties.put("hive.metastore.catalog.dir", queryRunner.getCoordinator().getBaseDataDir().resolve("hive_data").toString());
                 }
 
-                queryRunner.installPlugin(new TestingHivePlugin(dataDir, metastore, module));
-                queryRunner.installPlugin(new MockPlanAlternativePlugin(new TestingHivePlugin(dataDir, metastore, module)));
+                queryRunner.installPlugin(new TestingHivePlugin(dataDir, metastore, module, directoryLister));
+                queryRunner.installPlugin(new MockPlanAlternativePlugin(new TestingHivePlugin(dataDir, metastore, module, directoryLister)));
 
                 Map<String, String> hiveProperties = new HashMap<>();
                 if (!skipTimezoneSetup) {
