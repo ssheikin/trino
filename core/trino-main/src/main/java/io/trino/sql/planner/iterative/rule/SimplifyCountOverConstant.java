@@ -117,6 +117,6 @@ public class SimplifyCountOverConstant
             argument = inputs.get(Symbol.from(argument));
         }
 
-        return argument instanceof Constant constant && constant.getValue() != null;
+        return argument instanceof Constant constant && constant.value() != null;
     }
 }
