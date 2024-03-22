@@ -664,7 +664,8 @@ public final class ShowQueriesRewrite
                         query,
                         false,
                         viewDefinition.get().getComment(),
-                        Optional.of(security)))
+                        Optional.of(security),
+                        ImmutableList.of()))
                         .trim();
                 return singleValueQuery("Create View", sql);
             }
