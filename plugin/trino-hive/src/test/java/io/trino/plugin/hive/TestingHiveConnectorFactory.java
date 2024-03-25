@@ -57,7 +57,7 @@ public class TestingHiveConnectorFactory
     {
         this.metastore = requireNonNull(metastore, "metastore is null");
 
-        localFileSystemRootPath.toFile().mkdirs();
+        boolean ignored = localFileSystemRootPath.toFile().mkdirs();
         this.module = new AbstractConfigurationAwareModule()
         {
             @Override

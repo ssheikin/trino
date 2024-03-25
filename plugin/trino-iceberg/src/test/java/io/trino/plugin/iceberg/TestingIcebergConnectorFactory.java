@@ -49,7 +49,7 @@ public class TestingIcebergConnectorFactory
             Optional<Module> icebergCatalogModule,
             Optional<TrinoFileSystemFactory> fileSystemFactory)
     {
-        localFileSystemRootPath.toFile().mkdirs();
+        boolean ignored = localFileSystemRootPath.toFile().mkdirs();
         this.icebergCatalogModule = requireNonNull(icebergCatalogModule, "icebergCatalogModule is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.module = binder -> {
