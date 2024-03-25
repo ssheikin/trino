@@ -23,6 +23,7 @@ import io.airlift.event.client.EventModule;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
+import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.manager.FileSystemModule;
 import io.trino.plugin.base.CatalogNameModule;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorAccessControl;
@@ -81,7 +82,7 @@ public class DeltaLakeConnectorFactory
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         checkStrictSpiVersionMatch(context, this);
-        return createConnector(catalogName, config, context, Optional.empty(), EMPTY_MODULE);
+        return createConnector(catalogName, config, context, Optional.empty(), Optional.empty(), EMPTY_MODULE);
     }
 
     public static Connector createConnector(
@@ -89,6 +90,7 @@ public class DeltaLakeConnectorFactory
             Map<String, String> config,
             ConnectorContext context,
             Optional<Module> metastoreModule,
+            Optional<TrinoFileSystemFactory> fileSystemFactory,
             Module module)
     {
         ClassLoader classLoader = DeltaLakeConnectorFactory.class.getClassLoader();
@@ -104,7 +106,9 @@ public class DeltaLakeConnectorFactory
                     new DeltaLakeModule(),
                     new DeltaLakeSecurityModule(),
                     new DeltaLakeSynchronizerModule(),
-                    new FileSystemModule(catalogName, context.getNodeManager(), context.getOpenTelemetry()),
+                    fileSystemFactory
+                            .map(factory -> (Module) binder -> binder.bind(TrinoFileSystemFactory.class).toInstance(factory))
+                            .orElseGet(() -> new FileSystemModule(catalogName, context.getNodeManager(), context.getOpenTelemetry())),
                     binder -> {
                         binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
                         binder.bind(Tracer.class).toInstance(context.getTracer());

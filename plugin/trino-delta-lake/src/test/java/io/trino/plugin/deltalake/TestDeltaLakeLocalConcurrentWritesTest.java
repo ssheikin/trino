@@ -86,7 +86,7 @@ public class TestDeltaLakeLocalConcurrentWritesTest
         this.dataDirectory = queryRunner.getCoordinator().getBaseDataDir().resolve("delta_lake_data");
         this.metastore = createTestingFileHiveMetastore(dataDirectory.toFile());
 
-        queryRunner.installPlugin(new TestingDeltaLakePlugin(dataDirectory, Optional.of(new TestingDeltaLakeMetastoreModule(metastore))));
+        queryRunner.installPlugin(new TestingDeltaLakePlugin(dataDirectory, Optional.of(new TestingDeltaLakeMetastoreModule(metastore)), Optional.empty()));
 
         Map<String, String> connectorProperties = ImmutableMap.<String, String>builder()
                 .put("delta.unique-table-location", "true")

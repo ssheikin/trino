@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,7 +82,7 @@ public class TestDeltaLakeFileOperations
             queryRunner.createCatalog("tpch", "tpch");
 
             Path dataDirectory = queryRunner.getCoordinator().getBaseDataDir().resolve("delta_lake_data");
-            queryRunner.installPlugin(new TestingDeltaLakePlugin(dataDirectory));
+            queryRunner.installPlugin(new TestingDeltaLakePlugin(dataDirectory, Optional.empty(), Optional.empty()));
             queryRunner.createCatalog(
                     "delta_lake",
                     "delta_lake",
