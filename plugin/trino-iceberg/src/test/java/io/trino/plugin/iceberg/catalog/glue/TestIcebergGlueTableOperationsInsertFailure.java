@@ -88,7 +88,10 @@ public class TestIcebergGlueTableOperationsInsertFailure
         Path dataDirectory = Files.createTempDirectory("iceberg_data");
         dataDirectory.toFile().deleteOnExit();
 
-        queryRunner.installPlugin(new TestingIcebergPlugin(dataDirectory, Optional.of(new TestingIcebergGlueCatalogModule(awsGlueAsyncAdapterProvider))));
+        queryRunner.installPlugin(new TestingIcebergPlugin(
+                dataDirectory,
+                Optional.of(new TestingIcebergGlueCatalogModule(awsGlueAsyncAdapterProvider)),
+                Optional.empty()));
         queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", ImmutableMap.of());
 
         glueHiveMetastore = createTestingGlueHiveMetastore(dataDirectory);
