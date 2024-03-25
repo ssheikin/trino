@@ -3512,6 +3512,8 @@ public abstract class BaseConnectorTest
         assertThatThrownBy(() -> assertUpdate("ALTER TABLE " + tableName + " ADD COLUMN " + invalidTargetColumnName + " int"))
                 .satisfies(this::verifyColumnNameLengthFailurePermissible);
         assertQuery("SELECT x FROM " + tableName, "VALUES 123");
+
+        assertUpdate("DROP TABLE " + tableName);
     }
 
     @Test
@@ -3543,6 +3545,8 @@ public abstract class BaseConnectorTest
         assertThatThrownBy(() -> assertUpdate("ALTER TABLE " + tableName + " RENAME COLUMN x TO " + invalidTargetTableName))
                 .satisfies(this::verifyColumnNameLengthFailurePermissible);
         assertQuery("SELECT x FROM " + tableName, "VALUES 123");
+
+        assertUpdate("DROP TABLE " + tableName);
     }
 
     protected boolean columnExists(String tableName, String columnName)
