@@ -232,6 +232,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
@@ -1048,6 +1049,8 @@ public class PlanTester
     {
         return searchFrom(node)
                 .where(TableScanNode.class::isInstance)
-                .findAll();
+                .findAll().stream()
+                .map(TableScanNode.class::cast)
+                .collect(toImmutableList());
     }
 }
