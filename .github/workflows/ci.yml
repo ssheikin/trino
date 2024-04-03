@@ -929,7 +929,7 @@ jobs:
       - name: Memsql Tests
         id: tests-memsql
         env:
-          MEMSQL_LICENSE: ${{ secrets.MEMSQL_LICENSE }}
+          MEMSQL_LICENSE: ${{ env.SEP_CI_SEP_MEMSQL_LICENSE }}
         if: matrix.modules == 'plugin/trino-singlestore' && (env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || env.MEMSQL_LICENSE != '')
         run: |
           $MAVEN test ${MAVEN_TEST} -pl :trino-singlestore -Dmemsql.license=${MEMSQL_LICENSE}
