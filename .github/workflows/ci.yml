@@ -826,7 +826,7 @@ jobs:
         env:
           SYNAPSE_ENDPOINT: ${{ vars.SYNAPSE_ENDPOINT }}
           SYNAPSE_USER: ${{ vars.SYNAPSE_USER }}
-          SYNAPSE_PASSWORD: ${{ secrets.SYNAPSE_PASSWORD }}
+          SYNAPSE_PASSWORD: ${{ env.SEP_CI_SEP_SYNAPSE_PASSWORD }}
         if: >-
           contains(matrix.modules, 'starburst-synapse') &&
           (env.SYNAPSE_ENDPOINT != '' || env.SYNAPSE_USER != '' || env.SYNAPSE_PASSWORD != '')
@@ -1380,7 +1380,7 @@ jobs:
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
           SYNAPSE_ENDPOINT: ${{ vars.SYNAPSE_ENDPOINT }}
           SYNAPSE_USER: ${{ vars.SYNAPSE_USER }}
-          SYNAPSE_PASSWORD: ${{ secrets.SYNAPSE_PASSWORD }}
+          SYNAPSE_PASSWORD: ${{ env.SEP_CI_SEP_SYNAPSE_PASSWORD }}
           SNOWFLAKE_ACCOUNT_NAME: ${{ vars.SNOWFLAKE_ACCOUNT_NAME }}
           GCP_CREDENTIALS_KEY: ${{ secrets.GCP_CREDENTIALS_KEY }}
           GCP_STORAGE_BUCKET: ${{ vars.GCP_STORAGE_BUCKET }}
