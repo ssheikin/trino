@@ -31,8 +31,8 @@ public class SymbolKeySerializer
     public void serialize(Symbol value, JsonGenerator generator, SerializerProvider serializers)
             throws IOException
     {
-        String name = ENCODER.encodeToString(value.getName().getBytes(UTF_8));
-        String type = ENCODER.encodeToString(value.getType().getTypeId().getId().getBytes(UTF_8));
+        String name = ENCODER.encodeToString(value.name().getBytes(UTF_8));
+        String type = ENCODER.encodeToString(value.type().getTypeId().getId().getBytes(UTF_8));
         generator.writeFieldName(name + ":" + type);
     }
 }
