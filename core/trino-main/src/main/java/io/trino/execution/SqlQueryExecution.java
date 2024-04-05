@@ -732,6 +732,12 @@ public class SqlQueryExecution
     }
 
     @Override
+    public boolean isInfoPruned()
+    {
+        return stateMachine.isQueryInfoPruned();
+    }
+
+    @Override
     public QueryId getQueryId()
     {
         return stateMachine.getQueryId();

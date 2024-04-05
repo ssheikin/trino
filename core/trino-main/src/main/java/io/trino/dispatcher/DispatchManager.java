@@ -47,6 +47,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.weakref.jmx.Flatten;
 import org.weakref.jmx.Managed;
+import org.weakref.jmx.Nested;
 
 import java.util.List;
 import java.util.Optional;
@@ -138,6 +139,13 @@ public class DispatchManager
     public QueryManagerStats getStats()
     {
         return stats;
+    }
+
+    @Managed
+    @Nested
+    public QueryTracker<DispatchQuery> getQueryTracker()
+    {
+        return queryTracker;
     }
 
     public QueryId createQueryId()

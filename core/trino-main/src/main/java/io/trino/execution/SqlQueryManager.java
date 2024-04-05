@@ -332,6 +332,13 @@ public class SqlQueryManager
         return queryManagementExecutorMBean;
     }
 
+    @Managed
+    @Nested
+    public QueryTracker<QueryExecution> getQueryTracker()
+    {
+        return queryTracker;
+    }
+
     /**
      * Enforce memory limits at the query level
      */
