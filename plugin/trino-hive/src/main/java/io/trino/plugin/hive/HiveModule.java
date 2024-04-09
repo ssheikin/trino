@@ -75,6 +75,7 @@ import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.json.JsonBinder.jsonBinder;
 import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
+import static io.trino.plugin.base.ClosingBinder.closingBinder;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
@@ -179,6 +180,9 @@ public class HiveModule
 
         newOptionalBinder(binder, FunctionProvider.class).setDefault().to(HiveFunctionProvider.class).in(Scopes.SINGLETON);
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(Unload.class).in(Scopes.SINGLETON);
+
+        closingBinder(binder).registerExecutor(ExecutorService.class);
+        closingBinder(binder).registerExecutor(Key.get(ScheduledExecutorService.class, ForHiveTransactionHeartbeats.class));
     }
 
     @Singleton
