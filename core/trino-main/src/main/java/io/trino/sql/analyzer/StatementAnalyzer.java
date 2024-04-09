@@ -306,7 +306,6 @@ import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.SystemSessionProperties.getMaxGroupingSets;
 import static io.trino.SystemSessionProperties.getRetryPolicy;
-import static io.trino.SystemSessionProperties.isLegacyMaterializedViewGracePeriod;
 import static io.trino.metadata.FunctionResolver.toPath;
 import static io.trino.metadata.MetadataUtil.createQualifiedObjectName;
 import static io.trino.metadata.MetadataUtil.getRequiredCatalogHandle;
@@ -2361,13 +2360,6 @@ class StatementAnalyzer
         {
             MaterializedViewFreshness materializedViewFreshness = metadata.getMaterializedViewFreshness(session, name);
             MaterializedViewFreshness.Freshness freshness = materializedViewFreshness.getFreshness();
-
-            if (isLegacyMaterializedViewGracePeriod(session)) {
-                return switch (freshness) {
-                    case FRESH, UNKNOWN -> true;
-                    case STALE -> false;
-                };
-            }
 
             if (freshness == FRESH) {
                 return true;
