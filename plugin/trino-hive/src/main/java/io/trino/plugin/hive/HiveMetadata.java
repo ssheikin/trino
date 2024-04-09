@@ -69,6 +69,7 @@ import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorAnalyzeMetadata;
 import io.trino.spi.connector.ConnectorInsertTableHandle;
+import io.trino.spi.connector.ConnectorMaterializedViewDefinition;
 import io.trino.spi.connector.ConnectorMergeTableHandle;
 import io.trino.spi.connector.ConnectorOutputMetadata;
 import io.trino.spi.connector.ConnectorOutputTableHandle;
@@ -85,6 +86,7 @@ import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.ConstraintApplicationResult;
 import io.trino.spi.connector.DiscretePredicates;
 import io.trino.spi.connector.LocalProperty;
+import io.trino.spi.connector.MaterializedViewFreshness;
 import io.trino.spi.connector.ProjectionApplicationResult;
 import io.trino.spi.connector.RelationType;
 import io.trino.spi.connector.RetryMode;
@@ -144,6 +146,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -386,6 +389,7 @@ public class HiveMetadata
     private final HiveStatisticsProvider hiveStatisticsProvider;
     private final HiveRedirectionsProvider hiveRedirectionsProvider;
     private final Set<SystemTableProvider> systemTableProviders;
+    private final HiveMaterializedViewMetadata hiveMaterializedViewMetadata;
     private final AccessControlMetadata accessControlMetadata;
     private final DirectoryLister directoryLister;
     private final boolean partitionProjectionEnabled;
@@ -412,6 +416,7 @@ public class HiveMetadata
             HiveStatisticsProvider hiveStatisticsProvider,
             HiveRedirectionsProvider hiveRedirectionsProvider,
             Set<SystemTableProvider> systemTableProviders,
+            HiveMaterializedViewMetadata hiveMaterializedViewMetadata,
             AccessControlMetadata accessControlMetadata,
             DirectoryLister directoryLister,
             boolean partitionProjectionEnabled,
@@ -437,6 +442,7 @@ public class HiveMetadata
         this.hiveStatisticsProvider = requireNonNull(hiveStatisticsProvider, "hiveStatisticsProvider is null");
         this.hiveRedirectionsProvider = requireNonNull(hiveRedirectionsProvider, "hiveRedirectionsProvider is null");
         this.systemTableProviders = requireNonNull(systemTableProviders, "systemTableProviders is null");
+        this.hiveMaterializedViewMetadata = requireNonNull(hiveMaterializedViewMetadata, "hiveMaterializedViewMetadata is null");
         this.accessControlMetadata = requireNonNull(accessControlMetadata, "accessControlMetadata is null");
         this.directoryLister = requireNonNull(directoryLister, "directoryLister is null");
         this.partitionProjectionEnabled = partitionProjectionEnabled;
@@ -1536,6 +1542,12 @@ public class HiveMetadata
                 definition.getPath());
 
         replaceView(session, viewName, view, newDefinition);
+    }
+
+    @Override
+    public void setMaterializedViewColumnComment(ConnectorSession session, SchemaTableName viewName, String columnName, Optional<String> comment)
+    {
+        hiveMaterializedViewMetadata.setMaterializedViewColumnComment(session, viewName, columnName, comment);
     }
 
     private Table getTrinoView(ConnectorSession session, SchemaTableName viewName)
@@ -3838,6 +3850,78 @@ public class HiveMetadata
     public void cleanupQuery(ConnectorSession session)
     {
         getMetastore(session).cleanupQuery(session);
+    }
+
+    @Override
+    public void createMaterializedView(
+            ConnectorSession session,
+            SchemaTableName viewName,
+            ConnectorMaterializedViewDefinition definition,
+            Map<String, Object> properties,
+            boolean replace,
+            boolean ignoreExisting)
+    {
+        hiveMaterializedViewMetadata.createMaterializedView(session, viewName, definition, properties, replace, ignoreExisting);
+    }
+
+    @Override
+    public void dropMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        hiveMaterializedViewMetadata.dropMaterializedView(session, viewName);
+    }
+
+    @Override
+    public List<SchemaTableName> listMaterializedViews(ConnectorSession session, Optional<String> schemaName)
+    {
+        return hiveMaterializedViewMetadata.listMaterializedViews(session, schemaName);
+    }
+
+    @Override
+    public Map<SchemaTableName, ConnectorMaterializedViewDefinition> getMaterializedViews(ConnectorSession session, Optional<String> schemaName)
+    {
+        return hiveMaterializedViewMetadata.getMaterializedViews(session, schemaName);
+    }
+
+    @Override
+    public Optional<ConnectorMaterializedViewDefinition> getMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        return hiveMaterializedViewMetadata.getMaterializedView(session, viewName);
+    }
+
+    @Override
+    public MaterializedViewFreshness getMaterializedViewFreshness(ConnectorSession session, SchemaTableName name)
+    {
+        return hiveMaterializedViewMetadata.getMaterializedViewFreshness(session, name);
+    }
+
+    @Override
+    public void renameMaterializedView(ConnectorSession session, SchemaTableName source, SchemaTableName target)
+    {
+        hiveMaterializedViewMetadata.renameMaterializedView(session, source, target);
+    }
+
+    @Override
+    public boolean delegateMaterializedViewRefreshToConnector(ConnectorSession session, SchemaTableName viewName)
+    {
+        return hiveMaterializedViewMetadata.delegateMaterializedViewRefreshToConnector(session, viewName);
+    }
+
+    @Override
+    public CompletableFuture<?> refreshMaterializedView(ConnectorSession session, SchemaTableName name)
+    {
+        return hiveMaterializedViewMetadata.refreshMaterializedView(session, name);
+    }
+
+    @Override
+    public Map<String, Object> getMaterializedViewProperties(ConnectorSession session, SchemaTableName viewName, ConnectorMaterializedViewDefinition definition)
+    {
+        return hiveMaterializedViewMetadata.getMaterializedViewProperties(session, viewName, definition);
+    }
+
+    @Override
+    public void setMaterializedViewProperties(ConnectorSession session, SchemaTableName viewName, Map<String, Optional<Object>> properties)
+    {
+        hiveMaterializedViewMetadata.setMaterializedViewProperties(session, viewName, properties);
     }
 
     @Override
