@@ -513,10 +513,9 @@ public class ServerMainModule
         newSetBinder(binder, ServerLoadableComponent.class);
 
         // cleanup
-        closingBinder(binder)
-                .registerExecutor(Key.get(ScheduledExecutorService.class, ForExchange.class))
-                .registerExecutor(Key.get(ExecutorService.class, ForAsyncHttp.class))
-                .registerExecutor(Key.get(ScheduledExecutorService.class, ForAsyncHttp.class));
+        closingBinder(binder).registerExecutor(Key.get(ScheduledExecutorService.class, ForExchange.class));
+        closingBinder(binder).registerExecutor(Key.get(ExecutorService.class, ForAsyncHttp.class));
+        closingBinder(binder).registerExecutor(Key.get(ScheduledExecutorService.class, ForAsyncHttp.class));
     }
 
     private static class RegisterFunctionBundles
