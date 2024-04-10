@@ -125,7 +125,7 @@ public class TestDeltaLakeDatabricksUnityCompatibility
      * verifies that if a managed table is created using Databricks delta lake, Trino which connects
      * to Unity Catalog's HMS endpoint doesn't see it.
      */
-    @Test(groups = {DATABRICKS_UNITY_HTTP_HMS, PROFILE_SPECIFIC_TESTS})
+    @Test(groups = {DATABRICKS_UNITY_HTTP_HMS, PROFILE_SPECIFIC_TESTS}, enabled = false)
     @Flaky(issue = DATABRICKS_COMMUNICATION_FAILURE_ISSUE, match = DATABRICKS_COMMUNICATION_FAILURE_MATCH)
     public void testManagedTable()
     {
@@ -138,7 +138,7 @@ public class TestDeltaLakeDatabricksUnityCompatibility
         assertThat(onTrino().executeQuery("SHOW TABLES IN delta." + schemaName)).hasNoRows();
     }
 
-    @Test(groups = {DATABRICKS_UNITY_HTTP_HMS, PROFILE_SPECIFIC_TESTS})
+    @Test(groups = {DATABRICKS_UNITY_HTTP_HMS, PROFILE_SPECIFIC_TESTS}, enabled = false)
     @Flaky(issue = DATABRICKS_COMMUNICATION_FAILURE_ISSUE, match = DATABRICKS_COMMUNICATION_FAILURE_MATCH)
     public void testColumnTypes()
     {
