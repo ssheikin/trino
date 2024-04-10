@@ -96,7 +96,7 @@ public class DeltaLakeTransactionManager
             return hiveMetastore;
         }
 
-        private void createIfAbsent(ConnectorIdentity identity)
+        private synchronized void createIfAbsent(ConnectorIdentity identity)
         {
             if (metadata == null) {
                 try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(getClass().getClassLoader())) {
