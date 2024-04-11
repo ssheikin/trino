@@ -19,8 +19,10 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.base.security.ConnectorAccessControlModule;
 import io.trino.plugin.base.security.FileBasedAccessControlModule;
 import io.trino.plugin.base.security.ReadOnlySecurityModule;
+import io.trino.spi.TrinoException;
 
 import static io.airlift.configuration.ConfigurationAwareModule.combine;
+import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 
 public class HiveSecurityModule
         extends AbstractConfigurationAwareModule
@@ -32,6 +34,10 @@ public class HiveSecurityModule
         FILE,
         SQL_STANDARD,
         SYSTEM,
+        RANGER,
+        LAKE_FORMATION,
+        SENTRY,
+        STARBURST,
         /**/
     }
 
@@ -45,6 +51,10 @@ public class HiveSecurityModule
             case FILE -> combine(new FileBasedAccessControlModule(), new StaticAccessControlMetadataModule());
             case SQL_STANDARD -> new SqlStandardSecurityModule();
             case SYSTEM -> new SystemSecurityModule();
+            case RANGER -> throw new TrinoException(GENERIC_INTERNAL_ERROR, "Unsupported Hive security: RANGER");
+            case LAKE_FORMATION -> throw new TrinoException(GENERIC_INTERNAL_ERROR, "Unsupported Hive security: LAKE_FORMATION");
+            case SENTRY -> throw new TrinoException(GENERIC_INTERNAL_ERROR, "Unsupported Hive security: SENTRY");
+            case STARBURST -> throw new TrinoException(GENERIC_INTERNAL_ERROR, "Unsupported Hive security: STARBURST");
         });
     }
 

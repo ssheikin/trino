@@ -19,11 +19,13 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.base.security.FileBasedAccessControlModule;
 import io.trino.plugin.base.security.ReadOnlySecurityModule;
 import io.trino.plugin.hive.security.AllowAllSecurityModule;
+import io.trino.spi.TrinoException;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.airlift.configuration.ConfigurationAwareModule.combine;
 import static io.trino.plugin.deltalake.DeltaLakeAccessControlMetadataFactory.DEFAULT;
+import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 
 public class DeltaLakeSecurityModule
         extends AbstractConfigurationAwareModule
@@ -34,6 +36,8 @@ public class DeltaLakeSecurityModule
         READ_ONLY,
         FILE,
         SYSTEM,
+        SQL_STANDARD,
+        RANGER,
         /**/
     }
 
@@ -46,6 +50,8 @@ public class DeltaLakeSecurityModule
             case FILE -> combine(new FileBasedAccessControlModule(), new StaticAccessControlMetadataModule());
             // do not bind a ConnectorAccessControl so the engine will use system security with system roles
             case SYSTEM -> EMPTY_MODULE;
+            case RANGER -> throw new TrinoException(GENERIC_INTERNAL_ERROR, "Unsupported Delta security: RANGER");
+            case SQL_STANDARD -> throw new TrinoException(GENERIC_INTERNAL_ERROR, "Unsupported Delta security: SQL_STANDARD");
         });
     }
 
