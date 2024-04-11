@@ -59,6 +59,7 @@ public class TestThriftMetastoreConfig
                 .setMaxWaitForTransactionLock(new Duration(10, MINUTES))
                 .setAssumeCanonicalPartitionKeys(false)
                 .setWriteStatisticsThreads(20)
+                .setCatalogName(null)
                 .setBatchMetadataFetchEnabled(true));
     }
 
@@ -91,6 +92,7 @@ public class TestThriftMetastoreConfig
                 .put("hive.metastore.thrift.write-statistics-threads", "10")
                 .put("hive.metastore.thrift.assume-canonical-partition-keys", "true")
                 .put("hive.metastore.thrift.use-spark-table-statistics-fallback", "false")
+                .put("hive.metastore.thrift.catalog-name", "custom_catalog_name")
                 .put("hive.metastore.thrift.batch-fetch.enabled", "false")
                 .buildOrThrow();
 
@@ -116,6 +118,7 @@ public class TestThriftMetastoreConfig
                 .setAssumeCanonicalPartitionKeys(true)
                 .setWriteStatisticsThreads(10)
                 .setUseSparkTableStatisticsFallback(false)
+                .setCatalogName("custom_catalog_name")
                 .setBatchMetadataFetchEnabled(false);
 
         assertFullMapping(properties, expected);
