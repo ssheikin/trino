@@ -45,7 +45,8 @@ public class MongoPageSinkProvider
     @Override
     public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorInsertTableHandle insertTableHandle, ConnectorPageSinkId pageSinkId)
     {
+        MongoSession mongoSession = mongoSessionProvider.getMongoSession(session.getIdentity());
         MongoInsertTableHandle handle = (MongoInsertTableHandle) insertTableHandle;
-        return new MongoPageSink(mongoSessionProvider.getMongoSession(session.getIdentity()), handle.getTemporaryRemoteTableName().orElseGet(handle::getRemoteTableName), handle.getColumns(), implicitPrefix, handle.getPageSinkIdColumnName(), pageSinkId);
+        return new MongoPageSink(mongoSession, handle.getTemporaryRemoteTableName().orElseGet(handle::remoteTableName), handle.columns(), implicitPrefix, handle.pageSinkIdColumnName(), pageSinkId);
     }
 }
