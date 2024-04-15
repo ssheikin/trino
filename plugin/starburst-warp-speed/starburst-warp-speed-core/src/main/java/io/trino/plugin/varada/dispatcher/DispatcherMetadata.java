@@ -594,6 +594,13 @@ public class DispatcherMetadata
     }
 
     @Override
+    public void createView(ConnectorSession session, SchemaTableName viewName, ConnectorViewDefinition definition, Map<String, Object> viewProperties, boolean replace)
+    {
+        proxiedConnectorMetadata.createView(session, viewName, definition, viewProperties, replace);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
     public void createView(ConnectorSession session, SchemaTableName viewName, ConnectorViewDefinition definition, boolean replace)
     {
         proxiedConnectorMetadata.createView(session, viewName, definition, replace);
@@ -633,6 +640,12 @@ public class DispatcherMetadata
     public Optional<ConnectorViewDefinition> getView(ConnectorSession session, SchemaTableName viewName)
     {
         return proxiedConnectorMetadata.getView(session, viewName);
+    }
+
+    @Override
+    public Map<String, Object> getViewProperties(ConnectorSession session, SchemaTableName viewName)
+    {
+        return proxiedConnectorMetadata.getViewProperties(session, viewName);
     }
 
     @Override
