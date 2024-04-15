@@ -156,6 +156,7 @@ public final class SpecialForm
         OR,
         DEREFERENCE,
         ROW_CONSTRUCTOR,
+        ARRAY_CONSTRUCTOR,
         BIND,
     }
 }
