@@ -95,6 +95,7 @@ public class TestDeltaLakeConnectorTest
 
     protected final String bucketName = "test-bucket-" + randomNameSuffix();
     protected MinioClient minioClient;
+    protected HiveMetastore metastore;
 
     @Override
     protected QueryRunner createQueryRunner()
@@ -136,6 +137,9 @@ public class TestDeltaLakeConnectorTest
             queryRunner.execute("CREATE SCHEMA " + SCHEMA + " WITH (location = 's3://" + bucketName + "/" + SCHEMA + "')");
             queryRunner.execute("CREATE SCHEMA schemawithoutunderscore WITH (location = 's3://" + bucketName + "/schemawithoutunderscore')");
             copyTpchTables(queryRunner, "tpch", TINY_SCHEMA_NAME, REQUIRED_TPCH_TABLES);
+
+            metastore = TestingDeltaLakeUtils.getConnectorService(queryRunner, HiveMetastoreFactory.class)
+                    .createMetastore(Optional.empty());
         }
         catch (Throwable e) {
             closeAllSuppress(e, queryRunner);
@@ -1935,8 +1939,6 @@ public class TestDeltaLakeConnectorTest
                 getQueryRunner()::execute,
                 "test_create_or_replace_with_same_location_",
                 " (a BIGINT)")) {
-            HiveMetastore metastore = TestingDeltaLakeUtils.getConnectorService(getDistributedQueryRunner(), HiveMetastoreFactory.class)
-                    .createMetastore(Optional.empty());
             String location = metastore.getTable("test_schema", table.getName()).orElseThrow().getStorage().getLocation();
             assertTableType("test_schema", table.getName(), MANAGED_TABLE.name());
             assertUpdate("CREATE OR REPLACE TABLE " + table.getName() + " (d BIGINT) WITH (location = '" + location + "')");
@@ -1954,8 +1956,6 @@ public class TestDeltaLakeConnectorTest
                 getQueryRunner()::execute,
                 "test_create_or_replace_with_same_location_",
                 " (a BIGINT)")) {
-            HiveMetastore metastore = TestingDeltaLakeUtils.getConnectorService(getDistributedQueryRunner(), HiveMetastoreFactory.class)
-                    .createMetastore(Optional.empty());
             String location = metastore.getTable("test_schema", table.getName()).orElseThrow().getStorage().getLocation();
             assertTableType("test_schema", table.getName(), MANAGED_TABLE.name());
             assertUpdate("CREATE OR REPLACE TABLE " + table.getName() + " WITH (location = '" + location + "') AS SELECT 'abc' as colA", 1);
@@ -2181,8 +2181,6 @@ public class TestDeltaLakeConnectorTest
 
     private void assertTableType(String schemaName, String tableName, String tableType)
     {
-        HiveMetastore metastore = TestingDeltaLakeUtils.getConnectorService(getDistributedQueryRunner(), HiveMetastoreFactory.class)
-                .createMetastore(Optional.empty());
         assertThat(metastore.getTable(schemaName, tableName).orElseThrow().getTableType()).isEqualTo(tableType);
     }
 
@@ -3891,10 +3889,6 @@ public class TestDeltaLakeConnectorTest
                 ",(5, BOOLEAN 'true', TINYINT '37')";
         assertUpdate("CREATE TABLE " + tableName + "(id, boolean, tinyint) WITH (location = '" + tableLocation + "') AS " + initialValues, 5);
         assertThat(query("SELECT * FROM " + tableName)).matches(initialValues);
-
-        QueryRunner queryRunner = getQueryRunner();
-        HiveMetastore metastore = TestingDeltaLakeUtils.getConnectorService(queryRunner, HiveMetastoreFactory.class)
-                .createMetastore(Optional.empty());
 
         metastore.dropTable(SCHEMA, tableName, false);
         for (String file : minioClient.listObjects(bucketName, SCHEMA + "/" + tableName)) {
