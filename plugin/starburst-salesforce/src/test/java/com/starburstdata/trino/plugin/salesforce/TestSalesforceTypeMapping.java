@@ -75,7 +75,7 @@ public class TestSalesforceTypeMapping
     // minutes offset change since 1970-01-01, no DST
     private final ZoneId kathmandu = ZoneId.of("Asia/Kathmandu");
 
-    private String jdbcUrl;
+    protected String jdbcUrl;
 
     @Override
     protected QueryRunner createQueryRunner()
