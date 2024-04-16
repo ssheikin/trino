@@ -13,44 +13,48 @@
  */
 package io.trino.plugin.varada.storage.write;
 
+import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
-import io.trino.plugin.varada.dispatcher.warmup.WarpCacheTask;
+import io.trino.plugin.varada.dispatcher.model.RowGroupKey;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ConnectorPageSink;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.Objects.requireNonNull;
-
-public class WarpCachePageSink
+public class FakePageSink
         implements ConnectorPageSink
 {
-    private final WarpCacheTask warpCacheTask;
+    private static final Logger logger = Logger.get(FakePageSink.class);
 
-    public WarpCachePageSink(WarpCacheTask warpCacheTask)
+    private final RowGroupKey rowGroupKey;
+    private final AtomicInteger counter;
+
+    public FakePageSink(RowGroupKey rowGroupKey, AtomicInteger counter)
     {
-        this.warpCacheTask = requireNonNull(warpCacheTask);
+        this.rowGroupKey = rowGroupKey;
+        this.counter = counter;
+        logger.info("start FakePageSink value=%s, key=%s", this.counter.getAndIncrement(), rowGroupKey);
     }
 
     @Override
     public CompletableFuture<?> appendPage(Page page)
     {
-        warpCacheTask.addPage(page);
         return NOT_BLOCKED;
     }
 
     @Override
     public CompletableFuture<Collection<Slice>> finish()
     {
-        warpCacheTask.finish();
+        logger.info("counter is %s, key=%s", counter.getAndDecrement(), rowGroupKey);
         return CompletableFuture.completedFuture(Collections.emptyList());
     }
 
     @Override
     public void abort()
     {
-        warpCacheTask.abort();
+        logger.info("ABORT counter is %s. key=%s", counter.getAndDecrement(), rowGroupKey);
     }
 }
