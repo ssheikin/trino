@@ -322,14 +322,12 @@ public class PipelinedQueryScheduler
         if (queryStateMachine.isDone()) {
             return Optional.empty();
         }
-        DistributedStagesScheduler distributedStagesScheduler;
-        switch (retryPolicy) {
-            case QUERY:
-            case NONE:
+        DistributedStagesScheduler distributedStagesScheduler = switch (retryPolicy) {
+            case QUERY, NONE -> {
                 if (attempt > 0) {
                     dynamicFilterService.registerQueryRetry(queryStateMachine.getQueryId(), attempt);
                 }
-                distributedStagesScheduler = DistributedStagesScheduler.create(
+                yield DistributedStagesScheduler.create(
                         queryStateMachine,
                         schedulerStats,
                         scheduledSplitsPerTableTracker,
@@ -347,10 +345,9 @@ public class PipelinedQueryScheduler
                         tableExecuteContextManager,
                         retryPolicy,
                         attempt);
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected retry policy: " + retryPolicy);
-        }
+            }
+            default -> throw new IllegalArgumentException("Unexpected retry policy: " + retryPolicy);
+        };
 
         this.distributedStagesScheduler.set(distributedStagesScheduler);
         distributedStagesScheduler.addStateChangeListener(state -> {
