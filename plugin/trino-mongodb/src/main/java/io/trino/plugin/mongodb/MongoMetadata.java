@@ -201,7 +201,7 @@ public class MongoMetadata
 
         ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
         for (MongoColumnHandle columnHandle : columns) {
-            columnHandles.put(columnHandle.getBaseName().toLowerCase(ENGLISH), columnHandle);
+            columnHandles.put(columnHandle.baseName().toLowerCase(ENGLISH), columnHandle);
         }
         return columnHandles.buildOrThrow();
     }
@@ -275,7 +275,7 @@ public class MongoMetadata
         }
         MongoTableHandle table = (MongoTableHandle) tableHandle;
         MongoColumnHandle column = (MongoColumnHandle) columnHandle;
-        mongoSession.setColumnComment(table, column.getBaseName(), comment);
+        mongoSession.setColumnComment(table, column.baseName(), comment);
     }
 
     @Override
@@ -306,7 +306,7 @@ public class MongoMetadata
         if (mongoSession.isFederatedDatabase()) {
             throw new TrinoException(NOT_SUPPORTED, "Renaming columns is not supported on Atlas data federation");
         }
-        mongoSession.renameColumn(((MongoTableHandle) tableHandle), ((MongoColumnHandle) source).getBaseName(), target);
+        mongoSession.renameColumn(((MongoTableHandle) tableHandle), ((MongoColumnHandle) source).baseName(), target);
     }
 
     @Override
@@ -315,7 +315,7 @@ public class MongoMetadata
         if (mongoSession.isFederatedDatabase()) {
             throw new TrinoException(NOT_SUPPORTED, "Dropping columns is not supported on Atlas data federation");
         }
-        mongoSession.dropColumn(((MongoTableHandle) tableHandle), ((MongoColumnHandle) column).getBaseName());
+        mongoSession.dropColumn(((MongoTableHandle) tableHandle), ((MongoColumnHandle) column).baseName());
     }
 
     @Override
@@ -326,10 +326,10 @@ public class MongoMetadata
         }
         MongoTableHandle table = (MongoTableHandle) tableHandle;
         MongoColumnHandle column = (MongoColumnHandle) columnHandle;
-        if (!canChangeColumnType(column.getType(), type)) {
-            throw new TrinoException(NOT_SUPPORTED, "Cannot change type from %s to %s".formatted(column.getType(), type));
+        if (!canChangeColumnType(column.type(), type)) {
+            throw new TrinoException(NOT_SUPPORTED, "Cannot change type from %s to %s".formatted(column.type(), type));
         }
-        mongoSession.setColumnType(table, column.getBaseName(), type);
+        mongoSession.setColumnType(table, column.baseName(), type);
     }
 
     public void close()
@@ -412,7 +412,7 @@ public class MongoMetadata
 
         mongoSession.createTable(remoteTableName, columns, tableMetadata.getComment());
 
-        List<MongoColumnHandle> handleColumns = columns.stream().filter(column -> !column.isHidden()).collect(toImmutableList());
+        List<MongoColumnHandle> handleColumns = columns.stream().filter(column -> !column.hidden()).collect(toImmutableList());
 
         Closer closer = Closer.create();
         closer.register(() -> mongoSession.dropTable(remoteTableName));
@@ -433,7 +433,7 @@ public class MongoMetadata
                     Optional.empty());
         }
 
-        MongoColumnHandle pageSinkIdColumn = buildPageSinkIdColumn(columns.stream().map(MongoColumnHandle::getBaseName).collect(toImmutableSet()));
+        MongoColumnHandle pageSinkIdColumn = buildPageSinkIdColumn(columns.stream().map(MongoColumnHandle::baseName).collect(toImmutableSet()));
         List<MongoColumnHandle> allTemporaryTableColumns = ImmutableList.<MongoColumnHandle>builderWithExpectedSize(columns.size() + 1)
                 .addAll(columns)
                 .add(pageSinkIdColumn)
@@ -446,7 +446,7 @@ public class MongoMetadata
                 remoteTableName,
                 handleColumns,
                 Optional.of(temporaryTable.collectionName()),
-                Optional.of(pageSinkIdColumn.getBaseName()));
+                Optional.of(pageSinkIdColumn.baseName()));
     }
 
     @Override
@@ -470,8 +470,8 @@ public class MongoMetadata
         MongoTableHandle handle = table.tableHandle();
         List<MongoColumnHandle> columns = table.columns();
         List<MongoColumnHandle> handleColumns = columns.stream()
-                .filter(column -> !column.isHidden())
-                .peek(column -> validateColumnNameForInsert(column.getBaseName()))
+                .filter(column -> !column.hidden())
+                .peek(column -> validateColumnNameForInsert(column.baseName()))
                 .collect(toImmutableList());
 
         if (retryMode == RetryMode.NO_RETRIES) {
@@ -481,7 +481,7 @@ public class MongoMetadata
                     Optional.empty(),
                     Optional.empty());
         }
-        MongoColumnHandle pageSinkIdColumn = buildPageSinkIdColumn(columns.stream().map(MongoColumnHandle::getBaseName).collect(toImmutableSet()));
+        MongoColumnHandle pageSinkIdColumn = buildPageSinkIdColumn(columns.stream().map(MongoColumnHandle::baseName).collect(toImmutableSet()));
         List<MongoColumnHandle> allColumns = ImmutableList.<MongoColumnHandle>builderWithExpectedSize(columns.size() + 1)
                 .addAll(columns)
                 .add(pageSinkIdColumn)
@@ -496,7 +496,7 @@ public class MongoMetadata
                 handle.remoteTableName(),
                 handleColumns,
                 Optional.of(temporaryTable.collectionName()),
-                Optional.of(pageSinkIdColumn.getBaseName()));
+                Optional.of(pageSinkIdColumn.baseName()));
     }
 
     @Override
@@ -658,7 +658,7 @@ public class MongoMetadata
             for (Map.Entry<ColumnHandle, Domain> entry : domains.entrySet()) {
                 MongoColumnHandle columnHandle = (MongoColumnHandle) entry.getKey();
                 Domain domain = entry.getValue();
-                Type columnType = columnHandle.getType();
+                Type columnType = columnHandle.type();
                 // TODO: Support predicate pushdown on more types including JSON
                 if (isPushdownSupportedType(columnType)) {
                     supported.put(entry.getKey(), entry.getValue());
@@ -719,7 +719,7 @@ public class MongoMetadata
                     .map(assignment -> new Assignment(
                             assignment.getKey(),
                             assignment.getValue(),
-                            ((MongoColumnHandle) assignment.getValue()).getType()))
+                            ((MongoColumnHandle) assignment.getValue()).type()))
                     .collect(toImmutableList());
 
             return Optional.of(new ProjectionApplicationResult<>(
@@ -792,9 +792,9 @@ public class MongoMetadata
             return baseColumn;
         }
         ImmutableList.Builder<String> dereferenceNamesBuilder = ImmutableList.builder();
-        dereferenceNamesBuilder.addAll(baseColumn.getDereferenceNames());
+        dereferenceNamesBuilder.addAll(baseColumn.dereferenceNames());
 
-        Type type = baseColumn.getType();
+        Type type = baseColumn.type();
         RowType parentType = null;
         for (int index : indices) {
             checkArgument(type instanceof RowType, "type should be Row type");
@@ -806,12 +806,12 @@ public class MongoMetadata
             type = field.getType();
         }
         return new MongoColumnHandle(
-                baseColumn.getBaseName(),
+                baseColumn.baseName(),
                 dereferenceNamesBuilder.build(),
                 projectedColumnType,
-                baseColumn.isHidden(),
+                baseColumn.hidden(),
                 isDBRefField(parentType),
-                baseColumn.getComment());
+                baseColumn.comment());
     }
 
     /**
@@ -845,7 +845,7 @@ public class MongoMetadata
 
         ConnectorTableHandle tableHandle = ((QueryFunctionHandle) handle).getTableHandle();
         List<ColumnHandle> columnHandles = getColumnHandles(session, tableHandle).values().stream()
-                .filter(column -> !((MongoColumnHandle) column).isHidden())
+                .filter(column -> !((MongoColumnHandle) column).hidden())
                 .collect(toImmutableList());
         return Optional.of(new TableFunctionApplicationResult<>(tableHandle, columnHandles));
     }
