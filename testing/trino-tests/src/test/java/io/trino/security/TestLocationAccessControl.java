@@ -42,7 +42,7 @@ public class TestLocationAccessControl
                 .setSchema("default")
                 .build();
         DistributedQueryRunner queryRunner = DistributedQueryRunner.builder(session)
-                .setNodeCount(1)
+                .setWorkerCount(0)// Coordinator only is perfectly enough until we do parallel Stargate connector
                 .build();
         queryRunner.installPlugin(new MockConnectorPlugin(MockConnectorFactory.builder()
                 .withTableProperties(() -> ImmutableList.of(stringProperty("location", "table location", null, false)))

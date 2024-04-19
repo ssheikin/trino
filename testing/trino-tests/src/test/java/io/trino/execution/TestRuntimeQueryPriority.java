@@ -90,7 +90,7 @@ public class TestRuntimeQueryPriority
     {
         return TpchQueryRunnerBuilder.builder()
                 .withConnectorProperties(ImmutableMap.of(TPCH_SPLITS_PER_NODE, "1"))
-                .setNodeCount(1)
+                .setWorkerCount(1)// Coordinator only is perfectly enough until we do parallel Stargate connector
                 .addExtraProperties(ImmutableMap.of(
                         "experimental.thread-per-driver-scheduler-enabled", "true",
                         "query.priority.low.resource-percentage", "0.001"))

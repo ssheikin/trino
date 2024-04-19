@@ -151,7 +151,7 @@ public class TestAccessControl
                             .to(TestingSystemSecurityMetadata.class)
                             .in(Scopes.SINGLETON);
                 })
-                .setNodeCount(1)
+                .setWorkerCount(0)
                 .setSystemAccessControl(new ForwardingSystemAccessControl()
                 {
                     @Override
