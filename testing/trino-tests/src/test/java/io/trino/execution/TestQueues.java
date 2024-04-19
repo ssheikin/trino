@@ -377,7 +377,6 @@ public class TestQueues
             throws Exception
     {
         QueryRunner queryRunner = DistributedQueryRunner.builder(testSessionBuilder().build())
-                .setNodeCount(2)
                 .build();
 
         try {
