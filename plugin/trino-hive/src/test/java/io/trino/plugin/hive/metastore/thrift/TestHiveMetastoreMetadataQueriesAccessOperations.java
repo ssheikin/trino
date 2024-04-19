@@ -81,6 +81,7 @@ public class TestHiveMetastoreMetadataQueriesAccessOperations
                 .addCoordinatorProperty("optimizer.experimental-max-prefetched-information-schema-prefixes", Integer.toString(MAX_PREFIXES_COUNT))
                 .addHiveProperty("hive.metastore", "thrift")
                 .addHiveProperty("hive.metastore.uri", hiveHadoop.getHiveMetastoreEndpoint().toString())
+                .addHiveProperty("hive.metastore.thrift.batch-fetch.enabled", "true")
                 .addHiveProperty("hive.hive-views.enabled", "true")
                 .addHiveProperty("hive.metastore-cache-ttl", "0s")
                 .setCreateTpchSchemas(false)
