@@ -144,6 +144,17 @@ public class BridgingHiveMetastore
     }
 
     @Override
+    public Optional<List<TableInfo>> getAllTables()
+    {
+        return delegate.getAllTables()
+                .map(tables -> tables.stream()
+                        .map(table -> new TableInfo(
+                                new SchemaTableName(table.getDbName(), table.getTableName()),
+                                TableInfo.ExtendedRelationType.fromTableTypeAndComment(table.getTableType(), table.getComments())))
+                        .collect(toImmutableList()));
+    }
+
+    @Override
     public List<TableInfo> getTables(String databaseName)
     {
         return delegate.getTables(databaseName).stream()

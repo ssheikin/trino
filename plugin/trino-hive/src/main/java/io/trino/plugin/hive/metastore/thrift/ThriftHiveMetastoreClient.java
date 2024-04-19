@@ -64,6 +64,7 @@ import io.trino.hive.thrift.metastore.UnlockRequest;
 import io.trino.plugin.base.util.LoggingInvocationHandler;
 import io.trino.plugin.hive.acid.AcidOperation;
 import io.trino.plugin.hive.metastore.thrift.MetastoreSupportsDateStatistics.DateStatisticsSupport;
+import io.trino.spi.connector.RelationType;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -72,6 +73,7 @@ import org.apache.thrift.transport.TTransportException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,6 +89,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.reflect.Reflection.newProxy;
 import static io.trino.hive.thrift.metastore.GrantRevokeType.GRANT;
 import static io.trino.hive.thrift.metastore.GrantRevokeType.REVOKE;
+import static io.trino.plugin.hive.HiveMetadata.PRESTO_VIEW_COMMENT;
+import static io.trino.plugin.hive.TableType.VIRTUAL_VIEW;
 import static io.trino.plugin.hive.metastore.thrift.MetastoreSupportsDateStatistics.DateStatisticsSupport.NOT_SUPPORTED;
 import static io.trino.plugin.hive.metastore.thrift.MetastoreSupportsDateStatistics.DateStatisticsSupport.SUPPORTED;
 import static io.trino.plugin.hive.metastore.thrift.MetastoreSupportsDateStatistics.DateStatisticsSupport.UNKNOWN;
@@ -187,6 +191,26 @@ public class ThriftHiveMetastoreClient
                         }
                     }
                     return client.getTableMeta(databaseName.orElse("*"), "*", ImmutableList.of());
+                },
+                () -> {
+                    // TODO: remove this once Unity adds support for getTableMeta
+                    if (databaseName.isPresent()) {
+                        Map<String, TableMeta> tables = new HashMap<>();
+                        String name = databaseName.get();
+                        client.getTables(databaseName.get(), ".*").forEach(tableName -> tables.put(tableName, new TableMeta(databaseName.get(), tableName, RelationType.TABLE.toString())));
+                        client.getTablesByType(databaseName.get(), ".*", VIRTUAL_VIEW.name()).forEach(tableName -> {
+                            TableMeta tableMeta = new TableMeta(databaseName.get(), tableName, VIRTUAL_VIEW.name());
+                            // This makes all views look like a Trino view, so that they are not filtered out during SHOW VIEWS
+                            tableMeta.setComments(PRESTO_VIEW_COMMENT);
+                            tables.put(name, tableMeta);
+                        });
+                        return ImmutableList.copyOf(tables.values());
+                    }
+                    ImmutableList.Builder<TableMeta> builder = ImmutableList.builder();
+                    for (String database : getAllDatabases()) {
+                        builder.addAll(getTableMeta(Optional.of(database)));
+                    }
+                    return builder.build();
                 });
     }
 

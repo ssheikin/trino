@@ -521,6 +521,12 @@ public class FileHiveMetastore
     }
 
     @Override
+    public Optional<List<TableInfo>> getAllTables()
+    {
+        return Optional.empty();
+    }
+
+    @Override
     public synchronized List<TableInfo> getTables(String databaseName)
     {
         return listAllTables(databaseName);

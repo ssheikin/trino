@@ -798,6 +798,18 @@ public class HiveMetadata
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> optionalSchemaName)
     {
+        if (optionalSchemaName.isEmpty()) {
+            Optional<List<TableInfo>> allTables = getMetastore(session).getTables();
+            if (allTables.isPresent()) {
+                return ImmutableSet.<SchemaTableName>builder()
+                        .addAll(allTables.get().stream()
+                                .map(TableInfo::tableName)
+                                .filter(table -> !isHiveSystemSchema(table.getSchemaName()))
+                                .collect(toImmutableList()))
+                        .build()
+                        .asList();
+            }
+        }
         ImmutableSet.Builder<SchemaTableName> tableNames = ImmutableSet.builder();
         for (String schemaName : listSchemas(session, optionalSchemaName)) {
             for (TableInfo tableInfo : getMetastore(session).getTables(schemaName)) {
@@ -811,9 +823,21 @@ public class HiveMetadata
     public Map<SchemaTableName, RelationType> getRelationTypes(ConnectorSession session, Optional<String> optionalSchemaName)
     {
         ImmutableMap.Builder<SchemaTableName, RelationType> result = ImmutableMap.builder();
-        for (String schemaName : listSchemas(session, optionalSchemaName)) {
-            for (TableInfo tableInfo : getMetastore(session).getTables(schemaName)) {
-                result.put(tableInfo.tableName(), tableInfo.extendedRelationType().toRelationType());
+        boolean fetched = false;
+        if (optionalSchemaName.isEmpty()) {
+            Optional<List<TableInfo>> tables = getMetastore(session).getTables();
+            if (tables.isPresent()) {
+                tables.get().stream()
+                        .filter(entry -> !isHiveSystemSchema(entry.tableName().getSchemaName()))
+                        .forEach(table -> result.put(table.tableName(), table.extendedRelationType().toRelationType()));
+                fetched = true;
+            }
+        }
+        if (!fetched) {
+            for (String schemaName : listSchemas(session, optionalSchemaName)) {
+                for (TableInfo tableInfo : getMetastore(session).getTables(schemaName)) {
+                    result.put(tableInfo.tableName(), tableInfo.extendedRelationType().toRelationType());
+                }
             }
         }
         return result.buildKeepingLast();
@@ -2790,6 +2814,16 @@ public class HiveMetadata
     @Override
     public List<SchemaTableName> listViews(ConnectorSession session, Optional<String> optionalSchemaName)
     {
+        if (optionalSchemaName.isEmpty()) {
+            Optional<List<TableInfo>> allTables = getMetastore(session).getTables();
+            if (allTables.isPresent()) {
+                return allTables.get().stream()
+                        .filter(tableInfo -> tableInfo.extendedRelationType().toRelationType() == RelationType.VIEW)
+                        .map(TableInfo::tableName)
+                        .filter(view -> !isHiveSystemSchema(view.getSchemaName()))
+                        .collect(toImmutableList());
+            }
+        }
         return listSchemas(session, optionalSchemaName).stream()
                 .map(getMetastore(session)::getTables)
                 .flatMap(List::stream)

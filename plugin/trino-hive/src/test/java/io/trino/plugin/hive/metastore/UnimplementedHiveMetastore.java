@@ -87,6 +87,12 @@ public class UnimplementedHiveMetastore
     }
 
     @Override
+    public Optional<List<TableInfo>> getAllTables()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void createDatabase(Database database)
     {
         throw new UnsupportedOperationException();
