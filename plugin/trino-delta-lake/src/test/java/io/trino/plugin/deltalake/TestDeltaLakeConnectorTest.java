@@ -2650,7 +2650,7 @@ public class TestDeltaLakeConnectorTest
         assertUpdate("INSERT INTO " + tableName + " VALUES('url4', 'domain4', 4), ('url5', 'domain5', 2), ('url6', 'domain6', 6)", 3);
 
         assertUpdate("UPDATE " + tableName + " SET page_url = 'url22' WHERE views = 2", 2);
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -2666,14 +2666,14 @@ public class TestDeltaLakeConnectorTest
                         """);
 
         assertUpdate("DELETE FROM " + tableName + " WHERE views = 2", 2);
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 3))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 3))",
                 """
                         VALUES
                             ('url22', 'domain2', 2, 'delete', BIGINT '4'),
                             ('url22', 'domain5', 2, 'delete', BIGINT '4')
                         """);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "')) ORDER BY _commit_version, _change_type, domain",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "')) ORDER BY _commit_version, _change_type, domain",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -2719,7 +2719,7 @@ public class TestDeltaLakeConnectorTest
                                 ('url6', 'domain4', 2)
                         """);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -2743,7 +2743,7 @@ public class TestDeltaLakeConnectorTest
                                 ('url4', 'domain1', 400),
                                 ('url5', 'domain2', 500)
                         """);
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 3))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 3))",
                 """
                         VALUES
                             ('url2', 'domain4', 2, 'delete', BIGINT '4'),
@@ -2778,7 +2778,7 @@ public class TestDeltaLakeConnectorTest
 
         assertUpdate("INSERT INTO " + tableName + " VALUES('url5', 5)", 1);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 0))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 0))",
                 """
                         VALUES
                             ('url1', 1, 'insert', BIGINT '1'),
@@ -2826,7 +2826,7 @@ public class TestDeltaLakeConnectorTest
                                 ('url4', 'domain4', 44),
                                 ('url5', 'domain5', 50)
                         """);
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName1 + "', 0))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName1 + "', 0))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -2879,7 +2879,7 @@ public class TestDeltaLakeConnectorTest
                             ('url5', 'domain3', 5)
                         """);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + targetTable + "'))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + targetTable + "'))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', 1),
@@ -2915,7 +2915,7 @@ public class TestDeltaLakeConnectorTest
                            ('url6', 'domain1', 600)
                         """);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + targetTable + "', 2))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + targetTable + "', 2))",
                 """
                         VALUES
                             ('url3', 'domain3', 3, 'delete', BIGINT '3'),
@@ -2942,7 +2942,7 @@ public class TestDeltaLakeConnectorTest
                 "WITH (change_data_feed_enabled = true, column_mapping_mode = '" + mode + "')");
         assertUpdate("INSERT INTO " + tableName + " VALUES('url1', 'domain1', 1)", 1);
         ZonedDateTime historyCommitTimestamp = (ZonedDateTime) computeScalar("SELECT timestamp FROM \"" + tableName + "$history\" WHERE version = 1");
-        ZonedDateTime tableChangesCommitTimestamp = (ZonedDateTime) computeScalar("SELECT _commit_timestamp FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 0)) WHERE _commit_Version = 1");
+        ZonedDateTime tableChangesCommitTimestamp = (ZonedDateTime) computeScalar("SELECT _commit_timestamp FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 0)) WHERE _commit_Version = 1");
         assertThat(historyCommitTimestamp).isEqualTo(tableChangesCommitTimestamp);
     }
 
@@ -2959,11 +2959,11 @@ public class TestDeltaLakeConnectorTest
         String tableName = "test_reading_ranges_of_changes_on_table_with_cdf_enabled_" + randomNameSuffix();
         assertUpdate("CREATE TABLE " + tableName + " (page_url VARCHAR, domain VARCHAR, views INTEGER) " +
                 "WITH (change_data_feed_enabled = true, column_mapping_mode = '" + mode + "')");
-        assertQueryReturnsEmptyResult("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))");
+        assertQueryReturnsEmptyResult("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))");
         assertUpdate("INSERT INTO " + tableName + " VALUES('url1', 'domain1', 1)", 1);
         assertUpdate("INSERT INTO " + tableName + " VALUES('url2', 'domain2', 2)", 1);
         assertUpdate("INSERT INTO " + tableName + " VALUES('url3', 'domain3', 3)", 1);
-        assertQueryReturnsEmptyResult("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 3))");
+        assertQueryReturnsEmptyResult("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 3))");
 
         assertUpdate("UPDATE " + tableName + " SET page_url = 'url22' WHERE domain = 'domain2'", 1);
         assertUpdate("UPDATE " + tableName + " SET page_url = 'url33' WHERE views = 3", 1);
@@ -2976,9 +2976,9 @@ public class TestDeltaLakeConnectorTest
                            ('url33', 'domain3', 3)
                         """);
 
-        assertQueryFails("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 1000))",
+        assertQueryFails("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 1000))",
                 "since_version: 1000 is higher then current table version: 6");
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 0))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 0))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -2991,7 +2991,7 @@ public class TestDeltaLakeConnectorTest
                             ('url1', 'domain1', 1, 'delete', BIGINT '6')
                         """);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -3004,7 +3004,7 @@ public class TestDeltaLakeConnectorTest
                             ('url1', 'domain1', 1, 'delete', BIGINT '6')
                         """);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 3))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 3))",
                 """
                         VALUES
                             ('url2', 'domain2', 2, 'update_preimage', BIGINT '4'),
@@ -3014,9 +3014,9 @@ public class TestDeltaLakeConnectorTest
                             ('url1', 'domain1', 1, 'delete', BIGINT '6')
                         """);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 5))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 5))",
                 "VALUES ('url1', 'domain1', 1, 'delete', BIGINT '6')");
-        assertQueryFails("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 10))", "since_version: 10 is higher then current table version: 6");
+        assertQueryFails("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 10))", "since_version: 10 is higher then current table version: 6");
     }
 
     @Test
@@ -3036,7 +3036,7 @@ public class TestDeltaLakeConnectorTest
         assertUpdate("ALTER TABLE " + tableName + " ADD COLUMN company VARCHAR");
         assertUpdate("INSERT INTO " + tableName + " VALUES('url2', 'domain2', 2, 'starburst')", 1);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, null, 'insert', BIGINT '1'),
@@ -3061,7 +3061,7 @@ public class TestDeltaLakeConnectorTest
         assertUpdate("INSERT INTO " + tableName + " VALUES('url2', ROW('02', 19))", 1);
         assertUpdate("UPDATE " + tableName + " SET costs = ROW('02', 37) WHERE costs.month = '02'", 1);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))",
                 """
                         VALUES
                             ('url1', ROW('01', BIGINT '11') , 'insert', BIGINT '1'),
@@ -3070,7 +3070,7 @@ public class TestDeltaLakeConnectorTest
                             ('url2', ROW('02', BIGINT '37') , 'update_postimage', BIGINT '3')
                         """);
 
-        assertThat(query("SELECT costs.month, costs.amount, _commit_version FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))"))
+        assertThat(query("SELECT costs.month, costs.amount, _commit_version FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))"))
                 .matches("""
                         VALUES
                             (VARCHAR '01', BIGINT '11', BIGINT '1'),
@@ -3096,7 +3096,7 @@ public class TestDeltaLakeConnectorTest
         assertUpdate("INSERT INTO " + tableName + " VALUES('url1', 'domain1', 1)", 1);
         assertUpdate("INSERT INTO " + tableName + " VALUES('url2', 'domain2', 2)", 1);
         assertUpdate("INSERT INTO " + tableName + " VALUES('url3', 'domain3', 3)", 1);
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 0))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 0))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -3116,11 +3116,11 @@ public class TestDeltaLakeConnectorTest
                            ('url33', 'domain3', 3)
                         """);
 
-        assertQueryFails("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 3))",
+        assertQueryFails("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 3))",
                 "Change Data Feed is not enabled at version 4. Version contains 'remove' entries without 'cdc' entries");
-        assertQueryFails("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))",
+        assertQueryFails("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))",
                 "Change Data Feed is not enabled at version 4. Version contains 'remove' entries without 'cdc' entries");
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 5))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 5))",
                 """
                         VALUES
                             ('url3', 'domain3', 3, 'update_preimage', BIGINT '6'),
@@ -3146,7 +3146,7 @@ public class TestDeltaLakeConnectorTest
                         "('url2', 'domain2', 2)) t(page_url, domain, views)",
                 2);
 
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "'))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "'))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '0'),
@@ -3184,8 +3184,8 @@ public class TestDeltaLakeConnectorTest
         getQueryRunner().execute(sessionWithShortRetentionUnlocked, "CALL system.vacuum(CURRENT_SCHEMA, '" + tableName + "', '" + retention + "s')");
         allFilesFromCdfDirectory = getAllFilesFromCdfDirectory(tableName);
         assertThat(allFilesFromCdfDirectory).hasSizeBetween(1, 2);
-        assertQueryFails("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 2))", "Error opening Hive split.*/_change_data/.*");
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 3))",
+        assertQueryFails("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 2))", "Error opening Hive split.*/_change_data/.*");
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 3))",
                 """
                         VALUES
                             ('url3', 'domain3', 3, 'update_preimage', BIGINT '4'),
@@ -3212,7 +3212,7 @@ public class TestDeltaLakeConnectorTest
         assertUpdate("UPDATE " + tableName + " SET views = views * 30 WHERE views = 3", 1);
         computeActual("ALTER TABLE " + tableName + " EXECUTE OPTIMIZE");
         assertUpdate("INSERT INTO " + tableName + " VALUES('url10', 'domain10', 10)", 1);
-        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + tableName + "', 0))",
+        assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 0))",
                 """
                         VALUES
                             ('url1', 'domain1', 1, 'insert', BIGINT '1'),
@@ -3234,12 +3234,12 @@ public class TestDeltaLakeConnectorTest
         assertUpdate("INSERT INTO " + tableName + " VALUES('url3', 'domain3', 3)", 1);
 
         assertAccessDenied(
-                "SELECT * FROM TABLE(system.table_changes('" + SCHEMA + "', '" + tableName + "', 0))",
+                "SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 0))",
                 "Cannot execute function .*",
                 privilege("delta.system.table_changes", EXECUTE_FUNCTION));
 
         assertAccessDenied(
-                "SELECT * FROM TABLE(system.table_changes('" + SCHEMA + "', '" + tableName + "', 0))",
+                "SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + tableName + "', 0))",
                 "Cannot select from columns .*",
                 privilege(tableName, SELECT_COLUMN));
 
@@ -3792,7 +3792,7 @@ public class TestDeltaLakeConnectorTest
             assertQueryFails(session, "UPDATE " + table.getName() + " SET x = 10 WHERE x = 1", expectedMessageRegExp);
             assertUpdate(session, "UPDATE " + table.getName() + " SET x = 20 WHERE part = 22", 1);
             // TODO (https://github.com/trinodb/trino/issues/18498) Check for partition filter for table_changes when the following issue will be completed https://github.com/trinodb/trino/pull/17928
-            assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + table.getName() + "'))",
+            assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + table.getName() + "'))",
                     """
                             VALUES
                                 (1,   11,  'insert',           BIGINT '1'),
@@ -3804,13 +3804,13 @@ public class TestDeltaLakeConnectorTest
 
             assertQueryFails(session, "DELETE FROM " + table.getName() + " WHERE x = 3", expectedMessageRegExp);
             assertUpdate(session, "DELETE FROM " + table.getName() + " WHERE part = 33 and x = 3", 1);
-            assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + table.getName() + "', 4))",
+            assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + table.getName() + "', 4))",
                     """
                             VALUES
                                 (3, 33, 'delete', BIGINT '5')
                             """);
 
-            assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes('test_schema', '" + table.getName() + "')) ORDER BY _commit_version, _change_type, part",
+            assertTableChangesQuery("SELECT * FROM TABLE(system.table_changes(CURRENT_SCHEMA, '" + table.getName() + "')) ORDER BY _commit_version, _change_type, part",
                     """
                             VALUES
                                 (1,   11,  'insert',           BIGINT '1'),
