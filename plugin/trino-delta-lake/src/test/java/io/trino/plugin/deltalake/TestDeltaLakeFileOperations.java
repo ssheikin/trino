@@ -849,7 +849,7 @@ public class TestDeltaLakeFileOperations
         Path tableLocation = Files.createTempFile(tableName, null);
         copyDirectoryContents(new File(Resources.getResource("deltalake/multipart_checkpoint").toURI()).toPath(), tableLocation);
 
-        assertUpdate("CALL system.register_table('%s', '%s', '%s')".formatted(getSession().getSchema().orElseThrow(), tableName, tableLocation.toUri()));
+        assertUpdate("CALL system.register_table(CURRENT_SCHEMA, '%s', '%s')".formatted(tableName, tableLocation.toUri()));
         assertFileSystemAccesses("SELECT * FROM " + tableName,
                 ImmutableMultiset.<FileOperation>builder()
                         .add(new FileOperation(LAST_CHECKPOINT, "_last_checkpoint", "InputFile.newStream"))
@@ -871,7 +871,7 @@ public class TestDeltaLakeFileOperations
         Path tableLocation = Files.createTempFile(tableName, null);
         copyDirectoryContents(new File(Resources.getResource("deltalake/v2_checkpoint_json").toURI()).toPath(), tableLocation);
 
-        assertUpdate("CALL system.register_table('%s', '%s', '%s')".formatted(getSession().getSchema().orElseThrow(), tableName, tableLocation.toUri()));
+        assertUpdate("CALL system.register_table(CURRENT_SCHEMA, '%s', '%s')".formatted(tableName, tableLocation.toUri()));
         assertFileSystemAccesses("SELECT * FROM " + tableName,
                 ImmutableMultiset.<FileOperation>builder()
                         .add(new FileOperation(LAST_CHECKPOINT, "_last_checkpoint", "InputFile.newStream"))
@@ -894,7 +894,7 @@ public class TestDeltaLakeFileOperations
         Path tableLocation = Files.createTempFile(tableName, null);
         copyDirectoryContents(new File(Resources.getResource("deltalake/v2_checkpoint_parquet").toURI()).toPath(), tableLocation);
 
-        assertUpdate("CALL system.register_table('%s', '%s', '%s')".formatted(getSession().getSchema().orElseThrow(), tableName, tableLocation.toUri()));
+        assertUpdate("CALL system.register_table(CURRENT_SCHEMA, '%s', '%s')".formatted(tableName, tableLocation.toUri()));
         assertFileSystemAccesses("SELECT * FROM " + tableName,
                 ImmutableMultiset.<FileOperation>builder()
                         .add(new FileOperation(LAST_CHECKPOINT, "_last_checkpoint", "InputFile.newStream"))
