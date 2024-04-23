@@ -3986,6 +3986,12 @@ public class HiveMetadata
     }
 
     @Override
+    public boolean isMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        return hiveMaterializedViewMetadata.isMaterializedView(session, viewName);
+    }
+
+    @Override
     public MaterializedViewFreshness getMaterializedViewFreshness(ConnectorSession session, SchemaTableName name)
     {
         return hiveMaterializedViewMetadata.getMaterializedViewFreshness(session, name);
