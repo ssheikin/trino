@@ -988,6 +988,12 @@ public class MockPlanAlternativeMetadata
     }
 
     @Override
+    public boolean isMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        return delegate.isMaterializedView(session, viewName);
+    }
+
+    @Override
     public MaterializedViewFreshness getMaterializedViewFreshness(ConnectorSession session, SchemaTableName name)
     {
         return delegate.getMaterializedViewFreshness(session, name);

@@ -1360,6 +1360,15 @@ public class TracingConnectorMetadata
     }
 
     @Override
+    public boolean isMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        Span span = startSpan("isMaterializedView", viewName);
+        try (var ignored = scopedSpan(span)) {
+            return delegate.isMaterializedView(session, viewName);
+        }
+    }
+
+    @Override
     public Map<String, Object> getMaterializedViewProperties(ConnectorSession session, SchemaTableName viewName, ConnectorMaterializedViewDefinition materializedViewDefinition)
     {
         Span span = startSpan("getMaterializedViewProperties", viewName);

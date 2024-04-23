@@ -1775,6 +1775,17 @@ public interface ConnectorMetadata
         return Optional.empty();
     }
 
+    /**
+     * Tells whether the specified view name refers to a materialized view. Returns {@literal false}
+     * if {@code viewName} relation does not exist or is not a materialized view (e.g. is a table, or a view).
+     *
+     * @see #getMaterializedView(ConnectorSession, SchemaTableName)
+     */
+    default boolean isMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        return getMaterializedView(session, viewName).isPresent();
+    }
+
     default Map<String, Object> getMaterializedViewProperties(ConnectorSession session, SchemaTableName viewName, ConnectorMaterializedViewDefinition materializedViewDefinition)
     {
         throw new TrinoException(NOT_SUPPORTED, "This connector does not support materialized views");

@@ -1191,6 +1191,14 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
+    public boolean isMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            return delegate.isMaterializedView(session, viewName);
+        }
+    }
+
+    @Override
     public Map<String, Object> getMaterializedViewProperties(ConnectorSession session, SchemaTableName viewName, ConnectorMaterializedViewDefinition viewDefinition)
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
