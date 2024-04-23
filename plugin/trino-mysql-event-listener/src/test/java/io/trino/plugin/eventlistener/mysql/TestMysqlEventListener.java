@@ -130,6 +130,8 @@ public class TestMysqlEventListener
             // not stored
             Collections.emptyList(),
             // not stored
+            Collections.emptyList(),
+            // not stored
             List.of("{operator: \"operator1\"}", "{operator: \"operator2\"}"),
             // not stored
             Collections.emptyList(),
@@ -284,6 +286,8 @@ public class TestMysqlEventListener
             Collections.emptyList(),
             130,
             false,
+            // not stored
+            Collections.emptyList(),
             // not stored
             Collections.emptyList(),
             // not stored
