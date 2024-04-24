@@ -30,6 +30,7 @@ import io.trino.sql.planner.assertions.PlanMatchPattern;
 import io.trino.sql.planner.plan.ExchangeNode;
 import io.trino.sql.planner.plan.FilterNode;
 import io.trino.sql.planner.plan.JoinNode;
+import io.trino.sql.planner.plan.ProjectNode;
 import io.trino.sql.planner.plan.TableScanNode;
 import io.trino.sql.planner.plan.TopNNode;
 import io.trino.testing.QueryRunner;
@@ -519,6 +520,69 @@ public class TestPostgreSqlConnectorTest
                         node(JoinNode.class,
                                 anyTree(node(TableScanNode.class)),
                                 anyTree(node(TableScanNode.class))));
+    }
+
+    @Test
+    public void testJoinPushdownWithCallsInJoinCondition()
+    {
+        Session session = joinPushdownEnabled(getSession());
+        // no cast (varchar(15 = varchar(15))
+        // neither side of join condition co-occur in projection
+        assertThat(query(session, "SELECT c.custkey, o.totalprice FROM customer c JOIN orders o ON UPPER(c.phone) = o.clerk"))
+                .isFullyPushedDown();
+        assertThat(query(session, "SELECT c.custkey, o.totalprice FROM customer c JOIN orders o ON c.phone = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        assertThat(query(session, "SELECT c.custkey, o.totalprice FROM customer c JOIN orders o ON UPPER(c.phone) = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        // both sides of join condition co-occur in projection
+        assertThat(query(session, "SELECT o.totalprice, c.phone, o.clerk FROM customer c JOIN orders o ON UPPER(c.phone) = o.clerk"))
+                .isNotFullyPushedDown(ProjectNode.class);
+        assertThat(query(session, "SELECT o.totalprice, c.phone, o.clerk FROM customer c JOIN orders o ON c.phone = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        assertThat(query(session, "SELECT o.totalprice, c.phone, o.clerk FROM customer c JOIN orders o ON UPPER(c.phone) = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        // left side of join condition co-occur in projection
+        assertThat(query(session, "SELECT c.custkey, o.totalprice, c.phone FROM customer c JOIN orders o ON UPPER(c.phone) = o.clerk"))
+                .isFullyPushedDown();
+        assertThat(query(session, "SELECT c.custkey, o.totalprice, c.phone FROM customer c JOIN orders o ON c.phone = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        assertThat(query(session, "SELECT c.custkey, o.totalprice, c.phone FROM customer c JOIN orders o ON UPPER(c.phone) = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        // right side of join condition co-occur in projection
+        assertThat(query(session, "SELECT c.custkey, o.totalprice, o.clerk FROM customer c JOIN orders o ON UPPER(c.phone) = o.clerk"))
+                .isNotFullyPushedDown(ProjectNode.class);
+        assertThat(query(session, "SELECT c.custkey, o.totalprice, o.clerk FROM customer c JOIN orders o ON c.phone = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        assertThat(query(session, "SELECT c.custkey, o.totalprice, o.clerk FROM customer c JOIN orders o ON UPPER(c.phone) = UPPER(o.clerk)"))
+                .isFullyPushedDown();
+        // second join condition
+        assertThat(query(session, "SELECT c.custkey, o.totalprice FROM customer c JOIN orders o ON UPPER(c.phone) = o.clerk AND c.custkey = o.custkey"))
+                .isFullyPushedDown();
+        // conditions with constants
+        assertThat(query(session, "SELECT c.name, o.totalprice FROM customer c JOIN orders o ON c.custkey = o.custkey AND LOWER(c.mktsegment) = 'machinery' AND UPPER(o.clerk) = 'CLERK#000000534'"))
+                .isFullyPushedDown();
+        // nested calls
+        assertThat(query(session, "SELECT o.totalprice, c.phone, o.clerk FROM customer c JOIN orders o ON UPPER(UPPER(c.phone)) = o.clerk AND o.clerk = UPPER(c.phone)"))
+                .isNotFullyPushedDown(ProjectNode.class);
+        // verify outputs of the select with join on subquery
+        assertThat(query(session, """
+                SELECT
+                    nested.totalprice,
+                    nested.phone,
+                    nested.nested_clerk
+                FROM customer cus
+                JOIN (
+                    SELECT
+                        o.totalprice,
+                        c.phone,
+                        o.clerk as nested_clerk
+                    FROM customer c
+                    JOIN orders o
+                        ON UPPER(UPPER(c.phone)) = o.clerk AND o.clerk = UPPER(c.phone)
+                    ) nested
+                ON UPPER(UPPER(UPPER(cus.phone))) = nested.nested_clerk
+                """))
+                .isNotFullyPushedDown(ProjectNode.class);
     }
 
     @Test
