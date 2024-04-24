@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.trino.execution.ScheduledSplit;
 import io.trino.sql.planner.plan.PlanNodeId;
+import jakarta.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,13 +38,13 @@ public class DriverFactory
     private final int pipelineId;
     private final boolean inputDriver;
     private final boolean outputDriver;
-    private final List<OperatorFactory> operatorFactories;
     private final Optional<PlanNodeId> sourceId;
     private final OptionalInt driverInstances;
 
     // must synchronize between createDriver() and noMoreDrivers(), but isNoMoreDrivers() is safe without synchronizing
     @GuardedBy("this")
     private volatile boolean noMoreDrivers;
+    private volatile List<OperatorFactory> operatorFactories;
 
     public DriverFactory(int pipelineId, boolean inputDriver, boolean outputDriver, List<OperatorFactory> operatorFactories, OptionalInt driverInstances)
     {
@@ -98,6 +99,12 @@ public class DriverFactory
         return driverInstances;
     }
 
+    @Nullable
+    public List<OperatorFactory> getOperatorFactories()
+    {
+        return operatorFactories;
+    }
+
     @Override
     public Driver createDriver(DriverContext driverContext, Optional<ScheduledSplit> split)
     {
@@ -150,6 +157,7 @@ public class DriverFactory
         for (OperatorFactory operatorFactory : operatorFactories) {
             operatorFactory.noMoreOperators();
         }
+        operatorFactories = null;
         noMoreDrivers = true;
     }
 
