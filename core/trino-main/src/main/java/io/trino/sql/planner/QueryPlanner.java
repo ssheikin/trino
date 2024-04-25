@@ -803,14 +803,21 @@ class QueryPlanner
                     if (nonNullableColumnHandles.contains(dataColumnHandle)) {
                         ColumnSchema columnSchema = dataColumnSchemas.get(fieldNumber);
                         String columnName = columnSchema.getName();
-                        rewritten = new CoalesceExpression(rewritten, new Cast(failFunction(metadata, INVALID_ARGUMENTS, "Assigning NULL to non-null MERGE target table column " + columnName), columnSchema.getType()));
+                        rewritten = new CoalesceExpression(rewritten, new Cast(failFunction(metadata, CONSTRAINT_VIOLATION, "NULL value not allowed for NOT NULL column: " + columnName), columnSchema.getType()));
                     }
                     rowBuilder.add(rewritten);
                     assignments.put(field, rewritten);
                 }
                 else {
-                    rowBuilder.add(field.toSymbolReference());
-                    assignments.putIdentity(field);
+                    Expression expression = field.toSymbolReference();
+                    if (mergeCase instanceof MergeInsert && nonNullableColumnHandles.contains(dataColumnHandle)) {
+                        ColumnSchema columnSchema = dataColumnSchemas.get(fieldNumber);
+                        String columnName = columnSchema.getName();
+                        expression = new CoalesceExpression(expression, new Cast(failFunction(metadata, CONSTRAINT_VIOLATION, "NULL value not allowed for NOT NULL column: " + columnName), columnSchema.getType()));
+                    }
+
+                    rowBuilder.add(expression);
+                    assignments.put(field, expression);
                 }
             }
 
