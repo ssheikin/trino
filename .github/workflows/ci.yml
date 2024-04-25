@@ -59,11 +59,10 @@ concurrency:
     dispatch_sha=${{ github.event_name == 'repository_dispatch' && github.event.client_payload.slash_command.args.named.sha || 'NA' }},
     commit_sha=${{ github.event_name != 'pull_request' && github.event_name != 'repository_dispatch' && github.sha || 'NA' }}
   cancel-in-progress: true
-
 jobs:
   build-success:
     if: ${{ always() }} # if `failure()` would not work for cancellations, `!success()` would not work for skipped jobs
-    runs-on: [self-hosted, sep-cicd, gha-fleet-nano]
+    runs-on: [self-hosted, gha-fleet-ec2-2CPU-8GB-amd64, latest]
     needs:
       [
         artifact-checks,
@@ -101,7 +100,7 @@ jobs:
           echo '${{ needs.web-ui-checks.result }}' | grep -xE 'success|skipped' || { echo 'Job "web-ui-checks" failed' >&2; exit 1; }
 
   maven-checks:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-small]
+    runs-on: [self-hosted, gha-fleet-ec2-4CPU-16GB-amd64, latest]
     name: maven-checks ${{ matrix.java-version }}
     strategy:
       fail-fast: false
@@ -144,7 +143,7 @@ jobs:
         run: rm -rf ~/.m2/repository/io/trino/trino-*
 
   artifact-checks:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-small]
+    runs-on: [self-hosted, gha-fleet-ec2-4CPU-16GB-amd64, latest]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -192,7 +191,7 @@ jobs:
         run: core/docker/build.sh -j 22 -a amd64
 
   check-commits-dispatcher:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-nano]
+    runs-on: [self-hosted, gha-fleet-ec2-2CPU-8GB-amd64, latest]
     if: github.event_name == 'pull_request'
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -224,7 +223,7 @@ jobs:
   check-commit:
     needs:
       - check-commits-dispatcher
-    runs-on: [self-hosted, sep-cicd, gha-fleet-nano]
+    runs-on: [self-hosted, gha-fleet-ec2-2CPU-8GB-amd64, latest]
     if: github.event_name == 'pull_request' && needs.check-commits-dispatcher.outputs.matrix != ''
     strategy:
       fail-fast: false
@@ -245,7 +244,7 @@ jobs:
           base_ref: ${{ github.event.pull_request.base.ref }}
 
   error-prone-checks:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-small]
+    runs-on: [self-hosted, gha-fleet-ec2-4CPU-16GB-amd64, latest]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -276,7 +275,7 @@ jobs:
             -pl '!:trino-docs,!:trino-server,!:trino-server-rpm'
 
   web-ui-checks:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-nano]
+    runs-on: [self-hosted, gha-fleet-ec2-2CPU-8GB-amd64, latest]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -293,7 +292,7 @@ jobs:
         run: core/trino-main/bin/check_webui.sh
 
   test-jdbc-compatibility:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-large]
+    runs-on: [self-hosted, gha-fleet-ec2-16CPU-64GB-amd64, latest]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -341,7 +340,7 @@ jobs:
           upload-heap-dump: ${{ env.SECRETS_PRESENT == '' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
 
   hive-tests:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-small]
+    runs-on: [self-hosted, gha-fleet-ec2-4CPU-16GB-amd64, latest]
     strategy:
       fail-fast: false
       matrix:
@@ -421,7 +420,7 @@ jobs:
   # ----------------------------------------------------------------------------
   salesforce-tests:
     name: salesforce-tests (${{ matrix.modules }})
-    runs-on: [sep-cicd, gha-fleet-small]
+    runs-on: [self-hosted, gha-fleet-ec2-4CPU-16GB-amd64, latest]
     strategy:
       fail-fast: false
       matrix:
@@ -514,7 +513,7 @@ jobs:
             :boom: Salesforce connector tests failed on branch: ${{ steps.should_notify.outputs.branch }} (<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|see CI job for details>) (:thumbsup: this message if you take care of this)
 
   test-other-modules:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-large]
+    runs-on: [self-hosted, gha-fleet-ec2-16CPU-64GB-amd64, latest]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -609,7 +608,7 @@ jobs:
           upload-heap-dump: ${{ env.SECRETS_PRESENT == '' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
 
   build-test-matrix:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-nano]
+    runs-on: [self-hosted, gha-fleet-ec2-2CPU-8GB-amd64, latest]
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -678,7 +677,7 @@ jobs:
             - { modules: plugin/starburst-snowflake, profile: parallel-integration-tests, cloud: amazon-web-service }
             - { modules: plugin/starburst-snowflake, profile: fte-tests, cloud: amazon-web-service }
             - { modules: plugin/starburst-sqlserver }
-            - { modules: plugin/starburst-stargate, runners: [ self-hosted, sep-cicd, gha-fleet-large ] }
+            - { modules: plugin/starburst-stargate, runners: [ self-hosted, gha-fleet-ec2-16CPU-64GB-amd64, latest ] }
             - { modules: plugin/starburst-synapse }
             - { modules: plugin/starburst-synapse, profile: fte-tests }
             - { modules: plugin/starburst-synapse, profile: long-running-tests }
@@ -694,7 +693,7 @@ jobs:
             - { modules: plugin/trino-druid }
             - { modules: plugin/trino-elasticsearch }
             - { modules: plugin/trino-google-sheets }
-            - { modules: plugin/trino-hive, runners: [ self-hosted, sep-cicd, gha-fleet-large ] }
+            - { modules: plugin/trino-hive, runners: [ self-hosted, gha-fleet-ec2-16CPU-64GB-amd64, latest ] }
             - { modules: plugin/trino-hive, profile: fte-tests }
             - { modules: plugin/trino-hive, profile: test-parquet }
             - { modules: plugin/trino-hudi }
@@ -728,14 +727,14 @@ jobs:
             - { modules: testing/trino-faulttolerant-tests, profile: test-fault-tolerant-delta }
             - { modules: testing/trino-faulttolerant-tests, profile: test-fault-tolerant-hive }
             - { modules: testing/trino-faulttolerant-tests, profile: test-fault-tolerant-iceberg }
-            - { modules: testing/trino-tests, runners: [ self-hosted, sep-cicd, gha-fleet-large ] }
+            - { modules: testing/trino-tests, runners: [ self-hosted, gha-fleet-ec2-16CPU-64GB-amd64, latest ] }
           EOF
           ./.github/bin/build-matrix-from-impacted.py -v -i gib-impacted.log -m .github/test-matrix.yaml -o matrix.json
           echo "Matrix: $(jq '.' matrix.json)"
           echo "matrix=$(jq -c '.' matrix.json)" >> $GITHUB_OUTPUT
 
   test:
-    runs-on: ${{ matrix.runners != null && matrix.runners || fromJSON('["self-hosted",  "sep-cicd", "gha-fleet-small" ]') }}
+    runs-on: ${{ matrix.runners != null && matrix.runners || fromJSON('["self-hosted", "gha-fleet-ec2-4CPU-16GB-amd64", "latest" ]') }}
     needs: build-test-matrix
     if: needs.build-test-matrix.outputs.matrix != '{}'
     strategy:
@@ -1102,7 +1101,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   build-pt:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-nano]
+    runs-on: [self-hosted, gha-fleet-ec2-2CPU-8GB-amd64, latest]
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       product-tests-changed: ${{ steps.filter.outputs.product-tests }}
@@ -1319,7 +1318,7 @@ jobs:
           echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
 
   pt:
-    runs-on: [self-hosted, sep-cicd, gha-fleet-small]
+    runs-on: [self-hosted, gha-fleet-ec2-4CPU-16GB-amd64, latest]
     # explicitly define the name to avoid adding the value of the `ignore exclusion if` matrix item
     name: pt (${{ matrix.config }}, ${{ matrix.suite }}, ${{ matrix.jdk }})
     if: needs.build-pt.outputs.matrix != '{}'
