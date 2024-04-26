@@ -3963,7 +3963,7 @@ public class TestDeltaLakeConnectorTest
         testTimestampCoercionOnCreateTable("TIMESTAMP '1969-12-31 23:59:59.9999994'", "TIMESTAMP '1969-12-31 23:59:59.999999'");
     }
 
-    private void testTimestampCoercionOnCreateTable(String actualValue, String expectedValue)
+    private void testTimestampCoercionOnCreateTable(@Language("SQL") String actualValue, @Language("SQL") String expectedValue)
     {
         try (TestTable testTable = new TestTable(
                 getQueryRunner()::execute,
@@ -4007,7 +4007,7 @@ public class TestDeltaLakeConnectorTest
         testTimestampCoercionOnCreateTableAsSelect("TIMESTAMP '1969-12-31 23:59:59.9999994'", "TIMESTAMP '1969-12-31 23:59:59.999999'");
     }
 
-    private void testTimestampCoercionOnCreateTableAsSelect(String actualValue, String expectedValue)
+    private void testTimestampCoercionOnCreateTableAsSelect(@Language("SQL") String actualValue, @Language("SQL") String expectedValue)
     {
         try (TestTable testTable = new TestTable(
                 getQueryRunner()::execute,
@@ -4050,7 +4050,7 @@ public class TestDeltaLakeConnectorTest
         testTimestampCoercionOnCreateTableAsSelectWithNoData("TIMESTAMP '1969-12-31 23:59:59.9999994'");
     }
 
-    private void testTimestampCoercionOnCreateTableAsSelectWithNoData(String actualValue)
+    private void testTimestampCoercionOnCreateTableAsSelectWithNoData(@Language("SQL") String actualValue)
     {
         try (TestTable testTable = new TestTable(
                 getQueryRunner()::execute,
@@ -4093,7 +4093,7 @@ public class TestDeltaLakeConnectorTest
         testTimestampCoercionOnCreateTableAsWithRowTypeFailure("TIMESTAMP '1969-12-31 23:59:59.9999994'", ".*Unsupported type: timestamp\\(7\\).*");
     }
 
-    private void testTimestampCoercionOnCreateTableAsWithRowType(String actualValue, String expectedValue)
+    private void testTimestampCoercionOnCreateTableAsWithRowType(@Language("SQL") String actualValue, @Language("SQL") String expectedValue)
     {
         // TODO remove precision from timestamp once https://github.com/trinodb/trino/pull/21055 is merged
         try (TestTable testTable = new TestTable(
@@ -4147,7 +4147,7 @@ public class TestDeltaLakeConnectorTest
         testTimestampCoercionOnCreateTableAsWithArrayTypeFailure("TIMESTAMP '1969-12-31 23:59:59.9999994'", ".*Unsupported type: timestamp\\(7\\).*");
     }
 
-    private void testTimestampCoercionOnCreateTableAsWithArrayType(String actualValue, String expectedValue)
+    private void testTimestampCoercionOnCreateTableAsWithArrayType(@Language("SQL") String actualValue, @Language("SQL") String expectedValue)
     {
         try (TestTable testTable = new TestTable(
                 getQueryRunner()::execute,
@@ -4200,7 +4200,7 @@ public class TestDeltaLakeConnectorTest
         testTimestampCoercionOnCreateTableAsWithMapTypeFailure("TIMESTAMP '1969-12-31 23:59:59.9999994'", ".*Unsupported type: timestamp\\(7\\).*");
     }
 
-    private void testTimestampCoercionOnCreateTableAsWithMapType(String actualValue, String expectedValue)
+    private void testTimestampCoercionOnCreateTableAsWithMapType(@Language("SQL") String actualValue, @Language("SQL") String expectedValue)
     {
         try (TestTable testTable = new TestTable(
                 getQueryRunner()::execute,
