@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.airlift.units.Duration;
 import io.trino.hive.thrift.metastore.ColumnStatisticsData;
 import io.trino.hive.thrift.metastore.ColumnStatisticsObj;
@@ -652,7 +651,7 @@ public class TestCachingHiveMetastore
 
         assertThat(metastore.getTable(TEST_DATABASE, TEST_TABLE)).isPresent();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder().setNameFormat("invalidation-%d").build());
+        ExecutorService executorService = Executors.newFixedThreadPool(1, daemonThreadsNamed("invalidation-%d"));
         try {
             // invalidate thread
             Future<?> invalidateFuture = executorService.submit(
@@ -883,7 +882,7 @@ public class TestCachingHiveMetastore
 
         assertThat(metastore.getPartition(table, TEST_PARTITION_VALUES1)).isPresent();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder().setNameFormat("invalidation-%d").build());
+        ExecutorService executorService = Executors.newFixedThreadPool(1, daemonThreadsNamed("invalidation-%d"));
         try {
             // invalidate thread
             Future<?> invalidateFuture = executorService.submit(
