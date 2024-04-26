@@ -2253,7 +2253,7 @@ public class TestHiveTransactionalTable
                             // start time is expressed in milliseconds
                             return Long.parseLong(row.get("start time")) >= startedAfter.get().truncatedTo(ChronoUnit.SECONDS).toEpochMilli();
                         }
-                        catch (NumberFormatException ignored) {
+                        catch (NumberFormatException _) {
                         }
                     }
 

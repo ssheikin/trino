@@ -132,7 +132,7 @@ public class ConnectorServices
         try {
             splitManager = connector.getSplitManager();
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (UnsupportedOperationException _) {
         }
         this.splitManager = Optional.ofNullable(splitManager);
 
@@ -149,7 +149,7 @@ public class ConnectorServices
             connectorPageSourceProvider = connector.getPageSourceProvider();
             requireNonNull(connectorPageSourceProvider, format("Connector '%s' returned a null page source provider", catalogHandle));
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (UnsupportedOperationException _) {
         }
 
         try {
@@ -158,7 +158,7 @@ public class ConnectorServices
             verify(connectorPageSourceProvider == null, "Connector '%s' returned both page source and record set providers", catalogHandle);
             connectorPageSourceProvider = new RecordPageSourceProvider(connectorRecordSetProvider);
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (UnsupportedOperationException _) {
         }
 
         ConnectorAlternativeChooser connectorAlternativeChooser = null;
@@ -178,7 +178,7 @@ public class ConnectorServices
             connectorPageSinkProvider = connector.getPageSinkProvider();
             requireNonNull(connectorPageSinkProvider, format("Connector '%s' returned a null page sink provider", catalogHandle));
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (UnsupportedOperationException _) {
         }
         this.pageSinkProvider = Optional.ofNullable(connectorPageSinkProvider);
 
@@ -187,7 +187,7 @@ public class ConnectorServices
             indexProvider = connector.getIndexProvider();
             requireNonNull(indexProvider, format("Connector '%s' returned a null index provider", catalogHandle));
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (UnsupportedOperationException _) {
         }
         this.indexProvider = Optional.ofNullable(indexProvider);
 
@@ -196,7 +196,7 @@ public class ConnectorServices
             partitioningProvider = connector.getNodePartitioningProvider();
             requireNonNull(partitioningProvider, format("Connector '%s' returned a null partitioning provider", catalogHandle));
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (UnsupportedOperationException _) {
         }
         this.partitioningProvider = Optional.ofNullable(partitioningProvider);
 
@@ -204,7 +204,7 @@ public class ConnectorServices
         try {
             accessControl = connector.getAccessControl();
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (UnsupportedOperationException _) {
         }
         verifyAccessControl(accessControl);
         this.accessControl = Optional.ofNullable(accessControl);
@@ -442,7 +442,7 @@ public class ConnectorServices
                     clazz.getName(),
                     name, Arrays.stream(parameterTypes).map(Class::getName).collect(Collectors.joining(", "))));
         }
-        catch (ReflectiveOperationException ignored) {
+        catch (ReflectiveOperationException _) {
         }
     }
 }

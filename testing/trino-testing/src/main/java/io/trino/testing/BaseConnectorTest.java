@@ -4368,7 +4368,7 @@ public abstract class BaseConnectorTest
                 });
                 commit = true;
             }
-            catch (RollbackException ignored) {
+            catch (RollbackException _) {
                 // failure accepted, transaction rolled back
                 commit = false;
             }

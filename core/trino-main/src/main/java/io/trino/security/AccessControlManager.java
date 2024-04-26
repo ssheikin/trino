@@ -1756,7 +1756,7 @@ public class AccessControlManager
                     clazz.getName(),
                     name, Arrays.stream(parameterTypes).map(Class::getName).collect(Collectors.joining(", "))));
         }
-        catch (ReflectiveOperationException ignored) {
+        catch (ReflectiveOperationException _) {
         }
     }
 

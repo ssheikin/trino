@@ -1435,7 +1435,7 @@ public class FileHiveMetastore
                 try {
                     output.createExclusive(json);
                 }
-                catch (UnsupportedOperationException ignored) {
+                catch (UnsupportedOperationException _) {
                     // fall back to non-exclusive creation, relying on synchronization and above exists check
                     try (OutputStream out = output.create()) {
                         out.write(json);

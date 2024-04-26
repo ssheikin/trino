@@ -161,7 +161,7 @@ public class StaticSelector
                         mapping.put(key, value);
                     }
                 }
-                catch (IllegalArgumentException ignored) {
+                catch (IllegalArgumentException _) {
                     // there was no capturing group with the specified name
                 }
             }

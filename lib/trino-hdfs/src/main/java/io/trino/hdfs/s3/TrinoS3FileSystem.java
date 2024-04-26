@@ -1591,7 +1591,7 @@ public class TrinoS3FileSystem
                             return;
                         }
                     }
-                    catch (IOException ignored) {
+                    catch (IOException _) {
                         // will retry by re-opening the stream
                     }
                 }
@@ -1685,7 +1685,7 @@ public class TrinoS3FileSystem
                     in.close();
                 }
             }
-            catch (IOException | AbortedException ignored) {
+            catch (IOException | AbortedException _) {
                 // thrown if the current thread is in the interrupted state
             }
         }
