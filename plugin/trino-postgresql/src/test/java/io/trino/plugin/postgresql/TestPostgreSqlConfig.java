@@ -30,7 +30,8 @@ public class TestPostgreSqlConfig
         assertRecordedDefaults(recordDefaults(PostgreSqlConfig.class)
                 .setArrayMapping(PostgreSqlConfig.ArrayMapping.DISABLED)
                 .setIncludeSystemTables(false)
-                .setEnableStringPushdownWithCollate(false));
+                .setEnableStringPushdownWithCollate(false)
+                .setEnableArraySubscriptPushdown(false));
     }
 
     @Test
@@ -40,12 +41,14 @@ public class TestPostgreSqlConfig
                 .put("postgresql.array-mapping", "AS_ARRAY")
                 .put("postgresql.include-system-tables", "true")
                 .put("postgresql.experimental.enable-string-pushdown-with-collate", "true")
+                .put("postgresql.experimental.enable-array-subscript-pushdown", "true")
                 .buildOrThrow();
 
         PostgreSqlConfig expected = new PostgreSqlConfig()
                 .setArrayMapping(PostgreSqlConfig.ArrayMapping.AS_ARRAY)
                 .setIncludeSystemTables(true)
-                .setEnableStringPushdownWithCollate(true);
+                .setEnableStringPushdownWithCollate(true)
+                .setEnableArraySubscriptPushdown(true);
 
         assertFullMapping(properties, expected);
     }

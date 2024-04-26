@@ -92,6 +92,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.plugin.base.expression.ConnectorExpressions.and;
 import static io.trino.plugin.base.expression.ConnectorExpressions.extractConjuncts;
+import static io.trino.plugin.base.projection.ApplyProjectionUtil.replaceWithNewVariables;
 import static io.trino.plugin.jdbc.JdbcErrorCode.JDBC_NON_TRANSIENT_ERROR;
 import static io.trino.plugin.jdbc.JdbcMetadataSessionProperties.isAggregationPushdownEnabled;
 import static io.trino.plugin.jdbc.JdbcMetadataSessionProperties.isComplexExpressionPushdown;
@@ -285,6 +286,16 @@ public class DefaultJdbcMetadata
 
         JdbcTableHandle handle = (JdbcTableHandle) table;
 
+        Optional<ProjectionApplicationResult<ConnectorTableHandle>> projectionApplicationResult = applyProjectionExpressions(
+                session,
+                handle,
+                projections,
+                assignments);
+
+        if (projectionApplicationResult.isPresent()) {
+            return projectionApplicationResult;
+        }
+
         List<JdbcColumnHandle> newColumns = assignments.values().stream()
                 .map(JdbcColumnHandle.class::cast)
                 .collect(toImmutableList());
@@ -325,6 +336,87 @@ public class DefaultJdbcMetadata
                                 ((JdbcColumnHandle) assignment.getValue()).getColumnType()))
                         .collect(toImmutableList()),
                 precalculateStatisticsForPushdown));
+    }
+
+    private Optional<ProjectionApplicationResult<ConnectorTableHandle>> applyProjectionExpressions(
+            ConnectorSession session,
+            JdbcTableHandle handle,
+            List<ConnectorExpression> projections,
+            Map<String, ColumnHandle> assignments)
+    {
+        ImmutableList.Builder<JdbcColumnHandle> newColumnsBuilder = ImmutableList.builder();
+
+        assignments.values().stream()
+                .map(JdbcColumnHandle.class::cast)
+                .forEach(newColumnsBuilder::add);
+
+        ImmutableList.Builder<Assignment> assignmentBuilder = ImmutableList.builder();
+        assignments.entrySet().stream()
+                .map(assignment -> new Assignment(
+                        assignment.getKey(),
+                        assignment.getValue(),
+                        ((JdbcColumnHandle) assignment.getValue()).getColumnType()))
+                .forEach(assignmentBuilder::add);
+
+        int nextSyntheticColumnId = handle.getNextSyntheticColumnId();
+
+        ImmutableMap.Builder<ConnectorExpression, Variable> newVariablesBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, ParameterizedExpression> columnExpressionsBuilder = ImmutableMap.builder();
+
+        if (isComplexExpressionPushdown(session)) {
+            for (ConnectorExpression projection : projections) {
+                // Try to convert Projection
+                Map<ConnectorExpression, JdbcExpression> expression = jdbcClient.convertProjection(session, handle, projection, assignments);
+                if (!expression.isEmpty()) {
+                    for (Map.Entry<ConnectorExpression, JdbcExpression> convertedExpression : expression.entrySet()) {
+                        String columnName = SYNTHETIC_COLUMN_NAME_PREFIX + nextSyntheticColumnId;
+                        JdbcColumnHandle newColumn = JdbcColumnHandle.builder()
+                                .setColumnName(columnName)
+                                .setJdbcTypeHandle(convertedExpression.getValue().getJdbcTypeHandle())
+                                .setColumnType(convertedExpression.getKey().getType())
+                                .setComment(Optional.of("synthetic"))
+                                .build();
+                        nextSyntheticColumnId++;
+                        columnExpressionsBuilder.put(columnName, new ParameterizedExpression(convertedExpression.getValue().getExpression(), convertedExpression.getValue().getParameters()));
+                        Variable newVariable = new Variable(newColumn.getColumnName(), newColumn.getColumnType());
+                        newVariablesBuilder.put(convertedExpression.getKey(), newVariable);
+                        Assignment newAssignment = new Assignment(columnName, newColumn, convertedExpression.getKey().getType());
+                        assignmentBuilder.add(newAssignment);
+                        newColumnsBuilder.add(newColumn);
+                    }
+                }
+            }
+        }
+
+        List<JdbcColumnHandle> newColumns = newColumnsBuilder.build();
+
+        // Modify projections to refer to new variables
+        Map<ConnectorExpression, Variable> newVariables = newVariablesBuilder.buildOrThrow();
+        List<ConnectorExpression> newProjections = projections.stream()
+                .map(expression -> replaceWithNewVariables(expression, newVariables))
+                .collect(toImmutableList());
+
+        List<Assignment> outputAssignments = assignmentBuilder.build();
+
+        if (!newVariables.isEmpty()) {
+            PreparedQuery preparedQuery = jdbcClient.prepareQuery(session, handle, Optional.empty(), newColumns, columnExpressionsBuilder.buildOrThrow());
+            return Optional.of(new ProjectionApplicationResult<>(
+                    new JdbcTableHandle(
+                            new JdbcQueryRelationHandle(preparedQuery),
+                            TupleDomain.all(),
+                            ImmutableList.of(),
+                            Optional.empty(),
+                            OptionalLong.empty(),
+                            Optional.of(newColumns),
+                            handle.getOtherReferencedTables(),
+                            nextSyntheticColumnId,
+                            handle.getAuthorization(),
+                            handle.getUpdateAssignments()),
+                    newProjections,
+                    outputAssignments,
+                    precalculateStatisticsForPushdown));
+        }
+        return Optional.empty();
     }
 
     @Override

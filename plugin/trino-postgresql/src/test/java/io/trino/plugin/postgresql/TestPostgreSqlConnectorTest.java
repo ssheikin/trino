@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.Session;
+import io.trino.metadata.TestingFunctionResolution;
 import io.trino.plugin.jdbc.BaseJdbcConnectorTest;
 import io.trino.plugin.jdbc.JdbcColumnHandle;
 import io.trino.plugin.jdbc.JdbcTableHandle;
@@ -26,10 +27,13 @@ import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.JoinCondition;
 import io.trino.spi.predicate.Range;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.sql.ir.FunctionCall;
+import io.trino.sql.ir.SymbolReference;
 import io.trino.sql.planner.assertions.PlanMatchPattern;
 import io.trino.sql.planner.plan.ExchangeNode;
 import io.trino.sql.planner.plan.FilterNode;
 import io.trino.sql.planner.plan.JoinNode;
+import io.trino.sql.planner.plan.ProjectNode;
 import io.trino.sql.planner.plan.TableScanNode;
 import io.trino.sql.planner.plan.TopNNode;
 import io.trino.testing.QueryRunner;
@@ -58,10 +62,15 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.trino.plugin.postgresql.PostgreSqlQueryRunner.createPostgreSqlQueryRunner;
+import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.spi.type.VarcharType.createVarcharType;
+import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.anyTree;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.exchange;
+import static io.trino.sql.planner.assertions.PlanMatchPattern.expression;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.node;
+import static io.trino.sql.planner.assertions.PlanMatchPattern.output;
+import static io.trino.sql.planner.assertions.PlanMatchPattern.project;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.tableScan;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_AGGREGATION_PUSHDOWN;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_JOIN_PUSHDOWN_WITH_FULL_JOIN;
@@ -82,6 +91,8 @@ public class TestPostgreSqlConnectorTest
         extends BaseJdbcConnectorTest
 {
     private static final Logger log = Logger.get(TestPostgreSqlConnectorTest.class);
+
+    private static final TestingFunctionResolution FUNCTIONS = new TestingFunctionResolution();
 
     protected TestingPostgreSqlServer postgreSqlServer;
 
@@ -1030,6 +1041,212 @@ public class TestPostgreSqlConnectorTest
         }
     }
 
+    @Test
+    public void testArraySubscriptFilterPushdown()
+    {
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                "test_array_subscript_for_filter",
+                "(id bigint, array_col integer[], nested_array_col integer[][], arrays_with_null integer[])",
+                ImmutableList.of("1, ARRAY[123, 456], ARRAY[ARRAY[789]], ARRAY[NULL, 0]"))) {
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT id FROM " + table.getName() + " WHERE array_col[1] = 123"))
+                    .matches("VALUES BIGINT '1'")
+                    .isFullyPushedDown();
+
+            // With functions
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT id FROM " + table.getName() + " WHERE array_col[1] + array_col[2] = 123 + 456"))
+                    .matches("VALUES BIGINT '1'")
+                    .isFullyPushedDown();
+
+            // With functions on index
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT id FROM " + table.getName() + " WHERE array_col[id + 1] + 1 = 457"))
+                    .matches("VALUES BIGINT '1'")
+                    .isFullyPushedDown();
+
+            // With functions which are not pushed down
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT id FROM " + table.getName() + " WHERE array_col[1] + random(1, 10) > 123"))
+                    .matches("VALUES BIGINT '1'")
+                    .isNotFullyPushedDown(FilterNode.class);
+
+            // With nested array
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT id FROM " + table.getName() + " WHERE nested_array_col[1][1] = 789"))
+                    .matches("VALUES BIGINT '1'")
+                    .isNotFullyPushedDown(FilterNode.class);
+
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT id FROM " + table.getName() + " WHERE nested_array_col[1] = ARRAY[789]"))
+                    .matches("VALUES BIGINT '1'")
+                    .isNotFullyPushedDown(FilterNode.class);
+
+            // For null values
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT id FROM " + table.getName() + " WHERE arrays_with_null[1] IS NULL"))
+                    .matches("VALUES BIGINT '1'")
+                    .isFullyPushedDown();
+        }
+    }
+
+    @Test
+    public void testArraySubscriptProjectionPushdown()
+    {
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                "test_array_subscript_for_project",
+                "(id bigint, array_col varchar[], nested_array_col varchar[][], arrays_with_null varchar[])",
+                ImmutableList.of("1, ARRAY['abc', 'def'], ARRAY[ARRAY['ghi']], ARRAY[NULL, 'ghi']"))) {
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT array_col[1] FROM " + table.getName()))
+                    .skippingTypesCheck()
+                    .matches("VALUES 'abc'")
+                    .isFullyPushedDown();
+
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT array_col[id + 1] FROM " + table.getName()))
+                    .skippingTypesCheck()
+                    .matches("VALUES 'def'")
+                    .isFullyPushedDown();
+
+            // With additional function - the expression are projections are partially pushed down
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT LOWER(array_col[id + 1]) FROM " + table.getName()))
+                    .skippingTypesCheck()
+                    .matches("VALUES 'def'")
+                    .hasPlan(
+                            output(
+                                    project(ImmutableMap.of(
+                                            "expr",
+                                                    expression(
+                                                            new FunctionCall(
+                                                                    FUNCTIONS.resolveFunction("lower", fromTypes(VARCHAR)),
+                                                                    ImmutableList.of(new SymbolReference(VARCHAR, "pfgnrtd"))))),
+                                            tableScan(
+                                                    tableHandle -> ((JdbcTableHandle) tableHandle).isSynthetic(),
+                                                    TupleDomain.all(),
+                                                    ImmutableMap.of("pfgnrtd", columnHandle -> ((JdbcColumnHandle) columnHandle).getColumnName().startsWith("pfgnrtd_"))))));
+
+            // With nested array
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT nested_array_col[1][1] FROM " + table.getName()))
+                    .skippingTypesCheck()
+                    .matches("VALUES 'ghi'")
+                    .isNotFullyPushedDown(ProjectNode.class);
+
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT nested_array_col[1] FROM " + table.getName()))
+                    .skippingTypesCheck()
+                    .matches("VALUES ARRAY['ghi']")
+                    .isNotFullyPushedDown(ProjectNode.class);
+
+            // With null values
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT arrays_with_null[1] FROM " + table.getName()))
+                    .skippingTypesCheck()
+                    .matches("VALUES NULL")
+                    .isFullyPushedDown();
+        }
+    }
+
+    @Test
+    public void testArraySubscriptOnMultiDimensionalInputData()
+    {
+        // When we try to insert a multi-dimensional data
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                "test_array_subscript_invalid_data",
+                "(array_col integer[])",
+                ImmutableList.of("ARRAY[ARRAY[123]]"))) {
+            assertQueryFails(
+                    getSessionWithArrayMapping(),
+                    "SELECT array_col[1] FROM " + table.getName(),
+                    "Bad value for type int : \\{\"123\"}");
+
+            // For project expression
+            assertQueryFails(getSessionWithArraySubscriptPushdownEnabled(),
+                    "SELECT array_col[1] FROM " + table.getName(),
+                    "ERROR: multidimensional arrays must have array expressions with matching dimensions");
+
+            // For filter expression
+            assertQueryFails(
+                    getSessionWithArrayMapping(),
+                    "SELECT true FROM " + table.getName() + " WHERE array_col[1] IS NULL",
+                    "Bad value for type int : \\{\"123\"}");
+
+            // For both filter and project
+            assertQueryFails(getSessionWithArraySubscriptPushdownEnabled(),
+                    "SELECT array_col[1] FROM " + table.getName() + " WHERE array_col[1] IS NULL",
+                    "ERROR: multidimensional arrays must have array expressions with matching dimensions");
+        }
+    }
+
+    @Test
+    public void testArraySubscriptOnInvalidIndex()
+    {
+        // When we try to access data beyond its index
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                "test_array_subscript_invalid_index",
+                "(id bigint, array_col integer[])",
+                ImmutableList.of("0, ARRAY[123]"))) {
+            assertQueryFails(
+                    getSessionWithArrayMapping(),
+                    "SELECT array_col[2] FROM " + table.getName(),
+                    "Array subscript must be less than or equal to array length: 2 > 1");
+
+            // For project expression
+            assertQueryFails(getSessionWithArraySubscriptPushdownEnabled(),
+                    "SELECT array_col[2] FROM " + table.getName(),
+                    "ERROR: multidimensional arrays must have array expressions with matching dimensions");
+
+            // For filter expression
+            assertQueryFails(
+                    getSessionWithArrayMapping(),
+                    "SELECT true FROM " + table.getName() + " WHERE array_col[2] IS NULL",
+                    "Array subscript must be less than or equal to array length: 2 > 1");
+
+            // For both filter and project
+            assertQueryFails(getSessionWithArraySubscriptPushdownEnabled(),
+                    "SELECT array_col[2] FROM " + table.getName() + " WHERE array_col[2] IS NULL",
+                    "ERROR: multidimensional arrays must have array expressions with matching dimensions");
+
+            // When we try to access data at index O
+            assertQueryFails(
+                    getSessionWithArrayMapping(),
+                    "SELECT array_col[id] FROM " + table.getName(),
+                    "SQL array indices start at 1");
+
+            // With pushdown enabled
+            assertQueryFails(getSessionWithArraySubscriptPushdownEnabled(),
+                    "SELECT array_col[id] FROM " + table.getName(),
+                    "ERROR: multidimensional arrays must have array expressions with matching dimensions");
+        }
+    }
+
+    @Test
+    public void testArraySubscriptPushdownForVariousDataType()
+    {
+        assertArraySubscriptPushdown("boolean", "true");
+        assertArraySubscriptPushdown("smallint", "1");
+        assertArraySubscriptPushdown("integer", "1");
+        assertArraySubscriptPushdown("bigint", "1");
+        assertArraySubscriptPushdown("real", "1.0");
+        assertArraySubscriptPushdown("double precision", "1.0");
+        assertArraySubscriptPushdown("decimal(3, 0)", "1.0");
+        assertArraySubscriptPushdown("date", "DATE '1900-01-01'");
+        assertArraySubscriptPushdown("timestamp(3)", "TIMESTAMP '1900-01-01 01:01:00'");
+        assertArraySubscriptPushdown("timestamptz(3)", "TIMESTAMP '1900-01-01 01:01:00'");
+        assertArraySubscriptPushdown("time", "TIME '01:01:00'");
+        assertArraySubscriptPushdown("varchar", "'varchar'");
+        assertArraySubscriptPushdown("char(4)", "'char'");
+        assertArraySubscriptPushdown("uuid", "UUID '00000000-0000-0000-0000-000000000000'");
+        assertArraySubscriptPushdown("money", "10.0");
+        assertArraySubscriptPushdown("json", "JSON '123.4'");
+        assertArraySubscriptPushdown("jsonb", "JSON '123.4'");
+    }
+
+    private void assertArraySubscriptPushdown(String datatype, String actualValue)
+    {
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                "test_array_subscript_",
+                "(array_col %s[])".formatted(datatype),
+                ImmutableList.of("ARRAY[%s]".formatted(actualValue)))) {
+            assertThat(query(getSessionWithArraySubscriptPushdownEnabled(), "SELECT array_col[1] FROM " + table.getName() + " WHERE array_col[1] IS NOT NULL"))
+                    .isFullyPushedDown();
+        }
+    }
+
     private String getLongInClause(int start, int length)
     {
         String longValues = range(start, start + length)
@@ -1138,5 +1355,19 @@ public class TestPostgreSqlConnectorTest
         }
 
         return Optional.of(setup);
+    }
+
+    private Session getSessionWithArrayMapping()
+    {
+        return Session.builder(getSession())
+                .setCatalogSessionProperty(getSession().getCatalog().orElseThrow(), "array_mapping", "AS_ARRAY")
+                .build();
+    }
+
+    private Session getSessionWithArraySubscriptPushdownEnabled()
+    {
+        return Session.builder(getSessionWithArrayMapping())
+                .setCatalogSessionProperty(getSession().getCatalog().orElseThrow(), "enable_array_subscript_pushdown", "true")
+                .build();
     }
 }
