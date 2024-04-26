@@ -419,11 +419,11 @@ public class TestReadUniontype
             switch (id) {
                 case 0:
                     Row rowValueFirst = rowBuilder().addField("a", "a1").addField("b", "b1").build();
-                    assertStructEquals(row.get(1), new Object[]{(byte) 0, rowValueFirst, null});
+                    assertStructEquals(row.get(1), new Object[] {(byte) 0, rowValueFirst, null});
                     break;
                 case 1:
                     Row rowValueSecond = rowBuilder().addField("c", "c1").addField("d", null).build();
-                    assertStructEquals(row.get(1), new Object[]{(byte) 1, null, rowValueSecond});
+                    assertStructEquals(row.get(1), new Object[] {(byte) 1, null, rowValueSecond});
                     break;
             }
         }
