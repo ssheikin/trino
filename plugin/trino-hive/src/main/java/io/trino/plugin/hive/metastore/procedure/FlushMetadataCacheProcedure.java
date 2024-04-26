@@ -102,7 +102,7 @@ public class FlushMetadataCacheProcedure
             List<String> partitionColumns,
             List<String> partitionValues)
     {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(getClass().getClassLoader())) {
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(getClass().getClassLoader())) {
             doFlushMetadataCache(
                     Optional.ofNullable(schemaName),
                     Optional.ofNullable(tableName),

@@ -91,7 +91,7 @@ public class IcebergConnectorFactory
             Optional<TrinoFileSystemFactory> fileSystemFactory)
     {
         ClassLoader classLoader = IcebergConnectorFactory.class.getClassLoader();
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
             Bootstrap app = new Bootstrap(
                     new EventModule(),
                     new MBeanModule(),

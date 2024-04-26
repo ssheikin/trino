@@ -66,7 +66,7 @@ public class DeltaLakeTransactionManager
         MemoizedMetadata transactionalMetadata = transactions.remove(transaction);
         checkArgument(transactionalMetadata != null, "no such transaction: %s", transaction);
         transactionalMetadata.optionalGet().ifPresent(metadata -> {
-            try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(getClass().getClassLoader())) {
+            try (ThreadContextClassLoader _ = new ThreadContextClassLoader(getClass().getClassLoader())) {
                 metadata.rollback();
             }
         });
@@ -99,7 +99,7 @@ public class DeltaLakeTransactionManager
         private synchronized void createIfAbsent(ConnectorIdentity identity)
         {
             if (metadata == null) {
-                try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(getClass().getClassLoader())) {
+                try (ThreadContextClassLoader _ = new ThreadContextClassLoader(getClass().getClassLoader())) {
                     // create per-transaction cache over hive metastore interface
                     hiveMetastore = metadataFactory.createTransactionMetastore(identity);
                     metadata = metadataFactory.create(hiveMetastore);
