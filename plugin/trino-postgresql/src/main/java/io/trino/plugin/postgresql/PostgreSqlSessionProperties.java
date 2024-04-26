@@ -30,6 +30,7 @@ public final class PostgreSqlSessionProperties
 {
     public static final String ARRAY_MAPPING = "array_mapping";
     public static final String ENABLE_STRING_PUSHDOWN_WITH_COLLATE = "enable_string_pushdown_with_collate";
+    public static final String ENABLE_ARRAY_SUBSCRIPT_PUSHDOWN = "enable_array_subscript_pushdown";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -47,6 +48,11 @@ public final class PostgreSqlSessionProperties
                         ENABLE_STRING_PUSHDOWN_WITH_COLLATE,
                         "Enable string pushdown with collate (experimental)",
                         postgreSqlConfig.isEnableStringPushdownWithCollate(),
+                        false),
+                booleanProperty(
+                        ENABLE_ARRAY_SUBSCRIPT_PUSHDOWN,
+                        "Enable array subscript pushdown (experimental)",
+                        postgreSqlConfig.isEnableArraySubscriptPushdown(),
                         false));
     }
 
@@ -64,5 +70,10 @@ public final class PostgreSqlSessionProperties
     public static boolean isEnableStringPushdownWithCollate(ConnectorSession session)
     {
         return session.getProperty(ENABLE_STRING_PUSHDOWN_WITH_COLLATE, Boolean.class);
+    }
+
+    public static boolean isEnableArraySubscriptPushdown(ConnectorSession session)
+    {
+        return session.getProperty(ENABLE_ARRAY_SUBSCRIPT_PUSHDOWN, Boolean.class);
     }
 }

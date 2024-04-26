@@ -14,6 +14,7 @@
 package io.trino.plugin.postgresql;
 
 import io.airlift.configuration.Config;
+import io.airlift.configuration.ConfigHidden;
 import io.airlift.configuration.DefunctConfig;
 import io.airlift.configuration.LegacyConfig;
 import jakarta.validation.constraints.NotNull;
@@ -24,6 +25,7 @@ public class PostgreSqlConfig
     private ArrayMapping arrayMapping = ArrayMapping.DISABLED;
     private boolean includeSystemTables;
     private boolean enableStringPushdownWithCollate;
+    private boolean enableArraySubscriptPushdown;
 
     public enum ArrayMapping
     {
@@ -67,6 +69,19 @@ public class PostgreSqlConfig
     public PostgreSqlConfig setEnableStringPushdownWithCollate(boolean enableStringPushdownWithCollate)
     {
         this.enableStringPushdownWithCollate = enableStringPushdownWithCollate;
+        return this;
+    }
+
+    public boolean isEnableArraySubscriptPushdown()
+    {
+        return enableArraySubscriptPushdown;
+    }
+
+    @ConfigHidden
+    @Config("postgresql.experimental.enable-array-subscript-pushdown")
+    public PostgreSqlConfig setEnableArraySubscriptPushdown(boolean enableArraySubscriptPushdown)
+    {
+        this.enableArraySubscriptPushdown = enableArraySubscriptPushdown;
         return this;
     }
 }
