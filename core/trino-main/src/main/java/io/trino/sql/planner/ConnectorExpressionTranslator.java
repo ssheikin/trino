@@ -76,6 +76,7 @@ import static io.trino.metadata.LanguageFunctionManager.isInlineFunction;
 import static io.trino.spi.expression.StandardFunctions.ADD_FUNCTION_NAME;
 import static io.trino.spi.expression.StandardFunctions.AND_FUNCTION_NAME;
 import static io.trino.spi.expression.StandardFunctions.ARRAY_CONSTRUCTOR_FUNCTION_NAME;
+import static io.trino.spi.expression.StandardFunctions.ARRAY_SUBSCRIPT_FUNCTION_NAME;
 import static io.trino.spi.expression.StandardFunctions.CAST_FUNCTION_NAME;
 import static io.trino.spi.expression.StandardFunctions.DIVIDE_FUNCTION_NAME;
 import static io.trino.spi.expression.StandardFunctions.EQUAL_OPERATOR_FUNCTION_NAME;
@@ -294,6 +295,10 @@ public final class ConnectorExpressionTranslator
                 return translateInPredicate(call.getArguments().get(0), call.getArguments().get(1));
             }
 
+            if (ARRAY_SUBSCRIPT_FUNCTION_NAME.equals(call.getFunctionName()) && call.getArguments().size() == 2) {
+                return translateArraySubscript(call.getType(), call.getArguments().get(0), call.getArguments().get(1));
+            }
+
             ResolvedFunction resolved = plannerContext.getMetadata().resolveBuiltinFunction(
                     call.getFunctionName().getName(),
                     fromTypes(call.getArguments().stream().map(ConnectorExpression::getType).collect(toImmutableList())));
@@ -501,6 +506,13 @@ public final class ConnectorExpressionTranslator
             }
 
             return Optional.empty();
+        }
+
+        private Optional<Expression> translateArraySubscript(Type type, ConnectorExpression target, ConnectorExpression index)
+        {
+            return translate(target)
+                .flatMap(value -> translate(index)
+                        .map(expression -> new SubscriptExpression(type, value, expression)));
         }
 
         protected Optional<List<Expression>> extractExpressionsFromArrayCall(ConnectorExpression expression)
@@ -786,13 +798,27 @@ public final class ConnectorExpressionTranslator
         @Override
         protected Optional<ConnectorExpression> visitSubscriptExpression(SubscriptExpression node, Void context)
         {
-            if (!(node.getBase().type() instanceof RowType)) {
+            Type type = node.getBase().type();
+            if (!(type instanceof RowType || type instanceof ArrayType)) {
                 return Optional.empty();
             }
 
             Optional<ConnectorExpression> translatedBase = process(node.getBase());
             if (translatedBase.isEmpty()) {
                 return Optional.empty();
+            }
+
+            if (node.base().type() instanceof ArrayType) {
+                Optional<ConnectorExpression> translatedIndex = process(node.index());
+                if (translatedIndex.isEmpty()) {
+                    return Optional.empty();
+                }
+
+                ConnectorExpression target = translatedBase.get();
+                ConnectorExpression index = translatedIndex.get();
+
+                // if array[subscript] expression is to be represented by a Call, target and index must be encoded as arguments, positionally
+                return Optional.of(new Call(node.type(), ARRAY_SUBSCRIPT_FUNCTION_NAME, ImmutableList.of(target, index)));
             }
 
             return Optional.of(new FieldDereference(((Expression) node).type(), translatedBase.get(), (int) ((long) ((Constant) node.getIndex()).getValue() - 1)));
