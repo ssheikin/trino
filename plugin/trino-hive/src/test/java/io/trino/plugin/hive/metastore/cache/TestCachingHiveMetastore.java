@@ -787,12 +787,12 @@ public class TestCachingHiveMetastore
                 .setColumnStatistics(ImmutableMap.of())
                 .build();
         assertThat(metastore.getPartitionColumnStatistics(TEST_DATABASE, TEST_TABLE, ImmutableSet.of(TEST_PARTITION2), ImmutableSet.of(TEST_COLUMN)))
-                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.getColumnStatistics()));
+                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.columnStatistics()));
         assertThat(mockClient.getAccessCount()).isEqualTo(3);
 
         // Absence of column statistics should get cached and metastore client access count should stay the same
         assertThat(metastore.getPartitionColumnStatistics(TEST_DATABASE, TEST_TABLE, ImmutableSet.of(TEST_PARTITION2), ImmutableSet.of(TEST_COLUMN)))
-                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.getColumnStatistics()));
+                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.columnStatistics()));
         assertThat(mockClient.getAccessCount()).isEqualTo(3);
     }
 
@@ -815,12 +815,12 @@ public class TestCachingHiveMetastore
                 .setColumnStatistics(ImmutableMap.of())
                 .build();
         assertThat(metastore.getPartitionColumnStatistics(TEST_DATABASE, TEST_TABLE, ImmutableSet.of(TEST_PARTITION2), ImmutableSet.of(TEST_COLUMN)))
-                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.getColumnStatistics()));
+                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.columnStatistics()));
         assertThat(mockClient.getAccessCount()).isEqualTo(3);
 
         // Absence of column statistics does not get cached and metastore client access count increases
         assertThat(metastore.getPartitionColumnStatistics(TEST_DATABASE, TEST_TABLE, ImmutableSet.of(TEST_PARTITION2), ImmutableSet.of(TEST_COLUMN)))
-                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.getColumnStatistics()));
+                .isEqualTo(ImmutableMap.of(TEST_PARTITION2, expectedStats.columnStatistics()));
         assertThat(mockClient.getAccessCount()).isEqualTo(4);
     }
 
