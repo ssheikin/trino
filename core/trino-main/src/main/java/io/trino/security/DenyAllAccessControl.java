@@ -84,14 +84,12 @@ import static io.trino.spi.security.AccessDeniedException.denyRevokeTablePrivile
 import static io.trino.spi.security.AccessDeniedException.denySelectColumns;
 import static io.trino.spi.security.AccessDeniedException.denySetCatalogProperties;
 import static io.trino.spi.security.AccessDeniedException.denySetCatalogSessionProperty;
+import static io.trino.spi.security.AccessDeniedException.denySetEntityAuthorization;
 import static io.trino.spi.security.AccessDeniedException.denySetMaterializedViewProperties;
 import static io.trino.spi.security.AccessDeniedException.denySetRole;
-import static io.trino.spi.security.AccessDeniedException.denySetSchemaAuthorization;
 import static io.trino.spi.security.AccessDeniedException.denySetSystemSessionProperty;
-import static io.trino.spi.security.AccessDeniedException.denySetTableAuthorization;
 import static io.trino.spi.security.AccessDeniedException.denySetTableProperties;
 import static io.trino.spi.security.AccessDeniedException.denySetUser;
-import static io.trino.spi.security.AccessDeniedException.denySetViewAuthorization;
 import static io.trino.spi.security.AccessDeniedException.denyShowColumns;
 import static io.trino.spi.security.AccessDeniedException.denyShowCreateCatalog;
 import static io.trino.spi.security.AccessDeniedException.denyShowCreateFunction;
@@ -226,12 +224,6 @@ public class DenyAllAccessControl
     }
 
     @Override
-    public void checkCanSetSchemaAuthorization(SecurityContext context, CatalogSchemaName schemaName, TrinoPrincipal principal)
-    {
-        denySetSchemaAuthorization(schemaName.toString(), principal);
-    }
-
-    @Override
     public void checkCanCreateTable(SecurityContext context, QualifiedObjectName tableName, Map<String, Object> properties)
     {
         denyCreateTable(tableName.toString());
@@ -334,12 +326,6 @@ public class DenyAllAccessControl
     }
 
     @Override
-    public void checkCanSetTableAuthorization(SecurityContext context, QualifiedObjectName tableName, TrinoPrincipal principal)
-    {
-        denySetTableAuthorization(tableName.toString(), principal);
-    }
-
-    @Override
     public void checkCanInsertIntoTable(SecurityContext context, QualifiedObjectName tableName)
     {
         denyInsertTable(tableName.toString());
@@ -373,12 +359,6 @@ public class DenyAllAccessControl
     public void checkCanRenameView(SecurityContext context, QualifiedObjectName viewName, QualifiedObjectName newViewName)
     {
         denyRenameView(viewName.toString(), newViewName.toString());
-    }
-
-    @Override
-    public void checkCanSetViewAuthorization(SecurityContext context, QualifiedObjectName view, TrinoPrincipal principal)
-    {
-        denySetViewAuthorization(view.toString(), principal);
     }
 
     @Override
@@ -595,5 +575,11 @@ public class DenyAllAccessControl
     public void checkCanShowCreateFunction(SecurityContext context, QualifiedObjectName functionName)
     {
         denyShowCreateFunction(functionName.toString());
+    }
+
+    @Override
+    public void checkCanSetEntityAuthorization(SecurityContext context, EntityKindAndName entityKindAndName, TrinoPrincipal principal)
+    {
+        denySetEntityAuthorization(entityKindAndName, principal);
     }
 }
