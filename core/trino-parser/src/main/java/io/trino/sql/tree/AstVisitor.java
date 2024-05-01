@@ -642,7 +642,7 @@ public abstract class AstVisitor<R, C>
         return visitStatement(node, context);
     }
 
-    protected R visitSetSchemaAuthorization(SetSchemaAuthorization node, C context)
+    protected R visitSetAuthorization(SetAuthorizationStatement node, C context)
     {
         return visitStatement(node, context);
     }
@@ -682,11 +682,6 @@ public abstract class AstVisitor<R, C>
         return visitStatement(node, context);
     }
 
-    protected R visitSetViewAuthorization(SetViewAuthorization node, C context)
-    {
-        return visitStatement(node, context);
-    }
-
     protected R visitSetProperties(SetProperties node, C context)
     {
         return visitStatement(node, context);
@@ -718,11 +713,6 @@ public abstract class AstVisitor<R, C>
     }
 
     protected R visitDropNotNullConstraint(DropNotNullConstraint node, C context)
-    {
-        return visitStatement(node, context);
-    }
-
-    protected R visitSetTableAuthorization(SetTableAuthorization node, C context)
     {
         return visitStatement(node, context);
     }

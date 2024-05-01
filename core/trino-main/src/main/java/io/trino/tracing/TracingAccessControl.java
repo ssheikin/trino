@@ -216,15 +216,6 @@ public class TracingAccessControl
     }
 
     @Override
-    public void checkCanSetSchemaAuthorization(SecurityContext context, CatalogSchemaName schemaName, TrinoPrincipal principal)
-    {
-        Span span = startSpan("checkCanSetSchemaAuthorization");
-        try (var _ = scopedSpan(span)) {
-            delegate.checkCanSetSchemaAuthorization(context, schemaName, principal);
-        }
-    }
-
-    @Override
     public void checkCanShowSchemas(SecurityContext context, String catalogName)
     {
         Span span = startSpan("checkCanShowSchemas");
@@ -387,15 +378,6 @@ public class TracingAccessControl
     }
 
     @Override
-    public void checkCanSetTableAuthorization(SecurityContext context, QualifiedObjectName tableName, TrinoPrincipal principal)
-    {
-        Span span = startSpan("checkCanSetTableAuthorization");
-        try (var _ = scopedSpan(span)) {
-            delegate.checkCanSetTableAuthorization(context, tableName, principal);
-        }
-    }
-
-    @Override
     public void checkCanRenameColumn(SecurityContext context, QualifiedObjectName tableName)
     {
         Span span = startSpan("checkCanRenameColumn");
@@ -455,15 +437,6 @@ public class TracingAccessControl
         Span span = startSpan("checkCanRenameView");
         try (var _ = scopedSpan(span)) {
             delegate.checkCanRenameView(context, viewName, newViewName);
-        }
-    }
-
-    @Override
-    public void checkCanSetViewAuthorization(SecurityContext context, QualifiedObjectName view, TrinoPrincipal principal)
-    {
-        Span span = startSpan("checkCanSetViewAuthorization");
-        try (var _ = scopedSpan(span)) {
-            delegate.checkCanSetViewAuthorization(context, view, principal);
         }
     }
 
@@ -806,6 +779,15 @@ public class TracingAccessControl
         Span span = startSpan("getColumnMasks");
         try (var _ = scopedSpan(span)) {
             return delegate.getColumnMasks(context, tableName, columns);
+        }
+    }
+
+    @Override
+    public void checkCanSetEntityAuthorization(SecurityContext context, EntityKindAndName entityKindAndName, TrinoPrincipal principal)
+    {
+        Span span = startSpan("checkCanSetEntityAuthorization");
+        try (var ignored = scopedSpan(span)) {
+            delegate.checkCanSetEntityAuthorization(context, entityKindAndName, principal);
         }
     }
 

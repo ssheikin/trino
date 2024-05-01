@@ -159,12 +159,6 @@ public abstract class ForwardingAccessControl
     }
 
     @Override
-    public void checkCanSetSchemaAuthorization(SecurityContext context, CatalogSchemaName schemaName, TrinoPrincipal principal)
-    {
-        delegate().checkCanSetSchemaAuthorization(context, schemaName, principal);
-    }
-
-    @Override
     public void checkCanShowSchemas(SecurityContext context, String catalogName)
     {
         delegate().checkCanShowSchemas(context, catalogName);
@@ -285,12 +279,6 @@ public abstract class ForwardingAccessControl
     }
 
     @Override
-    public void checkCanSetTableAuthorization(SecurityContext context, QualifiedObjectName tableName, TrinoPrincipal principal)
-    {
-        delegate().checkCanSetTableAuthorization(context, tableName, principal);
-    }
-
-    @Override
     public void checkCanInsertIntoTable(SecurityContext context, QualifiedObjectName tableName)
     {
         delegate().checkCanInsertIntoTable(context, tableName);
@@ -318,12 +306,6 @@ public abstract class ForwardingAccessControl
     public void checkCanRenameView(SecurityContext context, QualifiedObjectName viewName, QualifiedObjectName newViewName)
     {
         delegate().checkCanRenameView(context, viewName, newViewName);
-    }
-
-    @Override
-    public void checkCanSetViewAuthorization(SecurityContext context, QualifiedObjectName view, TrinoPrincipal principal)
-    {
-        delegate().checkCanSetViewAuthorization(context, view, principal);
     }
 
     @Override
@@ -552,5 +534,11 @@ public abstract class ForwardingAccessControl
     public Map<ColumnSchema, ViewExpression> getColumnMasks(SecurityContext context, QualifiedObjectName tableName, List<ColumnSchema> columns)
     {
         return delegate().getColumnMasks(context, tableName, columns);
+    }
+
+    @Override
+    public void checkCanSetEntityAuthorization(SecurityContext context, EntityKindAndName entityKindAndName, TrinoPrincipal principal)
+    {
+        delegate().checkCanSetEntityAuthorization(context, entityKindAndName, principal);
     }
 }
