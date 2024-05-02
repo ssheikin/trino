@@ -1381,6 +1381,7 @@ public final class SqlFormatter
                         case TABLE -> "TABLE";
                         case VIEW -> "VIEW";
                         case MATERIALIZED_VIEW -> "MATERIALIZED VIEW";
+                        case FUNCTION -> "FUNCTION";
                     })
                     .append(" ")
                     .append(formatName(node.getName()));
