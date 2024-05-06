@@ -21,6 +21,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.Optional;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.Comparators.max;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -39,8 +40,10 @@ public class CachingHiveMetastoreConfig
     private Optional<Duration> metastoreRefreshInterval = Optional.of(new Duration(10, MINUTES));
     private long metastoreCacheMaximumSize = 100000;
     private int maxMetastoreRefreshThreads = 10;
-    private boolean cacheMissing = true;
     private boolean partitionCacheEnabled = true;
+    private boolean cacheMissing = true;
+    private Boolean cacheMissingPartitions;
+    private Boolean cacheMissingStats;
 
     @NotNull
     public Duration getMetastoreCacheTtl()
@@ -107,6 +110,18 @@ public class CachingHiveMetastoreConfig
         return this;
     }
 
+    public boolean isPartitionCacheEnabled()
+    {
+        return partitionCacheEnabled;
+    }
+
+    @Config("hive.metastore-cache.cache-partitions")
+    public CachingHiveMetastoreConfig setPartitionCacheEnabled(boolean enabled)
+    {
+        this.partitionCacheEnabled = enabled;
+        return this;
+    }
+
     public boolean isCacheMissing()
     {
         return cacheMissing;
@@ -119,15 +134,27 @@ public class CachingHiveMetastoreConfig
         return this;
     }
 
-    public boolean isPartitionCacheEnabled()
+    public boolean isCacheMissingPartitions()
     {
-        return partitionCacheEnabled;
+        return firstNonNull(cacheMissingPartitions, cacheMissing);
     }
 
-    @Config("hive.metastore-cache.cache-partitions")
-    public CachingHiveMetastoreConfig setPartitionCacheEnabled(boolean enabled)
+    @Config("hive.metastore-cache.cache-missing-partitions")
+    public CachingHiveMetastoreConfig setCacheMissingPartitions(boolean cacheMissingPartitions)
     {
-        this.partitionCacheEnabled = enabled;
+        this.cacheMissingPartitions = cacheMissingPartitions;
+        return this;
+    }
+
+    public boolean isCacheMissingStats()
+    {
+        return firstNonNull(cacheMissingStats, cacheMissing);
+    }
+
+    @Config("hive.metastore-cache.cache-missing-stats")
+    public CachingHiveMetastoreConfig setCacheMissingStats(boolean cacheMissingStats)
+    {
+        this.cacheMissingStats = cacheMissingStats;
         return this;
     }
 }
