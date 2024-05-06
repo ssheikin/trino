@@ -1851,6 +1851,15 @@ public interface ConnectorMetadata
         return false;
     }
 
+    /**
+     * @return true if reading a subset of columns from a given table separately from reading a complement of the subset has similar or better
+     * performance as reading this table.
+     */
+    default boolean allowSplittingReadIntoMultipleSubQueries(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        return false;
+    }
+
     default WriterScalingOptions getNewTableWriterScalingOptions(ConnectorSession session, SchemaTableName tableName, Map<String, Object> tableProperties)
     {
         return WriterScalingOptions.DISABLED;
