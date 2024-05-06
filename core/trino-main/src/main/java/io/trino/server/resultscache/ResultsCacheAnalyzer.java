@@ -39,7 +39,7 @@ public class ResultsCacheAnalyzer
         }
 
         for (TableHandle tableHandle : analysis.getTables()) {
-            CatalogHandleType type = tableHandle.getCatalogHandle().getType();
+            CatalogHandleType type = tableHandle.catalogHandle().getType();
             if (type.isInternal()) {
                 log.debug("QueryId: %s, query uses internal table %s, not caching", queryId, tableHandle);
                 return Optional.of(new FilteredResultsCacheEntry(QUERY_HAS_SYSTEM_TABLE));
