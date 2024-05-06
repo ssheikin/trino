@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 
 import static io.trino.SystemSessionProperties.QUERY_EXECUTION_PRIORITY;
 import static io.trino.execution.executor.QueryExecutionPriority.LOW;
+import static io.trino.plugin.tpch.TpchConnectorFactory.TPCH_SPLITS_PER_NODE;
 import static io.trino.testing.TestingSession.testSession;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Comparator.comparing;
@@ -88,12 +89,11 @@ public class TestRuntimeQueryPriority
             throws Exception
     {
         return TpchQueryRunnerBuilder.builder()
+                .withConnectorProperties(ImmutableMap.of(TPCH_SPLITS_PER_NODE, "1"))
                 .setNodeCount(1)
-                .withSplitsPerNode(4)
                 .addExtraProperties(ImmutableMap.of(
                         "experimental.thread-per-driver-scheduler-enabled", "true",
                         "query.priority.low.resource-percentage", "0.001"))
-                .withSplitsPerNode(1)
                 .build();
     }
 
