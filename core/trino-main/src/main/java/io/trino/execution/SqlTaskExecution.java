@@ -917,7 +917,7 @@ public class SqlTaskExecution
 
         private static String formatSplitInfo(Split split)
         {
-            return split.getConnectorSplit().getClass().getSimpleName() + "{" + JOINER.join(split.getInfo()) + "}";
+            return split.connectorSplit().getClass().getSimpleName() + "{" + JOINER.join(split.getInfo()) + "}";
         }
     }
 
