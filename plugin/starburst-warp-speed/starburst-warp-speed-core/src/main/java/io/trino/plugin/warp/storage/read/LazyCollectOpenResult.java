@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.warp.storage.read;
 
-record CollectFromStorageResult(CollectBufferState collectBufferState, boolean chunkPrepared, int numCollectedRows, int lazyChunkIx)
+public record LazyCollectOpenResult(int collectTxId,
+                                    int[] outResultType)
 {
 }
