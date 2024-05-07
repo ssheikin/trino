@@ -32,8 +32,8 @@ import io.trino.split.SplitSource;
 import io.trino.split.SplitSource.SplitBatch;
 import io.trino.sql.planner.plan.PlanNodeId;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -96,7 +96,7 @@ public class SourcePartitionedScheduler
     private final Map<InternalNode, RemoteTask> scheduledTasks;
     private final Optional<QualifiedObjectName> sourceTable;
     private final ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker;
-    private final List<Split> pendingSplits = new ArrayList<>();
+    private final Set<Split> pendingSplits = new HashSet<>();
 
     private ListenableFuture<SplitBatch> nextSplitBatchFuture;
     private ListenableFuture<Void> placementFuture = immediateVoidFuture();

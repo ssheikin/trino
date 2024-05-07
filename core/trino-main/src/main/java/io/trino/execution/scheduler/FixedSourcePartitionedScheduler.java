@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -192,7 +193,7 @@ public class FixedSourcePartitionedScheduler
         }
 
         @Override
-        public SplitPlacementResult computeAssignments(List<Split> splits)
+        public SplitPlacementResult computeAssignments(Set<Split> splits)
         {
             return nodeSelector.computeAssignments(splits, remoteTasks.get(), bucketNodeMap);
         }
