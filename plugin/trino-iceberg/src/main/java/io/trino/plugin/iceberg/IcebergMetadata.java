@@ -851,7 +851,7 @@ public class IcebergMetadata
     @Override
     public void createSchema(ConnectorSession session, String schemaName, Map<String, Object> properties, TrinoPrincipal owner)
     {
-        getSchemaLocation(properties).ifPresent(location -> locationAccessControl.checkCanUseLocation(session.getIdentity(), location));
+        getSchemaLocation(properties).ifPresent(location -> locationAccessControl.checkCanUseLocation(session.getIdentity(), location, session.getQueryId()));
         catalog.createNamespace(session, schemaName, properties, owner);
     }
 
@@ -967,7 +967,7 @@ public class IcebergMetadata
             tableLocation = getTableLocation(tableMetadata.getProperties())
                     .orElseGet(() -> catalog.defaultTableLocation(session, tableMetadata.getTable()));
         }
-        locationAccessControl.checkCanUseLocation(session.getIdentity(), tableLocation);
+        locationAccessControl.checkCanUseLocation(session.getIdentity(), tableLocation, session.getQueryId());
         transaction = newCreateTableTransaction(catalog, tableMetadata, session, replace, tableLocation);
         Location location = Location.of(transaction.table().location());
         TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity(), transaction.table().io().properties());

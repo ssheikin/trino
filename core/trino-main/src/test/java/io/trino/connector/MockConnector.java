@@ -645,7 +645,7 @@ public class MockConnector
         @Override
         public void createTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, boolean ignoreExisting)
         {
-            locationAccessControl.orElseThrow().checkCanUseLocation(session.getIdentity(), (String) tableMetadata.getProperties().get("location"));
+            locationAccessControl.orElseThrow().checkCanUseLocation(session.getIdentity(), (String) tableMetadata.getProperties().get("location"), session.getQueryId());
         }
 
         @Override

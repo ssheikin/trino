@@ -1457,10 +1457,10 @@ public class AccessControlManager
     }
 
     @Override
-    public void checkCanUseLocation(ConnectorIdentity identity, String location)
+    public void checkCanUseLocation(ConnectorIdentity identity, String location, String queryId)
     {
         for (LocationAccessControl locationAccessControl : getLocationAccessControl()) {
-            locationAccessControl.checkCanUseLocation(identity, location);
+            locationAccessControl.checkCanUseLocation(identity, location, queryId);
         }
     }
 
@@ -1761,7 +1761,7 @@ public class AccessControlManager
             implements LocationAccessControl
     {
         @Override
-        public void checkCanUseLocation(ConnectorIdentity identity, String location)
+        public void checkCanUseLocation(ConnectorIdentity identity, String location, String queryId)
         {
             throw new TrinoException(SERVER_STARTING_UP, "Trino server is still initializing");
         }
