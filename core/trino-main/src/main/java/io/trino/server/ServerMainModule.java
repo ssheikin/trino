@@ -75,6 +75,7 @@ import io.trino.metadata.HandleJsonModule;
 import io.trino.metadata.InternalBlockEncodingSerde;
 import io.trino.metadata.InternalFunctionBundle;
 import io.trino.metadata.InternalNodeManager;
+import io.trino.metadata.LanguageFunctionEngineManager;
 import io.trino.metadata.LanguageFunctionManager;
 import io.trino.metadata.Metadata;
 import io.trino.metadata.MetadataManager;
@@ -413,6 +414,7 @@ public class ServerMainModule
         binder.bind(TableFunctionRegistry.class).in(Scopes.SINGLETON);
         binder.bind(PlannerContext.class).in(Scopes.SINGLETON);
         binder.bind(LanguageFunctionManager.class).in(Scopes.SINGLETON);
+        binder.bind(LanguageFunctionEngineManager.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, BuiltinFunctionsChecker.class)
                 .setDefault()
                 .toInstance(BuiltinFunctionsChecker.NOOP_CHECKER);
