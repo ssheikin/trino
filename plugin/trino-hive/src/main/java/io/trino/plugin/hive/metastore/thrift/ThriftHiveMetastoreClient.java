@@ -111,7 +111,7 @@ public class ThriftHiveMetastoreClient
     private final String hostname;
 
     private final MetastoreSupportsDateStatistics metastoreSupportsDateStatistics;
-    private final AtomicInteger chosenGetTableMetaAlternative;
+    private final boolean metastoreSupportsTableMeta;
     private final AtomicInteger chosenGetTableAlternative;
     private final AtomicInteger chosenAlterTransactionalTableAlternative;
     private final AtomicInteger chosenAlterPartitionsAlternative;
@@ -120,7 +120,7 @@ public class ThriftHiveMetastoreClient
             TransportSupplier transportSupplier,
             String hostname,
             MetastoreSupportsDateStatistics metastoreSupportsDateStatistics,
-            AtomicInteger chosenGetTableMetaAlternative,
+            boolean metastoreSupportsTableMeta,
             AtomicInteger chosenGetTableAlternative,
             AtomicInteger chosenAlterTransactionalTableAlternative,
             AtomicInteger chosenAlterPartitionsAlternative)
@@ -129,7 +129,7 @@ public class ThriftHiveMetastoreClient
         this.transportSupplier = requireNonNull(transportSupplier, "transportSupplier is null");
         this.hostname = requireNonNull(hostname, "hostname is null");
         this.metastoreSupportsDateStatistics = requireNonNull(metastoreSupportsDateStatistics, "metastoreSupportsDateStatistics is null");
-        this.chosenGetTableMetaAlternative = requireNonNull(chosenGetTableMetaAlternative, "chosenGetTableMetaAlternative is null");
+        this.metastoreSupportsTableMeta = metastoreSupportsTableMeta;
         this.chosenGetTableAlternative = requireNonNull(chosenGetTableAlternative, "chosenGetTableAlternative is null");
         this.chosenAlterTransactionalTableAlternative = requireNonNull(chosenAlterTransactionalTableAlternative, "chosenAlterTransactionalTableAlternative is null");
         this.chosenAlterPartitionsAlternative = requireNonNull(chosenAlterPartitionsAlternative, "chosenAlterPartitionsAlternative is null");
@@ -177,41 +177,37 @@ public class ThriftHiveMetastoreClient
     public List<TableMeta> getTableMeta(Optional<String> databaseName)
             throws TException
     {
-        return alternativeCall(
-                exception -> !(exception instanceof MetaException),
-                chosenGetTableMetaAlternative,
-                () -> {
-                    if (databaseName.isPresent()) {
-                        String name = databaseName.get();
-                        if (name.indexOf('*') >= 0 || name.indexOf('|') >= 0) {
-                            // in this case we replace any pipes with a glob and then filter the output
-                            return client.getTableMeta(name.replace('|', '*'), "*", ImmutableList.of()).stream()
-                                    .filter(tableMeta -> tableMeta.getDbName().equals(name))
-                                    .collect(toImmutableList());
-                        }
-                    }
-                    return client.getTableMeta(databaseName.orElse("*"), "*", ImmutableList.of());
-                },
-                () -> {
-                    // TODO: remove this once Unity adds support for getTableMeta
-                    if (databaseName.isPresent()) {
-                        Map<String, TableMeta> tables = new HashMap<>();
-                        String name = databaseName.get();
-                        client.getTables(databaseName.get(), ".*").forEach(tableName -> tables.put(tableName, new TableMeta(databaseName.get(), tableName, RelationType.TABLE.toString())));
-                        client.getTablesByType(databaseName.get(), ".*", VIRTUAL_VIEW.name()).forEach(tableName -> {
-                            TableMeta tableMeta = new TableMeta(databaseName.get(), tableName, VIRTUAL_VIEW.name());
-                            // This makes all views look like a Trino view, so that they are not filtered out during SHOW VIEWS
-                            tableMeta.setComments(PRESTO_VIEW_COMMENT);
-                            tables.put(name, tableMeta);
-                        });
-                        return ImmutableList.copyOf(tables.values());
-                    }
-                    ImmutableList.Builder<TableMeta> builder = ImmutableList.builder();
-                    for (String database : getAllDatabases()) {
-                        builder.addAll(getTableMeta(Optional.of(database)));
-                    }
-                    return builder.build();
+        // TODO: remove this once Unity adds support for getTableMeta
+        if (!metastoreSupportsTableMeta) {
+            if (databaseName.isPresent()) {
+                Map<String, TableMeta> tables = new HashMap<>();
+                String name = databaseName.get();
+                client.getTables(databaseName.get(), ".*").forEach(tableName -> tables.put(tableName, new TableMeta(databaseName.get(), tableName, RelationType.TABLE.toString())));
+                client.getTablesByType(databaseName.get(), ".*", VIRTUAL_VIEW.name()).forEach(tableName -> {
+                    TableMeta tableMeta = new TableMeta(databaseName.get(), tableName, VIRTUAL_VIEW.name());
+                    // This makes all views look like a Trino view, so that they are not filtered out during SHOW VIEWS
+                    tableMeta.setComments(PRESTO_VIEW_COMMENT);
+                    tables.put(name, tableMeta);
                 });
+                return ImmutableList.copyOf(tables.values());
+            }
+            ImmutableList.Builder<TableMeta> builder = ImmutableList.builder();
+            for (String database : getAllDatabases()) {
+                builder.addAll(getTableMeta(Optional.of(database)));
+            }
+            return builder.build();
+        }
+
+        if (databaseName.isPresent()) {
+            String name = databaseName.get();
+            if (name.indexOf('*') >= 0 || name.indexOf('|') >= 0) {
+                // in this case we replace any pipes with a glob and then filter the output
+                return client.getTableMeta(name.replace('|', '*'), "*", ImmutableList.of()).stream()
+                        .filter(tableMeta -> tableMeta.getDbName().equals(name))
+                        .collect(toImmutableList());
+            }
+        }
+        return client.getTableMeta(databaseName.orElse("*"), "*", ImmutableList.of());
     }
 
     @Override
