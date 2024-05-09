@@ -95,6 +95,7 @@ public class CreateCatalogLikeTask
                 propertiesBuilder.put(
                         name,
                         Optional.of((String) PropertyUtil.evaluateProperty(
+                                Optional.empty(),
                                 name,
                                 VARCHAR,
                                 property.getNonDefaultValue(),
