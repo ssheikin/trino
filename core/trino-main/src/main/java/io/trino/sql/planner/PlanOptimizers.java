@@ -455,6 +455,7 @@ public class PlanOptimizers
                                         new RemoveRedundantExists(),
                                         new RemoveRedundantWindow(),
                                         new ImplementFilteredAggregations(),
+                                        new MultipleDistinctAggregationsToSubqueries(metadata),
                                         new SingleDistinctAggregationToGroupBy(),
                                         new MergeLimitWithDistinct(),
                                         new PruneCountAggregationOverScalar(metadata),
@@ -686,7 +687,7 @@ public class PlanOptimizers
                                 new ReplaceRedundantJoinWithSource(), // Run this after PredicatePushDown optimizer as it inlines filter constants
                                 // Run this after PredicatePushDown and PushProjectionIntoTableScan as it uses stats, and those two rules may reduce the number of partitions
                                 // and columns we need stats for thus reducing the overhead of reading statistics from the metastore.
-                                new MultipleDistinctAggregationsToSubqueries(taskCountEstimator, metadata),
+                                new MultipleDistinctAggregationsToSubqueries(metadata),
                                 // Run SingleDistinctAggregationToGroupBy after MultipleDistinctAggregationsToSubqueries to ensure the single column distinct is optimized
                                 new SingleDistinctAggregationToGroupBy(),
                                 new OptimizeMixedDistinctAggregations(plannerContext, taskCountEstimator), // Run this after aggregation pushdown so that multiple distinct aggregations can be pushed into a connector
