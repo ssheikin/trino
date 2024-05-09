@@ -16,7 +16,7 @@ package io.trino.plugin.bigquery;
 import com.google.common.collect.ImmutableMap;
 import io.trino.testing.QueryRunner;
 
-final class TestBigQueryCaseInsensitiveMapping
+public final class TestBigQueryCaseInsensitiveMapping
         extends BaseBigQueryCaseInsensitiveMapping
 {
     @Override
