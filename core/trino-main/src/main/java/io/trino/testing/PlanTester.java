@@ -152,6 +152,7 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
+import io.trino.spi.connector.metastore.UnimplementedMetastore;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.Type;
@@ -414,6 +415,7 @@ public class PlanTester
                 OpenTelemetry.noop(),
                 transactionManager,
                 typeManager,
+                new UnimplementedMetastore(),
                 nodeSchedulerConfig,
                 accessControlManager,
                 optimizerConfig,

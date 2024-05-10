@@ -42,6 +42,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
+import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.type.TypeManager;
 import io.trino.sql.planner.OptimizerConfig;
 import io.trino.transaction.TransactionManager;
@@ -75,6 +76,7 @@ public class DefaultCatalogFactory
     private final OpenTelemetry openTelemetry;
     private final TransactionManager transactionManager;
     private final TypeManager typeManager;
+    private final Metastore metastore;
 
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
@@ -95,6 +97,7 @@ public class DefaultCatalogFactory
             OpenTelemetry openTelemetry,
             TransactionManager transactionManager,
             TypeManager typeManager,
+            Metastore metastore,
             NodeSchedulerConfig nodeSchedulerConfig,
             AccessControlManager accessControlManager,
             OptimizerConfig optimizerConfig,
@@ -111,6 +114,7 @@ public class DefaultCatalogFactory
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.metastore = requireNonNull(metastore, "metastore is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.accessControlManager = requireNonNull(accessControlManager, "accessControlManager is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
@@ -226,6 +230,7 @@ public class DefaultCatalogFactory
                 typeManager,
                 new InternalMetadataProvider(metadata, typeManager),
                 accessControlManager,
+                metastore,
                 pageSorter,
                 pageIndexerFactory,
                 serverProperties,

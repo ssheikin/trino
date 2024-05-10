@@ -30,6 +30,8 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.connector.metastore.Metastore;
+import io.trino.spi.connector.metastore.UnimplementedMetastore;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
@@ -125,5 +127,11 @@ public final class TestingConnectorContext
     public ClassLoader duplicatePluginClassLoader()
     {
         return getClass().getClassLoader();
+    }
+
+    @Override
+    public Metastore getMetastore()
+    {
+        return new UnimplementedMetastore();
     }
 }

@@ -23,6 +23,7 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
@@ -47,6 +48,7 @@ public class ConnectorContextInstance
     private final Supplier<ClassLoader> duplicatePluginClassLoaderFactory;
     private final AtomicBoolean pluginClassLoaderDuplicated = new AtomicBoolean();
     private final LocationAccessControl locationAccessControl;
+    private final Metastore metastore;
     private final CatalogHandle catalogHandle;
     private final Map<String, String> serverProperties;
 
@@ -59,6 +61,7 @@ public class ConnectorContextInstance
             TypeManager typeManager,
             MetadataProvider metadataProvider,
             LocationAccessControl locationAccessControl,
+            Metastore metastore,
             PageSorter pageSorter,
             PageIndexerFactory pageIndexerFactory,
             Map<String, String> serverProperties,
@@ -71,6 +74,7 @@ public class ConnectorContextInstance
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.metadataProvider = requireNonNull(metadataProvider, "metadataProvider is null");
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
+        this.metastore = requireNonNull(metastore, "metastore is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
         this.duplicatePluginClassLoaderFactory = requireNonNull(duplicatePluginClassLoaderFactory, "duplicatePluginClassLoaderFactory is null");
@@ -149,5 +153,11 @@ public class ConnectorContextInstance
     public LocationAccessControl getLocationAccessControl()
     {
         return locationAccessControl;
+    }
+
+    @Override
+    public Metastore getMetastore()
+    {
+        return metastore;
     }
 }
