@@ -170,7 +170,7 @@ public class ConnectorMaterializedViewDefinition
                 Objects.equals(comment, that.comment) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(path, that.path) &&
-                Objects.equals(shouldUseInvoker, that.shouldUseInvoker);
+                shouldUseInvoker == that.shouldUseInvoker;
     }
 
     @Override
