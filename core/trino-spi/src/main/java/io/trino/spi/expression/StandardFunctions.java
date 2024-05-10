@@ -96,9 +96,4 @@ public final class StandardFunctions
      * $array creates instance of {@link ArrayType}
      */
     public static final FunctionName ARRAY_CONSTRUCTOR_FUNCTION_NAME = new FunctionName("$array");
-
-    /**
-     * $array_subscript array subscript
-     */
-    public static final FunctionName ARRAY_SUBSCRIPT_FUNCTION_NAME = new FunctionName("$array_subscript");
 }

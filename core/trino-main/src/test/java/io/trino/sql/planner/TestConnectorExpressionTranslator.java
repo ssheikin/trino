@@ -98,7 +98,6 @@ public class TestConnectorExpressionTranslator
     private static final Type ROW_TYPE = rowType(field("int_symbol_1", INTEGER), field("varchar_symbol_1", createVarcharType(5)));
     private static final VarcharType VARCHAR_TYPE = createUnboundedVarcharType();
     private static final ArrayType VARCHAR_ARRAY_TYPE = new ArrayType(VARCHAR_TYPE);
-    private static final ArrayType NESTED_VARCHAR_ARRAY_TYPE = new ArrayType(VARCHAR_ARRAY_TYPE);
 
     private static final Map<Symbol, Type> symbols = ImmutableMap.<Symbol, Type>builder()
             .put(new Symbol(DOUBLE, "double_symbol_1"), DOUBLE)
@@ -106,9 +105,6 @@ public class TestConnectorExpressionTranslator
             .put(new Symbol(ROW_TYPE, "row_symbol_1"), ROW_TYPE)
             .put(new Symbol(VARCHAR_TYPE, "varchar_symbol_1"), VARCHAR_TYPE)
             .put(new Symbol(BOOLEAN, "boolean_symbol_1"), BOOLEAN)
-            .put(new Symbol(VARCHAR_ARRAY_TYPE, "array_symbol_1"), VARCHAR_ARRAY_TYPE)
-            .put(new Symbol(INTEGER, "index_symbol_1"), INTEGER)
-            .put(new Symbol(NESTED_VARCHAR_ARRAY_TYPE, "nested_array_symbol_1"), NESTED_VARCHAR_ARRAY_TYPE)
             .buildOrThrow();
 
     private static final Map<String, Symbol> variableMappings = symbols.entrySet().stream()
@@ -486,55 +482,6 @@ public class TestConnectorExpressionTranslator
                                     List.of(
                                             new Variable("varchar_symbol_1", VARCHAR_TYPE),
                                             new io.trino.spi.expression.Constant(Slices.wrappedBuffer(value.getBytes(UTF_8)), VARCHAR_TYPE))))));
-    }
-
-    @Test
-    public void testTranslateArraySubscript()
-    {
-        assertTranslationRoundTrips(
-                new SubscriptExpression(
-                        VARCHAR,
-                        new SymbolReference(VARCHAR_ARRAY_TYPE, "array_symbol_1"),
-                        new SymbolReference(INTEGER, "index_symbol_1")),
-                new Call(
-                        VARCHAR,
-                        StandardFunctions.ARRAY_SUBSCRIPT_FUNCTION_NAME,
-                        ImmutableList.of(
-                                new Variable("array_symbol_1", VARCHAR_ARRAY_TYPE),
-                                new Variable("index_symbol_1", INTEGER))));
-
-        Long index = 0L;
-        assertTranslationRoundTrips(
-                new SubscriptExpression(
-                        VARCHAR,
-                        new SymbolReference(VARCHAR_ARRAY_TYPE, "array_symbol_1"),
-                        new Constant(INTEGER, index)),
-                new Call(
-                        VARCHAR,
-                        StandardFunctions.ARRAY_SUBSCRIPT_FUNCTION_NAME,
-                        ImmutableList.of(
-                                new Variable("array_symbol_1", VARCHAR_ARRAY_TYPE),
-                                new io.trino.spi.expression.Constant(index, INTEGER))));
-
-        assertTranslationRoundTrips(
-                new SubscriptExpression(
-                        VARCHAR_TYPE,
-                        new SubscriptExpression(
-                                VARCHAR_ARRAY_TYPE,
-                                new SymbolReference(NESTED_VARCHAR_ARRAY_TYPE, "nested_array_symbol_1"),
-                                new SymbolReference(INTEGER, "index_symbol_1")),
-                        new SymbolReference(INTEGER, "index_symbol_1")),
-                new Call(
-                        VARCHAR,
-                        StandardFunctions.ARRAY_SUBSCRIPT_FUNCTION_NAME,
-                        ImmutableList.of(
-                                new Call(
-                                        VARCHAR_ARRAY_TYPE,
-                                        StandardFunctions.ARRAY_SUBSCRIPT_FUNCTION_NAME,
-                                        ImmutableList.of(
-                                                new Variable("nested_array_symbol_1", NESTED_VARCHAR_ARRAY_TYPE),
-                                                new Variable("index_symbol_1", INTEGER))),
-                                new Variable("index_symbol_1", INTEGER))));
     }
 
     private void assertTranslationRoundTrips(Expression expression, ConnectorExpression connectorExpression)
