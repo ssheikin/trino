@@ -94,7 +94,7 @@ public class TestIcebergGlueTableOperationsInsertFailure
                 Optional.empty()));
         queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", ImmutableMap.of());
 
-        glueHiveMetastore = createTestingGlueHiveMetastore(dataDirectory);
+        glueHiveMetastore = createTestingGlueHiveMetastore(dataDirectory, this::closeAfterClass);
 
         Database database = Database.builder()
                 .setDatabaseName(schemaName)
