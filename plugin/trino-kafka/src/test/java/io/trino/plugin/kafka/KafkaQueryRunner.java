@@ -46,6 +46,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.ByteStreams.toByteArray;
+import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.testing.Closeables.closeAllSuppress;
 import static io.airlift.units.Duration.nanosSince;
@@ -96,6 +97,7 @@ public final class KafkaQueryRunner
         private List<TpchTable<?>> tables = ImmutableList.of();
         private Map<SchemaTableName, KafkaTopicDescription> extraTopicDescription = ImmutableMap.of();
         private final boolean schemaRegistryEnabled;
+        private Module additionalKafkaModule = EMPTY_MODULE;
 
         private Builder(String schemaName, boolean schemaRegistryEnabled)
         {
@@ -124,6 +126,13 @@ public final class KafkaQueryRunner
         public Builder setExtraTopicDescription(Map<SchemaTableName, KafkaTopicDescription> extraTopicDescription)
         {
             this.extraTopicDescription = ImmutableMap.copyOf(requireNonNull(extraTopicDescription, "extraTopicDescription is null"));
+            return this;
+        }
+
+        @CanIgnoreReturnValue
+        public Builder setAdditionalKafkaModule(Module additionalKafkaModule)
+        {
+            this.additionalKafkaModule = requireNonNull(additionalKafkaModule, "additionalKafkaModule is null");
             return this;
         }
 
@@ -165,7 +174,8 @@ public final class KafkaQueryRunner
                                             .toInstance(new MapBasedTableDescriptionSupplier(topicDescriptions.buildOrThrow()))))
                             .add(binder -> binder.bind(ContentSchemaProvider.class).to(FileReadContentSchemaProvider.class).in(Scopes.SINGLETON))
                             .add(new DecoderModule())
-                            .add(new EncoderModule());
+                            .add(new EncoderModule())
+                            .add(additionalKafkaModule);
                 }
 
                 queryRunner.installPlugin(new KafkaPlugin(extensions.build()));
