@@ -62,6 +62,7 @@ import static io.trino.sql.planner.assertions.PlanMatchPattern.exchange;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.node;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.tableScan;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_AGGREGATION_PUSHDOWN;
+import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_JOIN_PUSHDOWN;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_JOIN_PUSHDOWN_WITH_FULL_JOIN;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_LIMIT_PUSHDOWN;
 import static io.trino.testing.TestingConnectorBehavior.SUPPORTS_PREDICATE_PUSHDOWN_WITH_VARCHAR_EQUALITY;
@@ -630,12 +631,10 @@ public class TestPostgreSqlConnectorTest
         assertThat(query(joinPushdownEnabled, "SELECT c.name, n.name FROM customer c JOIN nation n ON c.custkey = n.nationkey WHERE address < 'TcGe5gaZNgVePxU5kRrvXBfkasDTea'"))
                 .isFullyPushedDown();
 
-        // join on varchar columns is not pushed down
+        // join on varchar columns is pushed down even when synthetic cast to align length is added
+        // address: varchar(40), name: varchar(25) => address = CAST(name AS varchar(40))
         assertThat(query(joinPushdownEnabled, "SELECT c.name, n.name FROM customer c JOIN nation n ON c.address = n.name"))
-                .isNotFullyPushedDown(
-                        node(JoinNode.class,
-                                anyTree(node(TableScanNode.class)),
-                                anyTree(node(TableScanNode.class))));
+                .isFullyPushedDown();
     }
 
     @Test
@@ -1010,6 +1009,66 @@ public class TestPostgreSqlConnectorTest
             assertThat(query("SELECT id FROM " + table.getName() + " WHERE id IN ('a', 'B', NULL) OR id2 IN ('C', 'd')"))
                     // NULL constant value is currently not pushed down
                     .isNotFullyPushedDown(FilterNode.class);
+        }
+    }
+
+    @Test
+    public void testJoinWithCastInCriteriaPushdown()
+    {
+        if (!hasBehavior(SUPPORTS_JOIN_PUSHDOWN)) {
+            return;
+        }
+
+        Session session = joinPushdownEnabled(getSession());
+
+        for (CastTestCase testCase : ImmutableList.of(
+                new CastTestCase("integer", "tinyint", "smallint"),
+                new CastTestCase("integer", "double", "double precision"),
+                new CastTestCase("integer", "varchar"),
+                new CastTestCase("integer", "varchar(10)"),
+                new CastTestCase("varchar", "tinyint", "smallint"),
+                new CastTestCase("varchar", "double", "double precision"),
+                new CastTestCase("varchar", "integer"),
+                new CastTestCase("varchar", "varchar(10)"))) {
+            try (TestTable tableA = new TestTable(onRemoteDatabase(), "test_join_cast_a_", "(a1 %s, a2 %s)".formatted(testCase.fromRemoteType(), testCase.fromRemoteType()));
+                    TestTable tableB = new TestTable(onRemoteDatabase(), "test_join_cast_b_", "(b1 %s, b2 %s)".formatted(testCase.targetRemoteType(), testCase.fromRemoteType()))) {
+                assertThat(query(session, "SELECT a.a2, b.b2 FROM %s a JOIN %s b ON CAST(a.a1 AS %s) = b.b1".formatted(tableA.getName(), tableB.getName(), testCase.castType())))
+                        .isFullyPushedDown();
+            }
+        }
+
+        CastTestCase testCase;
+
+        // cast with pushdownable complex expression
+        testCase = new CastTestCase("integer", "varchar");
+        try (TestTable tableA = new TestTable(onRemoteDatabase(), "test_join_cast_a_", "(a1 %s, a2 %s)".formatted(testCase.fromRemoteType(), testCase.fromRemoteType()));
+                TestTable tableB = new TestTable(onRemoteDatabase(), "test_join_cast_b_", "(b1 %s, b2 %s)".formatted(testCase.targetRemoteType(), testCase.fromRemoteType()))) {
+            assertThat(query(session, "SELECT a.a2, b.b2 FROM %s a JOIN %s b ON CAST(a.a1 + 123 AS %s) = b.b1".formatted(tableA.getName(), tableB.getName(), testCase.castType())))
+                    .isFullyPushedDown();
+        }
+
+        // cast with pushdownable complex expression with function
+        testCase = new CastTestCase("varchar", "tinyint", "smallint");
+        try (TestTable tableA = new TestTable(onRemoteDatabase(), "test_join_cast_a_", "(a1 %s, a2 %s)".formatted(testCase.fromRemoteType(), testCase.fromRemoteType()));
+                TestTable tableB = new TestTable(onRemoteDatabase(), "test_join_cast_b_", "(b1 %s, b2 %s)".formatted(testCase.targetRemoteType(), testCase.fromRemoteType()))) {
+            assertThat(query(session, "SELECT a.a2, b.b2 FROM %s a JOIN %s b ON CAST(UPPER(a.a1) AS %s) = b.b1".formatted(tableA.getName(), tableB.getName(), testCase.castType())))
+                    .isFullyPushedDown();
+        }
+
+        // cast with non-pushdownable complex expression
+        testCase = new CastTestCase("date", "varchar");
+        try (TestTable tableA = new TestTable(onRemoteDatabase(), "test_join_cast_a_", "(a1 %s, a2 %s)".formatted(testCase.fromRemoteType(), testCase.fromRemoteType()));
+                TestTable tableB = new TestTable(onRemoteDatabase(), "test_join_cast_b_", "(b1 %s, b2 %s)".formatted(testCase.targetRemoteType(), testCase.fromRemoteType()))) {
+            assertThat(query(session, "SELECT a.a2, b.b2 FROM %s a JOIN %s b ON CAST(year(a.a1) AS %s) = b.b1".formatted(tableA.getName(), tableB.getName(), testCase.castType())))
+                    .joinIsNotFullyPushedDown();
+        }
+    }
+
+    private record CastTestCase(String fromRemoteType, String castType, String targetRemoteType)
+    {
+        private CastTestCase(String fromRemoteType, String castType)
+        {
+            this(fromRemoteType, castType, castType);
         }
     }
 
