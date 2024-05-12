@@ -130,12 +130,10 @@ public class DispatcherMetadataTest
                 DispatcherMetadata.class,
                 Set.of(
                         // Deprecated methods
-                        ConnectorMetadata.class.getMethod("createView", ConnectorSession.class, SchemaTableName.class, ConnectorViewDefinition.class, boolean.class),
                         ConnectorMetadata.class.getMethod("applyJoin", ConnectorSession.class, JoinType.class, ConnectorTableHandle.class, ConnectorTableHandle.class, List.class, Map.class, Map.class, JoinStatistics.class),
                         ConnectorMetadata.class.getMethod("getTableHandle", ConnectorSession.class, SchemaTableName.class),
                         ConnectorMetadata.class.getMethod("streamTableColumns", ConnectorSession.class, SchemaTablePrefix.class),
-                        ConnectorMetadata.class.getMethod("listTableColumns", ConnectorSession.class, SchemaTablePrefix.class),
-                        ConnectorMetadata.class.getMethod("finishInsert", ConnectorSession.class, ConnectorInsertTableHandle.class, Collection.class, Collection.class)));
+                        ConnectorMetadata.class.getMethod("listTableColumns", ConnectorSession.class, SchemaTablePrefix.class)));
     }
 
     @Test
