@@ -18,6 +18,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
+import io.airlift.configuration.ConfigurationAwareModule;
+import io.airlift.configuration.ConfigurationAwareModules;
+import io.airlift.configuration.ConfigurationModule;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Level;
 import io.airlift.log.Logger;
@@ -28,6 +31,7 @@ import io.trino.plugin.kafka.schema.ContentSchemaProvider;
 import io.trino.plugin.kafka.schema.MapBasedTableDescriptionSupplier;
 import io.trino.plugin.kafka.schema.TableDescriptionSupplier;
 import io.trino.plugin.kafka.schema.file.FileReadContentSchemaProvider;
+import io.trino.plugin.kafka.security.KafkaSecurityModule;
 import io.trino.plugin.kafka.util.CodecSupplier;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.spi.connector.SchemaTableName;
@@ -48,6 +52,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
+import static io.airlift.configuration.ConfigurationAwareModule.combine;
 import static io.airlift.testing.Closeables.closeAllSuppress;
 import static io.airlift.units.Duration.nanosSince;
 import static io.trino.plugin.kafka.util.TestUtils.loadTpchTopicDescription;
@@ -97,7 +102,7 @@ public final class KafkaQueryRunner
         private List<TpchTable<?>> tables = ImmutableList.of();
         private Map<SchemaTableName, KafkaTopicDescription> extraTopicDescription = ImmutableMap.of();
         private final boolean schemaRegistryEnabled;
-        private Module additionalKafkaModule = EMPTY_MODULE;
+        private Module additionalKafkaModule = combine(new KafkaClientsModule(), new KafkaSecurityModule());
 
         private Builder(String schemaName, boolean schemaRegistryEnabled)
         {
@@ -174,9 +179,10 @@ public final class KafkaQueryRunner
                                             .toInstance(new MapBasedTableDescriptionSupplier(topicDescriptions.buildOrThrow()))))
                             .add(binder -> binder.bind(ContentSchemaProvider.class).to(FileReadContentSchemaProvider.class).in(Scopes.SINGLETON))
                             .add(new DecoderModule())
-                            .add(new EncoderModule())
-                            .add(additionalKafkaModule);
+                            .add(new EncoderModule());
                 }
+
+                extensions.add(additionalKafkaModule);
 
                 queryRunner.installPlugin(new KafkaPlugin(extensions.build()));
                 queryRunner.createCatalog("kafka", "kafka", connectorProperties);
