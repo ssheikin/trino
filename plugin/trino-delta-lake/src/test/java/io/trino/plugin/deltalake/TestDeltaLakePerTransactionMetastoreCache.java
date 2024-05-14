@@ -28,7 +28,6 @@ import static io.trino.plugin.hive.metastore.MetastoreInvocations.assertMetastor
 import static io.trino.plugin.hive.metastore.MetastoreMethod.GET_TABLE;
 import static io.trino.tpch.TpchTable.NATION;
 import static io.trino.tpch.TpchTable.REGION;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TestDeltaLakePerTransactionMetastoreCache
 {
@@ -37,6 +36,7 @@ public class TestDeltaLakePerTransactionMetastoreCache
     {
         Map<String, String> deltaLakeProperties = new HashMap<>();
         deltaLakeProperties.put("delta.register-table-procedure.enabled", "true");
+        deltaLakeProperties.put("hive.metastore-cache-ttl", "0s");
         if (!enablePerTransactionHiveMetastoreCaching) {
             // almost disable the cache; 0 is not allowed as config property value
             deltaLakeProperties.put("delta.per-transaction-metastore-cache-maximum-size", "1");
@@ -54,13 +54,10 @@ public class TestDeltaLakePerTransactionMetastoreCache
     {
         try (QueryRunner queryRunner = createQueryRunner(true)) {
             // Verify cache works; we expect only two calls to `getTable` because we have two tables in a query.
-            // TODO: Fix this test, this assertion must not fail (https://starburstdata.atlassian.net/browse/SEP-13874)
-            assertThatThrownBy(() -> assertMetastoreInvocations(queryRunner, "SELECT * FROM nation JOIN region ON nation.regionkey = region.regionkey",
+            assertMetastoreInvocations(queryRunner, "SELECT * FROM nation JOIN region ON nation.regionkey = region.regionkey",
                     ImmutableMultiset.<MetastoreMethod>builder()
                             .addCopies(GET_TABLE, 2)
-                            .build()))
-                    .isInstanceOf(AssertionError.class)
-                    .hasMessageContaining("2 more occurrences of GET_TABLE");
+                            .build());
         }
     }
 
@@ -69,13 +66,10 @@ public class TestDeltaLakePerTransactionMetastoreCache
             throws Exception
     {
         try (QueryRunner queryRunner = createQueryRunner(false)) {
-            // TODO: Fix this test, this assertion must not fail (https://starburstdata.atlassian.net/browse/SEP-13874)
-            assertThatThrownBy(() -> assertMetastoreInvocations(queryRunner, "SELECT * FROM nation JOIN region ON nation.regionkey = region.regionkey",
+            assertMetastoreInvocations(queryRunner, "SELECT * FROM nation JOIN region ON nation.regionkey = region.regionkey",
                     ImmutableMultiset.<MetastoreMethod>builder()
                             .addCopies(GET_TABLE, 2)
-                            .build()))
-                    .isInstanceOf(AssertionError.class)
-                    .hasMessageContaining("2 more occurrences of GET_TABLE");
+                            .build());
         }
     }
 
