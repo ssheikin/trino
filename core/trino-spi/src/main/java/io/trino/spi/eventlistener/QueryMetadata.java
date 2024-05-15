@@ -50,6 +50,39 @@ public class QueryMetadata
 
     private final Supplier<Optional<String>> payloadProvider;
 
+    // kept for backward compatibility
+    @Unstable
+    public QueryMetadata(
+            String queryId,
+            Optional<String> transactionId,
+            String query,
+            Optional<String> updateType,
+            Optional<String> preparedQuery,
+            String queryState,
+            List<TableInfo> tables,
+            List<RoutineInfo> routines,
+            URI uri,
+            Optional<String> plan,
+            Optional<String> jsonPlan,
+            Optional<String> payload)
+    {
+        this(
+                queryId,
+                transactionId,
+                query,
+                updateType,
+                preparedQuery,
+                queryState,
+                tables,
+                routines,
+                uri,
+                Optional.empty(),
+                Optional.empty(),
+                plan,
+                jsonPlan,
+                () -> payload);
+    }
+
     @JsonCreator
     @Unstable
     public QueryMetadata(
@@ -83,6 +116,38 @@ public class QueryMetadata
                 plan,
                 jsonPlan,
                 () -> payload);
+    }
+
+    // kept for backward compatibility
+    public QueryMetadata(
+            String queryId,
+            Optional<String> transactionId,
+            String query,
+            Optional<String> updateType,
+            Optional<String> preparedQuery,
+            String queryState,
+            List<TableInfo> tables,
+            List<RoutineInfo> routines,
+            URI uri,
+            Optional<String> plan,
+            Optional<String> jsonPlan,
+            Supplier<Optional<String>> payloadProvider)
+    {
+        this(
+                queryId,
+                transactionId,
+                query,
+                updateType,
+                preparedQuery,
+                queryState,
+                tables,
+                routines,
+                uri,
+                Optional.empty(),
+                Optional.empty(),
+                plan,
+                jsonPlan,
+                payloadProvider);
     }
 
     public QueryMetadata(

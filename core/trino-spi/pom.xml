@@ -201,6 +201,17 @@
                                 <!-- Cork backports, i.e. temporary exclusions -->
                                 <!-- / Cork backports, i.e. temporary exclusions -->
 
+                                <!-- SEP fork specific changes -->
+                                <!-- Allow removing @JsonCreator annotation -->
+                                <!-- This allows Jackson to use a new constructor while still keeping the previous one for compatibility -->
+                                <item>
+                                    <code>java.annotation.removed</code>
+                                    <old>method void io.trino.spi.eventlistener.QueryMetadata::&lt;init&gt;(java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.List&lt;io.trino.spi.eventlistener.TableInfo&gt;, java.util.List&lt;io.trino.spi.eventlistener.RoutineInfo&gt;, java.net.URI, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;)</old>
+                                    <new>method void io.trino.spi.eventlistener.QueryMetadata::&lt;init&gt;(java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.List&lt;io.trino.spi.eventlistener.TableInfo&gt;, java.util.List&lt;io.trino.spi.eventlistener.RoutineInfo&gt;, java.net.URI, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;)</new>
+                                    <annotation>@com.fasterxml.jackson.annotation.JsonCreator</annotation>
+                                </item>
+                                <!-- / SEP fork specific changes -->
+
                                 <!-- Allow adding new annotations (such as @Nullable) -->
                                 <item>
                                     <code>java.annotation.added</code>
