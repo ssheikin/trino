@@ -178,10 +178,6 @@
                                 <exclude>
                                     <item>
                                         <matcher>java</matcher>
-                                        <match>@io.trino.spi.Experimental(*) ^*;</match>
-                                    </item>
-                                    <item>
-                                        <matcher>java</matcher>
                                         <match>type io.trino.spi.connector.ConstraintApplicationResult&lt;?&gt; {}</match>
                                     </item>
                                 </exclude>
@@ -219,24 +215,6 @@
                                 <!-- Allow changing enum constant order (e.g., StandardErrorCode) -->
                                 <item>
                                     <code>java.field.enumConstantOrderChanged</code>
-                                </item>
-                                <!-- Allow arbitrary changes to unstable APIs -->
-                                <item>
-                                    <regex>true</regex>
-                                    <code>java.method.numberOfParametersChanged</code>
-                                    <old>
-                                        <matcher>java</matcher>
-                                        <match>@io.trino.spi.Unstable *;</match>
-                                    </old>
-                                </item>
-                                <!-- Allow removing things that were previously deprecated -->
-                                <item>
-                                    <regex>true</regex>
-                                    <code>java\.(class|method|field)\.removed</code>
-                                    <old>
-                                        <matcher>java</matcher>
-                                        <match>@java.lang.Deprecated(*) ^*;</match>
-                                    </old>
                                 </item>
                                 <!-- Backwards incompatible changes since the previous release -->
                                 <!-- Any exclusions below can be deleted after each release -->
