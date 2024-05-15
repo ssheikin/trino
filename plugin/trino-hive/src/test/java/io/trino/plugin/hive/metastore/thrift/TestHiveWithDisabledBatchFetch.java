@@ -14,8 +14,10 @@
 package io.trino.plugin.hive.metastore.thrift;
 
 import io.trino.hive.thrift.metastore.TableMeta;
+import io.trino.plugin.base.util.AutoCloseableCloser;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -26,6 +28,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHiveWithDisabledBatchFetch
 {
+    private static final AutoCloseableCloser closer = AutoCloseableCloser.create();
+
+    @AfterAll
+    public static void shutDown()
+            throws Exception
+    {
+        closer.close();
+    }
+
     @Test
     public void testBatchEnabled()
     {
@@ -46,7 +57,7 @@ public class TestHiveWithDisabledBatchFetch
         ThriftMetastore thriftMetastore = testingThriftHiveMetastoreBuilder()
                 .thriftMetastoreConfig(new ThriftMetastoreConfig().setBatchMetadataFetchEnabled(true))
                 .metastoreClient(createFailingMetastoreClient())
-                .build();
+                .build(closer::register);
 
         assertThat(thriftMetastore.getAllTables()).isEmpty();
     }
@@ -56,7 +67,7 @@ public class TestHiveWithDisabledBatchFetch
         return testingThriftHiveMetastoreBuilder()
                 .thriftMetastoreConfig(new ThriftMetastoreConfig().setBatchMetadataFetchEnabled(enabled))
                 .metastoreClient(new MockThriftMetastoreClient())
-                .build();
+                .build(closer::register);
     }
 
     private static ThriftMetastoreClient createFailingMetastoreClient()
