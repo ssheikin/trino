@@ -1602,7 +1602,8 @@ class AstBuilder
         return new DropRole(
                 getLocation(context),
                 (Identifier) visit(context.name),
-                visitIfPresent(context.catalog, Identifier.class));
+                visitIfPresent(context.catalog, Identifier.class),
+                context.EXISTS() != null);
     }
 
     @Override

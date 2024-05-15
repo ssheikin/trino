@@ -128,7 +128,7 @@ statement
     | CREATE ROLE name=identifier
         (WITH ADMIN grantor)?
         (IN catalog=identifier)?                                       #createRole
-    | DROP ROLE name=identifier (IN catalog=identifier)?               #dropRole
+    | DROP ROLE (IF EXISTS)? name=identifier (IN catalog=identifier)?  #dropRole
     | GRANT
         privilegeOrRole (',' privilegeOrRole)*
         TO principal (',' principal)*
