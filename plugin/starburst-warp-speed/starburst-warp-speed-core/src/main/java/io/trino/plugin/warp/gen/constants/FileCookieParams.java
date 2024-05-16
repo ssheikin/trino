@@ -1,3 +1,4 @@
+
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,14 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.varada.dispatcher.warmup.warmers;
 
-import io.trino.plugin.varada.dispatcher.WarmupElementWriteMetadata;
-import io.trino.plugin.varada.dispatcher.model.RowGroupKey;
-import io.trino.plugin.varada.storage.write.PageSink;
+package io.trino.plugin.warp.gen.constants;
 
-public record WarmingCandidate(long[] fileCookie,
-                               PageSink pageSink,
-                               int fileOffset,
-                               WarmupElementWriteMetadata warmupElementWriteMetadata,
-                               RowGroupKey tmpRowGroupKey) {}
+public enum FileCookieParams
+{
+    FILE_COOKIE_PARAMS_FD,
+    FILE_COOKIE_PARAMS_FILE_HASH,
+    FILE_COOKIE_PARAMS_NUM_OF;
+
+    FileCookieParams()
+    {
+    }
+}
