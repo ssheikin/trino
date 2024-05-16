@@ -11,10 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.trino.plugin.warp.dispatcher.cache;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.airlift.log.Logger;
 import io.trino.plugin.warp.dispatcher.WarmupElementWriteMetadata;
 import io.trino.plugin.warp.dispatcher.model.RowGroupData;
@@ -31,25 +31,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
-
-public class AbortAction
+@Singleton
+public class AbortOnEngineAction
         implements CacheAction
 {
-    private static final Logger logger = Logger.get(FinishAction.class);
+    private static final Logger logger = Logger.get(AbortOnEngineAction.class);
 
     private final RowGroupDataService rowGroupDataService;
-    private final StorageWarmerService storageWarmerService;
     private final WarpCacheFilesMerger warpCacheFilesMerger;
+    private final StorageWarmerService storageWarmerService;
 
     @Inject
-    public AbortAction(RowGroupDataService rowGroupDataService,
-            StorageWarmerService storageWarmerService,
-            WarpCacheFilesMerger warpCacheFilesMerger)
+    public AbortOnEngineAction(RowGroupDataService rowGroupDataService, WarpCacheFilesMerger warpCacheFilesMerger, StorageWarmerService storageWarmerService)
     {
-        this.rowGroupDataService = requireNonNull(rowGroupDataService);
-        this.storageWarmerService = requireNonNull(storageWarmerService);
-        this.warpCacheFilesMerger = requireNonNull(warpCacheFilesMerger);
+        this.rowGroupDataService = rowGroupDataService;
+        this.warpCacheFilesMerger = warpCacheFilesMerger;
+        this.storageWarmerService = storageWarmerService;
     }
 
     @Override
@@ -75,7 +72,7 @@ public class AbortAction
                 logger.error(e, "failed to close WE %s", warmupElementWriteMetadata);
             }
         }
-        return CacheWarmState.ABORTING;
+        return CacheWarmState.ABORT_FROM_ENGINE;
     }
 
     @Override
@@ -96,7 +93,8 @@ public class AbortAction
             }
 
             try {
-                warpCacheFilesMerger.handleWarmFailed(tmpRowGroupDataList, permanentRowGroupKey);
+                //abort from engine should be transitive
+                warpCacheFilesMerger.deleteTmpRowGroups(tmpRowGroupDataList);
             }
             catch (Exception e) {
                 logger.error(e, "failed on merge %s. key=%s", tmpRowGroupDataList, permanentRowGroupKey);
@@ -107,7 +105,7 @@ public class AbortAction
                     flowId,
                     true,
                     true,
-                    true);
+                    false);
         }
         return false;
     }
