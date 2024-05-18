@@ -1329,7 +1329,7 @@ public class QueryStateMachine
     {
         // Execution start time is empty if planning has not started
         return queryStateTimer.getExecutionStartTime()
-                .map(ignored -> queryStateTimer.getPlanningTime());
+                .map(_ -> queryStateTimer.getPlanningTime());
     }
 
     public DateTime getLastHeartbeat()
