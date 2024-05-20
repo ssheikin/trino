@@ -1780,7 +1780,7 @@ public final class MetadataManager
             return false;
         }
 
-        Optional<CatalogMetadata> catalog = getOptionalCatalogMetadata(session, viewName.getCatalogName());
+        Optional<CatalogMetadata> catalog = getOptionalCatalogMetadata(session, viewName.catalogName());
         if (catalog.isPresent()) {
             CatalogMetadata catalogMetadata = catalog.get();
             CatalogHandle catalogHandle = catalogMetadata.getCatalogHandle(session, viewName);
