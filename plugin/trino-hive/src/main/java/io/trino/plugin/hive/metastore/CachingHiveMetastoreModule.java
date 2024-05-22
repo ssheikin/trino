@@ -23,6 +23,7 @@ import io.trino.plugin.hive.metastore.cache.CachingHiveMetastoreConfig;
 import io.trino.plugin.hive.metastore.cache.ImpersonationCachingConfig;
 import io.trino.plugin.hive.metastore.cache.SharedHiveMetastoreCache;
 import io.trino.plugin.hive.metastore.cache.SharedHiveMetastoreCache.CachingHiveMetastoreFactory;
+import io.trino.plugin.hive.metastore.glue.GlueCache;
 import io.trino.plugin.hive.metastore.procedure.FlushMetadataCacheProcedure;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.security.ConnectorIdentity;
@@ -33,6 +34,7 @@ import java.util.Set;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
@@ -61,6 +63,7 @@ public class CachingHiveMetastoreModule
                 .as(generator -> generator.generatedNameOf(CachingHiveMetastore.class));
 
         if (installFlushMetadataCacheProcedure) {
+            newOptionalBinder(binder, GlueCache.class);
             newSetBinder(binder, Procedure.class).addBinding().toProvider(FlushMetadataCacheProcedure.class).in(Scopes.SINGLETON);
         }
     }

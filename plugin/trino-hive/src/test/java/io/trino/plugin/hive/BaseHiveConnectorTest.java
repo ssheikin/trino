@@ -9332,6 +9332,13 @@ public abstract class BaseHiveConnectorTest
         }
     }
 
+    @Test
+    public void testFlushMetadataDisabled()
+    {
+        // Flushing metadata cache does not fail even if cache is disabled
+        assertQuerySucceeds("CALL system.flush_metadata_cache()");
+    }
+
     @ParameterizedTest
     @MethodSource("timestampDefinitionAndPrecisionProvider")
     public void testVariousTimestampPrecisionOnCreateTable(String inputType, HiveTimestampPrecision timestampPrecision)
