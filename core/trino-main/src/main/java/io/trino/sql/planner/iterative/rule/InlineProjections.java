@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 import static io.trino.matching.Capture.newCapture;
 import static io.trino.sql.planner.ExpressionSymbolInliner.inlineSymbols;
+import static io.trino.sql.planner.iterative.rule.ArraySubscriptPushdownUtil.isArraySubscriptChain;
 import static io.trino.sql.planner.plan.Patterns.project;
 import static io.trino.sql.planner.plan.Patterns.source;
 import static java.util.stream.Collectors.toSet;
@@ -183,6 +184,10 @@ public class InlineProjections
                         if (((FieldReference) assignment).base().type() instanceof RowType) {
                             return false;
                         }
+                    }
+                    // skip array subscript, inlining can cause conflicts with PushdownArraySubscript
+                    if (isArraySubscriptChain(assignment)) {
+                        return false;
                     }
 
                     return true;

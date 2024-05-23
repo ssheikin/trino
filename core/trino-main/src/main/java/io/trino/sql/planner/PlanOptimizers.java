@@ -50,6 +50,7 @@ import io.trino.sql.planner.iterative.rule.DetermineTableScanNodePartitioning;
 import io.trino.sql.planner.iterative.rule.EliminateCrossJoins;
 import io.trino.sql.planner.iterative.rule.EvaluateEmptyIntersect;
 import io.trino.sql.planner.iterative.rule.EvaluateZeroSample;
+import io.trino.sql.planner.iterative.rule.ExtractArraySubscriptFromFilterAboveScan;
 import io.trino.sql.planner.iterative.rule.ExtractDereferencesFromFilterAboveScan;
 import io.trino.sql.planner.iterative.rule.ExtractSpatialJoins;
 import io.trino.sql.planner.iterative.rule.GatherAndMergeWindows;
@@ -139,6 +140,10 @@ import io.trino.sql.planner.iterative.rule.PushAggregationIntoTableScan;
 import io.trino.sql.planner.iterative.rule.PushAggregationThroughOuterJoin;
 import io.trino.sql.planner.iterative.rule.PushCastIntoRow;
 import io.trino.sql.planner.iterative.rule.PushDistinctLimitIntoTableScan;
+import io.trino.sql.planner.iterative.rule.PushDownArraySubscriptThroughFilter;
+import io.trino.sql.planner.iterative.rule.PushDownArraySubscriptThroughJoin;
+import io.trino.sql.planner.iterative.rule.PushDownArraySubscriptThroughProject;
+import io.trino.sql.planner.iterative.rule.PushDownArraySubscriptThroughSemiJoin;
 import io.trino.sql.planner.iterative.rule.PushDownDereferenceThroughFilter;
 import io.trino.sql.planner.iterative.rule.PushDownDereferenceThroughJoin;
 import io.trino.sql.planner.iterative.rule.PushDownDereferenceThroughProject;
@@ -349,7 +354,12 @@ public class PlanOptimizers
                 new PushDownDereferencesThroughWindow(),
                 new PushDownDereferencesThroughTopN(),
                 new PushDownDereferencesThroughRowNumber(),
-                new PushDownDereferencesThroughTopNRanking());
+                new PushDownDereferencesThroughTopNRanking(),
+                new PushDownArraySubscriptThroughProject(),
+                new PushDownArraySubscriptThroughSemiJoin(),
+                new PushDownArraySubscriptThroughJoin(),
+                new PushDownArraySubscriptThroughFilter(),
+                new ExtractArraySubscriptFromFilterAboveScan());
 
         Set<Rule<?>> limitPushdownRules = ImmutableSet.of(
                 new PushLimitThroughOffset(),
