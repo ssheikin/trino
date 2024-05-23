@@ -170,7 +170,7 @@
                 <version>0.15.0</version>
                 <configuration>
                     <skip>${trino.check.skip-revapi}</skip>
-                    <oldVersion>443</oldVersion>
+                    <oldVersion>446</oldVersion>
                     <ignoreSuggestionsFormat>xml</ignoreSuggestionsFormat>
                     <analysisConfiguration>
                         <revapi.filter>
