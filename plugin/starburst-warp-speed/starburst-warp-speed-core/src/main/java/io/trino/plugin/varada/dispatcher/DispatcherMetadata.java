@@ -1153,6 +1153,12 @@ public class DispatcherMetadata
     }
 
     @Override
+    public boolean isMaterializedView(ConnectorSession session, SchemaTableName viewName)
+    {
+        return proxiedConnectorMetadata.isMaterializedView(session, viewName);
+    }
+
+    @Override
     public MaterializedViewFreshness getMaterializedViewFreshness(ConnectorSession session, SchemaTableName name)
     {
         return proxiedConnectorMetadata.getMaterializedViewFreshness(session, name);
