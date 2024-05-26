@@ -20,6 +20,7 @@ import io.trino.plugin.hive.metastore.glue.GlueHiveMetastore;
 import io.trino.spi.security.Identity;
 import io.trino.spi.security.SelectedRole;
 import io.trino.testing.QueryRunner;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -121,6 +122,14 @@ public class TestHiveS3AndGlueMetastoreTest
     {
         assertThat(updatedFiles).hasSizeLessThan(initialFiles.size());
         assertThat(getAllDataFilesFromTableDirectory(location)).isEqualTo(updatedFiles);
+    }
+
+    @Disabled // TODO https://starburstdata.atlassian.net/browse/SEP-13975
+    @Test
+    @Override // Row-level modifications are not supported for Hive tables
+    public void testBasicOperationsWithProvidedTableLocation()
+    {
+        super.testBasicOperationsWithProvidedTableLocation();
     }
 
     @Override // Row-level modifications are not supported for Hive tables
