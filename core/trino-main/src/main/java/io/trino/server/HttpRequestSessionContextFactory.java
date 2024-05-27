@@ -69,6 +69,8 @@ import static java.util.Objects.requireNonNull;
 
 public class HttpRequestSessionContextFactory
 {
+    public static final String REMOTE_USER_ADDRESS_KEY = "starburst.$internal.remoteUserAddress";
+
     private final PreparedStatementEncoder preparedStatementEncoder;
     private final Metadata metadata;
     private final GroupProvider groupProvider;
@@ -109,14 +111,14 @@ public class HttpRequestSessionContextFactory
         assertRequest(catalog.isPresent() || schema.isEmpty(), "Schema is set but catalog is not");
 
         requireNonNull(authenticatedIdentity, "authenticatedIdentity is null");
-        Identity identity = buildSessionIdentity(authenticatedIdentity, protocolHeaders, headers);
-        Identity originalIdentity = buildSessionOriginalIdentity(identity, protocolHeaders, headers);
+        Optional<String> remoteUserAddress = requireNonNull(remoteAddress, "remoteAddress is null");
+        Identity identity = buildSessionIdentity(authenticatedIdentity, protocolHeaders, headers, remoteUserAddress);
+        Identity originalIdentity = buildSessionOriginalIdentity(identity, protocolHeaders, headers, remoteUserAddress);
         SelectedRole selectedRole = parseSystemRoleHeaders(protocolHeaders, headers);
 
         Optional<String> source = Optional.ofNullable(headers.getFirst(protocolHeaders.requestSource()));
         Optional<String> traceToken = Optional.ofNullable(trimEmptyToNull(headers.getFirst(protocolHeaders.requestTraceToken())));
         Optional<String> userAgent = Optional.ofNullable(headers.getFirst(USER_AGENT));
-        Optional<String> remoteUserAddress = requireNonNull(remoteAddress, "remoteAddress is null");
         Optional<String> timeZoneId = Optional.ofNullable(headers.getFirst(protocolHeaders.requestTimeZone()));
         Optional<String> language = Optional.ofNullable(headers.getFirst(protocolHeaders.requestLanguage()));
         Optional<String> clientInfo = Optional.ofNullable(headers.getFirst(protocolHeaders.requestClientInfo()));
@@ -185,10 +187,16 @@ public class HttpRequestSessionContextFactory
 
     public Identity extractAuthorizedIdentity(HttpServletRequest servletRequest, HttpHeaders httpHeaders)
     {
-        return extractAuthorizedIdentity(authenticatedIdentity(servletRequest), httpHeaders.getRequestHeaders());
+        return extractAuthorizedIdentity(authenticatedIdentity(servletRequest), httpHeaders.getRequestHeaders(), Optional.of(servletRequest.getRemoteAddr()));
     }
 
     public Identity extractAuthorizedIdentity(Optional<Identity> optionalAuthenticatedIdentity, MultivaluedMap<String, String> headers)
+            throws AccessDeniedException
+    {
+        return extractAuthorizedIdentity(optionalAuthenticatedIdentity, headers, Optional.empty());
+    }
+
+    public Identity extractAuthorizedIdentity(Optional<Identity> optionalAuthenticatedIdentity, MultivaluedMap<String, String> headers, Optional<String> remoteUserAddress)
             throws AccessDeniedException
     {
         ProtocolHeaders protocolHeaders;
@@ -199,8 +207,8 @@ public class HttpRequestSessionContextFactory
             throw badRequest(e.getMessage());
         }
 
-        Identity identity = buildSessionIdentity(optionalAuthenticatedIdentity, protocolHeaders, headers);
-        Identity originalIdentity = buildSessionOriginalIdentity(identity, protocolHeaders, headers);
+        Identity identity = buildSessionIdentity(optionalAuthenticatedIdentity, protocolHeaders, headers, remoteUserAddress);
+        Identity originalIdentity = buildSessionOriginalIdentity(identity, protocolHeaders, headers, remoteUserAddress);
 
         accessControl.checkCanSetUser(originalIdentity.getPrincipal(), originalIdentity.getUser());
 
@@ -262,6 +270,13 @@ public class HttpRequestSessionContextFactory
                 .build();
     }
 
+    private Identity buildSessionIdentity(Optional<Identity> authenticatedIdentity, ProtocolHeaders protocolHeaders, MultivaluedMap<String, String> headers, Optional<String> remoteUserAddress)
+    {
+        Identity.Builder identityBuilder = Identity.from(buildSessionIdentity(authenticatedIdentity, protocolHeaders, headers));
+        remoteUserAddress.ifPresent(address -> identityBuilder.withAdditionalExtraCredentials(ImmutableMap.of(REMOTE_USER_ADDRESS_KEY, address)));
+        return identityBuilder.build();
+    }
+
     private Identity buildSessionOriginalIdentity(Identity identity, ProtocolHeaders protocolHeaders, MultivaluedMap<String, String> headers)
     {
         // We derive original identity using this header, but older clients will not send it, so fall back to identity
@@ -274,6 +289,13 @@ public class HttpRequestSessionContextFactory
                         .build())
                 .orElse(identity);
         return originalIdentity;
+    }
+
+    private Identity buildSessionOriginalIdentity(Identity identity, ProtocolHeaders protocolHeaders, MultivaluedMap<String, String> headers, Optional<String> remoteUserAddress)
+    {
+        Identity.Builder identityBuilder = Identity.from(buildSessionOriginalIdentity(identity, protocolHeaders, headers));
+        remoteUserAddress.ifPresent(address -> identityBuilder.withAdditionalExtraCredentials(ImmutableMap.of(REMOTE_USER_ADDRESS_KEY, address)));
+        return identityBuilder.build();
     }
 
     private static List<String> splitHttpHeader(MultivaluedMap<String, String> headers, String name)

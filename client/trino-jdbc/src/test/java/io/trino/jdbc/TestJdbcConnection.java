@@ -58,6 +58,7 @@ import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.testing.Closeables.closeAll;
 import static io.trino.metadata.MetadataUtil.TableMetadataBuilder.tableMetadataBuilder;
+import static io.trino.server.HttpRequestSessionContextFactory.REMOTE_USER_ADDRESS_KEY;
 import static io.trino.spi.connector.SystemTable.Distribution.ALL_NODES;
 import static io.trino.spi.type.VarcharType.createUnboundedVarcharType;
 import static io.trino.testing.assertions.Assert.assertEventually;
@@ -358,7 +359,8 @@ public class TestJdbcConnection
                     .buildOrThrow();
             TrinoConnection trinoConnection = connection.unwrap(TrinoConnection.class);
             assertThat(trinoConnection.getExtraCredentials()).isEqualTo(expectedCredentials);
-            assertThat(listExtraCredentials(connection)).isEqualTo(expectedCredentials);
+            assertThat(listExtraCredentials(connection)).isEqualTo(ImmutableMap.builder().putAll(expectedCredentials)
+                    .put(REMOTE_USER_ADDRESS_KEY, "127.0.0.1").buildOrThrow());
         }
     }
 
