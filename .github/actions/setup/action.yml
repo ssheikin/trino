@@ -56,9 +56,9 @@ runs:
           use-fallback: false
           # Note: must be same set of paths as for cache:restore mode
           path: ~/.m2/repository
-          key: ${{ github.repository }}/${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
+          key: ${{ github.repository }}/${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ github.repository }}/${{ runner.os }}-maven-test-
+            ${{ github.repository }}/${{ runner.os }}-maven-
       - name: Restore local Maven repo
         id: cache_restore
         if: ${{ format('{0}', inputs.cache) == 'restore' }}
@@ -71,9 +71,9 @@ runs:
           use-fallback: false
           # Note: must be same set of paths as for cache:true mode
           path: ~/.m2/repository
-          key: ${{ github.repository }}/${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
+          key: ${{ github.repository }}/${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ github.repository }}/${{ runner.os }}-maven-test-
+            ${{ github.repository }}/${{ runner.os }}-maven-
       - name: Install starburst-testing-auto-configuration
         # starburst-testing-auto-configuration is used by all tests and not implicitly built
         # This module has very little dependencies, so no need to cache it, or build conditionally
