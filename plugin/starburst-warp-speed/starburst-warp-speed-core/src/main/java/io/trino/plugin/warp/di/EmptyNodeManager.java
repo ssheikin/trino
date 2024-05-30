@@ -11,19 +11,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.warp;
+package io.trino.plugin.warp.di;
 
-import org.junit.jupiter.api.Test;
+import io.trino.spi.Node;
+import io.trino.spi.NodeManager;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Set;
 
-public class WarpPluginTest
+public class EmptyNodeManager
+        implements NodeManager
 {
-    @Test
-    public void testPlugin()
+    private final EmptyNode node = new EmptyNode();
+
+    @Override
+    public Set<Node> getAllNodes()
     {
-        WarpPlugin warpPlugin = new WarpPlugin();
-        assertThat(warpPlugin.getConnectorFactories()).hasOnlyElementsOfType(WarpConnectorFactory.class);
-        assertThat(warpPlugin.getCacheManagerFactories()).hasOnlyElementsOfType(WarpCacheManagerFactory.class);
+        return Set.of(node);
+    }
+
+    @Override
+    public Set<Node> getWorkerNodes()
+    {
+        return Set.of(node);
+    }
+
+    @Override
+    public Node getCurrentNode()
+    {
+        return node;
+    }
+
+    @Override
+    public String getEnvironment()
+    {
+        return "";
     }
 }

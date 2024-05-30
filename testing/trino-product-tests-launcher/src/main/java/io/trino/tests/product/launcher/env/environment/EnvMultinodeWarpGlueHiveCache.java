@@ -27,16 +27,16 @@ import static io.trino.tests.product.launcher.env.EnvironmentContainers.WORKER;
 import static org.testcontainers.utility.MountableFile.forHostPath;
 
 @TestsEnvironment
-public final class EnvMultinodeWarpHiveCache
+public final class EnvMultinodeWarpGlueHiveCache
         extends MultinodeWarpGlueBase
 {
     @Inject
-    public EnvMultinodeWarpHiveCache(
+    public EnvMultinodeWarpGlueHiveCache(
             DockerFiles dockerFiles,
             PortBinder portBinder,
             StandardMultinode standardMultinode)
     {
-        super("conf/environment/multinode-warp-hive-cache", dockerFiles, portBinder, standardMultinode);
+        super("conf/environment/multinode-warp-glue-hive-cache", dockerFiles, portBinder, standardMultinode);
     }
 
     @Override

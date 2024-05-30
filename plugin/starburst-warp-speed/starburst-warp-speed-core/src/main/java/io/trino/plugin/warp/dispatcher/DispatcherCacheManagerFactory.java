@@ -14,42 +14,38 @@
 package io.trino.plugin.warp.dispatcher;
 
 import com.google.inject.Module;
+import io.trino.plugin.warp.di.EmptyConnectorContext;
 import io.trino.plugin.warp.di.InitializationModule;
-import io.trino.spi.connector.Connector;
-import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.cache.CacheManager;
+import io.trino.spi.cache.CacheManagerContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Throwables.throwIfUnchecked;
 
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-public class DispatcherConnectorFactory
+public class DispatcherCacheManagerFactory
 {
-    public static final String DISPATCHER_CONNECTOR_NAME = "warp_speed";
+    public static final String DISPATCHER_CACHE_MANAGER_NAME = "warp_cache";
     private final Module storageEngineModule;
-    private final Module amazonModule;
+    private final Module cloudVendorModule;
 
-    public DispatcherConnectorFactory(Module storageEngineModule, Module amazonModule)
+    public DispatcherCacheManagerFactory(Module storageEngineModule, Module cloudVendorModule)
     {
         this.storageEngineModule = storageEngineModule;
-        this.amazonModule = amazonModule;
+        this.cloudVendorModule = cloudVendorModule;
     }
 
-    public Connector create(
-            String catalogName,
-            Map<String, String> config,
-            ConnectorContext context,
-            Optional<List<Class<? extends InitializationModule>>> optionalModules,
-            Map<String, String> proxiedConnectorInitializerMap)
+    public CacheManager create(Map<String, String> config,
+            CacheManagerContext context,
+            Optional<List<Class<? extends InitializationModule>>> optionalModules)
     {
         try {
             ClassLoader classLoader = this.getClass().getClassLoader();
-            // use the class instance from InternalDispatcherConnectorFactory's classloader
             Class<?> moduleClass = classLoader.loadClass(Module.class.getName());
+            EmptyConnectorContext connectorContext = new EmptyConnectorContext();
 
             Optional<List<Object>> optionalModuleInstances =
                     optionalModules.map(classes -> classes.stream()
@@ -58,40 +54,23 @@ public class DispatcherConnectorFactory
                                     Class<?> initModuleClass = classLoader.loadClass(aClass.getName());
                                     return InitializationModule.invokeCreateModule(initModuleClass,
                                             config,
-                                            context,
-                                            catalogName);
+                                            connectorContext,
+                                            DISPATCHER_CACHE_MANAGER_NAME);
                                 }
                                 catch (ClassNotFoundException e) {
                                     throw new RuntimeException(e);
                                 }
                             }).toList());
 
-            return (Connector) classLoader.loadClass(InternalDispatcherConnectorFactory.class.getName())
-                    .getMethod("createConnector",
+            return (CacheManager) classLoader.loadClass(InternalDispatcherCacheManagerFactory.class.getName())
+                    .getMethod("createCacheManager",
                             String.class,
                             Map.class,
                             Optional.class,
-                            Map.class,
                             moduleClass,
                             moduleClass,
-                            ConnectorContext.class)
-                    .invoke(null,
-                            catalogName,
-                            config,
-                            optionalModuleInstances,
-                            proxiedConnectorInitializerMap.entrySet()
-                                    .stream()
-                                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-                                        try {
-                                            return classLoader.loadClass(entry.getValue()).getDeclaredConstructor().newInstance();
-                                        }
-                                        catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    })),
-                            storageEngineModule,
-                            amazonModule,
-                            context);
+                            CacheManagerContext.class)
+                    .invoke(null, DISPATCHER_CACHE_MANAGER_NAME, config, optionalModuleInstances, storageEngineModule, cloudVendorModule, context);
         }
         catch (InvocationTargetException e) {
             Throwable targetException = e.getTargetException();

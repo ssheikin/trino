@@ -11,19 +11,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.warp;
+package io.trino.plugin.warp.di;
 
-import org.junit.jupiter.api.Test;
+import io.opentelemetry.api.OpenTelemetry;
+import io.trino.spi.NodeManager;
+import io.trino.spi.connector.ConnectorContext;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class WarpPluginTest
+public class EmptyConnectorContext
+        implements ConnectorContext
 {
-    @Test
-    public void testPlugin()
+    private final EmptyNodeManager nodeManager = new EmptyNodeManager();
+
+    @Override
+    public OpenTelemetry getOpenTelemetry()
     {
-        WarpPlugin warpPlugin = new WarpPlugin();
-        assertThat(warpPlugin.getConnectorFactories()).hasOnlyElementsOfType(WarpConnectorFactory.class);
-        assertThat(warpPlugin.getCacheManagerFactories()).hasOnlyElementsOfType(WarpCacheManagerFactory.class);
+        return OpenTelemetry.noop();
+    }
+
+    @Override
+    public NodeManager getNodeManager()
+    {
+        return nodeManager;
     }
 }
