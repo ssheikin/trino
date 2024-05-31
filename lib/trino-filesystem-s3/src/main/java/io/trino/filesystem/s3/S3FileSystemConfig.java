@@ -93,7 +93,7 @@ public class S3FileSystemConfig
     private boolean useWebIdentityTokenCredentialsProvider;
     private DataSize streamingPartSize = DataSize.of(16, MEGABYTE);
     private boolean requesterPays;
-    private Integer maxConnections;
+    private Integer maxConnections = 500;
     private Duration connectionTtl;
     private Duration connectionMaxIdleTime;
     private Duration socketConnectTimeout;
