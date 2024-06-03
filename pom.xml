@@ -2374,6 +2374,19 @@
         </repository>
     </repositories>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>${air.repository.release.id}</id>
+            <url>${air.repository.release.url}</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <build>
         <pluginManagement>
             <plugins>
