@@ -15,7 +15,6 @@ package io.trino.plugin.hive.metastore.cache;
 
 import io.airlift.configuration.Config;
 import io.airlift.units.Duration;
-import io.airlift.units.MinDuration;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -24,6 +23,7 @@ import java.util.Optional;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.Comparators.max;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.function.Predicate.not;
 
 public class CachingHiveMetastoreConfig
 {
@@ -72,7 +72,7 @@ public class CachingHiveMetastoreConfig
     }
 
     @NotNull
-    public Optional<@MinDuration("1ms") Duration> getMetastoreRefreshInterval()
+    public Optional<Duration> getMetastoreRefreshInterval()
     {
         return metastoreRefreshInterval;
     }
@@ -80,7 +80,7 @@ public class CachingHiveMetastoreConfig
     @Config("hive.metastore-refresh-interval")
     public CachingHiveMetastoreConfig setMetastoreRefreshInterval(Duration metastoreRefreshInterval)
     {
-        this.metastoreRefreshInterval = Optional.ofNullable(metastoreRefreshInterval);
+        this.metastoreRefreshInterval = Optional.ofNullable(metastoreRefreshInterval).filter(not(Duration::isZero));
         return this;
     }
 
