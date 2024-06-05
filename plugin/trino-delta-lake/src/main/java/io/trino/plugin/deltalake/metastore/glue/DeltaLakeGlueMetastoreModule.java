@@ -20,7 +20,7 @@ import com.google.inject.multibindings.ProvidesIntoOptional;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.deltalake.AllowDeltaLakeManagedTableRename;
 import io.trino.plugin.hive.metastore.glue.GlueHiveMetastore;
-import io.trino.plugin.hive.metastore.glue.GlueMetastoreModule;
+import io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule;
 
 import java.util.EnumSet;
 import java.util.Set;

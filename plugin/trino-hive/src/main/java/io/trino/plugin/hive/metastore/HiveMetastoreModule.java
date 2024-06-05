@@ -49,8 +49,8 @@ public class HiveMetastoreModule
         else {
             bindMetastoreModule("thrift", new ThriftMetastoreModule());
             bindMetastoreModule("file", new FileMetastoreModule());
-            bindMetastoreModule("glue", new GlueMetastoreModule());
-            bindMetastoreModule("glue-v1", new io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule());
+            bindMetastoreModule("glue-v2", new GlueMetastoreModule());
+            bindMetastoreModule("glue", new io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule());
         }
 
         install(new CachingHiveMetastoreModule(true));

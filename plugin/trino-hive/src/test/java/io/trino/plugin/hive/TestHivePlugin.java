@@ -78,14 +78,14 @@ public class TestHivePlugin
     }
 
     @Test
-    public void testGlueV1Metastore()
+    public void testGlueV2Metastore()
     {
         ConnectorFactory factory = getHiveConnectorFactory();
 
         factory.create(
                         "test",
                         ImmutableMap.of(
-                                "hive.metastore", "glue-v1",
+                                "hive.metastore", "glue",
                                 "hive.metastore.glue.region", "us-east-2",
                                 "bootstrap.quiet", "true"),
                         new TestingConnectorContext())
@@ -94,7 +94,7 @@ public class TestHivePlugin
         assertThatThrownBy(() -> factory.create(
                 "test",
                 ImmutableMap.of(
-                        "hive.metastore", "glue",
+                        "hive.metastore", "glue-v2",
                         "hive.metastore.uri", "thrift://foo:1234",
                         "bootstrap.quiet", "true"),
                 new TestingConnectorContext()))
