@@ -33,7 +33,6 @@ import static io.trino.tests.product.utils.QueryExecutors.onHive;
 import static io.trino.tests.product.utils.QueryExecutors.onTrino;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.testng.Assert.assertEquals;
 
 public class TestReadUniontype
         extends HiveProductTest
@@ -188,7 +187,7 @@ public class TestReadUniontype
                         "SELECT 8, create_union(0, CAST(252 AS INT), CAST(NULL AS DOUBLE), ARRAY('foo','bar'))",
                 TABLE_NAME));
         QueryResult selectAllResult = onTrino().executeQuery(format("SELECT * FROM %s", TABLE_NAME));
-        assertEquals(selectAllResult.rows().size(), 9);
+        assertThat(selectAllResult.rows().size()).isEqualTo(9);
         for (List<?> row : selectAllResult.rows()) {
             int id = (Integer) row.get(0);
             switch (id) {
@@ -394,7 +393,7 @@ public class TestReadUniontype
                 "INSERT INTO TABLE %s " + builder.toString(), TABLE_NAME));
 
         QueryResult selectAllResult = onTrino().executeQuery(format("SELECT * FROM %s", TABLE_NAME));
-        assertEquals(selectAllResult.rows().size(), 1100);
+        assertThat(selectAllResult.rows().size()).isEqualTo(1100);
     }
 
     private void testORCSchemaEvolution()
@@ -413,7 +412,7 @@ public class TestReadUniontype
                 TABLE_NAME_SCHEMA_EVOLUTION));
 
         QueryResult selectAllResult = onTrino().executeQuery(format("SELECT c0, c1 FROM %s", TABLE_NAME_SCHEMA_EVOLUTION));
-        assertEquals(selectAllResult.rows().size(), 2);
+        assertThat(selectAllResult.rows().size()).isEqualTo(2);
         for (List<?> row : selectAllResult.rows()) {
             int id = (Integer) row.get(0);
             switch (id) {
@@ -476,7 +475,7 @@ public class TestReadUniontype
         onHive().executeQuery(format("ALTER TABLE %S CHANGE COLUMN c1 c1 UNIONTYPE<STRUCT<a:STRING, b:STRING, d:STRING>, STRUCT<c:STRING>>", TABLE_NAME_SCHEMA_EVOLUTION));
 
         QueryResult selectAllResult = onTrino().executeQuery(format("SELECT c0, c1 FROM %s", TABLE_NAME_SCHEMA_EVOLUTION));
-        assertEquals(selectAllResult.rows().size(), 2);
+        assertThat(selectAllResult.rows().size()).isEqualTo(2);
         for (List<?> row : selectAllResult.rows()) {
             int id = (Integer) row.get(0);
             switch (id) {
@@ -505,9 +504,9 @@ public class TestReadUniontype
     {
         assertThat(actual).isInstanceOf(Row.class);
         Row actualRow = (Row) actual;
-        assertEquals(actualRow.getFields().size(), expected.length);
+        assertThat(actualRow.getFields().size()).isEqualTo(expected.length);
         for (int i = 0; i < actualRow.getFields().size(); i++) {
-            assertEquals(actualRow.getFields().get(i).getValue(), expected[i]);
+            assertThat(actualRow.getFields().get(i).getValue()).isEqualTo(expected[i]);
         }
     }
 
