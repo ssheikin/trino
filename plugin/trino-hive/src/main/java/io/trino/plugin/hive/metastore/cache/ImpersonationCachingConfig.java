@@ -18,11 +18,11 @@ import io.airlift.units.Duration;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.concurrent.TimeUnit;
+import static io.trino.plugin.hive.metastore.cache.CachingHiveMetastoreConfig.DEFAULT_STATS_CACHE_TTL;
 
 public class ImpersonationCachingConfig
 {
-    private Duration userMetastoreCacheTtl = new Duration(0, TimeUnit.SECONDS);
+    private Duration userMetastoreCacheTtl = DEFAULT_STATS_CACHE_TTL;
     private long userMetastoreCacheMaximumSize = 1000;
 
     @NotNull

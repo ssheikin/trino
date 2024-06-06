@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import static io.airlift.configuration.testing.ConfigAssertions.assertFullMapping;
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
+import static io.trino.plugin.hive.metastore.cache.CachingHiveMetastoreConfig.DEFAULT_STATS_CACHE_TTL;
 
 public class TestImpersonationCachingConfig
 {
@@ -30,7 +31,7 @@ public class TestImpersonationCachingConfig
     public void testDefaults()
     {
         assertRecordedDefaults(recordDefaults(ImpersonationCachingConfig.class)
-                .setUserMetastoreCacheTtl(new Duration(0, TimeUnit.SECONDS))
+                .setUserMetastoreCacheTtl(DEFAULT_STATS_CACHE_TTL)
                 .setUserMetastoreCacheMaximumSize(1000));
     }
 
