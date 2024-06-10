@@ -97,6 +97,12 @@ public class CachingHiveMetastoreModule
         }
 
         @Override
+        public boolean hasBuiltInCaching()
+        {
+            return delegate.hasBuiltInCaching();
+        }
+
+        @Override
         public boolean isImpersonationEnabled()
         {
             return delegate.isImpersonationEnabled();
