@@ -14,6 +14,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
             <optional>true</optional>
@@ -268,35 +273,6 @@
                         <version>${dep.plugin.surefire.version}</version>
                     </dependency>
                 </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <configuration>
-                    <licenseSets combine.children="append">
-                        <licenseSet>
-                            <excludes>src/main/java/io/trino/parquet/spark/Variant.java</excludes>
-                            <excludes>src/main/java/io/trino/parquet/spark/VariantUtil.java</excludes>
-                        </licenseSet>
-                    </licenseSets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <excludes>io/trino/parquet/spark/Variant.java,io/trino/parquet/spark/VariantUtil.java</excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>io/trino/parquet/spark/Variant.java</exclude>
-                        <exclude>io/trino/parquet/spark/VariantUtil.java</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
         </plugins>
     </build>
