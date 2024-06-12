@@ -11,12 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.server.resultscache;
+package io.trino.tests;
 
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
 import io.trino.Session;
 import io.trino.plugin.tpch.TpchPlugin;
+import io.trino.server.resultscache.CacheClient;
+import io.trino.server.resultscache.CacheEntry;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
