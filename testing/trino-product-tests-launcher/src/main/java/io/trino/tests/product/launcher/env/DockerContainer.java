@@ -26,6 +26,7 @@ import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.Timeout;
 import dev.failsafe.function.CheckedRunnable;
 import io.airlift.log.Logger;
+import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.testing.containers.ConditionalPullPolicy;
 import org.testcontainers.containers.BindMode;
@@ -209,6 +210,13 @@ public class DockerContainer
         requireNonNull(this.logPaths, "log paths are already exposed");
         this.logPaths.addAll(Arrays.asList(logPaths));
         return this;
+    }
+
+    public DockerContainer withMemoryLimit(DataSize limit)
+    {
+        return withCreateContainerCmdModifier(command ->
+                command.withHostConfig(requireNonNull(command.getHostConfig(), "hostConfig is null")
+                        .withMemory(limit.toBytes())));
     }
 
     public DockerContainer withHealthCheck(Path healthCheckScript)
