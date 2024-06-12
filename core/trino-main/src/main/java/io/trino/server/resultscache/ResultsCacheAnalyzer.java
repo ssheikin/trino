@@ -19,11 +19,13 @@ import io.trino.execution.QueryPreparer.PreparedQuery;
 import io.trino.metadata.TableHandle;
 import io.trino.spi.QueryId;
 import io.trino.spi.connector.CatalogHandle.CatalogHandleType;
+import io.trino.spi.connector.UncacheableConnectorTableHandle;
 import io.trino.sql.analyzer.Analysis;
 import io.trino.sql.tree.Query;
 
 import java.util.Optional;
 
+import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CONNECTOR_IS_UNCACHEABLE;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.NOT_SELECT;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.QUERY_HAS_SYSTEM_TABLE;
 
@@ -43,6 +45,10 @@ public class ResultsCacheAnalyzer
             if (type.isInternal()) {
                 log.debug("QueryId: %s, query uses internal table %s, not caching", queryId, tableHandle);
                 return Optional.of(new FilteredResultsCacheEntry(QUERY_HAS_SYSTEM_TABLE));
+            }
+            if (tableHandle.connectorHandle() instanceof UncacheableConnectorTableHandle) {
+                log.debug("QueryId: %s, query uses table %s from a connector that should not use cache, not caching", queryId, tableHandle);
+                return Optional.of(new FilteredResultsCacheEntry(CONNECTOR_IS_UNCACHEABLE));
             }
         }
 

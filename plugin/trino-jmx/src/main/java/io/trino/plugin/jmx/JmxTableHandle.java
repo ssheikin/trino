@@ -16,9 +16,9 @@ package io.trino.plugin.jmx;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.connector.UncacheableConnectorTableHandle;
 import io.trino.spi.predicate.TupleDomain;
 
 import java.util.List;
@@ -33,7 +33,7 @@ public record JmxTableHandle(
         List<JmxColumnHandle> columnHandles,
         boolean liveData,
         TupleDomain<ColumnHandle> nodeFilter)
-        implements ConnectorTableHandle
+        implements UncacheableConnectorTableHandle
 {
     public JmxTableHandle
     {

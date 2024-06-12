@@ -43,6 +43,7 @@ public interface ResultsCacheEntry
             NO_COLUMNS("no columns in result set", true),
             NOT_SELECT("not a select statement", true),
             QUERY_HAS_SYSTEM_TABLE("query has system table", true),
+            CONNECTOR_IS_UNCACHEABLE("query uses connector that should not use cache", true),
             /**/;
 
             private final String display;

@@ -16,6 +16,7 @@ package io.trino.tests;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
 import io.trino.Session;
+import io.trino.plugin.jmx.JmxPlugin;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.server.resultscache.CacheClient;
 import io.trino.server.resultscache.CacheEntry;
@@ -54,7 +55,9 @@ public class TestResultsCache
                 .build();
 
         queryRunner.installPlugin(new TpchPlugin());
+        queryRunner.installPlugin(new JmxPlugin());
         queryRunner.createCatalog("tpch", "tpch");
+        queryRunner.createCatalog("jmx", "jmx");
 
         return queryRunner;
     }
@@ -115,6 +118,23 @@ public class TestResultsCache
                 Arguments.of("testShowSchemas", "SHOW SCHEMAS IN tpch"),
                 Arguments.of("testShowTables", "SHOW TABLES IN tpch.tiny"),
                 Arguments.of("testShowColumns", "SHOW COLUMNS IN tpch.tiny.nation"));
+    }
+
+    @Test
+    public void testJmxConnectorTablesAreNotCached()
+            throws InterruptedException
+    {
+        String jmxConnectorKey = "jmxConnectorKey";
+        Session session = testSessionBuilder()
+                .setSystemProperty(CACHE_KEY, jmxConnectorKey)
+                .build();
+        String tableName = getQueryRunner().execute("SHOW TABLES in jmx.current")
+                .getMaterializedRows()
+                .get(0)
+                .getField(0)
+                .toString();
+        getQueryRunner().execute(session, "SELECT * FROM jmx.current.\"%s\"".formatted(tableName));
+        cacheClient.assertDoesNotContain(jmxConnectorKey);
     }
 
     @Test
