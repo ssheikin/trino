@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Sets;
+import com.google.common.graph.Traverser;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -30,6 +31,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.trino.Session;
+import io.trino.cache.SplitAdmissionControllerProvider;
 import io.trino.exchange.DirectExchangeInput;
 import io.trino.execution.BasicStageInfo;
 import io.trino.execution.BasicStageStats;
@@ -103,6 +105,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -190,6 +193,8 @@ public class PipelinedQueryScheduler
     private final Span schedulerSpan;
     private final Metadata metadata;
 
+    private final SplitAdmissionControllerProvider splitAdmissionControllerProvider;
+
     @GuardedBy("this")
     private boolean started;
 
@@ -239,6 +244,7 @@ public class PipelinedQueryScheduler
                 .setAttribute(TrinoAttributes.QUERY_ID, queryStateMachine.getQueryId().toString())
                 .startSpan();
 
+        splitAdmissionControllerProvider = createSplitAdmissionControllerProvider(queryStateMachine.getSession(), plan);
         stageManager = StageManager.create(
                 queryStateMachine,
                 metadata,
@@ -248,7 +254,8 @@ public class PipelinedQueryScheduler
                 schedulerSpan,
                 schedulerStats,
                 plan,
-                summarizeTaskInfo);
+                summarizeTaskInfo,
+                splitAdmissionControllerProvider);
 
         coordinatorStagesScheduler = CoordinatorStagesScheduler.create(
                 queryStateMachine,
@@ -265,6 +272,17 @@ public class PipelinedQueryScheduler
         retryInitialDelay = getRetryInitialDelay(queryStateMachine.getSession());
         retryMaxDelay = getRetryMaxDelay(queryStateMachine.getSession());
         retryDelayScaleFactor = getRetryDelayScaleFactor(queryStateMachine.getSession());
+    }
+
+    private static SplitAdmissionControllerProvider createSplitAdmissionControllerProvider(
+            Session session,
+            SubPlan planTree)
+    {
+        Iterable<SubPlan> iterable = Traverser.forTree(SubPlan::getChildren).breadthFirst(planTree);
+        List<PlanFragment> planFragments = StreamSupport.stream(iterable.spliterator(), false)
+                .map(SubPlan::getFragment)
+                .collect(toImmutableList());
+        return new SplitAdmissionControllerProvider(planFragments, session);
     }
 
     @Override
@@ -343,6 +361,7 @@ public class PipelinedQueryScheduler
                         splitBatchSize,
                         dynamicFilterService,
                         tableExecuteContextManager,
+                        splitAdmissionControllerProvider,
                         retryPolicy,
                         attempt);
             }
@@ -869,6 +888,7 @@ public class PipelinedQueryScheduler
                 int splitBatchSize,
                 DynamicFilterService dynamicFilterService,
                 TableExecuteContextManager tableExecuteContextManager,
+                SplitAdmissionControllerProvider splitAdmissionControllerProvider,
                 RetryPolicy retryPolicy,
                 int attempt)
         {
@@ -948,7 +968,8 @@ public class PipelinedQueryScheduler
                         executor,
                         tableExecuteContextManager,
                         metadata,
-                        scheduledSplitsPerTableTracker);
+                        scheduledSplitsPerTableTracker,
+                        splitAdmissionControllerProvider);
                 stageSchedulers.put(stageExecution.getStageId(), scheduler);
             }
 
@@ -1056,14 +1077,15 @@ public class PipelinedQueryScheduler
                 ScheduledExecutorService executor,
                 TableExecuteContextManager tableExecuteContextManager,
                 Metadata metadata,
-                ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker)
+                ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker,
+                SplitAdmissionControllerProvider splitAdmissionControllerProvider)
         {
             Session session = queryStateMachine.getSession();
             Span stageSpan = stageExecution.getStageSpan();
             PlanFragment fragment = stageExecution.getFragment();
             PartitioningHandle partitioningHandle = fragment.getPartitioning();
             Optional<Integer> partitionCount = fragment.getPartitionCount();
-            Map<PlanNodeId, SplitSource> splitSources = splitSourceFactory.createSplitSources(session, stageSpan, fragment);
+            Map<PlanNodeId, SplitSource> splitSources = splitSourceFactory.createSplitSources(session, stageSpan, fragment, splitAdmissionControllerProvider);
             Map<PlanNodeId, Optional<QualifiedObjectName>> planNodesToTableNames = planNodeIdToTableName(splitSources.keySet(), fragment.getRoot())
                     .entrySet()
                     .stream()
