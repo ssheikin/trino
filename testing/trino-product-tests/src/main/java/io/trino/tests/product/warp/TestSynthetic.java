@@ -98,7 +98,7 @@ public class TestSynthetic
         return executeDataProvider("file:///docker/presto-product-tests/warp/synthetic.json");
     }
 
-    @Test(groups = {WARP_SPEED_HIVE, PROFILE_SPECIFIC_TESTS}, dataProvider = "synthetic", enabled = false /* TODO https://starburstdata.atlassian.net/browse/SEP-13992 */)
+    @Test(groups = {WARP_SPEED_HIVE, PROFILE_SPECIFIC_TESTS}, dataProvider = "synthetic")
     public void synthetic(TestFormat testFormat)
             throws IOException
     {
@@ -140,7 +140,7 @@ public class TestSynthetic
         return executeDataProvider("file:///docker/presto-product-tests/warp/synth_partit.json");
     }
 
-    @Test(groups = {WARP_SPEED_HIVE_2, PROFILE_SPECIFIC_TESTS}, dataProvider = "synthPartit", enabled = false /* TODO https://starburstdata.atlassian.net/browse/SEP-13992 */)
+    @Test(groups = {WARP_SPEED_HIVE_2, PROFILE_SPECIFIC_TESTS}, dataProvider = "synthPartit")
     public void synthPartit(TestFormat testFormat)
             throws IOException
     {
