@@ -34,6 +34,7 @@ import io.trino.operator.scalar.json.JsonExistsFunction;
 import io.trino.operator.scalar.json.JsonQueryFunction;
 import io.trino.operator.scalar.json.JsonValueFunction;
 import io.trino.spi.block.BlockEncodingSerde;
+import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.type.ParametricType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
@@ -159,6 +160,7 @@ public final class TestingPlannerContext
                     typeManager,
                     functionManager,
                     languageFunctionManager,
+                    BuiltinFunctionsChecker.NOOP_CHECKER,
                     noopTracer());
         }
     }

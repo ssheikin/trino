@@ -26,6 +26,7 @@ import io.trino.spi.TrinoException;
 import io.trino.spi.TrinoWarning;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.CatalogSchemaName;
+import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.function.CatalogSchemaFunctionName;
 import io.trino.spi.function.FunctionDependencyDeclaration;
 import io.trino.spi.function.FunctionDependencyDeclaration.CastDependency;
@@ -67,6 +68,7 @@ public class FunctionResolver
     private final Metadata metadata;
     private final TypeManager typeManager;
     private final LanguageFunctionManager languageFunctionManager;
+    private final BuiltinFunctionsChecker builtinFunctionsChecker;
     private final WarningCollector warningCollector;
     private final FunctionBinder functionBinder;
 
@@ -74,11 +76,13 @@ public class FunctionResolver
             Metadata metadata,
             TypeManager typeManager,
             LanguageFunctionManager languageFunctionManager,
+            BuiltinFunctionsChecker builtinFunctionsChecker,
             WarningCollector warningCollector)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.languageFunctionManager = requireNonNull(languageFunctionManager, "languageFunctionManager is null");
+        this.builtinFunctionsChecker = requireNonNull(builtinFunctionsChecker, "builtinFunctionsChecker is null");
         this.warningCollector = requireNonNull(warningCollector, "warningCollector is null");
         this.functionBinder = new FunctionBinder(metadata, typeManager);
     }
@@ -289,9 +293,12 @@ public class FunctionResolver
         return names.build();
     }
 
-    private static boolean canExecuteFunction(Session session, AccessControl accessControl, CatalogSchemaFunctionName functionName)
+    private boolean canExecuteFunction(Session session, AccessControl accessControl, CatalogSchemaFunctionName functionName)
     {
         if (isInlineFunction(functionName)) {
+            return true;
+        }
+        if (builtinFunctionsChecker.isBuiltinFunction(functionName)) {
             return true;
         }
         return accessControl.canExecuteFunction(

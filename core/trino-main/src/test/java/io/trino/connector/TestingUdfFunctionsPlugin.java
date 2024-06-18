@@ -48,4 +48,12 @@ public class TestingUdfFunctionsPlugin
     {
         return false;
     }
+
+    @Description("Yet another testing UDF")
+    @ScalarFunction("another_testing_udf")
+    @SqlType(BOOLEAN)
+    public static boolean anotherTestingUdf()
+    {
+        return false;
+    }
 }

@@ -110,6 +110,7 @@ import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockEncodingSerde;
+import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
@@ -409,6 +410,9 @@ public class ServerMainModule
         binder.bind(TableFunctionRegistry.class).in(Scopes.SINGLETON);
         binder.bind(PlannerContext.class).in(Scopes.SINGLETON);
         binder.bind(LanguageFunctionManager.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, BuiltinFunctionsChecker.class)
+                .setDefault()
+                .toInstance(BuiltinFunctionsChecker.NOOP_CHECKER);
 
         // function
         binder.bind(FunctionManager.class).in(Scopes.SINGLETON);

@@ -22,6 +22,7 @@ import io.trino.metadata.FunctionResolver;
 import io.trino.metadata.LanguageFunctionManager;
 import io.trino.metadata.Metadata;
 import io.trino.spi.block.BlockEncodingSerde;
+import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
 
@@ -45,6 +46,7 @@ public class PlannerContext
     private final TypeManager typeManager;
     private final FunctionManager functionManager;
     private final LanguageFunctionManager languageFunctionManager;
+    private final BuiltinFunctionsChecker builtinFunctionsChecker;
     private final Tracer tracer;
 
     @Inject
@@ -55,6 +57,7 @@ public class PlannerContext
             TypeManager typeManager,
             FunctionManager functionManager,
             LanguageFunctionManager languageFunctionManager,
+            BuiltinFunctionsChecker builtinFunctionsChecker,
             Tracer tracer)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
@@ -64,6 +67,7 @@ public class PlannerContext
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.functionManager = requireNonNull(functionManager, "functionManager is null");
         this.languageFunctionManager = requireNonNull(languageFunctionManager, "languageFunctionManager is null");
+        this.builtinFunctionsChecker = requireNonNull(builtinFunctionsChecker, "builtinFunctionsChecker is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
     }
 
@@ -104,7 +108,7 @@ public class PlannerContext
 
     public FunctionResolver getFunctionResolver(WarningCollector warningCollector)
     {
-        return new FunctionResolver(metadata, typeManager, languageFunctionManager, warningCollector);
+        return new FunctionResolver(metadata, typeManager, languageFunctionManager, builtinFunctionsChecker, warningCollector);
     }
 
     public LanguageFunctionManager getLanguageFunctionManager()

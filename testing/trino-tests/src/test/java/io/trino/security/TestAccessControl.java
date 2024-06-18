@@ -42,12 +42,15 @@ import io.trino.spi.connector.ConnectorViewDefinition;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.SchemaTablePrefix;
 import io.trino.spi.function.BoundSignature;
+import io.trino.spi.function.BuiltinFunctionsChecker;
+import io.trino.spi.function.CatalogSchemaFunctionName;
 import io.trino.spi.function.FunctionDependencies;
 import io.trino.spi.function.FunctionId;
 import io.trino.spi.function.FunctionMetadata;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.function.InvocationConvention;
 import io.trino.spi.function.ScalarFunctionImplementation;
+import io.trino.spi.function.SchemaFunctionName;
 import io.trino.spi.function.Signature;
 import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.Identity;
@@ -150,6 +153,14 @@ public class TestAccessControl
                             .setBinding()
                             .to(TestingSystemSecurityMetadata.class)
                             .in(Scopes.SINGLETON);
+                    newOptionalBinder(binder, BuiltinFunctionsChecker.class)
+                            .setBinding()
+                            .toInstance(functionName -> functionName.equals(
+                                    new CatalogSchemaFunctionName(
+                                            "system",
+                                            new SchemaFunctionName(
+                                                    "builtin",
+                                                    "another_testing_udf"))));
                 })
                 .setWorkerCount(0)
                 .setSystemAccessControl(new ForwardingSystemAccessControl()
@@ -624,6 +635,9 @@ public class TestAccessControl
         TestingPrivilege denyNonTestingUdfCalls = new TestingPrivilege(Optional.empty(), name -> !name.equals("system.builtin.testing_udf"), EXECUTE_FUNCTION);
         assertAccessAllowed("SELECT testing_udf()", denyNonTestingUdfCalls);
         assertAccessDenied("SELECT other_testing_udf()", "Cannot execute function other_testing_udf", denyNonTestingUdfCalls);
+
+        // this should be allowed as BuiltinFunctionsChecker recognises it as a built in function so privileges are not checked
+        assertAccessAllowed("SELECT another_testing_udf()", new TestingPrivilege(Optional.empty(), name -> name.equals("system.builtin.another_testing_udf"), EXECUTE_FUNCTION));
     }
 
     @Test

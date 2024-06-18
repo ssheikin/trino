@@ -153,6 +153,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
+import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.Type;
@@ -448,7 +449,7 @@ public class PlanTester
                 new JsonQueryFunction(functionManager, metadata, typeManager)));
 
         CacheMetadata cacheMetadata = new CacheMetadata(createCacheMetadata(catalogManager));
-        this.plannerContext = new PlannerContext(metadata, cacheMetadata, typeOperators, blockEncodingSerde, typeManager, functionManager, languageFunctionManager, tracer);
+        this.plannerContext = new PlannerContext(metadata, cacheMetadata, typeOperators, blockEncodingSerde, typeManager, functionManager, languageFunctionManager, BuiltinFunctionsChecker.NOOP_CHECKER, tracer);
         this.pageFunctionCompiler = new PageFunctionCompiler(functionManager, 0);
         this.filterCompiler = new ColumnarFilterCompiler(functionManager, 0);
         this.expressionCompiler = new ExpressionCompiler(functionManager, pageFunctionCompiler, filterCompiler);
