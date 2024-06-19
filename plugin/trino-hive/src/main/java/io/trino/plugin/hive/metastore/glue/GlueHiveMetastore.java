@@ -209,7 +209,7 @@ public class GlueHiveMetastore
                 newFixedThreadPool(config.getThreads(), daemonThreadsNamed("glue-%s-%%s".formatted(poolCounter.getAndIncrement()))));
     }
 
-    private GlueHiveMetastore(
+    protected GlueHiveMetastore(
             GlueClient glueClient,
             GlueContext glueContext,
             GlueCache glueCache, TrinoFileSystem fileSystem,
