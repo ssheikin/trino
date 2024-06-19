@@ -282,10 +282,12 @@ public class DistributedQueryRunner
                 systemAccessControls,
                 locationAccessControlConfiguration,
                 locationAccessControls,
-                eventListeners));
+                eventListeners,
+                newServer -> {
+                    functionBundles.forEach(newServer::addFunctions);
+                    plugins.forEach(newServer::installPlugin);
+                }));
         servers.add(server);
-        functionBundles.forEach(server::addFunctions);
-        plugins.forEach(server::installPlugin);
         return server;
     }
 
@@ -313,7 +315,8 @@ public class DistributedQueryRunner
             Optional<List<SystemAccessControl>> systemAccessControls,
             Optional<FactoryConfiguration> locationAccessControlConfiguration,
             Optional<List<LocationAccessControl>> locationAccessControls,
-            List<EventListener> eventListeners)
+            List<EventListener> eventListeners,
+            Consumer<TestingTrinoServer> additionalConfiguration)
     {
         long start = System.nanoTime();
         ImmutableMap.Builder<String, String> propertiesBuilder = ImmutableMap.<String, String>builder()
@@ -351,6 +354,7 @@ public class DistributedQueryRunner
                 .setLocationAccessControlConfiguration(locationAccessControlConfiguration)
                 .setLocationAccessControls(locationAccessControls)
                 .setEventListeners(eventListeners)
+                .setAdditionalConfiguration(additionalConfiguration)
                 .build();
 
         String nodeRole = coordinator ? "coordinator" : "worker";
