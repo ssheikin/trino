@@ -51,7 +51,7 @@ import jakarta.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -556,7 +556,7 @@ public class SqlTaskExecution
     @NotThreadSafe
     private static class PendingSplitsForPlanNode
     {
-        private Set<ScheduledSplit> splits = new HashSet<>();
+        private Set<ScheduledSplit> splits = new LinkedHashSet<>();
         private SplitsState state = ADDING_SPLITS;
         private boolean noMoreSplits;
 
@@ -586,7 +586,7 @@ public class SqlTaskExecution
         {
             checkState(state == ADDING_SPLITS || state == NO_MORE_SPLITS);
             Set<ScheduledSplit> result = splits;
-            splits = new HashSet<>();
+            splits = new LinkedHashSet<>();
             return result;
         }
 
