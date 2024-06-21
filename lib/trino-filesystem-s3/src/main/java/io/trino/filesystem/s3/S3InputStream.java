@@ -192,14 +192,17 @@ final class S3InputStream
         closeStream();
 
         try {
-            String range = "bytes=%s-".formatted(nextReadPosition);
             GetObjectRequest.Builder builder = request.toBuilder();
             if (context.sseType() == S3FileSystemConfig.S3SseType.CUSTOMER) {
                 builder.sseCustomerAlgorithm(context.sseCustomerKey().algorithm());
                 builder.sseCustomerKey(context.sseCustomerKey().key());
                 builder.sseCustomerKeyMD5(context.sseCustomerKey().md5());
             }
-            GetObjectRequest rangeRequest = builder.range(range).build();
+            if (nextReadPosition != 0) {
+                String range = "bytes=%s-".formatted(nextReadPosition);
+                builder.range(range).build();
+            }
+            GetObjectRequest rangeRequest = builder.build();
             in = client.getObject(rangeRequest);
             streamPosition = nextReadPosition;
         }
