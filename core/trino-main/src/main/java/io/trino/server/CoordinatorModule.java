@@ -127,7 +127,6 @@ import io.trino.sql.planner.PlanOptimizers;
 import io.trino.sql.planner.PlanOptimizersFactory;
 import io.trino.sql.planner.RuleStatsRecorder;
 import io.trino.sql.planner.SplitSourceFactory;
-import io.trino.sql.planner.iterative.rule.DistinctAggregationController;
 import io.trino.sql.planner.sanity.ForAlternatives;
 import io.trino.sql.rewrite.DescribeInputRewrite;
 import io.trino.sql.rewrite.DescribeOutputRewrite;
@@ -328,7 +327,6 @@ public class CoordinatorModule
         // Optimizer/Rule Stats exporter
         binder.bind(RuleStatsRecorder.class).in(Scopes.SINGLETON);
         binder.bind(OptimizerStatsMBeanExporter.class).in(Scopes.SINGLETON);
-        binder.bind(DistinctAggregationController.class).in(Scopes.SINGLETON);
 
         // query explainer
         binder.bind(QueryExplainerFactory.class).in(Scopes.SINGLETON);
