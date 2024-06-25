@@ -213,10 +213,7 @@ public class TestDeltaLakeDeleteCompatibility
     }
 
     // Databricks 12.1 and OSS Delta 2.4.0 added support for deletion vectors
-    @Test(
-            groups = {DELTA_LAKE_DATABRICKS, DELTA_LAKE_OSS, DELTA_LAKE_EXCLUDE_91, PROFILE_SPECIFIC_TESTS},
-            dataProvider = "columnMappingModeDataProvider",
-            enabled = false /* TODO https://starburstdata.atlassian.net/browse/SEP-13976 */)
+    @Test(groups = {DELTA_LAKE_DATABRICKS, DELTA_LAKE_OSS, DELTA_LAKE_EXCLUDE_91, PROFILE_SPECIFIC_TESTS}, dataProvider = "columnMappingModeDataProvider")
     @Flaky(issue = DATABRICKS_COMMUNICATION_FAILURE_ISSUE, match = DATABRICKS_COMMUNICATION_FAILURE_MATCH)
     public void testDeletionVectors(String mode)
     {

@@ -69,7 +69,7 @@ public class TestDeltaLakeDropTableCompatibility
         };
     }
 
-    @Test(groups = {DELTA_LAKE_DATABRICKS, DELTA_LAKE_OSS, PROFILE_SPECIFIC_TESTS}, dataProvider = "engineConfigurations", enabled = false /* TODO https://starburstdata.atlassian.net/browse/SEP-13976 */)
+    @Test(groups = {DELTA_LAKE_DATABRICKS, DELTA_LAKE_OSS, PROFILE_SPECIFIC_TESTS}, dataProvider = "engineConfigurations")
     @Flaky(issue = DATABRICKS_COMMUNICATION_FAILURE_ISSUE, match = DATABRICKS_COMMUNICATION_FAILURE_MATCH)
     public void testDropTable(Engine creator, Engine dropper, boolean explicitLocation)
     {
