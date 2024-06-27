@@ -26,6 +26,7 @@ import io.trino.connector.system.StaticSystemTablesProvider;
 import io.trino.connector.system.SystemConnector;
 import io.trino.connector.system.SystemTablesProvider;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
+import io.trino.memory.LocalMemoryManager;
 import io.trino.metadata.HandleResolver;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.Metadata;
@@ -83,6 +84,7 @@ public class DefaultCatalogFactory
     private final AccessControlManager accessControlManager;
     private final Map<String, String> serverProperties;
     private final ConcurrentMap<ConnectorName, InternalConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
+    private final LocalMemoryManager localMemoryManager;
 
     @Inject
     public DefaultCatalogFactory(
@@ -101,7 +103,8 @@ public class DefaultCatalogFactory
             NodeSchedulerConfig nodeSchedulerConfig,
             AccessControlManager accessControlManager,
             OptimizerConfig optimizerConfig,
-            ConfigurationFactory configurationFactory)
+            ConfigurationFactory configurationFactory,
+            LocalMemoryManager localMemoryManager)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
@@ -118,6 +121,7 @@ public class DefaultCatalogFactory
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.accessControlManager = requireNonNull(accessControlManager, "accessControlManager is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
+        this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
     }
 
@@ -211,6 +215,7 @@ public class DefaultCatalogFactory
                 catalogConnector,
                 informationSchemaConnector,
                 systemConnector,
+                localMemoryManager,
                 catalogProperties);
     }
 

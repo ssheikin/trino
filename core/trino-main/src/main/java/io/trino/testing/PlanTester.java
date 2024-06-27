@@ -419,7 +419,8 @@ public class PlanTester
                 nodeSchedulerConfig,
                 accessControlManager,
                 optimizerConfig,
-                new ConfigurationFactory(ImmutableMap.of())));
+                new ConfigurationFactory(ImmutableMap.of()),
+                new LocalMemoryManager(new NodeMemoryConfig())));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
         this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager), new DynamicRowFilteringPageSourceProvider(new DynamicPageFilterCache(typeOperators)));
         this.dynamicRowFilteringPageSourceProvider = new DynamicRowFilteringPageSourceProvider(new DynamicPageFilterCache(typeOperators));
