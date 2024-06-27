@@ -125,8 +125,6 @@ import io.trino.operator.PagesIndex;
 import io.trino.operator.PagesIndexPageSorter;
 import io.trino.operator.SplitDriverFactory;
 import io.trino.operator.TaskContext;
-import io.trino.operator.dynamicfiltering.DynamicPageFilterCache;
-import io.trino.operator.dynamicfiltering.DynamicRowFilteringPageSourceProvider;
 import io.trino.operator.index.IndexJoinLookupStats;
 import io.trino.operator.index.IndexManager;
 import io.trino.operator.scalar.json.JsonExistsFunction;
@@ -298,7 +296,6 @@ public class PlanTester
     private final TestingAccessControlManager accessControl;
     private final SplitManager splitManager;
     private final PageSourceManager pageSourceManager;
-    private final DynamicRowFilteringPageSourceProvider dynamicRowFilteringPageSourceProvider;
     private final AlternativeChooser alternativeChooser;
     private final IndexManager indexManager;
     private final NodePartitioningManager nodePartitioningManager;
@@ -422,8 +419,7 @@ public class PlanTester
                 new ConfigurationFactory(ImmutableMap.of()),
                 new LocalMemoryManager(new NodeMemoryConfig())));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
-        this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager), new DynamicRowFilteringPageSourceProvider(new DynamicPageFilterCache(typeOperators)));
-        this.dynamicRowFilteringPageSourceProvider = new DynamicRowFilteringPageSourceProvider(new DynamicPageFilterCache(typeOperators));
+        this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager));
         this.alternativeChooser = new AlternativeChooser(createAlternativeChooser(catalogManager));
         this.pageSinkManager = new PageSinkManager(createPageSinkProvider(catalogManager));
         this.indexManager = new IndexManager(createIndexProvider(catalogManager));
@@ -790,7 +786,6 @@ public class PlanTester
                 plannerContext,
                 Optional.empty(),
                 pageSourceManager,
-                dynamicRowFilteringPageSourceProvider,
                 alternativeChooser,
                 indexManager,
                 nodePartitioningManager,
