@@ -21,6 +21,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.net.MediaType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -38,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public abstract class AbstractTestTrinoS3FileSystem
 {
+    protected static final int PART_SIZE = 5 * 1024 * 1024;
     private static final MediaType DIRECTORY_MEDIA_TYPE = MediaType.create("application", "x-directory");
     private static final String PATH_SEPARATOR = "/";
     private static final String DIRECTORY_SUFFIX = "_$folder$";
@@ -45,6 +49,41 @@ public abstract class AbstractTestTrinoS3FileSystem
     protected abstract String getBucketName();
 
     protected abstract Configuration s3Configuration();
+
+    @Test
+    public void testWriteFileWithMultiPartUpload()
+            throws Exception
+    {
+        String prefix = "test-write-file-with-mulit-part-upload" + randomNameSuffix();
+        String prefixPath = "s3://%s/%s".formatted(getBucketName(), prefix);
+
+        try (TrinoS3FileSystem fs = createFileSystem()) {
+            try {
+                String filename = "file1.txt";
+                Path path = new Path(prefixPath, filename);
+                FSDataOutputStream outputStream = fs.create(path);
+
+                // create load with size that is over the max part size to get the load divided and send into two parts
+                int loadSize = PART_SIZE + 100;
+                byte[] expected = new byte[loadSize];
+                Arrays.fill(expected, (byte) 1);
+                outputStream.write(expected);
+                outputStream.close();
+
+                FSDataInputStream inputStream = fs.open(path);
+                byte[] buffer = new byte[loadSize];
+                inputStream.read(0, buffer, 0, loadSize);
+                inputStream.close();
+                assertThat(expected).isEqualTo(buffer);
+
+                assertThat(fs.delete(new Path(prefixPath), true)).isTrue();
+                assertThat(listPaths(fs.getS3Client(), getBucketName(), prefix, true)).isEmpty();
+            }
+            finally {
+                fs.delete(new Path(prefixPath), true);
+            }
+        }
+    }
 
     @Test
     public void testDeleteRecursivelyMissingObjectPath()

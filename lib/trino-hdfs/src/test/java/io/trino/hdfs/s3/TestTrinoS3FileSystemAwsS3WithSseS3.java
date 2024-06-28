@@ -13,14 +13,7 @@
  */
 package io.trino.hdfs.s3;
 
-import com.amazonaws.util.BinaryUtils;
 import org.apache.hadoop.conf.Configuration;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 /**
  * Tests file system operations on AWS S3 storage.
@@ -28,12 +21,10 @@ import java.security.SecureRandom;
  * Requires AWS credentials, which can be provided any way supported by the DefaultProviderChain
  * See https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default
  */
-public class TestTrinoS3FileSystemAwsS3WithSSEC
+public class TestTrinoS3FileSystemAwsS3WithSseS3
         extends TestTrinoS3FileSystemAwsS3
 {
-    private static final String CUSTOMER_KEY = generateCustomerKey();
-
-    public TestTrinoS3FileSystemAwsS3WithSSEC()
+    public TestTrinoS3FileSystemAwsS3WithSseS3()
     {
         super();
     }
@@ -42,23 +33,9 @@ public class TestTrinoS3FileSystemAwsS3WithSSEC
     protected Configuration s3Configuration()
     {
         Configuration configuration = super.s3Configuration();
-        configuration.set("trino.s3.sse.type", "CUSTOMER");
-        configuration.set("trino.s3.sse.customer-key", CUSTOMER_KEY);
+        configuration.set("trino.s3.sse.type", "S3");
         configuration.set("trino.s3.sse.enabled", "true");
         configuration.set("trino.s3.streaming.part-size", String.valueOf(PART_SIZE));
         return configuration;
-    }
-
-    private static String generateCustomerKey()
-    {
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-            keyGenerator.init(256, new SecureRandom());
-            SecretKey secretKey = keyGenerator.generateKey();
-            return BinaryUtils.toBase64(secretKey.getEncoded());
-        }
-        catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
