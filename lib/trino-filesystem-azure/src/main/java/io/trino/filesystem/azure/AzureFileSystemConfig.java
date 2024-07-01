@@ -33,6 +33,7 @@ public class AzureFileSystemConfig
     private DataSize writeBlockSize = DataSize.of(4, Unit.MEGABYTE);
     private int maxWriteConcurrency = 8;
     private DataSize maxSingleUploadSize = DataSize.of(4, Unit.MEGABYTE);
+    private boolean useOauthPassthroughToken;
 
     @NotNull
     public AuthType getAuthType()
@@ -95,6 +96,18 @@ public class AzureFileSystemConfig
     public AzureFileSystemConfig setMaxSingleUploadSize(DataSize maxSingleUploadSize)
     {
         this.maxSingleUploadSize = maxSingleUploadSize;
+        return this;
+    }
+
+    public boolean isUseOauthPassthroughToken()
+    {
+        return useOauthPassthroughToken;
+    }
+
+    @Config("azure.use-oauth-passthrough-token")
+    public AzureFileSystemConfig setUseOauthPassthroughToken(boolean useOauthPassthroughToken)
+    {
+        this.useOauthPassthroughToken = useOauthPassthroughToken;
         return this;
     }
 }

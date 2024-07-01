@@ -32,12 +32,16 @@ import okhttp3.OkHttpClient;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.nullToEmpty;
+import static io.trino.filesystem.azure.AzureFileSystemConstants.OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL;
 import static java.util.Objects.requireNonNull;
 
 public class AzureFileSystemFactory
         implements TrinoFileSystemFactory
 {
     private final AzureAuth auth;
+    private final boolean useOauthPassthroughToken;
+    private final AzureFileSystemConfig.AuthType authType;
     private final DataSize readBlockSize;
     private final DataSize writeBlockSize;
     private final int maxWriteConcurrency;
@@ -51,6 +55,8 @@ public class AzureFileSystemFactory
     {
         this(openTelemetry,
                 azureAuth,
+                config.getAuthType(),
+                config.isUseOauthPassthroughToken(),
                 config.getReadBlockSize(),
                 config.getWriteBlockSize(),
                 config.getMaxWriteConcurrency(),
@@ -60,12 +66,16 @@ public class AzureFileSystemFactory
     public AzureFileSystemFactory(
             OpenTelemetry openTelemetry,
             AzureAuth azureAuth,
+            AzureFileSystemConfig.AuthType authType,
+            boolean useOauthPassthroughToken,
             DataSize readBlockSize,
             DataSize writeBlockSize,
             int maxWriteConcurrency,
             DataSize maxSingleUploadSize)
     {
         this.auth = requireNonNull(azureAuth, "azureAuth is null");
+        this.useOauthPassthroughToken = useOauthPassthroughToken;
+        this.authType = requireNonNull(authType, "authType is null");
         this.readBlockSize = requireNonNull(readBlockSize, "readBlockSize is null");
         this.writeBlockSize = requireNonNull(writeBlockSize, "writeBlockSize is null");
         checkArgument(maxWriteConcurrency >= 0, "maxWriteConcurrency is negative");
@@ -89,7 +99,15 @@ public class AzureFileSystemFactory
     @Override
     public TrinoFileSystem create(ConnectorIdentity identity)
     {
-        return new AzureFileSystem(httpClient, tracingOptions, auth, readBlockSize, writeBlockSize, maxWriteConcurrency, maxSingleUploadSize);
+        String accessToken = nullToEmpty(identity.getExtraCredentials().get(OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL));
+        return new AzureFileSystem(
+                httpClient,
+                tracingOptions,
+                useOauthPassthroughToken ? new AzureAuthCustomToken(new AzureCustomTokenCredential(accessToken), authType) : auth,
+                readBlockSize,
+                writeBlockSize,
+                maxWriteConcurrency,
+                maxSingleUploadSize);
     }
 
     public static HttpClient createAzureHttpClient(OkHttpClient okHttpClient, HttpClientOptions clientOptions)
