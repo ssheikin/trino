@@ -23,6 +23,7 @@ import io.airlift.slice.Slice;
 import io.trino.plugin.base.aggregation.AggregateFunctionRewriter;
 import io.trino.plugin.base.aggregation.AggregateFunctionRule;
 import io.trino.plugin.base.expression.ConnectorExpressionRewriter;
+import io.trino.plugin.base.expression.ConnectorExpressionRule;
 import io.trino.plugin.base.mapping.IdentifierMapping;
 import io.trino.plugin.base.projection.ProjectFunctionRewriter;
 import io.trino.plugin.base.projection.ProjectFunctionRule;
@@ -136,6 +137,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -291,6 +293,8 @@ public class PostgreSqlClient
             ConnectionFactory connectionFactory,
             QueryBuilder queryBuilder,
             TypeManager typeManager,
+            Set<ConnectorExpressionRule<? extends ConnectorExpression, ParameterizedExpression>> connectorExpressionRuleSet,
+            Set<ProjectFunctionRule<JdbcExpression, ParameterizedExpression>> projectFunctionRuleSet,
             IdentifierMapping identifierMapping,
             RemoteQueryModifier queryModifier)
     {
@@ -309,7 +313,7 @@ public class PostgreSqlClient
         this.statisticsEnabled = statisticsConfig.isEnabled();
 
         Predicate<ConnectorSession> pushdownWithCollateEnabled = PostgreSqlSessionProperties::isEnableStringPushdownWithCollate;
-        this.connectorExpressionRewriter = JdbcConnectorExpressionRewriterBuilder.newBuilder()
+        JdbcConnectorExpressionRewriterBuilder connectorExpressionRewriterBuilder = JdbcConnectorExpressionRewriterBuilder.newBuilder()
                 .addStandardRules(this::quoted)
                 .add(new RewriteIn())
                 .withTypeClass("integer_type", ImmutableSet.of("tinyint", "smallint", "integer", "bigint"))
@@ -337,13 +341,17 @@ public class PostgreSqlClient
                 .when(pushdownWithCollateEnabled).map("$less_than(left: collatable_type, right: collatable_type)").to("left < right COLLATE \"C\"")
                 .when(pushdownWithCollateEnabled).map("$less_than_or_equal(left: collatable_type, right: collatable_type)").to("left <= right COLLATE \"C\"")
                 .when(pushdownWithCollateEnabled).map("$greater_than(left: collatable_type, right: collatable_type)").to("left > right COLLATE \"C\"")
-                .when(pushdownWithCollateEnabled).map("$greater_than_or_equal(left: collatable_type, right: collatable_type)").to("left >= right COLLATE \"C\"")
-                .build();
+                .when(pushdownWithCollateEnabled).map("$greater_than_or_equal(left: collatable_type, right: collatable_type)").to("left >= right COLLATE \"C\"");
+
+        connectorExpressionRuleSet.forEach(connectorExpressionRewriterBuilder::add);
+
+        this.connectorExpressionRewriter = connectorExpressionRewriterBuilder.build();
 
         this.projectFunctionRewriter = new ProjectFunctionRewriter<>(
                 this.connectorExpressionRewriter,
                 ImmutableSet.<ProjectFunctionRule<JdbcExpression, ParameterizedExpression>>builder()
                         .add(new RewriteStringReverseFunction())
+                        .addAll(requireNonNull(projectFunctionRuleSet, "projectFunctionRuleSet is null"))
                         .build());
 
         JdbcTypeHandle bigintTypeHandle = new JdbcTypeHandle(Types.BIGINT, Optional.of("bigint"), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());

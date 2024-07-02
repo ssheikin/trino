@@ -15,16 +15,22 @@ package io.trino.plugin.postgresql;
 
 import com.google.inject.Binder;
 import com.google.inject.Scopes;
+import com.google.inject.TypeLiteral;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
+import io.trino.plugin.base.expression.ConnectorExpressionRule;
+import io.trino.plugin.base.projection.ProjectFunctionRule;
 import io.trino.plugin.jdbc.DecimalModule;
 import io.trino.plugin.jdbc.ForBaseJdbc;
 import io.trino.plugin.jdbc.JdbcClient;
+import io.trino.plugin.jdbc.JdbcExpression;
 import io.trino.plugin.jdbc.JdbcJoinPushdownSupportModule;
 import io.trino.plugin.jdbc.JdbcStatisticsConfig;
 import io.trino.plugin.jdbc.QueryBuilder;
 import io.trino.plugin.jdbc.RemoteQueryCancellationModule;
 import io.trino.plugin.jdbc.TimestampTimeZoneDomain;
+import io.trino.plugin.jdbc.expression.ParameterizedExpression;
 import io.trino.plugin.jdbc.ptf.Query;
+import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.function.table.ConnectorTableFunction;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
@@ -48,5 +54,7 @@ public class PostgreSqlClientModule
         install(new JdbcJoinPushdownSupportModule());
         install(new RemoteQueryCancellationModule());
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(Query.class).in(Scopes.SINGLETON);
+        newSetBinder(binder, new TypeLiteral<ConnectorExpressionRule<? extends ConnectorExpression, ParameterizedExpression>>() {});
+        newSetBinder(binder, new TypeLiteral<ProjectFunctionRule<JdbcExpression, ParameterizedExpression>>() {});
     }
 }

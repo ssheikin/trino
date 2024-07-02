@@ -15,6 +15,7 @@ package io.trino.plugin.postgresql;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.trino.metadata.ResolvedFunction;
 import io.trino.metadata.TestingFunctionResolution;
 import io.trino.plugin.base.mapping.DefaultIdentifierMapping;
@@ -114,6 +115,8 @@ public class TestPostgreSqlClient
             session -> { throw new UnsupportedOperationException(); },
             new DefaultQueryBuilder(RemoteQueryModifier.NONE),
             TESTING_TYPE_MANAGER,
+            ImmutableSet.of(),
+            ImmutableSet.of(),
             new DefaultIdentifierMapping(),
             RemoteQueryModifier.NONE);
 
