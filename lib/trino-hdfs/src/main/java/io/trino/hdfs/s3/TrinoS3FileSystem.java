@@ -1146,10 +1146,6 @@ public class TrinoS3FileSystem
 
     private AmazonWebServiceRequest handleSseKMS(AmazonWebServiceRequest amazonWebServiceRequest)
     {
-        if (amazonWebServiceRequest instanceof CopyObjectRequest copyObjectRequest) {
-            return copyObjectRequest.withSSEAwsKeyManagementParams(getSseKeyManagementParams());
-        }
-
         if (amazonWebServiceRequest instanceof InitiateMultipartUploadRequest initiateMultipartUploadRequest) {
             return initiateMultipartUploadRequest.withSSEAwsKeyManagementParams(getSseKeyManagementParams());
         }
@@ -1165,11 +1161,6 @@ public class TrinoS3FileSystem
         if (amazonWebServiceRequest instanceof InitiateMultipartUploadRequest initiateMultipartUploadRequest) {
             initiateMultipartUploadRequest.getObjectMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
             return initiateMultipartUploadRequest;
-        }
-
-        if (amazonWebServiceRequest instanceof UploadPartRequest uploadPartRequest) {
-            uploadPartRequest.getObjectMetadata().setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
-            return uploadPartRequest;
         }
 
         if (amazonWebServiceRequest instanceof PutObjectRequest putObjectRequest) {
