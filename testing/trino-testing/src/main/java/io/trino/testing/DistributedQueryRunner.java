@@ -779,6 +779,13 @@ public class DistributedQueryRunner
         }
 
         @CanIgnoreReturnValue
+        public SELF addCoordinatorProperties(Map<String, String> coordinatorProperties)
+        {
+            this.coordinatorProperties = addProperties(this.coordinatorProperties, coordinatorProperties);
+            return self();
+        }
+
+        @CanIgnoreReturnValue
         public SELF addCoordinatorProperty(String key, String value)
         {
             this.coordinatorProperties = addProperty(this.coordinatorProperties, key, value);
