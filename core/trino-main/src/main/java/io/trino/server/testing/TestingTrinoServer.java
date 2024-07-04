@@ -219,7 +219,7 @@ public class TestingTrinoServer
     private final boolean coordinator;
     private final FailureInjector failureInjector;
     private final ExchangeManagerRegistry exchangeManagerRegistry;
-    private final CacheManagerRegistry cacheManagerRegistry;
+    private CacheManagerRegistry cacheManagerRegistry;
 
     public static class TestShutdownAction
             implements ShutdownAction
@@ -430,8 +430,6 @@ public class TestingTrinoServer
         mBeanServer = injector.getInstance(MBeanServer.class);
         failureInjector = injector.getInstance(FailureInjector.class);
         exchangeManagerRegistry = injector.getInstance(ExchangeManagerRegistry.class);
-        cacheManagerRegistry = injector.getInstance(CacheManagerRegistry.class);
-        cacheManagerRegistry.loadCacheManager();
 
         systemAccessControlConfiguration.ifPresentOrElse(
                 configuration -> {
@@ -532,6 +530,19 @@ public class TestingTrinoServer
 
     public CacheManagerRegistry getCacheManagerRegistry()
     {
+        if (cacheManagerRegistry == null) {
+            cacheManagerRegistry = injector.getInstance(CacheManagerRegistry.class);
+            cacheManagerRegistry.loadCacheManager();
+        }
+        return cacheManagerRegistry;
+    }
+
+    public CacheManagerRegistry getCacheManagerRegistry(String name, Map<String, String> properties)
+    {
+        if (cacheManagerRegistry == null) {
+            cacheManagerRegistry = injector.getInstance(CacheManagerRegistry.class);
+            cacheManagerRegistry.loadCacheManager(name, properties);
+        }
         return cacheManagerRegistry;
     }
 

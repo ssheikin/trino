@@ -13,18 +13,21 @@
  */
 package io.trino.plugin.warp.it.proxiedconnector.hive;
 
+import com.google.common.collect.ImmutableMap;
 import io.trino.operator.OperatorStats;
 import io.trino.plugin.warp.WarpPlugin;
 import io.trino.plugin.warp.dispatcher.DispatcherConnectorFactory;
 import io.trino.plugin.warp.it.DispatcherQueryRunner;
 import io.trino.plugin.warp.it.DispatcherStubsIntegrationSmokeIT;
-import io.trino.server.testing.TestingTrinoServer;
+import io.trino.plugin.warp.tools.util.StringUtils;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.QueryRunner.MaterializedResultWithPlan;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +39,15 @@ import static io.trino.plugin.warp.config.ProxiedConnectorConfig.PROXIED_CONNECT
 import static io.trino.plugin.warp.extension.config.WarpExtensionConfig.USE_HTTP_SERVER_PORT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestHiveDefaultCacheManager
+public class TestHiveWarpCacheManager
         extends DispatcherStubsIntegrationSmokeIT
 {
-    public TestHiveDefaultCacheManager()
+    private static final String TABLE_1 = "table" + StringUtils.randomAlphanumeric(4);
+    private static final String TABLE_2 = "table" + StringUtils.randomAlphanumeric(4);
+
+    public TestHiveWarpCacheManager()
     {
-        super(1, "hive_warp");
+        super(1, "hive_cache");
     }
 
     @Override
@@ -62,8 +68,27 @@ public class TestHiveDefaultCacheManager
                 catalog,
                 new WarpPlugin(),
                 Map.of("cache.enabled", "true"));
+
+        Path cacheStorePath = Files.createTempDirectory("cache_");
+        ImmutableMap.Builder<String, String> cacheConfigBuilder = ImmutableMap.builder();
         ((DistributedQueryRunner) queryRunner).getServers()
-                .forEach(TestingTrinoServer::getCacheManagerRegistry);
+                .forEach(server -> server.getCacheManagerRegistry(
+                        "warp_cache",
+                        cacheConfigBuilder
+                                .put("node.environment", "warp_speed_cache")
+                                .put("warp-speed.config.is-single", Boolean.valueOf(numNodes > 1).toString())
+//                                .put("cache.enabled", "true")
+                                .put("warp-speed.config.is-cache", "true")
+                                .put("warp-speed.metrics.dump.interval", "5s")
+                                .put("warp-speed.cluster-uuid", "test")
+                                .put("http-rest-port", "8098")
+                                .put("warp-speed.use-http-server-port", "false")
+                                .put("warp-speed.config.http-rest-port-enabled", "true")
+                                .put("warp-speed.config.extensions.enabled", "true")
+                                .put("warp-speed.call-home.enable", "false")
+                                .put("warp-speed.store.path", "file://" + cacheStorePath.toString())
+                                .put("warp-speed.local-store.path", cacheStorePath.toString())
+                                .buildOrThrow()));
         return queryRunner;
     }
 
@@ -71,16 +96,16 @@ public class TestHiveDefaultCacheManager
     public void testSimpleWarm()
     {
         prepare();
-        DistributedQueryRunner queryRunner = (DistributedQueryRunner) getQueryRunner();
+        DistributedQueryRunner queryRunner = getDistributedQueryRunner();
 
-        @Language("SQL") String query = "select int1, v1 from table1 where v1 like '%shlomi%'";
+        @Language("SQL") String query = "select int1, v1 from " + TABLE_1 + " where v1 like '%shlomi%'";
         runQueryAndValidateReadFromCache(queryRunner, query);
 
-        @Language("SQL") String query2 = "select int1, v1 from table2 where v1 like '%shlomi%'";
+        @Language("SQL") String query2 = "select int1, v1 from " + TABLE_2 + " where v1 like '%shlomi%'";
         runQueryAndValidateReadFromCache(queryRunner, query2);
 
-        DistributedQueryRunner queryRunner2 = (DistributedQueryRunner) getQueryRunner();
-        @Language("SQL") String unionQuery = "select * from table1 b where b.int1 > 0 union all select * from table2";
+        DistributedQueryRunner queryRunner2 = getDistributedQueryRunner();
+        @Language("SQL") String unionQuery = "select * from %s b where b.int1 > 0 union all select * from %s".formatted(TABLE_1, TABLE_2);
         runQueryAndValidateReadFromCache(queryRunner2, unionQuery);
         assertExplain("explain " + unionQuery, "CacheData\\[\\]\n.*\n.*TableScan.*");
     }
@@ -100,23 +125,23 @@ public class TestHiveDefaultCacheManager
     }
 
     /**
-     * warm table1, table2 with default warming.
+     * warm table_1, table_2 with default warming.
      * int_1- DATA, BASIC. v1- DATA, BASIC, LUCENE
      */
     private void prepare()
     {
         createTable(DEFAULT_SCHEMA,
-                "table1",
+                TABLE_1,
                 "(int1 integer, v1 varchar(20)) WITH (format='PARQUET', partitioned_by = ARRAY[])");
-        computeActual(getSession(), "INSERT INTO table1 VALUES (1, 'shlomi'), (2, 'kobi')");
+        computeActual(getSession(), "INSERT INTO %s VALUES (1, 'shlomi'), (2, 'kobi')".formatted(TABLE_1));
         createTable(DEFAULT_SCHEMA,
-                "table2",
+                TABLE_2,
                 "(int1 integer, v1 varchar(20)) WITH (format='PARQUET', partitioned_by = ARRAY[])");
-        computeActual(getSession(), "INSERT INTO table2 VALUES (3, 'roman'), (4, 'tal')");
-        String query2 = "select int1, v1 from table2 where int1 > 0 and v1 like '%shlomi%' and v1 > 's' and upper(v1) = 'SHLOMI'";
+        computeActual(getSession(), "INSERT INTO %s VALUES (3, 'roman'), (4, 'tal')".formatted(TABLE_2));
+        String query2 = "select int1, v1 from " + TABLE_2 + " where int1 > 0 and v1 like '%shlomi%' and v1 > 's' and upper(v1) = 'SHLOMI'";
         warmAndValidate(query2, true, 5, 2);
         //warm int_1 (DATA, BASIC), v1 (DATA, BASIC, LUCENE) with default warming
-        String query = "select int1, v1 from table1 where int1 > 0 and v1 like '%shlomi%' and v1 > 's' and upper(v1) = 'SHLOMI'";
+        String query = "select int1, v1 from " + TABLE_1 + " where int1 > 0 and v1 like '%shlomi%' and v1 > 's' and upper(v1) = 'SHLOMI'";
         warmAndValidate(query, true, 5, 2);
     }
 
