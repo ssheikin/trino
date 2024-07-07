@@ -65,7 +65,6 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
     protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
     {
         switch (connectorBehavior) {
-            case SUPPORTS_ADD_COLUMN:
             case SUPPORTS_ADD_COLUMN_WITH_COMMENT:
             case SUPPORTS_DROP_COLUMN:
             case SUPPORTS_SET_COLUMN_TYPE:
@@ -214,16 +213,6 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
 
     @Test
     @Override
-    public void testAddColumn()
-    {
-        // Required because Stargate connector adds additional `Query failed (...):` prefix to the error message
-        assertThatThrownBy(super::testAddColumn)
-                .hasMessageContaining("This connector does not support adding columns");
-        abort("not supported");
-    }
-
-    @Test
-    @Override
     public void testDropColumn()
     {
         // Required because Stargate connector adds additional `Query failed (...):` prefix to the error message
@@ -360,5 +349,11 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
     public void testExecuteProcedure()
     {
         // TODO (https://github.com/starburstdata/cork/issues/984) Enable this test
+    }
+
+    @Override
+    protected void verifyAddNotNullColumnToNonEmptyTableFailurePermissible(Throwable e)
+    {
+        assertThat(e).hasMessageMatching(".* Unable to add NOT NULL column '.*' for non-empty table: .*");
     }
 }
