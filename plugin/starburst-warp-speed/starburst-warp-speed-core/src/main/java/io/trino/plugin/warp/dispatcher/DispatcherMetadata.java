@@ -920,7 +920,7 @@ public class DispatcherMetadata
                     customStats);
         }
 
-        TupleDomain<ColumnHandle> newRemainingFilter = resultOpt.get().getAlternatives().get(0).remainingFilter()
+        TupleDomain<ColumnHandle> newRemainingFilter = resultOpt.get().getAlternatives().getFirst().remainingFilter()
                 .transformKeys(ColumnHandle.class::cast);
         if (logger.isDebugEnabled()) {
             logger.debug("Will return to Presto the following remaining Filter: %s", newRemainingFilter.toString(session));
@@ -931,7 +931,7 @@ public class DispatcherMetadata
                 constraint,
                 dispatcherTableHandle,
                 newRemainingFilter,
-                resultOpt.get().getAlternatives().get(0).handle(),
+                resultOpt.get().getAlternatives().getFirst().handle(),
                 warpExpression,
                 customStats);
     }
