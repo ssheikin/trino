@@ -14,6 +14,8 @@
  */
 package io.trino.execution;
 
+import com.google.common.collect.ImmutableMap;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.opentelemetry.api.OpenTelemetry;
 import io.trino.Session;
 import io.trino.Session.SessionBuilder;
@@ -138,7 +140,7 @@ public class TestCommitTask
                 new ResourceGroupId("test"),
                 true,
                 transactionManager,
-                new AccessControlManager(NodeVersion.UNKNOWN, transactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), DefaultSystemAccessControl.NAME, LocationAccessControl.DEFAULT_NAME),
+                new AccessControlManager(NodeVersion.UNKNOWN, transactionManager, emptyEventListenerManager(), new AccessControlConfig(), OpenTelemetry.noop(), new SecretsResolver(ImmutableMap.of()), DefaultSystemAccessControl.NAME, LocationAccessControl.DEFAULT_NAME),
                 executor,
                 metadata,
                 WarningCollector.NOOP,

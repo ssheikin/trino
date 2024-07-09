@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.json.JsonCodec;
 import io.airlift.node.NodeInfo;
 import io.airlift.units.Duration;
@@ -106,6 +107,7 @@ public class TestLocalDispatchQuery
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
+                new SecretsResolver(ImmutableMap.of()),
                 DefaultSystemAccessControl.NAME,
                 LocationAccessControl.DEFAULT_NAME);
         accessControl.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));
@@ -132,7 +134,7 @@ public class TestLocalDispatchQuery
                 JsonCodec.jsonCodec(OperatorStats.class),
                 JsonCodec.jsonCodec(ExecutionFailureInfo.class),
                 JsonCodec.jsonCodec(StatsAndCosts.class),
-                new EventListenerManager(new EventListenerConfig()),
+                new EventListenerManager(new EventListenerConfig(), new SecretsResolver(ImmutableMap.of())),
                 new NodeInfo("node"),
                 new NodeVersion("version"),
                 new SessionPropertyManager(),
@@ -180,6 +182,7 @@ public class TestLocalDispatchQuery
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
+                new SecretsResolver(ImmutableMap.of()),
                 DefaultSystemAccessControl.NAME,
                 LocationAccessControl.DEFAULT_NAME);
         accessControl.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));

@@ -208,13 +208,13 @@ public class TestCreateCatalogLikeTask
                         new Property(new Identifier("property1-to-remove")),
                         new Property(new Identifier("property3-to-update"), new StringLiteral("value-updated")),
                         new Property(new Identifier("property4-added"), new StringLiteral("${ENV:foo}")),
-                        new Property(new Identifier("property5-added"), new StringLiteral("${FILE:bar}"))),
+                        new Property(new Identifier("property5-added"), new StringLiteral("${ENV:bar}"))),
                 """
                            "property0-added" = 'value-added',
                            property2 = 'value not changed',
                            "property3-to-update" = 'value-updated',
                            "property4-added" = '${ENV:foo}',
-                           "property5-added" = '${FILE:bar}'
+                           "property5-added" = '${ENV:bar}'
                         """);
     }
 

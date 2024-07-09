@@ -16,6 +16,7 @@ package io.trino.security;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.CreationException;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.opentelemetry.api.OpenTelemetry;
 import io.trino.client.NodeVersion;
 import io.trino.metadata.Metadata;
@@ -146,6 +147,7 @@ public class TestFileBasedSystemAccessControl
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
+                new SecretsResolver(ImmutableMap.of()),
                 DefaultSystemAccessControl.NAME,
                 LocationAccessControl.DEFAULT_NAME);
         accessControlManager.loadSystemAccessControl(
@@ -807,6 +809,7 @@ public class TestFileBasedSystemAccessControl
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
+                new SecretsResolver(ImmutableMap.of()),
                 DefaultSystemAccessControl.NAME,
                 LocationAccessControl.DEFAULT_NAME);
         File configFile = newTemporaryFile();
@@ -874,6 +877,7 @@ public class TestFileBasedSystemAccessControl
                 emptyEventListenerManager(),
                 new AccessControlConfig(),
                 OpenTelemetry.noop(),
+                new SecretsResolver(ImmutableMap.of()),
                 DefaultSystemAccessControl.NAME,
                 LocationAccessControl.DEFAULT_NAME);
 

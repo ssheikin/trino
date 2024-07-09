@@ -17,6 +17,7 @@ import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
 import io.airlift.configuration.ConfigurationFactory;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.node.NodeInfo;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
@@ -85,6 +86,7 @@ public class DefaultCatalogFactory
     private final Map<String, String> serverProperties;
     private final ConcurrentMap<ConnectorName, InternalConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
     private final LocalMemoryManager localMemoryManager;
+    private final SecretsResolver secretsResolver;
 
     @Inject
     public DefaultCatalogFactory(
@@ -104,7 +106,8 @@ public class DefaultCatalogFactory
             AccessControlManager accessControlManager,
             OptimizerConfig optimizerConfig,
             ConfigurationFactory configurationFactory,
-            LocalMemoryManager localMemoryManager)
+            LocalMemoryManager localMemoryManager,
+            SecretsResolver secretsResolver)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
@@ -123,6 +126,7 @@ public class DefaultCatalogFactory
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
+        this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
     }
 
     @Override
@@ -152,7 +156,7 @@ public class DefaultCatalogFactory
                     catalogProperties.catalogHandle(),
                     factory.getConnectorFactory(),
                     duplicatePluginClassLoaderFactory,
-                    catalogProperties.properties());
+                    secretsResolver.getResolvedConfiguration(catalogProperties.properties()));
             return createCatalog(
                     catalogProperties.catalogHandle(),
                     catalogProperties.connectorName(),
@@ -242,7 +246,7 @@ public class DefaultCatalogFactory
                 duplicatePluginClassLoaderFactory);
 
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
-            return connectorFactory.create(catalogName, properties, context);
+            return connectorFactory.create(catalogName, secretsResolver.getResolvedConfiguration(properties), context);
         }
     }
 

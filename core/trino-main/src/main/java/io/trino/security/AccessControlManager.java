@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.log.Logger;
 import io.airlift.stats.CounterStat;
 import io.opentelemetry.api.OpenTelemetry;
@@ -124,6 +125,7 @@ public class AccessControlManager
 
     private final CounterStat authorizationSuccess = new CounterStat();
     private final CounterStat authorizationFail = new CounterStat();
+    private final SecretsResolver secretsResolver;
 
     @Inject
     public AccessControlManager(
@@ -132,6 +134,7 @@ public class AccessControlManager
             EventListenerManager eventListenerManager,
             AccessControlConfig config,
             OpenTelemetry openTelemetry,
+            SecretsResolver secretsResolver,
             @DefaultSystemAccessControlName String defaultAccessControlName,
             @DefaultLocationAccessControlName String defaultLocationAccessControlName)
     {
@@ -141,6 +144,7 @@ public class AccessControlManager
         this.accessControlConfigFiles = ImmutableList.copyOf(config.getAccessControlFiles());
         this.locationAccessControlConfigFiles = ImmutableList.copyOf(config.getLocationAccessControlFiles());
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
+        this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
         this.defaultAccessControlName = requireNonNull(defaultAccessControlName, "defaultAccessControl is null");
         this.defaultLocationAccessControlName = requireNonNull(defaultLocationAccessControlName, "defaultLocationAccessControlName is null");
         addSystemAccessControlFactory(new DefaultSystemAccessControl.Factory());
@@ -237,7 +241,7 @@ public class AccessControlManager
 
         SystemAccessControl systemAccessControl;
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(factory.getClass().getClassLoader())) {
-            systemAccessControl = factory.create(ImmutableMap.copyOf(properties), createSystemAccessControlContext(name));
+            systemAccessControl = factory.create(ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)), createSystemAccessControlContext(name));
         }
 
         log.info("-- Loaded system access control %s --", name);
@@ -255,7 +259,7 @@ public class AccessControlManager
 
         SystemAccessControl systemAccessControl;
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(factory.getClass().getClassLoader())) {
-            systemAccessControl = factory.create(ImmutableMap.copyOf(properties), createSystemAccessControlContext(name));
+            systemAccessControl = factory.create(ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)), createSystemAccessControlContext(name));
         }
 
         systemAccessControl.getEventListeners()
@@ -336,7 +340,7 @@ public class AccessControlManager
 
         LocationAccessControl locationAccessControl;
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(factory.getClass().getClassLoader())) {
-            locationAccessControl = factory.create(ImmutableMap.copyOf(properties), createLocationAccessControlContext(name));
+            locationAccessControl = factory.create(ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)), createLocationAccessControlContext(name));
         }
 
         log.info("-- Loaded location access control %s --", name);
@@ -353,7 +357,7 @@ public class AccessControlManager
 
         LocationAccessControl locationAccessControl;
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(factory.getClass().getClassLoader())) {
-            locationAccessControl = factory.create(ImmutableMap.copyOf(properties), createLocationAccessControlContext(name));
+            locationAccessControl = factory.create(ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)), createLocationAccessControlContext(name));
         }
 
         List<LocationAccessControl> locationAccessControls = ImmutableList.of(locationAccessControl);

@@ -556,5 +556,16 @@
                 </excludes>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <foo>foo</foo>
+                        <bar>bar</bar>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
