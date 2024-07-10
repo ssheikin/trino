@@ -54,6 +54,12 @@ runs:
       with:
         secret-ids: ${{ inputs.secret-id }}
         parse-json-secrets: true
+    - name: Remove prefix from secrets
+      shell: bash
+      run: |
+        for variable in "${!SEP_CI_SEP_@}"; do
+          echo "${variable#SEP_CI_SEP_}=${!variable}" >> $GITHUB_ENV
+        done
     - name: "Login to maven registry"
       if: inputs.login-maven != 'false'
       uses: starburstdata/codeartifact-login-action@v1

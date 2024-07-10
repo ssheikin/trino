@@ -365,6 +365,7 @@ jobs:
           aws-access-key-id: ${{ vars.ENG_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ENG_AWS_SECRET_ACCESS_KEY }}
           secret-id: ${{ vars.SEP_SECRETS_AWS_ID }}
+          login-docker: true
       - uses: ./.github/actions/setup
         timeout-minutes: 10
         with:
@@ -399,6 +400,20 @@ jobs:
         run: |
           if [ "${DATABRICKS_TOKEN}" != "" ] && ( [ ! -f gib-impacted.log ] || grep -q plugin/trino-hive gib-impacted.log ); then
             $MAVEN test ${MAVEN_TEST} -pl :trino-hive -P unity-tests
+          fi
+      - name: Run ABFS Tests
+        id: test-hive-abfs
+        env:
+          ABFS_TESTS_ABFS_ACCOUNT: ${{ vars.AZURE_ABFS_ACCOUNT }}
+          ABFS_TESTS_CLIENT_SECRET: ${{ env.ABFS_TESTS_CLIENT_SECRET }}
+          ABFS_TESTS_ABFS_ACCESS_KEY: ${{ secrets.AZURE_ABFS_ACCESSKEY }}
+        run: |
+          if [ "${ABFS_TESTS_ABFS_ACCOUNT}" != "" ] && ( [ ! -f gib-impacted.log ] || grep -q plugin/trino-hive gib-impacted.log ); then
+            $MAVEN test ${MAVEN_TEST} -pl :trino-hive -P abfs-tests \
+              -Dhive.hadoop2.azure-abfs-account="${ABFS_TESTS_ABFS_ACCOUNT}" \
+              -Dhive.hadoop2.azure-abfs-container=container \
+              -Dhive.hadoop2.azure-abfs-access-key="${ABFS_TESTS_ABFS_ACCESS_KEY}" \
+              -Dhive.hadoop2.azure-abfs-client-secret="${ABFS_TESTS_CLIENT_SECRET}"
           fi
       - name: Upload test results
         uses: ./.github/actions/process-test-results
