@@ -27,7 +27,6 @@ import java.util.Optional;
         "hive.metastore.glue.get-partition-threads",
         "hive.metastore.glue.read-statistics-threads",
         "hive.metastore.glue.write-statistics-threads",
-        "hive.metastore.glue.proxy-api-id",
         "hive.metastore.glue.aws-credentials-provider",
 })
 public class GlueHiveMetastoreConfig
