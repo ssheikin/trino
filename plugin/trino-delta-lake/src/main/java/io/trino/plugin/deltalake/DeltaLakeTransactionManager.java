@@ -15,7 +15,7 @@ package io.trino.plugin.deltalake;
 
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
-import io.trino.plugin.hive.metastore.HiveMetastore;
+import io.trino.metastore.HiveMetastore;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.security.ConnectorIdentity;

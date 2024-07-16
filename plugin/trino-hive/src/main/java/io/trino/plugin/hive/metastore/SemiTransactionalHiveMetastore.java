@@ -32,6 +32,23 @@ import io.trino.filesystem.FileIterator;
 import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
+import io.trino.metastore.AcidOperation;
+import io.trino.metastore.AcidTransactionOwner;
+import io.trino.metastore.Column;
+import io.trino.metastore.Database;
+import io.trino.metastore.HiveBasicStatistics;
+import io.trino.metastore.HiveColumnStatistics;
+import io.trino.metastore.HivePrincipal;
+import io.trino.metastore.HivePrivilegeInfo;
+import io.trino.metastore.HivePrivilegeInfo.HivePrivilege;
+import io.trino.metastore.HiveType;
+import io.trino.metastore.Partition;
+import io.trino.metastore.PartitionStatistics;
+import io.trino.metastore.PartitionWithStatistics;
+import io.trino.metastore.PrincipalPrivileges;
+import io.trino.metastore.StatisticsUpdateMode;
+import io.trino.metastore.Table;
+import io.trino.metastore.TableInfo;
 import io.trino.plugin.hive.HiveMetastoreClosure;
 import io.trino.plugin.hive.HiveTableHandle;
 import io.trino.plugin.hive.LocationHandle.WriteMode;
@@ -39,9 +56,7 @@ import io.trino.plugin.hive.PartitionNotFoundException;
 import io.trino.plugin.hive.PartitionUpdateAndMergeResults;
 import io.trino.plugin.hive.TableAlreadyExistsException;
 import io.trino.plugin.hive.TableInvalidationCallback;
-import io.trino.plugin.hive.acid.AcidOperation;
 import io.trino.plugin.hive.acid.AcidTransaction;
-import io.trino.plugin.hive.metastore.HivePrivilegeInfo.HivePrivilege;
 import io.trino.plugin.hive.security.SqlStandardAccessControlMetadataMetastore;
 import io.trino.plugin.hive.util.ValidTxnWriteIdList;
 import io.trino.spi.TrinoException;
@@ -91,6 +106,13 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
+import static io.trino.metastore.HivePrivilegeInfo.HivePrivilege.OWNERSHIP;
+import static io.trino.metastore.Partition.toPartitionValues;
+import static io.trino.metastore.PrincipalPrivileges.NO_PRIVILEGES;
+import static io.trino.metastore.StatisticsUpdateMode.MERGE_INCREMENTAL;
+import static io.trino.metastore.StatisticsUpdateMode.OVERWRITE_ALL;
+import static io.trino.metastore.StatisticsUpdateMode.OVERWRITE_SOME_COLUMNS;
+import static io.trino.metastore.StatisticsUpdateMode.UNDO_MERGE_INCREMENTAL;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_CORRUPTED_COLUMN_STATISTICS;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_FILESYSTEM_ERROR;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_METASTORE_ERROR;
@@ -103,17 +125,10 @@ import static io.trino.plugin.hive.TableType.MANAGED_TABLE;
 import static io.trino.plugin.hive.ViewReaderUtil.isTrinoMaterializedView;
 import static io.trino.plugin.hive.ViewReaderUtil.isTrinoView;
 import static io.trino.plugin.hive.acid.AcidTransaction.NO_ACID_TRANSACTION;
-import static io.trino.plugin.hive.metastore.HivePrivilegeInfo.HivePrivilege.OWNERSHIP;
 import static io.trino.plugin.hive.metastore.MetastoreUtil.buildInitialPrivilegeSet;
 import static io.trino.plugin.hive.metastore.MetastoreUtil.getBasicStatisticsWithSparkFallback;
 import static io.trino.plugin.hive.metastore.MetastoreUtil.getHiveBasicStatistics;
-import static io.trino.plugin.hive.metastore.Partition.toPartitionValues;
-import static io.trino.plugin.hive.metastore.PrincipalPrivileges.NO_PRIVILEGES;
 import static io.trino.plugin.hive.metastore.SparkMetastoreUtil.getSparkTableStatistics;
-import static io.trino.plugin.hive.metastore.StatisticsUpdateMode.MERGE_INCREMENTAL;
-import static io.trino.plugin.hive.metastore.StatisticsUpdateMode.OVERWRITE_ALL;
-import static io.trino.plugin.hive.metastore.StatisticsUpdateMode.OVERWRITE_SOME_COLUMNS;
-import static io.trino.plugin.hive.metastore.StatisticsUpdateMode.UNDO_MERGE_INCREMENTAL;
 import static io.trino.plugin.hive.util.AcidTables.isTransactionalTable;
 import static io.trino.plugin.hive.util.HiveUtil.makePartName;
 import static io.trino.plugin.hive.util.HiveWriteUtils.isFileCreatedByQuery;
@@ -250,7 +265,7 @@ public class SemiTransactionalHiveMetastore
         if (!tableActions.isEmpty()) {
             throw new UnsupportedOperationException("Listing all tables after adding/dropping/altering tables/views in a transaction is not supported");
         }
-        return delegate.getTables();
+        return delegate.getAllTables();
     }
 
     public synchronized List<TableInfo> getTables(String databaseName)
@@ -330,7 +345,7 @@ public class SemiTransactionalHiveMetastore
             return ImmutableMap.of();
         }
         TableSource tableSource = getTableSource(databaseName, tableName);
-        Map<List<String>, Action<PartitionAndMore>> partitionActionsOfTable = partitionActions.computeIfAbsent(table.get().getSchemaTableName(), k -> new HashMap<>());
+        Map<List<String>, Action<PartitionAndMore>> partitionActionsOfTable = partitionActions.computeIfAbsent(table.get().getSchemaTableName(), uk -> new HashMap<>());
         ImmutableSet.Builder<String> partitionNamesToQuery = ImmutableSet.builder();
         ImmutableMap.Builder<String, PartitionStatistics> resultBuilder = ImmutableMap.builder();
         for (String partitionName : partitionNames) {

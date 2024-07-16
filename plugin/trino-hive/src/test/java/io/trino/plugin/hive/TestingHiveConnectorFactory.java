@@ -19,8 +19,8 @@ import com.google.inject.Module;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.local.LocalFileSystemFactory;
+import io.trino.metastore.HiveMetastore;
 import io.trino.plugin.hive.fs.DirectoryLister;
-import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -88,8 +88,6 @@ public class TestingHiveConnectorFactory
         if (metastore.isEmpty() && !config.containsKey("hive.metastore")) {
             configBuilder.put("hive.metastore", "file");
         }
-        return createConnector(catalogName, configBuilder.buildOrThrow(), context, module, metastore,
-                Optional.empty(),
-                directoryLister);
+        return createConnector(catalogName, configBuilder.buildOrThrow(), context, module, metastore, Optional.empty(), directoryLister);
     }
 }

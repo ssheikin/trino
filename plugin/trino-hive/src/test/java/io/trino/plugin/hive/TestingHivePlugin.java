@@ -15,8 +15,8 @@ package io.trino.plugin.hive;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
+import io.trino.metastore.HiveMetastore;
 import io.trino.plugin.hive.fs.DirectoryLister;
-import io.trino.plugin.hive.metastore.HiveMetastore;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 
