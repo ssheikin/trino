@@ -13,13 +13,15 @@
  */
 package io.trino.plugin.hive;
 
+import io.trino.metastore.HiveMetastore;
+
 public class DefaultHiveMaterializedViewMetadataFactory
         implements HiveMaterializedViewMetadataFactory
 {
     private static final HiveMaterializedViewMetadata NONE = new NoneHiveMaterializedViewMetadata();
 
     @Override
-    public HiveMaterializedViewMetadata create(HiveMetastoreClosure hiveMetastoreClosure)
+    public HiveMaterializedViewMetadata create(HiveMetastore hiveMetastore)
     {
         return NONE;
     }

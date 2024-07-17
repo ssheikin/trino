@@ -13,7 +13,9 @@
  */
 package io.trino.plugin.hive;
 
+import io.trino.metastore.HiveMetastore;
+
 public interface HiveMaterializedViewMetadataFactory
 {
-    HiveMaterializedViewMetadata create(HiveMetastoreClosure hiveMetastoreClosure);
+    HiveMaterializedViewMetadata create(HiveMetastore hiveMetastore);
 }
