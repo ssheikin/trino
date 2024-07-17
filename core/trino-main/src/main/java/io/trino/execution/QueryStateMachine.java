@@ -1385,7 +1385,12 @@ public class QueryStateMachine
             return;
         }
 
-        QueryInfo queryInfo = finalInfo.get();
+        QueryInfo prunedQueryInfo = QueryStateMachine.pruneQueryInfo(finalInfo.get(), version);
+        finalQueryInfo.compareAndSet(finalInfo, Optional.of(prunedQueryInfo));
+    }
+
+    public static QueryInfo pruneQueryInfo(QueryInfo queryInfo, NodeVersion version)
+    {
         Optional<StageInfo> prunedOutputStage = queryInfo.getOutputStage().map(outputStage -> new StageInfo(
                 outputStage.getStageId(),
                 outputStage.getState(),
@@ -1398,7 +1403,7 @@ public class QueryStateMachine
                 ImmutableMap.of(), // Remove tables
                 outputStage.getFailureCause()));
 
-        QueryInfo prunedQueryInfo = new QueryInfo(
+        return new QueryInfo(
                 queryInfo.getQueryId(),
                 queryInfo.getSession(),
                 queryInfo.getState(),
@@ -1436,7 +1441,6 @@ public class QueryStateMachine
                 queryInfo.getRetryPolicy(),
                 true,
                 version);
-        finalQueryInfo.compareAndSet(finalInfo, Optional.of(prunedQueryInfo));
     }
 
     public void setResultsCacheEntry(ResultsCacheEntry resultsCacheEntry)
