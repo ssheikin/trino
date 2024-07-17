@@ -47,7 +47,6 @@ import static io.trino.plugin.hive.metastore.MetastoreMethod.GET_ALL_TABLES;
 import static io.trino.plugin.hive.metastore.MetastoreMethod.GET_TABLE;
 import static io.trino.plugin.hive.metastore.MetastoreMethod.GET_TABLES;
 import static io.trino.plugin.hive.metastore.PrincipalPrivileges.NO_PRIVILEGES;
-import static io.trino.plugin.hive.metastore.StorageFormat.fromHiveStorageFormat;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
@@ -124,7 +123,7 @@ public class TestHiveMetastoreMetadataQueriesAccessOperations
                                 new Column("name", HiveType.HIVE_STRING, Optional.empty(), Map.of())))
                         .setOwner(Optional.empty());
                 table.getStorageBuilder()
-                        .setStorageFormat(fromHiveStorageFormat(PARQUET));
+                        .setStorageFormat(PARQUET.toStorageFormat());
                 metastore.createTable(table.build(), NO_PRIVILEGES);
             }
         }

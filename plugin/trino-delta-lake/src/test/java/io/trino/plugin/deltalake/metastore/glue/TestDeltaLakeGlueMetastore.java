@@ -79,7 +79,6 @@ import static io.trino.plugin.hive.HiveStorageFormat.PARQUET;
 import static io.trino.plugin.hive.TableType.EXTERNAL_TABLE;
 import static io.trino.plugin.hive.TableType.VIRTUAL_VIEW;
 import static io.trino.plugin.hive.metastore.HiveType.HIVE_STRING;
-import static io.trino.plugin.hive.metastore.StorageFormat.fromHiveStorageFormat;
 import static io.trino.spi.security.PrincipalType.ROLE;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.TestingNames.randomNameSuffix;
@@ -293,7 +292,7 @@ public class TestDeltaLakeGlueMetastore
                 .setDataColumns(List.of(new Column("a_column", HIVE_STRING, Optional.empty(), Map.of())));
 
         table.getStorageBuilder()
-                .setStorageFormat(fromHiveStorageFormat(PARQUET))
+                .setStorageFormat(PARQUET.toStorageFormat())
                 .setLocation(tableLocation);
 
         tableConfiguration.accept(table);
@@ -312,7 +311,7 @@ public class TestDeltaLakeGlueMetastore
                 .setDataColumns(List.of(new Column("a_column", HIVE_STRING, Optional.empty(), Map.of())));
 
         table.getStorageBuilder()
-                .setStorageFormat(fromHiveStorageFormat(PARQUET))
+                .setStorageFormat(PARQUET.toStorageFormat())
                 .setLocation(tableLocation);
 
         tableConfiguration.accept(table);
