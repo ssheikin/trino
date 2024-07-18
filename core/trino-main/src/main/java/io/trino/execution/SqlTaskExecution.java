@@ -43,6 +43,7 @@ import io.trino.operator.SplitDriverFactory;
 import io.trino.operator.TaskContext;
 import io.trino.spi.SplitWeight;
 import io.trino.spi.TrinoException;
+import io.trino.spi.cache.CacheSplitId;
 import io.trino.sql.planner.LocalExecutionPlanner.LocalExecutionPlan;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.tracing.TrinoAttributes;
@@ -899,6 +900,14 @@ public class SqlTaskExecution
         public String getInfo()
         {
             return (partitionedSplit == null) ? "" : formatSplitInfo(partitionedSplit.getSplit());
+        }
+
+        @Override
+        public Optional<CacheSplitId> getCacheSplitId()
+        {
+            return Optional.ofNullable(partitionedSplit)
+                    .map(ScheduledSplit::getSplit)
+                    .flatMap(Split::getCacheSplitId);
         }
 
         @Override
