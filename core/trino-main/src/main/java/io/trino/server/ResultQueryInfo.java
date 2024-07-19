@@ -17,12 +17,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.execution.BasicStageInfo;
 import io.trino.execution.ExecutionFailureInfo;
+import io.trino.execution.Input;
 import io.trino.execution.QueryInfo;
 import io.trino.execution.QueryState;
 import io.trino.spi.ErrorCode;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoWarning;
+import io.trino.spi.eventlistener.TableInfo;
 import io.trino.spi.security.SelectedRole;
+import io.trino.sql.analyzer.Output;
 import io.trino.transaction.TransactionId;
 
 import java.util.List;
@@ -77,7 +80,13 @@ public record ResultQueryInfo(
         @JsonProperty
         boolean clearTransactionId,
         @JsonProperty
-        List<TrinoWarning> warnings)
+        List<TrinoWarning> warnings,
+        @JsonProperty
+        Set<Input> inputs,
+        @JsonProperty
+        Optional<Output> output,
+        @JsonProperty
+        List<TableInfo> referencedTables)
 {
     @JsonCreator
     public ResultQueryInfo(
@@ -102,7 +111,10 @@ public record ResultQueryInfo(
             @JsonProperty("deallocatedPreparedStatements") Set<String> deallocatedPreparedStatements,
             @JsonProperty("startedTransactionId") Optional<TransactionId> startedTransactionId,
             @JsonProperty("clearTransactionId") boolean clearTransactionId,
-            @JsonProperty("warnings") List<TrinoWarning> warnings)
+            @JsonProperty("warnings") List<TrinoWarning> warnings,
+            @JsonProperty("inputs") Set<Input> inputs,
+            @JsonProperty("output") Optional<Output> output,
+            @JsonProperty("referencedTables") List<TableInfo> referencedTables)
     {
         this.queryId = requireNonNull(queryId, "queryId is null");
         this.state = requireNonNull(state, "state is null");
@@ -126,6 +138,9 @@ public record ResultQueryInfo(
         this.setRoles = requireNonNull(setRoles, "setRoles is null");
         this.clearTransactionId = clearTransactionId;
         this.warnings = requireNonNull(warnings, "warnings is null");
+        this.inputs = requireNonNull(inputs, "inputs is null");
+        this.output = requireNonNull(output, "output is null");
+        this.referencedTables = requireNonNull(referencedTables, "referencedTables is null");
     }
 
     public ResultQueryInfo(QueryInfo queryInfo)
@@ -151,7 +166,10 @@ public record ResultQueryInfo(
                 queryInfo.getDeallocatedPreparedStatements(),
                 queryInfo.getStartedTransactionId(),
                 queryInfo.isClearTransactionId(),
-                queryInfo.getWarnings());
+                queryInfo.getWarnings(),
+                queryInfo.getInputs(),
+                queryInfo.getOutput(),
+                queryInfo.getReferencedTables());
     }
 
     @Override

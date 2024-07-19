@@ -441,7 +441,14 @@ class Query
             updateCount = updatedRowsCount.orElse(null);
         }
 
-        resultsCacheEntry.ifPresent(entry -> entry.appendResults(resultRows.getColumns().orElse(null), resultRows));
+        if (resultsCacheEntry.isPresent()) {
+            resultsCacheEntry.get().appendResults(
+                    queryInfo.inputs(),
+                    queryInfo.output(),
+                    queryInfo.referencedTables(),
+                    resultRows.getColumns().orElse(null),
+                    resultRows);
+        }
 
         if (isStarted && (queryInfo.outputStage().isEmpty() || exchangeDataSource.isFinished())) {
             if (queryInfo.state() != FAILED) {

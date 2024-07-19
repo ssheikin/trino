@@ -14,6 +14,7 @@
 package io.trino.server.resultscache;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -21,22 +22,29 @@ import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.concurrent.MoreFutures;
 import io.airlift.log.Logger;
 import io.trino.client.Column;
+import io.trino.execution.Input;
 import io.trino.server.protocol.QueryResultRows;
+import io.trino.server.resultscache.CacheEntry.Reference;
 import io.trino.spi.QueryId;
+import io.trino.spi.eventlistener.TableInfo;
+import io.trino.sql.analyzer.Output;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CACHED;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CACHING;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.NO_COLUMNS;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.OVER_MAX_SIZE;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
 
 public class ActiveResultsCacheEntry
         implements ResultsCacheEntry
@@ -127,7 +135,12 @@ public class ActiveResultsCacheEntry
         return Optional.of(entryResult);
     }
 
-    public void appendResults(List<Column> columns, QueryResultRows resultRows)
+    public void appendResults(
+            Set<Input> inputs,
+            Optional<Output> output,
+            List<TableInfo> referencedTables,
+            List<Column> columns,
+            QueryResultRows resultRows)
     {
         List<CompletionCallback> completionCallbacks = new ArrayList<>();
         try {
@@ -150,8 +163,16 @@ public class ActiveResultsCacheEntry
                         completionCallbacks.add(setInvalidState(NO_COLUMNS));
                         return;
                     }
+                    ImmutableSet.Builder<Reference> tableReferencesBuilder = ImmutableSet.builder();
+                    inputs.forEach(entry -> tableReferencesBuilder.add(new Reference(entry.getCatalogName(), entry.getSchema(), entry.getTable(), false)));
+                    output.ifPresent(entry -> tableReferencesBuilder.add(new Reference(entry.getCatalogName(), entry.getSchema(), entry.getTable(), true)));
+                    Set<Reference> tablesReferences = tableReferencesBuilder.build();
+                    Set<Reference> viewsReferences = referencedTables.stream()
+                            .map(entry -> new Reference(entry.getCatalog(), entry.getSchema(), entry.getTable(), false))
+                            .filter(not(tablesReferences::contains))
+                            .collect(toImmutableSet());
 
-                    resultsData = Optional.of(new ResultsData(columns));
+                    resultsData = Optional.of(new ResultsData(columns, tablesReferences, viewsReferences));
                 }
 
                 long logicalSizeInBytes = resultRows.countLogicalSizeInBytes();
@@ -198,7 +219,9 @@ public class ActiveResultsCacheEntry
                                 queryId.toString(),
                                 query,
                                 resultsData.columns,
-                                resultsData.data)));
+                                resultsData.data,
+                                Optional.of(resultsData.tablesReferences),
+                                Optional.of(resultsData.viewsReferences))));
         MoreFutures.addExceptionCallback(submitFuture, throwable ->
                 log.error(throwable, "Upload to cache failed"));
     }
@@ -207,10 +230,14 @@ public class ActiveResultsCacheEntry
     {
         private final List<Column> columns;
         private final List<List<Object>> data = new ArrayList<>();
+        private final Set<Reference> tablesReferences;
+        private final Set<Reference> viewsReferences;
 
-        public ResultsData(List<Column> columns)
+        public ResultsData(List<Column> columns, Set<Reference> tableReferences, Set<Reference> viewsReferences)
         {
             this.columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
+            this.tablesReferences = ImmutableSet.copyOf(requireNonNull(tableReferences, "tableReferences is null"));
+            this.viewsReferences = ImmutableSet.copyOf(requireNonNull(viewsReferences, "viewsReferences is null"));
         }
 
         public void addRecords(Iterable<List<Object>> records)

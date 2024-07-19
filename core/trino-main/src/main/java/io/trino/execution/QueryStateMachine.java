@@ -525,7 +525,10 @@ public class QueryStateMachine
                 deallocatedPreparedStatements,
                 Optional.ofNullable(startedTransactionId.get()),
                 clearTransactionId.get(),
-                warningCollector.getWarnings());
+                warningCollector.getWarnings(),
+                inputs.get(),
+                output.get(),
+                referencedTables.get());
     }
 
     private BasicQueryStats createBasicQueryStats(BasicStageStats stageStats)

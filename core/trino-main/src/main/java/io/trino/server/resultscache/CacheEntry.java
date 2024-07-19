@@ -14,10 +14,13 @@
 package io.trino.server.resultscache;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.trino.client.Column;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -27,7 +30,9 @@ public record CacheEntry(
         String queryId,
         String queryText,
         List<Column> columns,
-        List<List<Object>> rows)
+        List<List<Object>> rows,
+        Optional<Set<Reference>> tables,
+        Optional<Set<Reference>> views)
 {
     public CacheEntry
     {
@@ -38,5 +43,17 @@ public record CacheEntry(
         columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
         // Nested row lists can have null values, ImmutableList does not support null values
         rows = ImmutableList.copyOf(requireNonNull(rows, "rows is null"));
+        tables = tables.map(ImmutableSet::copyOf);
+        views = views.map(ImmutableSet::copyOf);
+    }
+
+    public record Reference(String catalog, String schema, String name, boolean output)
+    {
+        public Reference
+        {
+            requireNonNull(catalog, "catalog is null");
+            requireNonNull(schema, "schema is null");
+            requireNonNull(name, "name is null");
+        }
     }
 }
