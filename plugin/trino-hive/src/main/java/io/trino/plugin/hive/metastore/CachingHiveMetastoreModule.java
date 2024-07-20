@@ -25,7 +25,7 @@ import io.trino.plugin.hive.metastore.cache.ImpersonationCachingConfig;
 import io.trino.plugin.hive.metastore.cache.SharedHiveMetastoreCache;
 import io.trino.plugin.hive.metastore.cache.SharedHiveMetastoreCache.CachingHiveMetastoreFactory;
 import io.trino.plugin.hive.metastore.glue.GlueCache;
-import io.trino.plugin.hive.metastore.procedure.FlushMetadataCacheProcedure;
+import io.trino.plugin.hive.procedure.FlushMetadataCacheProcedure;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.security.ConnectorIdentity;
 
