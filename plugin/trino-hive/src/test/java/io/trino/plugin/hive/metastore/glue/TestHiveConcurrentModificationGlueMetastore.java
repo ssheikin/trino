@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.hive.metastore.glue;
 
-import io.opentelemetry.api.OpenTelemetry;
+import com.google.common.collect.ImmutableSet;
 import io.trino.Session;
 import io.trino.plugin.hive.TestingHivePlugin;
 import io.trino.spi.TrinoException;
@@ -70,7 +70,7 @@ public class TestHiveConcurrentModificationGlueMetastore
         GlueHiveMetastoreConfig glueConfig = new GlueHiveMetastoreConfig()
                 .setDefaultWarehouseDir(dataDirectory.toUri().toString());
 
-        GlueClient glueClient = closeAfterClass(createGlueClient(new GlueHiveMetastoreConfig(), OpenTelemetry.noop()));
+        GlueClient glueClient = closeAfterClass(createGlueClient(new GlueHiveMetastoreConfig(), ImmutableSet.of()));
         GlueClient proxiedGlueClient = newProxy(GlueClient.class, (proxy, method, args) -> {
             try {
                 if (method.getName().equals("updateTable")) {

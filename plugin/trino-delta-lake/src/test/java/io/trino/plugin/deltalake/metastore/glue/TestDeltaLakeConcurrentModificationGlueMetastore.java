@@ -14,7 +14,6 @@
 package io.trino.plugin.deltalake.metastore.glue;
 
 import com.google.common.collect.ImmutableSet;
-import io.opentelemetry.api.OpenTelemetry;
 import io.trino.Session;
 import io.trino.plugin.deltalake.TestingDeltaLakePlugin;
 import io.trino.plugin.deltalake.metastore.TestingDeltaLakeMetastoreModule;
@@ -75,7 +74,7 @@ public class TestDeltaLakeConcurrentModificationGlueMetastore
         GlueHiveMetastoreConfig glueConfig = new GlueHiveMetastoreConfig()
                 .setDefaultWarehouseDir(dataDirectory.toUri().toString());
 
-        GlueClient glueClient = closeAfterClass(createGlueClient(new GlueHiveMetastoreConfig(), OpenTelemetry.noop()));
+        GlueClient glueClient = closeAfterClass(createGlueClient(new GlueHiveMetastoreConfig(), ImmutableSet.of()));
         GlueClient proxiedGlueClient = newProxy(GlueClient.class, (proxy, method, args) -> {
             Object result;
             try {
