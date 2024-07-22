@@ -21,6 +21,7 @@ import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.ProvidesIntoOptional;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.airlift.units.Duration;
@@ -82,10 +83,9 @@ public class GlueMetastoreModule
                 .in(Scopes.SINGLETON);
         binder.bind(Key.get(boolean.class, AllowHiveTableRename.class)).toInstance(false);
 
-        newSetBinder(binder, ExecutionInterceptor.class, ForGlueHiveMetastore.class)
-                .addBinding()
-                .toProvider(TelemetryExecutionInterceptorProvider.class)
-                .in(Scopes.SINGLETON);
+        Multibinder<ExecutionInterceptor> executionInterceptorMultibinder = newSetBinder(binder, ExecutionInterceptor.class, ForGlueHiveMetastore.class);
+        executionInterceptorMultibinder.addBinding().toProvider(TelemetryExecutionInterceptorProvider.class).in(Scopes.SINGLETON);
+        executionInterceptorMultibinder.addBinding().to(GlueHiveExecutionInterceptor.class).in(Scopes.SINGLETON);
 
         closingBinder(binder).registerCloseable(GlueClient.class);
     }
@@ -137,10 +137,7 @@ public class GlueMetastoreModule
         GlueClientBuilder glue = GlueClient.builder();
 
         glue.overrideConfiguration(builder -> builder
-                .executionInterceptors(ImmutableList.<ExecutionInterceptor>builder()
-                    .addAll(executionInterceptors)
-                    .add(new GlueHiveExecutionInterceptor(config.isSkipArchive()))
-                    .build())
+                .executionInterceptors(ImmutableList.copyOf(executionInterceptors))
                 .retryStrategy(retryBuilder -> retryBuilder
                         .retryOnException(throwable -> throwable instanceof ConcurrentModificationException)
                         .backoffStrategy(BackoffStrategy.exponentialDelay(
