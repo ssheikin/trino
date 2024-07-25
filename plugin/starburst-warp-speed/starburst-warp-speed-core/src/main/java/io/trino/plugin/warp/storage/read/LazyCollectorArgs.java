@@ -13,12 +13,14 @@
  */
 package io.trino.plugin.warp.storage.read;
 
-public record CollectTxArgs(
-        int[] weCollectParams,
-        long[][] collectBuffIds,
-        byte[] collectStoreBuff,
-        byte[] collect2MatchParams,
-        QueryParams queryParams,
-        long[] fileCookie)
+import io.trino.plugin.warp.storage.juffers.ReadJuffersWarmUpElement;
+import io.trino.plugin.warp.storage.read.fill.BlockFiller;
+
+public record LazyCollectorArgs(CollectTxArgs collectTxArgs,
+                                WarmupElementCollectParams collectParams,
+                                ReadJuffersWarmUpElement collectJufferWE,
+                                BlockFiller<?> blockFiller,
+                                int chunkIx,
+                                int numToCollect)
 {
 }
