@@ -45,6 +45,11 @@ public class TestingDeltaLakePlugin
         this(localFileSystemRootPath, Optional.empty(), Optional.empty());
     }
 
+    public TestingDeltaLakePlugin(Path localFileSystemRootPath, Optional<Module> metastoreModule)
+    {
+        this(localFileSystemRootPath, metastoreModule, Optional.empty());
+    }
+
     public TestingDeltaLakePlugin(Path localFileSystemRootPath, Optional<Module> metastoreModule, Optional<TrinoFileSystemFactory> fileSystemFactory)
     {
         this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");
