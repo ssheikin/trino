@@ -18,6 +18,7 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.security.ConnectorIdentity;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
 import java.util.function.Function;
 
 import static io.trino.spi.testing.InterfaceTestUtils.assertAllMethodsOverridden;
@@ -43,6 +44,7 @@ public class TestDecoratingTrinoFileSystemFactory
 
     @Test
     public void testFileSystemsAreDecorated()
+            throws Exception
     {
         TrinoFileSystem undecorated = new ForwardingTrinoFileSystem()
         {
@@ -72,10 +74,12 @@ public class TestDecoratingTrinoFileSystemFactory
 
         assertProperForwardingMethodsAreCalled(
                 TrinoFileSystem.class,
-                forwardingFactory.andThen(factory -> factory.create((ConnectorIdentity) null)));
+                forwardingFactory.andThen(factory -> factory.create((ConnectorIdentity) null)),
+                Set.of(TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class)));
 
         assertProperForwardingMethodsAreCalled(
                 TrinoFileSystem.class,
-                forwardingFactory.andThen(factory -> factory.create((ConnectorSession) null)));
+                forwardingFactory.andThen(factory -> factory.create((ConnectorSession) null)),
+                Set.of(TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class)));
     }
 }

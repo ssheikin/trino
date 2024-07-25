@@ -15,6 +15,8 @@ package io.trino.filesystem;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static io.trino.spi.testing.InterfaceTestUtils.assertAllMethodsOverridden;
 import static io.trino.spi.testing.InterfaceTestUtils.assertProperForwardingMethodsAreCalled;
 
@@ -28,7 +30,11 @@ public class TestForwardingTrinoFileSystem
 
     @Test
     public void testProperForwardingMethodsAreCalled()
+            throws Exception
     {
-        assertProperForwardingMethodsAreCalled(TrinoFileSystem.class, trinoFileSystem -> ForwardingTrinoFileSystem.of(() -> trinoFileSystem));
+        assertProperForwardingMethodsAreCalled(
+                TrinoFileSystem.class,
+                trinoFileSystem -> ForwardingTrinoFileSystem.of(() -> trinoFileSystem),
+                Set.of(TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class)));
     }
 }
