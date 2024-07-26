@@ -63,7 +63,7 @@ public class TestCachedHiveGlueMetastore
                         .setSchema(testSchema)
                         .build())
                 .addCoordinatorProperty("optimizer.experimental-max-prefetched-information-schema-prefixes", Integer.toString(MAX_PREFIXES_COUNT))
-                .addHiveProperty("hive.metastore", "glue-v2")
+                .addHiveProperty("hive.metastore", "glue")
                 .addHiveProperty("hive.metastore.glue.default-warehouse-dir", "local:///glue")
                 .addHiveProperty("hive.metastore-cache-ttl", "1d")
                 .addHiveProperty("hive.metastore-refresh-interval", "1h")

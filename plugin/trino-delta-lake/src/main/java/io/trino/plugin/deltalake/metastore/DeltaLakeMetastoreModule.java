@@ -36,8 +36,8 @@ public class DeltaLakeMetastoreModule
         binder.bind(Key.get(boolean.class, HideDeltaLakeTables.class)).toInstance(false);
         bindMetastoreModule("thrift", new DeltaLakeThriftMetastoreModule());
         bindMetastoreModule("file", new DeltaLakeFileMetastoreModule());
-        bindMetastoreModule("glue-v2", new DeltaLakeGlueMetastoreModule());
-        bindMetastoreModule("glue", new DeltaLakeGlueV1MetastoreModule());
+        bindMetastoreModule("glue", new DeltaLakeGlueMetastoreModule());
+        bindMetastoreModule("glue-v1", new DeltaLakeGlueV1MetastoreModule());
 
         install(new CachingHiveMetastoreModule(false));
     }

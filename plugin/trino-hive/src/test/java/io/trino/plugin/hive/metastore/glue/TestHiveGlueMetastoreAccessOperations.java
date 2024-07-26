@@ -71,7 +71,7 @@ public class TestHiveGlueMetastoreAccessOperations
                         .setCatalog("hive")
                         .setSchema(testSchema)
                         .build())
-                .addHiveProperty("hive.metastore", "glue-v2")
+                .addHiveProperty("hive.metastore", "glue")
                 .addHiveProperty("hive.metastore.glue.default-warehouse-dir", "local:///glue")
                 .addHiveProperty("hive.security", "allow-all")
                 .addHiveProperty("hive.metastore-cache-ttl", "0s")
