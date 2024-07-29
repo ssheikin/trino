@@ -41,17 +41,20 @@ public class DeltaLakeProxiedConnectorInitializer
     }
 
     @Override
-    public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
+    public Connector create(
+            String catalogName,
+            Map<String, String> config,
+            ConnectorContext context,
+            Optional<Module> optionalProxyModule)
     {
         try {
             Map<String, String> deltaLakeConfig = getDeltaLakeFilteredConfig(config);
-            Module moduleInstance = binder -> {};
             return DeltaLakeConnectorFactory.createConnector(catalogName,
                     deltaLakeConfig,
                     context,
                     Optional.empty(),
                     Optional.empty(),
-                    moduleInstance);
+                    optionalProxyModule.orElse(ignored -> {}));
         }
         catch (Exception e) {
             throw new RuntimeException("cant create delta-lake connector", e);
