@@ -28,6 +28,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -160,6 +162,12 @@ public class TestResultsCache
         public void insertCacheEntry(CacheEntry cacheEntry)
         {
             assertThat(entries.add(cacheEntry.key())).isTrue();
+        }
+
+        @Override
+        public Optional<CacheEntry> getCacheEntry(String key, Instant since)
+        {
+            throw new UnsupportedOperationException("Not implemented");
         }
 
         void assertContains(String cacheEntry)

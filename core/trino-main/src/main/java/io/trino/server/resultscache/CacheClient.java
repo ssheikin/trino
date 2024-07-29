@@ -13,7 +13,12 @@
  */
 package io.trino.server.resultscache;
 
+import java.time.Instant;
+import java.util.Optional;
+
 public interface CacheClient
 {
     void insertCacheEntry(CacheEntry cacheEntry);
+
+    Optional<CacheEntry> getCacheEntry(String key, Instant since);
 }
