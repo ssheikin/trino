@@ -59,7 +59,6 @@ public class TestHiveS3AndGlueMetastoreTest
                 .addExtraProperty("sql.default-function-schema", "functions")
                 .setCreateTpchSchemas(false)
                 .addHiveProperty("hive.metastore", "glue-v2")
-                .addHiveProperty("hive.metastore-refresh-interval", "0s")
                 .addHiveProperty("hive.metastore.glue.default-warehouse-dir", schemaPath())
                 .addHiveProperty("hive.security", "allow-all")
                 .addHiveProperty("hive.non-managed-table-writes-enabled", "true")
