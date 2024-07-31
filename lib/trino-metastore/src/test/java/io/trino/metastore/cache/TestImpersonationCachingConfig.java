@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.hive.metastore.cache;
+package io.trino.metastore.cache;
 
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import static io.airlift.configuration.testing.ConfigAssertions.assertFullMapping;
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
-import static io.trino.plugin.hive.metastore.cache.CachingHiveMetastoreConfig.DEFAULT_STATS_CACHE_TTL;
+import static io.trino.metastore.cache.CachingHiveMetastoreConfig.DEFAULT_STATS_CACHE_TTL;
 
 public class TestImpersonationCachingConfig
 {

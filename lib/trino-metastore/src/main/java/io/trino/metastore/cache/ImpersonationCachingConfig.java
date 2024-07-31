@@ -11,14 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.hive.metastore.cache;
+package io.trino.metastore.cache;
 
 import io.airlift.configuration.Config;
 import io.airlift.units.Duration;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-import static io.trino.plugin.hive.metastore.cache.CachingHiveMetastoreConfig.DEFAULT_STATS_CACHE_TTL;
+import static io.trino.metastore.cache.CachingHiveMetastoreConfig.DEFAULT_STATS_CACHE_TTL;
 
 public class ImpersonationCachingConfig
 {
