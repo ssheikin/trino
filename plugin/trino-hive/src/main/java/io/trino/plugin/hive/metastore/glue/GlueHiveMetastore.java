@@ -1594,7 +1594,7 @@ public class GlueHiveMetastore
      * @return results of all tasks in any order
      * @throws ExecutionException if any task fails; exception cause is the first task failure
      */
-    private <T> List<T> runParallel(Collection<Callable<T>> tasks)
+    protected <T> List<T> runParallel(Collection<Callable<T>> tasks)
             throws ExecutionException
     {
         return processWithAdditionalThreads(tasks, executor);
