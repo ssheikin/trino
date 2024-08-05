@@ -37,7 +37,8 @@ class TestAzureFileSystemConfig
                 .setWriteBlockSize(DataSize.of(4, Unit.MEGABYTE))
                 .setMaxWriteConcurrency(8)
                 .setMaxSingleUploadSize(DataSize.of(4, Unit.MEGABYTE))
-                .setUseOauthPassthroughToken(false));
+                .setUseOauthPassthroughToken(false)
+                .setMaxHttpRequests(2 * Runtime.getRuntime().availableProcessors()));
     }
 
     @Test
@@ -51,6 +52,7 @@ class TestAzureFileSystemConfig
                 .put("azure.max-write-concurrency", "7")
                 .put("azure.max-single-upload-size", "7MB")
                 .put("azure.use-oauth-passthrough-token", "true")
+                .put("azure.max-http-requests", "128")
                 .buildOrThrow();
 
         AzureFileSystemConfig expected = new AzureFileSystemConfig()
@@ -60,7 +62,8 @@ class TestAzureFileSystemConfig
                 .setWriteBlockSize(DataSize.of(5, Unit.MEGABYTE))
                 .setMaxWriteConcurrency(7)
                 .setMaxSingleUploadSize(DataSize.of(7, Unit.MEGABYTE))
-                .setUseOauthPassthroughToken(true);
+                .setUseOauthPassthroughToken(true)
+                .setMaxHttpRequests(128);
 
         assertFullMapping(properties, expected);
     }
