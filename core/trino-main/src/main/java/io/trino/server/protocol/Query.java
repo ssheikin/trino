@@ -46,6 +46,7 @@ import io.trino.execution.buffer.PagesSerdeFactory;
 import io.trino.memory.context.SimpleLocalMemoryContext;
 import io.trino.operator.DirectExchangeClientSupplier;
 import io.trino.server.ExternalUriInfo;
+import io.trino.server.GoneException;
 import io.trino.server.ResultQueryInfo;
 import io.trino.server.resultscache.ActiveResultsCacheEntry;
 import io.trino.server.resultscache.ResultsCacheEntry;
@@ -58,8 +59,7 @@ import io.trino.spi.security.SelectedRole;
 import io.trino.spi.type.Type;
 import io.trino.transaction.TransactionId;
 import io.trino.util.Ciphers;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
 
 import java.net.URI;
 import java.util.List;
@@ -391,18 +391,18 @@ class Query
 
         // if this is a result before the lastResult, the data is gone
         if (token < lastToken) {
-            throw new WebApplicationException(Response.Status.GONE);
+            throw new GoneException();
         }
 
         // if this is a request for a result after the end of the stream, return not found
         if (nextToken.isEmpty()) {
-            throw new WebApplicationException(Response.Status.NOT_FOUND);
+            throw new NotFoundException();
         }
 
         // if this is not a request for the next results, return not found
         if (token != nextToken.getAsLong()) {
             // unknown token
-            throw new WebApplicationException(Response.Status.NOT_FOUND);
+            throw new NotFoundException();
         }
 
         return Optional.empty();
