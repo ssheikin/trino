@@ -30,6 +30,7 @@ public final class ResultsCacheSessionProperties
         implements SystemSessionPropertiesProvider
 {
     public static final String CACHE_KEY = "results_cache_key";
+    public static final String CACHE_EPOCH = "results_cache_epoch";
     public static final String CACHE_ENTRY_MAX_SIZE_BYTES = "results_cache_entry_max_size_bytes";
 
     // These properties are consumed by the dispatcher and not used within Trino
@@ -50,6 +51,11 @@ public final class ResultsCacheSessionProperties
                     SKIP_RESULTS_CACHE_SESSION_PROPERTY,
                     "Skip using the results cache regardless of if cached results are available",
                     null,
+                    false),
+            longProperty(
+                    CACHE_EPOCH,
+                    "Cache key epoch time",
+                    null,
                     false));
 
     @Override
@@ -66,5 +72,10 @@ public final class ResultsCacheSessionProperties
     public static Optional<Long> getResultsCacheEntryMaxSizeBytes(Session session)
     {
         return Optional.ofNullable(session.getSystemProperty(CACHE_ENTRY_MAX_SIZE_BYTES, Long.class));
+    }
+
+    public static Optional<Long> getResultsCacheEpoch(Session session)
+    {
+        return Optional.ofNullable(session.getSystemProperty(CACHE_EPOCH, Long.class));
     }
 }

@@ -51,8 +51,10 @@ public class ActiveResultsCacheEntry
 {
     private static final Logger log = Logger.get(ActiveResultsCacheEntry.class);
     private final String cacheKey;
+    private final long cacheEpoch;
     private final QueryId queryId;
     private final String query;
+    private final String user;
     private final long maximumSize;
     private final CacheClient cacheClient;
     private final ListeningExecutorService executorService;
@@ -71,16 +73,20 @@ public class ActiveResultsCacheEntry
 
     public ActiveResultsCacheEntry(
             String cacheKey,
+            long cacheEpoch,
             QueryId queryId,
             String query,
+            String user,
             long maximumSize,
             CacheClient cacheClient,
             ListeningExecutorService executorService)
     {
         this.cacheKey = requireNonNull(cacheKey, "key is null");
+        this.cacheEpoch = cacheEpoch;
         this.entryResult = new ResultsCacheResult(CACHING);
         this.queryId = requireNonNull(queryId, "queryId is null");
         this.query = requireNonNull(query, "query is null");
+        this.user = requireNonNull(user, "user is null");
         checkArgument(maximumSize > 0, "maximumSize is <= 0");
         this.maximumSize = maximumSize;
         this.cacheClient = requireNonNull(cacheClient, "cacheClient is null");
@@ -215,7 +221,9 @@ public class ActiveResultsCacheEntry
                 cacheClient.insertCacheEntry(
                         new CacheEntry(
                                 cacheKey,
+                                cacheEpoch,
                                 createdTime,
+                                user,
                                 queryId.toString(),
                                 query,
                                 resultsData.columns,

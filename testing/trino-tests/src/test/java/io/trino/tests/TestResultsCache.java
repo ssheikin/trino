@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static io.trino.server.resultscache.ResultsCacheSessionProperties.CACHE_EPOCH;
 import static io.trino.server.resultscache.ResultsCacheSessionProperties.CACHE_KEY;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static io.trino.testing.assertions.Assert.assertEventually;
@@ -70,6 +71,7 @@ public class TestResultsCache
     {
         Session session = testSessionBuilder()
                 .setSystemProperty(CACHE_KEY, cacheKey)
+                .setSystemProperty(CACHE_EPOCH, String.valueOf(Instant.now().toEpochMilli()))
                 .build();
 
         getQueryRunner().execute(session, query);
@@ -101,6 +103,7 @@ public class TestResultsCache
     {
         Session session = testSessionBuilder()
                 .setSystemProperty(CACHE_KEY, cacheKey)
+                .setSystemProperty(CACHE_EPOCH, String.valueOf(Instant.now().toEpochMilli()))
                 .build();
 
         getQueryRunner().execute(session, query);
@@ -129,6 +132,7 @@ public class TestResultsCache
         String jmxConnectorKey = "jmxConnectorKey";
         Session session = testSessionBuilder()
                 .setSystemProperty(CACHE_KEY, jmxConnectorKey)
+                .setSystemProperty(CACHE_EPOCH, String.valueOf(Instant.now().toEpochMilli()))
                 .build();
         String tableName = getQueryRunner().execute("SHOW TABLES in jmx.current")
                 .getMaterializedRows()
@@ -145,6 +149,7 @@ public class TestResultsCache
         String cacheKey = "testPreparedStatementExecute";
         Session session = testSessionBuilder()
                 .setSystemProperty(CACHE_KEY, cacheKey)
+                .setSystemProperty(CACHE_EPOCH, String.valueOf(Instant.now().toEpochMilli()))
                 .addPreparedStatement("my_query", "SELECT * FROM tpch.tiny.nation")
                 .build();
 

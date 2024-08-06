@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 public record ResultsCacheState(
         String key,
+        long epoch,
         Optional<Long> maximumSizeBytes)
 {
     public ResultsCacheState

@@ -26,7 +26,9 @@ import static java.util.Objects.requireNonNull;
 
 public record CacheEntry(
         String key,
+        long epoch,
         Instant created,
+        String user,
         String queryId,
         String queryText,
         List<Column> columns,
@@ -38,6 +40,7 @@ public record CacheEntry(
     {
         requireNonNull(key, "key is null");
         requireNonNull(created, "created is null");
+        requireNonNull(user, "user is null");
         requireNonNull(queryId, "queryId is null");
         requireNonNull(queryText, "queryText is null");
         columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));

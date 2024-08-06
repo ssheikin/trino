@@ -25,6 +25,8 @@ import java.util.Optional;
 
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static io.airlift.concurrent.Threads.threadsNamed;
+import static io.trino.server.resultscache.ResultsCacheSessionProperties.getResultsCacheEntryMaxSizeBytes;
+import static io.trino.server.resultscache.ResultsCacheSessionProperties.getResultsCacheEpoch;
 import static io.trino.server.resultscache.ResultsCacheSessionProperties.getResultsCacheKey;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -59,7 +61,8 @@ public class ActiveResultsCacheManager
         ActiveResultsCacheEntry entry = createResultsCacheEntry(
                 state.get(),
                 queryId,
-                queryInfo.getQuery());
+                queryInfo.getQuery(),
+                queryInfo.getSession().getUser());
         queryManager.registerResultsCacheEntry(queryInfo.getQueryId(), entry);
         return Optional.of(entry);
     }
@@ -67,18 +70,25 @@ public class ActiveResultsCacheManager
     @Override
     public Optional<ResultsCacheState> createResultsCacheParameters(Session session)
     {
-        return getResultsCacheKey(session).map(cacheKey -> {
-            log.debug("QueryId: %s, statement had cache key %s", session.getQueryId(), cacheKey);
-            return new ResultsCacheState(
-                    cacheKey,
-                    ResultsCacheSessionProperties.getResultsCacheEntryMaxSizeBytes(session));
-        });
+        Optional<String> cacheKey = getResultsCacheKey(session);
+        Optional<Long> cacheEpoch = getResultsCacheEpoch(session);
+
+        if (cacheKey.isEmpty() || cacheEpoch.isEmpty()) {
+            return Optional.empty();
+        }
+
+        log.debug("QueryId: %s, statement had cache key %s and epoch %d", session.getQueryId(), cacheKey.get(), cacheEpoch.get());
+        return Optional.of(new ResultsCacheState(
+                cacheKey.get(),
+                cacheEpoch.get(),
+                getResultsCacheEntryMaxSizeBytes(session)));
     }
 
     private ActiveResultsCacheEntry createResultsCacheEntry(
             ResultsCacheState resultsCacheParameters,
             QueryId queryId,
-            String query)
+            String query,
+            String user)
     {
         Optional<Long> requestMaxSizeOptional = resultsCacheParameters.maximumSizeBytes();
         long maximumSizeBytes = requestMaxSizeOptional.map(requestMaxSize -> {
@@ -92,8 +102,10 @@ public class ActiveResultsCacheManager
         log.debug("QueryId: %s, created ResultsCacheEntry with key %s", queryId, resultsCacheParameters.key());
         return new ActiveResultsCacheEntry(
                 resultsCacheParameters.key(),
+                resultsCacheParameters.epoch(),
                 queryId,
                 query,
+                user,
                 maximumSizeBytes,
                 cacheClient,
                 executorService);
