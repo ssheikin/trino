@@ -16,7 +16,6 @@ package io.trino.tests.product.hive;
 import io.trino.tempto.assertions.QueryAssert;
 import io.trino.tempto.query.QueryResult;
 import io.trino.tests.product.hive.util.TemporaryHiveTable;
-import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -47,12 +46,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeSimpleSelect()
     {
-        withTemporaryTable("merge_simple_select_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_simple_select_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
 
-            withTemporaryTable("merge_simple_select_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_simple_select_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Arches'), ('Ed', 7, 'Etherville'), ('Carol', 9, 'Centreville'), ('Dave', 11, 'Darbyshire')", sourceTable));
@@ -72,12 +71,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeSimpleSelectPartitioned()
     {
-        withTemporaryTable("merge_simple_select_partitioned_target", true, true, NONE, targetTable -> {
+        withTemporaryTable("merge_simple_select_partitioned_target", true, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true, partitioned_by = ARRAY['address'])", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
 
-            withTemporaryTable("merge_simple_select_partitioned_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_simple_select_partitioned_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Arches'), ('Ed', 7, 'Etherville'), ('Carol', 9, 'Centreville'), ('Dave', 11, 'Darbyshire')", sourceTable));
@@ -98,7 +97,7 @@ public class TestHiveMerge
     public void testMergeUpdateWithVariousLayouts(boolean partitioned, String bucketing)
     {
         BucketingType bucketingType = bucketing.isEmpty() ? NONE : BUCKETED_V2;
-        withTemporaryTable("merge_update_with_various_formats", true, partitioned, bucketingType, targetTable -> {
+        withTemporaryTable("merge_update_with_various_formats", partitioned, bucketingType, targetTable -> {
             StringBuilder builder = new StringBuilder();
             builder.append("CREATE TABLE ")
                     .append(targetTable)
@@ -114,7 +113,7 @@ public class TestHiveMerge
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchase) VALUES ('Dave', 'dates'), ('Lou', 'limes'), ('Carol', 'candles')", targetTable));
             verifySelectForTrinoAndHive("SELECT * FROM " + targetTable, row("Dave", "dates"), row("Lou", "limes"), row("Carol", "candles"));
 
-            withTemporaryTable("merge_update_with_various_formats_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_update_with_various_formats_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchase VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchase) VALUES ('Craig', 'candles'), ('Len', 'limes'), ('Joe', 'jellybeans')", sourceTable));
@@ -134,13 +133,13 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testMergeUnBucketedUnPartitionedFailure()
     {
-        withTemporaryTable("merge_with_various_formats_failure", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_with_various_formats_failure", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchase VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchase) VALUES ('Dave', 'dates'), ('Lou', 'limes'), ('Carol', 'candles')", targetTable));
             verifySelectForTrinoAndHive("SELECT * FROM " + targetTable, row("Dave", "dates"), row("Lou", "limes"), row("Carol", "candles"));
 
-            withTemporaryTable("merge_with_various_formats_failure_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_with_various_formats_failure_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchase VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchase) VALUES ('Craig', 'candles'), ('Len', 'limes'), ('Joe', 'jellybeans')", sourceTable));
@@ -171,7 +170,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeMultipleOperationsUnbucketedUnpartitioned()
     {
-        withTemporaryTable("merge_multiple", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_multiple", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, zipcode INT, spouse VARCHAR, address VARCHAR) WITH (transactional = true)", targetTable));
             testMergeMultipleOperationsInternal(targetTable, 32);
         });
@@ -180,7 +179,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeMultipleOperationsUnbucketedPartitioned()
     {
-        withTemporaryTable("merge_multiple", true, true, NONE, targetTable -> {
+        withTemporaryTable("merge_multiple", true, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (purchases INT, zipcode INT, spouse VARCHAR, address VARCHAR, customer VARCHAR) WITH (transactional = true, partitioned_by = ARRAY['address', 'customer'])", targetTable));
             testMergeMultipleOperationsInternal(targetTable, 32);
         });
@@ -189,7 +188,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeMultipleOperationsBucketedUnpartitioned()
     {
-        withTemporaryTable("merge_multiple", true, false, BUCKETED_V2, targetTable -> {
+        withTemporaryTable("merge_multiple", false, BUCKETED_V2, targetTable -> {
             onHive().executeQuery(format("CREATE TABLE %s (customer STRING, purchases INT, zipcode INT, spouse STRING, address STRING)" +
                     "   CLUSTERED BY(customer, zipcode, address) INTO 4 BUCKETS STORED AS ORC TBLPROPERTIES ('transactional'='true')", targetTable));
             testMergeMultipleOperationsInternal(targetTable, 32);
@@ -264,7 +263,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeSimpleQuery()
     {
-        withTemporaryTable("merge_simple_query_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_simple_query_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
@@ -284,7 +283,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeAllInserts()
     {
-        withTemporaryTable("merge_all_inserts", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_all_inserts", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 11, 'Antioch'), ('Bill', 7, 'Buena')", targetTable));
@@ -302,7 +301,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeSimpleQueryPartitioned()
     {
-        withTemporaryTable("merge_simple_query_partitioned_target", true, true, NONE, targetTable -> {
+        withTemporaryTable("merge_simple_query_partitioned_target", true, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true, partitioned_by = ARRAY['address'])", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
@@ -323,12 +322,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeAllColumnsUpdated()
     {
-        withTemporaryTable("merge_all_columns_updated_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_all_columns_updated_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Dave', 11, 'Devon'), ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge')", targetTable));
 
-            withTemporaryTable("merge_all_columns_updated_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_all_columns_updated_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Dave', 11, 'Darbyshire'), ('Aaron', 6, 'Arches'), ('Carol', 9, 'Centreville'), ('Ed', 7, 'Etherville')", sourceTable));
@@ -344,12 +343,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeAllMatchesDeleted()
     {
-        withTemporaryTable("merge_all_matches_deleted_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_all_matches_deleted_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
 
-            withTemporaryTable("merge_all_matches_deleted_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_all_matches_deleted_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Arches'), ('Carol', 9, 'Centreville'), ('Dave', 11, 'Darbyshire'), ('Ed', 7, 'Etherville')", sourceTable));
@@ -365,12 +364,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000, dataProvider = "partitionedBucketedFailure")
     public void testMergeMultipleRowsMatchFails(String createTableSql)
     {
-        withTemporaryTable("merge_all_matches_deleted_target", true, true, NONE, targetTable -> {
+        withTemporaryTable("merge_all_matches_deleted_target", true, NONE, targetTable -> {
             onHive().executeQuery(format(createTableSql, targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Antioch')", targetTable));
 
-            withTemporaryTable("merge_all_matches_deleted_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_all_matches_deleted_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Adelphi'), ('Aaron', 8, 'Ashland')", sourceTable));
@@ -402,12 +401,12 @@ public class TestHiveMerge
     public void testMergeFailingPartitioning()
     {
         String testDescription = "failing_merge";
-        withTemporaryTable(format("%s_target", testDescription), true, true, NONE, targetTable -> {
+        withTemporaryTable(format("%s_target", testDescription), true, NONE, targetTable -> {
             onHive().executeQuery(format("CREATE TABLE %s (customer STRING, purchases INT, address STRING) STORED AS ORC TBLPROPERTIES ('transactional'='true')", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
 
-            withTemporaryTable(format("%s_source", testDescription), true, true, NONE, sourceTable -> {
+            withTemporaryTable(format("%s_source", testDescription), true, NONE, sourceTable -> {
                 onHive().executeQuery(format("CREATE TABLE %s (purchases INT, address STRING) PARTITIONED BY (customer STRING) STORED AS ORC TBLPROPERTIES ('transactional'='true')", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Arches'), ('Ed', 7, 'Etherville'), ('Carol', 9, 'Centreville'), ('Dave', 11, 'Darbyshire')", sourceTable));
@@ -441,12 +440,12 @@ public class TestHiveMerge
 
     private void testMergeWithDifferentPartitioningInternal(String testDescription, String createTargetTableSql, String createSourceTableSql)
     {
-        withTemporaryTable(format("%s_target", testDescription), true, true, NONE, targetTable -> {
+        withTemporaryTable(format("%s_target", testDescription), true, NONE, targetTable -> {
             onHive().executeQuery(format(createTargetTableSql, targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
 
-            withTemporaryTable(format("%s_source", testDescription), true, true, NONE, sourceTable -> {
+            withTemporaryTable(format("%s_source", testDescription), true, NONE, sourceTable -> {
                 onHive().executeQuery(format(createSourceTableSql, sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Arches'), ('Ed', 7, 'Etherville'), ('Carol', 9, 'Centreville'), ('Dave', 11, 'Darbyshire')", sourceTable));
@@ -504,7 +503,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeQueryWithStrangeCapitalization()
     {
-        withTemporaryTable("test_without_aliases_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("test_without_aliases_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
@@ -523,12 +522,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeWithoutTablesAliases()
     {
-        withTemporaryTable("test_without_aliases_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("test_without_aliases_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (cusTomer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
 
-            withTemporaryTable("test_without_aliases_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("test_without_aliases_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Arches'), ('Ed', 7, 'Etherville'), ('Carol', 9, 'Centreville'), ('Dave', 11, 'Darbyshire')", sourceTable));
@@ -547,12 +546,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeWithUnpredictablePredicates()
     {
-        withTemporaryTable("test_without_aliases_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("test_without_aliases_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (cusTomer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 5, 'Antioch'), ('Bill', 7, 'Buena'), ('Carol', 3, 'Cambridge'), ('Dave', 11, 'Devon')", targetTable));
 
-            withTemporaryTable("test_without_aliases_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("test_without_aliases_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 6, 'Arches'), ('Carol', 9, 'Centreville'), ('Dave', 11, 'Darbyshire'), ('Ed', 7, 'Etherville')", sourceTable));
@@ -588,13 +587,13 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeWithSimplifiedUnpredictablePredicates()
     {
-        withTemporaryTable("test_without_aliases_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("test_without_aliases_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address)" +
                     " VALUES ('Dave', 11, 'Devon'), ('Dave', 11, 'Darbyshire')", targetTable));
 
-            withTemporaryTable("test_without_aliases_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("test_without_aliases_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Dave', 11, 'Darbyshire')", sourceTable));
@@ -613,12 +612,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeCasts()
     {
-        withTemporaryTable("merge_cast_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_cast_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (col1 TINYINT, col2 SMALLINT, col3 INT, col4 BIGINT, col5 REAL, col6 DOUBLE) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s VALUES (1, 2, 3, 4, 5, 6)", targetTable));
 
-            withTemporaryTable("test_without_aliases_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("test_without_aliases_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (col1 DOUBLE, col2 REAL, col3 BIGINT, col4 INT, col5 SMALLINT, col6 TINYINT) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s VALUES (2, 3, 4, 5, 6, 7)", sourceTable));
@@ -635,12 +634,12 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeSubqueries()
     {
-        withTemporaryTable("merge_nation_target", true, false, NONE, targetTable -> {
+        withTemporaryTable("merge_nation_target", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (nation_name VARCHAR, region_name VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (nation_name, region_name) VALUES ('FRANCE', 'EUROPE'), ('ALGERIA', 'AFRICA'), ('GERMANY', 'EUROPE')", targetTable));
 
-            withTemporaryTable("merge_nation_source", true, false, NONE, sourceTable -> {
+            withTemporaryTable("merge_nation_source", false, NONE, sourceTable -> {
                 onTrino().executeQuery(format("CREATE TABLE %s (nation_name VARCHAR, region_name VARCHAR) WITH (transactional = true)", sourceTable));
 
                 onTrino().executeQuery(format("INSERT INTO %s VALUES ('ALGERIA', 'AFRICA'), ('FRANCE', 'EUROPE'), ('EGYPT', 'MIDDLE EAST'), ('RUSSIA', 'EUROPE')", sourceTable));
@@ -660,7 +659,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = 60 * 60 * 1000)
     public void testMergeOriginalFilesTarget()
     {
-        withTemporaryTable("region", true, false, NONE, targetTable -> {
+        withTemporaryTable("region", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s WITH (transactional=true) AS TABLE tpch.tiny.region", targetTable));
 
             // This merge is illegal, because many nations have the same region
@@ -682,7 +681,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testMergeOverManySplits()
     {
-        withTemporaryTable("delete_select", true, false, NONE, targetTable -> {
+        withTemporaryTable("delete_select", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (orderkey bigint, custkey bigint, orderstatus varchar(1), totalprice double, orderdate date, orderpriority varchar(15), clerk varchar(15), shippriority integer, comment varchar(79)) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s SELECT * FROM tpch.\"sf0.1\".orders", targetTable));
@@ -700,7 +699,7 @@ public class TestHiveMerge
     @Test(groups = {HIVE_TRANSACTIONAL, PROFILE_SPECIFIC_TESTS}, timeOut = TEST_TIMEOUT)
     public void testMergeFalseJoinCondition()
     {
-        withTemporaryTable("join_false", true, false, NONE, targetTable -> {
+        withTemporaryTable("join_false", false, NONE, targetTable -> {
             onTrino().executeQuery(format("CREATE TABLE %s (customer VARCHAR, purchases INT, address VARCHAR) WITH (transactional = true)", targetTable));
 
             onTrino().executeQuery(format("INSERT INTO %s (customer, purchases, address) VALUES ('Aaron', 11, 'Antioch'), ('Bill', 7, 'Buena')", targetTable));
@@ -752,20 +751,10 @@ public class TestHiveMerge
         };
     }
 
-    void withTemporaryTable(String rootName, boolean transactional, boolean isPartitioned, BucketingType bucketingType, Consumer<String> testRunner)
+    void withTemporaryTable(String rootName, boolean isPartitioned, BucketingType bucketingType, Consumer<String> testRunner)
     {
-        if (transactional) {
-            ensureTransactionalHive();
-        }
         try (TemporaryHiveTable table = TemporaryHiveTable.temporaryHiveTable(tableName(rootName, isPartitioned, bucketingType))) {
             testRunner.accept(table.getName());
-        }
-    }
-
-    private void ensureTransactionalHive()
-    {
-        if (getHiveVersionMajor() < 3) {
-            throw new SkipException("Hive transactional tables are supported with Hive version 3 or above");
         }
     }
 }
