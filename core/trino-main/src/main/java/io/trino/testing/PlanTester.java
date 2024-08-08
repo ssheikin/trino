@@ -490,7 +490,7 @@ public class PlanTester
                 nodeManager);
 
         exchangeManagerRegistry = new ExchangeManagerRegistry(OpenTelemetry.noop(), noopTracer(), secretsResolver);
-        cacheManagerRegistry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(new NodeMemoryConfig()), plannerContext.getBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager());
+        cacheManagerRegistry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(new NodeMemoryConfig()), plannerContext.getBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager(), new SecretsResolver(ImmutableMap.of()));
         tupleDomainCodec = getTupleDomainJsonCodec(blockEncodingSerde, typeManager);
         this.pluginManager = new PluginManager(
                 (loader, createClassLoader) -> {},

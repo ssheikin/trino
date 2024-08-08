@@ -16,6 +16,7 @@ package io.trino.cache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.json.JsonCodec;
 import io.airlift.units.DataSize;
 import io.trino.Session;
@@ -133,7 +134,7 @@ public class TestCacheDriverFactory
                 .setMaxQueryMemoryPerNode(DataSize.of(32, MEGABYTE));
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setEnabled(true);
-        registry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(config, DataSize.of(1024, MEGABYTE).toBytes()), new TestingBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager());
+        registry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(config, DataSize.of(1024, MEGABYTE).toBytes()), new TestingBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager(), new SecretsResolver(ImmutableMap.of()));
         TestCacheManagerFactory cacheManagerFactory = new TestCacheManagerFactory();
         registry.loadCacheManager(cacheManagerFactory, ImmutableMap.of());
         splitCache = cacheManagerFactory.getCacheManager().getSplitCache();

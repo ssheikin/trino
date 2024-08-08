@@ -15,6 +15,7 @@ package io.trino.cache;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.units.DataSize;
 import io.trino.execution.StageId;
 import io.trino.execution.TaskId;
@@ -61,7 +62,7 @@ public class TestCacheManagerRegistry
                 .setMaxQueryMemoryPerNode(DataSize.of(100, MEGABYTE));
 
         memoryManager = new LocalMemoryManager(config, DataSize.of(110, MEGABYTE).toBytes());
-        registry = new CacheManagerRegistry(new CacheConfig(), memoryManager, newDirectExecutorService(), new TestingBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager());
+        registry = new CacheManagerRegistry(new CacheConfig(), memoryManager, newDirectExecutorService(), new TestingBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager(), new SecretsResolver(ImmutableMap.of()));
         registry.addCacheManagerFactory(new TestCacheManagerFactory());
         registry.loadCacheManager(TEST_CACHE_MANAGER, ImmutableMap.of());
     }

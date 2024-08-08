@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
+import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.log.Logger;
 import io.airlift.stats.Distribution;
 import io.airlift.stats.TimeStat;
@@ -84,14 +85,28 @@ public class CacheManagerRegistry
     private final AtomicInteger nonEmptyRevokeCount = new AtomicInteger();
     private final CacheStats cacheStats;
     private final InternalNodeManager internalNodeManager;
+    private final SecretsResolver secretsResolver;
 
     private volatile CacheManager cacheManager;
     private volatile LocalMemoryContext revocableMemoryContext;
 
     @Inject
-    public CacheManagerRegistry(CacheConfig cacheConfig, LocalMemoryManager localMemoryManager, BlockEncodingSerde blockEncodingSerde, CacheStats cacheStats, InternalNodeManager internalNodeManager)
+    public CacheManagerRegistry(
+            CacheConfig cacheConfig,
+            LocalMemoryManager localMemoryManager,
+            BlockEncodingSerde blockEncodingSerde,
+            CacheStats cacheStats,
+            InternalNodeManager internalNodeManager,
+            SecretsResolver secretsResolver)
     {
-        this(cacheConfig, localMemoryManager, newSingleThreadExecutor(daemonThreadsNamed("cache-manager-registry")), blockEncodingSerde, cacheStats, internalNodeManager);
+        this(
+                cacheConfig,
+                localMemoryManager,
+                newSingleThreadExecutor(daemonThreadsNamed("cache-manager-registry")),
+                blockEncodingSerde,
+                cacheStats,
+                internalNodeManager,
+                secretsResolver);
     }
 
     @VisibleForTesting
@@ -100,7 +115,8 @@ public class CacheManagerRegistry
             ExecutorService executor,
             BlockEncodingSerde blockEncodingSerde,
             CacheStats cacheStats,
-            InternalNodeManager internalNodeManager)
+            InternalNodeManager internalNodeManager,
+            SecretsResolver secretsResolver)
     {
         requireNonNull(cacheConfig, "cacheConfig is null");
         requireNonNull(localMemoryManager, "localMemoryManager is null");
@@ -114,6 +130,7 @@ public class CacheManagerRegistry
         this.blockEncodingSerde = blockEncodingSerde;
         this.cacheStats = cacheStats;
         this.internalNodeManager = requireNonNull(internalNodeManager, "internalNodeManager is null");
+        this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
     }
 
     public void addCacheManagerFactory(CacheManagerFactory factory)
@@ -191,7 +208,7 @@ public class CacheManagerRegistry
         };
         CacheManager cacheManager;
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(factory.getClass().getClassLoader())) {
-            cacheManager = factory.create(properties, context);
+            cacheManager = factory.create(secretsResolver.getResolvedConfiguration(properties), context);
         }
         this.cacheManager = cacheManager;
 
