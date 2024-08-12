@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.starburst.schema-discovery</groupId>
         <artifactId>starburst-schema-discovery</artifactId>
-        <version>453-e.0.8</version>
+        <version>453-e.0.9-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
