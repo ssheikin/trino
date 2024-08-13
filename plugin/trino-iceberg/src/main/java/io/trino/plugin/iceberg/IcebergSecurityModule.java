@@ -33,7 +33,7 @@ public class IcebergSecurityModule
             case READ_ONLY -> new ReadOnlySecurityModule();
             case FILE -> new FileBasedAccessControlModule();
             // do not bind a ConnectorAccessControl so the engine will use system security with system roles
-            case SYSTEM -> EMPTY_MODULE;
+            case SYSTEM, LAKE_FORMATION -> EMPTY_MODULE;
         });
     }
 }
