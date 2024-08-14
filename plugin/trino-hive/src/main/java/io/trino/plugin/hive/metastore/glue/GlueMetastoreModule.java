@@ -40,6 +40,7 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.http.apache.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.GlueClientBuilder;
 import software.amazon.awssdk.services.glue.model.ConcurrentModificationException;
@@ -139,6 +140,9 @@ public class GlueMetastoreModule
                 .executionInterceptors(ImmutableList.copyOf(executionInterceptors))
                 .retryStrategy(retryBuilder -> retryBuilder
                         .retryOnException(throwable -> throwable instanceof ConcurrentModificationException)
+                        .backoffStrategy(BackoffStrategy.exponentialDelay(
+                                java.time.Duration.ofMillis(20),
+                                java.time.Duration.ofMillis(1500)))
                         .maxAttempts(config.getMaxGlueErrorRetries())));
 
         Optional<StaticCredentialsProvider> staticCredentialsProvider = getStaticCredentialsProvider(config);
