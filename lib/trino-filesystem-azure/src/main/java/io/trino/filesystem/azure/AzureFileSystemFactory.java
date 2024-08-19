@@ -42,6 +42,7 @@ public class AzureFileSystemFactory
     private final AzureAuth auth;
     private final boolean useOauthPassthroughToken;
     private final AzureFileSystemConfig.AuthType authType;
+    private final String endpoint;
     private final DataSize readBlockSize;
     private final DataSize writeBlockSize;
     private final int maxWriteConcurrency;
@@ -57,6 +58,7 @@ public class AzureFileSystemFactory
                 azureAuth,
                 config.getAuthType(),
                 config.isUseOauthPassthroughToken(),
+                config.getEndpoint(),
                 config.getReadBlockSize(),
                 config.getWriteBlockSize(),
                 config.getMaxWriteConcurrency(),
@@ -68,6 +70,7 @@ public class AzureFileSystemFactory
             AzureAuth azureAuth,
             AzureFileSystemConfig.AuthType authType,
             boolean useOauthPassthroughToken,
+            String endpoint,
             DataSize readBlockSize,
             DataSize writeBlockSize,
             int maxWriteConcurrency,
@@ -76,6 +79,7 @@ public class AzureFileSystemFactory
         this.auth = requireNonNull(azureAuth, "azureAuth is null");
         this.useOauthPassthroughToken = useOauthPassthroughToken;
         this.authType = requireNonNull(authType, "authType is null");
+        this.endpoint = requireNonNull(endpoint, "endpoint is null");
         this.readBlockSize = requireNonNull(readBlockSize, "readBlockSize is null");
         this.writeBlockSize = requireNonNull(writeBlockSize, "writeBlockSize is null");
         checkArgument(maxWriteConcurrency >= 0, "maxWriteConcurrency is negative");
@@ -104,6 +108,7 @@ public class AzureFileSystemFactory
                 httpClient,
                 tracingOptions,
                 useOauthPassthroughToken ? new AzureAuthCustomToken(new AzureCustomTokenCredential(accessToken), authType) : auth,
+                endpoint,
                 readBlockSize,
                 writeBlockSize,
                 maxWriteConcurrency,
