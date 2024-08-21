@@ -24,19 +24,14 @@ import dev.failsafe.RetryPolicy;
 import io.airlift.json.ObjectMapperProvider;
 import io.airlift.log.Logger;
 import io.trino.plugin.warp.annotation.ForWarmupRuleCloudFetcher;
-import io.trino.plugin.warp.api.warmup.WarmupColRuleData;
 import io.trino.plugin.warp.cloudvendors.CloudVendorService;
 import io.trino.plugin.warp.cloudvendors.model.StorageObjectMetadata;
-import io.trino.plugin.warp.dispatcher.warmup.events.WarmRulesChangedEvent;
+import io.trino.plugin.warp.dispatcher.cache.CacheMgrWarmupRuleService;
+import io.trino.plugin.warp.dispatcher.warmup.events.CacheMgrWarmRulesChangedEvent;
 import io.trino.plugin.warp.gen.stats.WarmupRuleFetcherStats;
 import io.trino.plugin.warp.log.ShapingLogger;
 import io.trino.plugin.warp.metrics.MetricsManager;
-import io.trino.plugin.warp.tools.util.StringUtils;
-import io.trino.plugin.warp.warmup.WarmupRuleApiMapper;
-import io.trino.plugin.warp.warmup.WarmupRuleService;
-import io.trino.plugin.warp.warmup.model.WarmupRule;
-import io.trino.plugin.warp.warmup.model.WarmupRuleResult;
-import io.trino.spi.catalog.CatalogName;
+import io.trino.plugin.warp.warmup.model.CacheManagerRule;
 
 import java.time.Duration;
 import java.util.List;
@@ -49,11 +44,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.util.Objects.requireNonNull;
 
 @Singleton
-public class WarmupRuleCloudFetcher
-        implements WarmupRuleFetcher<WarmupRule>
+public class CacheMgrWarmupRuleCloudFetcher
+        implements WarmupRuleFetcher<CacheManagerRule>
 {
-    private static final Logger logger = Logger.get(WarmupRuleCloudFetcher.class);
-    public static final String WARM_FETCHER_STAT_GROUP = "WarmupRuleCloudFetcher";
+    private static final Logger logger = Logger.get(CacheMgrWarmupRuleCloudFetcher.class);
+    public static final String WARM_FETCHER_STAT_GROUP = "CacheMgrWarmupRuleCloudFetcher";
 
     private static final ShapingLogger shapingLogger = ShapingLogger.getInstance(
             logger,
@@ -63,9 +58,8 @@ public class WarmupRuleCloudFetcher
 
     private final WarmupRuleCloudFetcherConfig warmupRuleCloudFetcherConfig;
     private final CloudVendorService cloudVendorService;
-    private final WarmupRuleService warmupRuleService;
+    private final CacheMgrWarmupRuleService warmupRuleService;
     private final EventBus eventBus;
-    private final CatalogName catalogName;
     private final ObjectMapperProvider objectMapperProvider;
     @SuppressWarnings("FieldCanBeLocal")
     private final Timer timer;
@@ -75,12 +69,11 @@ public class WarmupRuleCloudFetcher
 
     @SuppressWarnings("unused")
     @Inject
-    public WarmupRuleCloudFetcher(
+    public CacheMgrWarmupRuleCloudFetcher(
             @ForWarmupRuleCloudFetcher WarmupRuleCloudFetcherConfig warmupRuleCloudFetcherConfig,
             @ForWarmupRuleCloudFetcher CloudVendorService cloudVendorService,
-            WarmupRuleService warmupRuleService,
+            CacheMgrWarmupRuleService warmupRuleService,
             EventBus eventBus,
-            CatalogName catalogName,
             MetricsManager metricsManager,
             ObjectMapperProvider objectMapperProvider)
     {
@@ -88,19 +81,17 @@ public class WarmupRuleCloudFetcher
                 cloudVendorService,
                 warmupRuleService,
                 eventBus,
-                catalogName,
                 metricsManager,
                 objectMapperProvider,
                 new Timer());
     }
 
     @VisibleForTesting
-    WarmupRuleCloudFetcher(
+    CacheMgrWarmupRuleCloudFetcher(
             WarmupRuleCloudFetcherConfig warmupRuleCloudFetcherConfig,
             CloudVendorService cloudVendorService,
-            WarmupRuleService warmupRuleService,
+            CacheMgrWarmupRuleService warmupRuleService,
             EventBus eventBus,
-            CatalogName catalogName,
             MetricsManager metricsManager,
             ObjectMapperProvider objectMapperProvider,
             Timer timer)
@@ -109,7 +100,6 @@ public class WarmupRuleCloudFetcher
         this.cloudVendorService = requireNonNull(cloudVendorService);
         this.warmupRuleService = requireNonNull(warmupRuleService);
         this.eventBus = requireNonNull(eventBus);
-        this.catalogName = requireNonNull(catalogName);
         this.objectMapperProvider = requireNonNull(objectMapperProvider);
         this.timer = requireNonNull(timer);
         this.writeLock = new ReentrantReadWriteLock().writeLock();
@@ -127,11 +117,12 @@ public class WarmupRuleCloudFetcher
                 warmupRuleCloudFetcherConfig.getFetchDelayDuration().toMillis(),
                 warmupRuleCloudFetcherConfig.getFetchDuration().toMillis());
 
-        this.warmupRuleFetcherStats = requireNonNull(metricsManager).registerMetric(WarmupRuleFetcherStats.create(WARM_FETCHER_STAT_GROUP));
+        this.warmupRuleFetcherStats = requireNonNull(metricsManager)
+                .registerMetric(WarmupRuleFetcherStats.create(WARM_FETCHER_STAT_GROUP));
     }
 
     @Override
-    public List<WarmupRule> getWarmupRules(boolean force)
+    public List<CacheManagerRule> getWarmupRules(boolean force)
     {
         if (force) {
             if (writeLock.tryLock()) {
@@ -142,28 +133,26 @@ public class WarmupRuleCloudFetcher
                     writeLock.unlock();
                 }
             }
-            fetch();
         }
-        return getWarmupRules();
+        fetch();
+        return warmupRuleService.getAll();
     }
 
     @Override
-    public List<WarmupRule> getWarmupRules()
+    public List<CacheManagerRule> getWarmupRules()
     {
-        return warmupRuleService.getAll();
+        return getWarmupRules(false);
     }
 
     @VisibleForTesting
     void fetch()
     {
-        if (StringUtils.isEmpty(warmupRuleCloudFetcherConfig.getStorePath())) {
-            logger.debug("rules path is null, storePath %s connectorName %s", warmupRuleCloudFetcherConfig.getStorePath(), catalogName);
+        if (warmupRuleCloudFetcherConfig.getStorePath() == null) {
+            logger.debug("rules path is null");
             return;
         }
 
-        String path = CloudVendorService.concatenatePath(
-                warmupRuleCloudFetcherConfig.getStorePath(),
-                catalogName.toString());
+        String path = warmupRuleCloudFetcherConfig.getStorePath();
 
         if (writeLock.tryLock()) {
             try {
@@ -188,28 +177,23 @@ public class WarmupRuleCloudFetcher
 
                     logger.debug("fetching from %s -> %s", path, optionalJson.orElse(""));
 
-                    WarmupRuleResult warmupRuleResult = warmupRuleService.replaceAll(optionalJson
-                            .map(json -> {
-                                try {
-                                    List<WarmupColRuleData> warmupColRuleDataList = objectMapperProvider.get()
-                                            .readerFor(new TypeReference<List<WarmupColRuleData>>() {})
-                                            .readValue(json);
-                                    return warmupColRuleDataList.stream().map(WarmupRuleApiMapper::toModel).toList();
-                                }
-                                catch (JsonProcessingException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }).orElse(List.of()));
+                    optionalJson.ifPresent(json -> {
+                        try {
+                            List<CacheManagerRule> cacheManagerRules = objectMapperProvider.get()
+                                    .readerFor(new TypeReference<List<CacheManagerRule>>() {})
+                                    .readValue(json);
 
-                    if (!warmupRuleResult.rejectedRules().isEmpty()) {
-                        logger.warn("the following faulty warmup rules were not applied - %s", warmupRuleResult.rejectedRules());
-                    }
-                    if (!warmupRuleResult.appliedRules().isEmpty()) {
-                        shapingLogger.info("%d warmup rules were applied", warmupRuleResult.appliedRules().size());
-                    }
+                            warmupRuleService.replaceAll(cacheManagerRules);
 
-                    warmupRuleFetcherStats.incsuccess();
-                    eventBus.post(new WarmRulesChangedEvent());
+                            shapingLogger.info("%d cache rules were applied", cacheManagerRules.size());
+
+                            warmupRuleFetcherStats.incsuccess();
+                            eventBus.post(new CacheMgrWarmRulesChangedEvent());
+                        }
+                        catch (JsonProcessingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
                 }
                 else {
                     logger.debug("rules file does not exist %s", path);

@@ -11,13 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.warp.dispatcher.warmup.fetcher;
+package io.trino.plugin.warp.warmup.model;
 
-import java.util.List;
+import java.time.Duration;
 
-public interface WarmupRuleFetcher<T>
-{
-    List<T> getWarmupRules();
-
-    List<T> getWarmupRules(boolean force);
-}
+public record CacheManagerRule(String signatureKey, double priority, Duration ttl) {}
