@@ -153,9 +153,7 @@ public class Server
             injector.getInstance(PluginInstaller.class).loadPlugins();
 
             var catalogStoreManager = injector.getInstance(Key.get(new TypeLiteral<Optional<CatalogStoreManager>>() {}));
-            if (catalogStoreManager.isPresent()) {
-                catalogStoreManager.get().loadConfiguredCatalogStore();
-            }
+            catalogStoreManager.ifPresent(CatalogStoreManager::loadConfiguredCatalogStore);
 
             Set<ServerLoadableComponent> loadableComponents = injector.getInstance(Key.get(new TypeLiteral<>() {}));
             loadableComponents.forEach(ServerLoadableComponent::load);

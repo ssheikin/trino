@@ -51,6 +51,7 @@ import io.trino.cache.CacheManagerRegistry;
 import io.trino.cache.CacheMetadata;
 import io.trino.connector.CatalogManagerConfig.CatalogMangerKind;
 import io.trino.connector.CatalogManagerModule;
+import io.trino.connector.CatalogStoreManager;
 import io.trino.connector.ConnectorServicesProvider;
 import io.trino.cost.StatsCalculator;
 import io.trino.dispatcher.DispatchManager;
@@ -387,6 +388,9 @@ public class TestingTrinoServer
         lifeCycleManager = injector.getInstance(LifeCycleManager.class);
 
         pluginInstaller = injector.getInstance(PluginInstaller.class);
+
+        var catalogStoreManager = injector.getInstance(Key.get(new TypeLiteral<Optional<CatalogStoreManager>>() {}));
+        catalogStoreManager.ifPresent(CatalogStoreManager::loadConfiguredCatalogStore);
 
         Optional<CatalogManager> catalogManager = Optional.empty();
         if (injector.getExistingBinding(Key.get(CatalogManager.class)) != null) {
