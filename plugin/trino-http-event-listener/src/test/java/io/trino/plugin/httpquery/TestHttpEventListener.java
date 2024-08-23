@@ -168,6 +168,7 @@ final class TestHttpEventListener
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 0L,
                 0L,
                 0L,
