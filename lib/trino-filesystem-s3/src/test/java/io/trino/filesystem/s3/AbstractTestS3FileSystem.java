@@ -96,12 +96,6 @@ public abstract class AbstractTestS3FileSystem
     }
 
     @Override
-    protected boolean isCreateExclusive()
-    {
-        return false;
-    }
-
-    @Override
     protected final boolean supportsRenameFile()
     {
         return false;

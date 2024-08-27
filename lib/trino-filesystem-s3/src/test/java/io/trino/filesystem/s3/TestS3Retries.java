@@ -122,7 +122,8 @@ public class TestS3Retries
                 null,
                 null,
                 Optional.empty(),
-                S3FileSystemConfig.ObjectCannedAcl.NONE);
+                S3FileSystemConfig.ObjectCannedAcl.NONE,
+                false);
         S3Input input = new S3Input(location.location(), s3client, request, context);
 
         byte[] bytes = new byte[TEST_DATA_SIZE];

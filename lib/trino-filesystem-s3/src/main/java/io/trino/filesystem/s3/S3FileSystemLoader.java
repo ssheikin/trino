@@ -80,7 +80,8 @@ final class S3FileSystemLoader
                 config.getSseKmsKeyId(),
                 config.getSseCustomerKey() != null ? S3SseCustomerKey.onAES256(config.getSseCustomerKey()) : null,
                 Optional.empty(),
-                config.getCannedAcl());
+                config.getCannedAcl(),
+                config.isSupportsExclusiveCreate());
     }
 
     @Override
