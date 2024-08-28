@@ -92,7 +92,7 @@ public class TestIcebergGlueTableOperationsInsertFailure
                 dataDirectory,
                 Optional.of(new TestingIcebergGlueCatalogModule(awsGlueAsyncAdapterProvider)),
                 Optional.empty()));
-        queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", ImmutableMap.of());
+        queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", ImmutableMap.of("fs.hadoop.enabled", "true"));
 
         glueHiveMetastore = createTestingGlueHiveMetastore(dataDirectory, this::closeAfterClass);
 
