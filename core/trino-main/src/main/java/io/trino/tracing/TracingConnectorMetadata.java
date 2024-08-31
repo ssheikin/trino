@@ -622,15 +622,6 @@ public class TracingConnectorMetadata
     }
 
     @Override
-    public ConnectorOutputTableHandle beginCreateTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, Optional<ConnectorTableLayout> layout, RetryMode retryMode)
-    {
-        Span span = startSpan("beginCreateTable", tableMetadata.getTable());
-        try (var _ = scopedSpan(span)) {
-            return delegate.beginCreateTable(session, tableMetadata, layout, retryMode);
-        }
-    }
-
-    @Override
     public ConnectorOutputTableHandle beginCreateTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, Optional<ConnectorTableLayout> layout, RetryMode retryMode, boolean replace)
     {
         Span span = startSpan("beginCreateTable", tableMetadata.getTable());
