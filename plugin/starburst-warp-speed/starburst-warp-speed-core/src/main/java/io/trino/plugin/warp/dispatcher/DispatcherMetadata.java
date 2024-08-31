@@ -263,13 +263,6 @@ public class DispatcherMetadata
         proxiedConnectorMetadata.setSchemaAuthorization(session, source, principal);
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public void createTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, boolean ignoreExisting)
-    {
-        proxiedConnectorMetadata.createTable(session, tableMetadata, ignoreExisting);
-    }
-
     @Override
     public void dropTable(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
@@ -594,13 +587,6 @@ public class DispatcherMetadata
     public void createView(ConnectorSession session, SchemaTableName viewName, ConnectorViewDefinition definition, Map<String, Object> viewProperties, boolean replace)
     {
         proxiedConnectorMetadata.createView(session, viewName, definition, viewProperties, replace);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void createView(ConnectorSession session, SchemaTableName viewName, ConnectorViewDefinition definition, boolean replace)
-    {
-        proxiedConnectorMetadata.createView(session, viewName, definition, replace);
     }
 
     @Override
