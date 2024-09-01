@@ -44,6 +44,7 @@ import io.trino.plugin.iceberg.SchemaInitializer;
 import io.trino.testing.QueryRunner;
 import org.apache.iceberg.FileFormat;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -117,6 +118,11 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
         // DROP TABLES should clean up any files, but clear the directory manually to be safe
         deleteDirectory(schemaPath());
     }
+
+    @Disabled // TODO https://starburstdata.atlassian.net/browse/SEP-14611 - It was failing with `Task 1 did not complete in time`, sh
+    @Test
+    @Override
+    public void testDeleteRowsConcurrently() {}
 
     @Test
     @Override
