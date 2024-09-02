@@ -24,6 +24,7 @@ import io.trino.spi.TrinoException;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.Identifier;
+import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.Property;
 import io.trino.sql.tree.RenameCatalog;
 import io.trino.sql.tree.Statement;
@@ -163,7 +164,7 @@ public class TestRenameCatalogTask
     {
         Map<Class<? extends Statement>, DataDefinitionTask<?>> tasks = queryRunner.getCoordinator().getInstance(Key.get(new TypeLiteral<>() {}));
         CreateCatalogTask task = (CreateCatalogTask) tasks.get(CreateCatalog.class);
-        CreateCatalog statement = new CreateCatalog(new Identifier(catalogA), false, new Identifier("tpch"), TPCH_PROPERTIES, Optional.empty(), Optional.empty());
+        CreateCatalog statement = new CreateCatalog(new NodeLocation(1, 1), new Identifier(catalogA), false, new Identifier("tpch"), TPCH_PROPERTIES, Optional.empty(), Optional.empty());
         ListenableFuture<Void> future = task.execute(statement, createNewQuery(), emptyList(), WarningCollector.NOOP);
         getFutureValue(future);
     }

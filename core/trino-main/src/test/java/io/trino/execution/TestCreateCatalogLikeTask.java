@@ -25,6 +25,7 @@ import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.CreateCatalogLike;
 import io.trino.sql.tree.Identifier;
+import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.Property;
 import io.trino.sql.tree.Statement;
 import io.trino.sql.tree.StringLiteral;
@@ -242,7 +243,7 @@ public class TestCreateCatalogLikeTask
     {
         Map<Class<? extends Statement>, DataDefinitionTask<?>> tasks = queryRunner.getCoordinator().getInstance(Key.get(new TypeLiteral<>() {}));
         CreateCatalogTask task = (CreateCatalogTask) tasks.get(CreateCatalog.class);
-        CreateCatalog statement = new CreateCatalog(new Identifier(catalogA), false, new Identifier(CONNECTOR_NAME), catalogProperties, Optional.empty(), Optional.empty());
+        CreateCatalog statement = new CreateCatalog(new NodeLocation(1,1), new Identifier(catalogA), false, new Identifier(CONNECTOR_NAME), catalogProperties, Optional.empty(), Optional.empty());
         ListenableFuture<Void> future = task.execute(statement, createNewQuery(), emptyList(), WarningCollector.NOOP);
         getFutureValue(future);
     }

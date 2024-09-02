@@ -729,6 +729,7 @@ public final class ShowQueriesRewrite
             List<Property> propertyNodes = buildCatalogProperties("catalog " + catalogName, INVALID_CATALOG_PROPERTY, properties);
 
             CreateCatalog createCatalog = new CreateCatalog(
+                    node.getLocation().orElseThrow(),
                     new Identifier(catalogName),
                     false,
                     new Identifier(catalogProperties.connectorName().toString()),
