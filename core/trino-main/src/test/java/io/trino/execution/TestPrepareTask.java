@@ -29,6 +29,7 @@ import io.trino.spi.security.LocationAccessControl;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.AllColumns;
 import io.trino.sql.tree.Execute;
+import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.Prepare;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Query;
@@ -104,7 +105,7 @@ public class TestPrepareTask
     @Test
     public void testPrepareInvalidStatement()
     {
-        Statement statement = new Execute(identifier("foo"), emptyList());
+        Statement statement = new Execute(new NodeLocation(1, 1), identifier("foo"), emptyList());
         String sqlString = "PREPARE my_query FROM EXECUTE foo";
         assertTrinoExceptionThrownBy(() -> executePrepare("my_query", statement, sqlString, TEST_SESSION))
                 .hasErrorCode(NOT_SUPPORTED)
