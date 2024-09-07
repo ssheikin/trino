@@ -146,16 +146,17 @@ public class FileSystemModule
                 .orElseThrow(() -> new IllegalArgumentException("No factory for location: " + location));
 
         TrinoFileSystemFactory delegate = new SwitchingFileSystemFactory(loader);
-        if (fileSystemCache.isPresent()) {
-            delegate = new CacheFileSystemFactory(tracer, delegate, fileSystemCache.orElseThrow(), keyProvider.orElseThrow());
-        }
-        // use MemoryFileSystemCache only when no other TrinoFileSystemCache is configured
-        else if (memoryFileSystemCache.isPresent()) {
-            delegate = new CacheFileSystemFactory(tracer, delegate, memoryFileSystemCache.orElseThrow(), keyProvider.orElseThrow());
-        }
+        delegate = new TracingFileSystemFactory(tracer, delegate);
         if (!decorators.isEmpty()) {
             delegate = new DecoratingTrinoFileSystemFactory(delegate, decorators);
         }
-        return new TracingFileSystemFactory(tracer, delegate);
+        if (fileSystemCache.isPresent()) {
+            return new CacheFileSystemFactory(tracer, delegate, fileSystemCache.orElseThrow(), keyProvider.orElseThrow());
+        }
+        // use MemoryFileSystemCache only when no other TrinoFileSystemCache is configured
+        if (memoryFileSystemCache.isPresent()) {
+            return new CacheFileSystemFactory(tracer, delegate, memoryFileSystemCache.orElseThrow(), keyProvider.orElseThrow());
+        }
+        return delegate;
     }
 }
