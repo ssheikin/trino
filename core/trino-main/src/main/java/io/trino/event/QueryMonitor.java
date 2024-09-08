@@ -164,6 +164,7 @@ public class QueryMonitor
                         new QueryMetadata(
                                 queryInfo.getQueryId().toString(),
                                 queryInfo.getSession().getTransactionId().map(TransactionId::toString),
+                                queryInfo.getSession().getQueryDataEncodingId(),
                                 queryInfo.getQuery(),
                                 queryInfo.getUpdateType(),
                                 queryInfo.getPreparedQuery(),
@@ -184,6 +185,7 @@ public class QueryMonitor
                 new QueryMetadata(
                         queryInfo.getQueryId().toString(),
                         queryInfo.getSession().getTransactionId().map(TransactionId::toString),
+                        queryInfo.getSession().getQueryDataEncodingId(),
                         queryInfo.getQuery(),
                         queryInfo.getUpdateType(),
                         queryInfo.getPreparedQuery(),
@@ -291,6 +293,7 @@ public class QueryMonitor
         return new QueryMetadata(
                 queryInfo.getQueryId().toString(),
                 queryInfo.getSession().getTransactionId().map(TransactionId::toString),
+                queryInfo.getSession().getQueryDataEncodingId(),
                 queryInfo.getQuery(),
                 Optional.ofNullable(queryInfo.getUpdateType()),
                 queryInfo.getPreparedQuery(),
