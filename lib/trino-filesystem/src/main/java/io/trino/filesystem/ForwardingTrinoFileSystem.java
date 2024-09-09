@@ -13,6 +13,8 @@
  */
 package io.trino.filesystem;
 
+import io.airlift.units.Duration;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
@@ -122,5 +124,12 @@ public abstract class ForwardingTrinoFileSystem
             throws IOException
     {
         return delegate().createTemporaryDirectory(targetPath, temporaryPrefix, relativePrefix);
+    }
+
+    @Override
+    public Optional<UriLocation> preSignedUri(Location location, Duration ttl)
+            throws IOException
+    {
+        return delegate().preSignedUri(location, ttl);
     }
 }
