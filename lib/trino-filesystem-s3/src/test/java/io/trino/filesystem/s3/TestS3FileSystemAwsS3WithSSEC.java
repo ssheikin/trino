@@ -97,7 +97,8 @@ public class TestS3FileSystemAwsS3WithSSEC
                         .setRegion(region)
                         .setSseType(CUSTOMER)
                         .setSseCustomerKey(s3SSECustomerKey.key())
-                        .setStreamingPartSize(DataSize.valueOf("5.5MB")));
+                        .setStreamingPartSize(DataSize.valueOf("5.5MB")),
+                new S3FileSystemStats());
     }
 
     private static String environmentVariable(String name)
