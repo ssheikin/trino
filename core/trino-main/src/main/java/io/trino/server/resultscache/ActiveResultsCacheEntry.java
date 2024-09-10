@@ -25,6 +25,7 @@ import io.trino.client.Column;
 import io.trino.execution.Input;
 import io.trino.server.protocol.QueryResultRows;
 import io.trino.server.resultscache.CacheEntry.Reference;
+import io.trino.spi.Page;
 import io.trino.spi.QueryId;
 import io.trino.spi.eventlistener.TableInfo;
 import io.trino.sql.analyzer.Output;
@@ -194,7 +195,7 @@ public class ActiveResultsCacheEntry
                 }
 
                 log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, logicalSizeInBytes, currentSize);
-                resultsData.get().addRecords(resultRows);
+                resultsData.get().addRecords(resultRows.getPages());
             }
         }
         finally {
@@ -237,7 +238,7 @@ public class ActiveResultsCacheEntry
     private static class ResultsData
     {
         private final List<Column> columns;
-        private final List<List<Object>> data = new ArrayList<>();
+        private final List<Page> data = new ArrayList<>();
         private final Set<Reference> tablesReferences;
         private final Set<Reference> viewsReferences;
 
@@ -248,7 +249,7 @@ public class ActiveResultsCacheEntry
             this.viewsReferences = ImmutableSet.copyOf(requireNonNull(viewsReferences, "viewsReferences is null"));
         }
 
-        public void addRecords(Iterable<List<Object>> records)
+        public void addRecords(List<Page> records)
         {
             Iterables.addAll(data, records);
         }

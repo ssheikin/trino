@@ -48,6 +48,7 @@ import io.trino.operator.DirectExchangeClientSupplier;
 import io.trino.server.ExternalUriInfo;
 import io.trino.server.GoneException;
 import io.trino.server.ResultQueryInfo;
+import io.trino.server.protocol.spooling.QueryDataProducer;
 import io.trino.server.resultscache.ActiveResultsCacheEntry;
 import io.trino.server.resultscache.ResultsCacheEntry;
 import io.trino.spi.ErrorCode;
@@ -106,6 +107,10 @@ class Query
 
     @GuardedBy("this")
     private final ExchangeDataSource exchangeDataSource;
+
+    @GuardedBy("this")
+    private final QueryDataProducer queryDataProducer;
+
     @GuardedBy("this")
     private ListenableFuture<Void> exchangeDataSourceBlocked;
 
@@ -181,6 +186,7 @@ class Query
             Session session,
             Slug slug,
             QueryManager queryManager,
+            QueryDataProducer queryDataProducer,
             Optional<URI> queryInfoUrl,
             DirectExchangeClientSupplier directExchangeClientSupplier,
             ExchangeManagerRegistry exchangeManagerRegistry,
@@ -199,7 +205,7 @@ class Query
                 getRetryPolicy(session),
                 exchangeManagerRegistry);
 
-        Query result = new Query(session, slug, queryManager, queryInfoUrl, resultsCacheEntry, exchangeDataSource, dataProcessorExecutor, timeoutExecutor, blockEncodingSerde);
+        Query result = new Query(session, slug, queryManager, queryDataProducer, queryInfoUrl, resultsCacheEntry, exchangeDataSource, dataProcessorExecutor, timeoutExecutor, blockEncodingSerde);
 
         result.queryManager.setOutputInfoListener(result.getQueryId(), result::setQueryOutputInfo);
 
@@ -219,6 +225,7 @@ class Query
             Session session,
             Slug slug,
             QueryManager queryManager,
+            QueryDataProducer queryDataProducer,
             Optional<URI> queryInfoUrl,
             Optional<ActiveResultsCacheEntry> resultsCacheEntry,
             ExchangeDataSource exchangeDataSource,
@@ -229,6 +236,7 @@ class Query
         requireNonNull(session, "session is null");
         requireNonNull(slug, "slug is null");
         requireNonNull(queryManager, "queryManager is null");
+        requireNonNull(queryDataProducer, "queryDataProducer is null");
         requireNonNull(queryInfoUrl, "queryInfoUrl is null");
         requireNonNull(resultsCacheEntry, "resultsCacheEntry is null");
         requireNonNull(exchangeDataSource, "exchangeDataSource is null");
@@ -237,6 +245,7 @@ class Query
         requireNonNull(blockEncodingSerde, "blockEncodingSerde is null");
 
         this.queryManager = queryManager;
+        this.queryDataProducer = queryDataProducer;
         this.queryId = session.getQueryId();
         this.session = session;
         this.slug = slug;
@@ -517,7 +526,7 @@ class Query
                 partialCancelUri,
                 nextResultsUri,
                 resultRows.getColumns().orElse(null),
-                resultRows.isEmpty() ? null : resultRows, // client excepts null that indicates "no data"
+                queryDataProducer.produce(externalUriInfo, session, resultRows, this::handleSerializationException),
                 toStatementStats(queryInfo),
                 toQueryError(queryInfo, typeSerializationException),
                 mappedCopy(queryInfo.warnings(), ProtocolUtil::toClientWarning),
@@ -563,9 +572,6 @@ class Query
         // last page is removed.  If another thread observes this state before the response is cached
         // the pages will be lost.
         QueryResultRows.Builder resultBuilder = queryResultRowsBuilder(session)
-                // Intercept serialization exceptions and fail query if it's still possible.
-                // Put serialization exception aside to return failed query result.
-                .withExceptionConsumer(this::handleSerializationException)
                 .withColumnsAndTypes(columns, types);
 
         try {
