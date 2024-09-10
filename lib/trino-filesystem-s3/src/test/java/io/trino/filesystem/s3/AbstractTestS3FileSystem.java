@@ -102,6 +102,12 @@ public abstract class AbstractTestS3FileSystem
     }
 
     @Override
+    protected boolean supportsPreSignedUri()
+    {
+        return true;
+    }
+
+    @Override
     protected final void verifyFileSystemIsEmpty()
     {
         try (S3Client client = createS3Client()) {
