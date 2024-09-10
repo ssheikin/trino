@@ -133,6 +133,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -149,6 +150,7 @@ import java.util.stream.Stream;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.base.Verify.verify;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.airlift.slice.Slices.wrappedBuffer;
@@ -928,6 +930,12 @@ public class PostgreSqlClient
     }
 
     @Override
+    public boolean supportsMerge()
+    {
+        return true;
+    }
+
+    @Override
     public OptionalLong delete(ConnectorSession session, JdbcTableHandle handle)
     {
         checkArgument(handle.isNamedRelation(), "Unable to delete from synthetic table: %s", handle);
@@ -1193,6 +1201,32 @@ public class PostgreSqlClient
         // PostgreSQL driver caches the max column name length in a DatabaseMetaData object. The cost to call this method per column is low.
         if (columnName.length() > databaseMetadata.getMaxColumnNameLength()) {
             throw new TrinoException(NOT_SUPPORTED, format("Column name must be shorter than or equal to '%s' characters but got '%s': '%s'", databaseMetadata.getMaxColumnNameLength(), columnName.length(), columnName));
+        }
+    }
+
+    @Override
+    public List<JdbcColumnHandle> getPrimaryKeys(ConnectorSession session, RemoteTableName remoteTableName)
+    {
+        List<JdbcColumnHandle> columns = getColumns(session, remoteTableName.getSchemaTableName(), remoteTableName);
+        try (Connection connection = connectionFactory.openConnection(session)) {
+            DatabaseMetaData metaData = connection.getMetaData();
+
+            ResultSet primaryKeys = metaData.getPrimaryKeys(remoteTableName.getCatalogName().orElse(null), remoteTableName.getSchemaName().orElse(null), remoteTableName.getTableName());
+
+            Set<String> primaryKeyNames = new HashSet<>();
+            while (primaryKeys.next()) {
+                String columnName = primaryKeys.getString("COLUMN_NAME");
+                primaryKeyNames.add(columnName);
+            }
+            if (primaryKeyNames.isEmpty()) {
+                return ImmutableList.of();
+            }
+            return columns.stream()
+                    .filter(column -> primaryKeyNames.contains(column.getColumnName()))
+                    .collect(toImmutableList());
+        }
+        catch (SQLException e) {
+            throw new TrinoException(JDBC_ERROR, e);
         }
     }
 
