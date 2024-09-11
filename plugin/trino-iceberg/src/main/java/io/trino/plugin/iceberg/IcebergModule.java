@@ -21,6 +21,9 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.trino.filesystem.cache.CacheKeyProvider;
+import io.trino.plugin.base.ConnectorSplitManagerDecorator;
+import io.trino.plugin.base.DecoratingConnectorSplitManager;
+import io.trino.plugin.base.ForDecorator;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.hive.FileFormatDataSourceStats;
 import io.trino.plugin.hive.SortingFileWriterConfig;
@@ -84,11 +87,13 @@ public class IcebergModule
         binder.bind(IcebergMaterializedViewProperties.class).in(Scopes.SINGLETON);
         binder.bind(IcebergAnalyzeProperties.class).in(Scopes.SINGLETON);
 
-        binder.bind(ConnectorSplitManager.class).to(IcebergSplitManager.class).in(Scopes.SINGLETON);
+        binder.bind(ConnectorSplitManager.class).annotatedWith(ForDecorator.class).to(IcebergSplitManager.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, ConnectorPageSourceProviderFactory.class).setDefault().to(IcebergPageSourceProviderFactory.class).in(Scopes.SINGLETON);
         binder.bind(IcebergPageSourceProviderFactory.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorPageSinkProvider.class).to(IcebergPageSinkProvider.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorNodePartitioningProvider.class).to(IcebergNodePartitioningProvider.class).in(Scopes.SINGLETON);
+        newSetBinder(binder, ConnectorSplitManagerDecorator.class);
+        binder.bind(ConnectorSplitManager.class).to(DecoratingConnectorSplitManager.class).in(Scopes.SINGLETON);
 
         configBinder(binder).bindConfig(OrcReaderConfig.class);
         configBinder(binder).bindConfig(OrcWriterConfig.class);
