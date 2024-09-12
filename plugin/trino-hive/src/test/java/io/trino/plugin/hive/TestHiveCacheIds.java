@@ -27,7 +27,7 @@ import io.trino.hdfs.HdfsConfiguration;
 import io.trino.hdfs.HdfsEnvironment;
 import io.trino.hdfs.authentication.NoHdfsAuthentication;
 import io.trino.plugin.base.TypeDeserializer;
-import io.trino.plugin.hive.fs.FileSystemDirectoryLister;
+import io.trino.plugin.hive.fs.CachingDirectoryLister;
 import io.trino.plugin.hive.fs.TransactionScopeCachingDirectoryListerFactory;
 import io.trino.plugin.hive.metastore.HiveCacheTableId;
 import io.trino.plugin.hive.metastore.HiveMetastoreConfig;
@@ -115,7 +115,7 @@ public class TestHiveCacheIds
                         new PropertiesSystemTableProvider()),
                 new DefaultHiveMaterializedViewMetadataFactory(),
                 SqlStandardAccessControlMetadata::new,
-                new FileSystemDirectoryLister(config),
+                new CachingDirectoryLister(config),
                 new TransactionScopeCachingDirectoryListerFactory(config),
                 true);
 
