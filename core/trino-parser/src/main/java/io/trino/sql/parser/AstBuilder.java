@@ -1000,7 +1000,7 @@ class AstBuilder
     @Override
     public Node visitStartTransaction(SqlBaseParser.StartTransactionContext context)
     {
-        return new StartTransaction(visit(context.transactionMode(), TransactionMode.class));
+        return new StartTransaction(getLocation(context), visit(context.transactionMode(), TransactionMode.class));
     }
 
     @Override
