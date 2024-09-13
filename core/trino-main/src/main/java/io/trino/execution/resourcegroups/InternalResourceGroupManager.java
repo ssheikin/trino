@@ -83,6 +83,7 @@ public final class InternalResourceGroupManager<C>
     private final AtomicLong lastCpuQuotaGenerationNanos = new AtomicLong(System.nanoTime());
     private final Map<String, ResourceGroupConfigurationManagerFactory> configurationManagerFactories = new ConcurrentHashMap<>();
     private final SecretsResolver secretsResolver;
+    private volatile Optional<String> defaultConfigurationManagerFactoryName = Optional.empty();
 
     @Inject
     public InternalResourceGroupManager(
@@ -137,10 +138,13 @@ public final class InternalResourceGroupManager<C>
     }
 
     @Override
-    public void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory)
+    public void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory, boolean setAsDefault)
     {
         if (configurationManagerFactories.putIfAbsent(factory.getName(), factory) != null) {
             throw new IllegalArgumentException(format("Resource group configuration manager '%s' is already registered", factory.getName()));
+        }
+        if (setAsDefault) {
+            defaultConfigurationManagerFactoryName = Optional.of(factory.getName());
         }
     }
 
@@ -150,6 +154,8 @@ public final class InternalResourceGroupManager<C>
     {
         File configFile = CONFIG_FILE.getAbsoluteFile();
         if (!configFile.exists()) {
+            defaultConfigurationManagerFactoryName.ifPresent(defaultConfigurationManagerFactory ->
+                    setConfigurationManager(defaultConfigurationManagerFactory, ImmutableMap.of()));
             return;
         }
 

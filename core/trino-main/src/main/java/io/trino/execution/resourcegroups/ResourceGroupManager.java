@@ -37,7 +37,12 @@ public interface ResourceGroupManager<C>
 
     List<ResourceGroupInfo> listResourceGroups();
 
-    void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory);
+    default void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory)
+    {
+        addConfigurationManagerFactory(factory, false);
+    }
+
+    void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory, boolean setAsDefault);
 
     void loadConfigurationManager()
             throws Exception;

@@ -57,7 +57,7 @@ public final class NoOpResourceGroupManager
     }
 
     @Override
-    public void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory)
+    public void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory, boolean setAsDefault)
     {
         // no-op
     }
