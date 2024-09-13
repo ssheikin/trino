@@ -21,6 +21,7 @@ import io.trino.spi.connector.SchemaTableName;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
@@ -74,9 +75,18 @@ public interface Metastore
     boolean schemaExists(ClusterCatalogName clusterCatalogName, String schemaName)
             throws MetastoreFailureException;
 
-    void createSchema(
+    default void createSchema(
             ClusterCatalogName clusterCatalogName,
             String schemaName)
+            throws MetastoreFailureException, AlreadyExistsException
+    {
+        createSchema(clusterCatalogName, schemaName, Map.of());
+    }
+
+    void createSchema(
+            ClusterCatalogName clusterCatalogName,
+            String schemaName,
+            Map<String, String> properties)
             throws MetastoreFailureException, AlreadyExistsException;
 
     boolean dropSchema(ClusterCatalogName clusterCatalogName, String schemaName)
@@ -85,11 +95,17 @@ public interface Metastore
     Map<String, String> getSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName)
             throws MetastoreFailureException;
 
-    void addSchemaProperties(
+    default void setSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName, Map<String, String> properties)
+            throws MetastoreFailureException, NotFoundException
+    {
+        setSchemaProperties(clusterCatalogName, schemaName, _ -> properties);
+    }
+
+    void setSchemaProperties(
             ClusterCatalogName clusterCatalogName,
             String schemaName,
-            Map<String, String> properties)
-            throws MetastoreFailureException, AlreadyExistsException;
+            Function<Map<String, String>, Map<String, String>> propertiesTransformer)
+            throws MetastoreFailureException, NotFoundException;
 
     record Table(
             ClusterCatalogName clusterCatalogName,

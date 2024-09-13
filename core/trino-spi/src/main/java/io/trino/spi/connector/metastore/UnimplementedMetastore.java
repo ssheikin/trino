@@ -20,6 +20,7 @@ import io.trino.spi.connector.SchemaTableName;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class UnimplementedMetastore
         implements Metastore
@@ -87,7 +88,8 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public void createSchema(ClusterCatalogName clusterCatalogName, String schemaName)
+    public void createSchema(ClusterCatalogName clusterCatalogName, String schemaName, Map<String, String> properties)
+            throws MetastoreFailureException, AlreadyExistsException
     {
         throw new UnsupportedOperationException();
     }
@@ -105,7 +107,8 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public void addSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName, Map<String, String> properties)
+    public void setSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName, Function<Map<String, String>, Map<String, String>> propertiesTransformer)
+            throws MetastoreFailureException, NotFoundException
     {
         throw new UnsupportedOperationException();
     }
