@@ -68,7 +68,10 @@ public interface Metastore
             Table newTable)
             throws MetastoreFailureException, NotFoundException;
 
-    Map<String, String> getSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName)
+    List<Schema> getSchemas(ClusterCatalogName clusterCatalogName)
+            throws MetastoreFailureException;
+
+    boolean schemaExists(ClusterCatalogName clusterCatalogName, String schemaName)
             throws MetastoreFailureException;
 
     void createSchema(
@@ -76,7 +79,10 @@ public interface Metastore
             String schemaName)
             throws MetastoreFailureException, AlreadyExistsException;
 
-    List<Schema> getSchemas(ClusterCatalogName clusterCatalogName)
+    boolean dropSchema(ClusterCatalogName clusterCatalogName, String schemaName)
+            throws MetastoreFailureException, NotFoundException;
+
+    Map<String, String> getSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName)
             throws MetastoreFailureException;
 
     void addSchemaProperties(
@@ -84,12 +90,6 @@ public interface Metastore
             String schemaName,
             Map<String, String> properties)
             throws MetastoreFailureException, AlreadyExistsException;
-
-    boolean dropSchema(ClusterCatalogName clusterCatalogName, String schemaName)
-            throws MetastoreFailureException, NotFoundException;
-
-    boolean schemaExists(ClusterCatalogName clusterCatalogName, String schemaName)
-            throws MetastoreFailureException;
 
     record Table(
             ClusterCatalogName clusterCatalogName,

@@ -75,7 +75,13 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public Map<String, String> getSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName)
+    public List<Schema> getSchemas(ClusterCatalogName clusterCatalogName)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean schemaExists(ClusterCatalogName clusterCatalogName, String schemaName)
     {
         throw new UnsupportedOperationException();
     }
@@ -87,19 +93,13 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public List<Schema> getSchemas(ClusterCatalogName clusterCatalogName)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean dropSchema(ClusterCatalogName clusterCatalogName, String schemaName)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean schemaExists(ClusterCatalogName clusterCatalogName, String schemaName)
+    public Map<String, String> getSchemaProperties(ClusterCatalogName clusterCatalogName, String schemaName)
     {
         throw new UnsupportedOperationException();
     }
