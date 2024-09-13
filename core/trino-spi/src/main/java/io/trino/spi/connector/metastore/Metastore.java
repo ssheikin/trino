@@ -40,15 +40,14 @@ public interface Metastore
             RelationType type)
             throws MetastoreFailureException;
 
-    void createTable(Table table)
-            throws MetastoreFailureException, AlreadyExistsException;
+    default void createTable(Table table)
+            throws MetastoreFailureException, AlreadyExistsException
+    {
+        createTable(table, Map.of());
+    }
 
-    void updateTableMetadataLocation(
-            ClusterCatalogName clusterCatalogName,
-            SchemaTableName schemaTableName,
-            String newMetadataLocation,
-            String previousMetadataLocation)
-            throws MetastoreFailureException, NotFoundException;
+    void createTable(Table table, Map<String, String> properties)
+            throws MetastoreFailureException, AlreadyExistsException;
 
     void renameTable(
             ClusterCatalogName clusterCatalogName,
@@ -67,6 +66,37 @@ public interface Metastore
             ClusterCatalogName clusterCatalogName,
             SchemaTableName schemaTableName,
             Table newTable)
+            throws MetastoreFailureException, NotFoundException;
+
+    default void updateTable(
+            ClusterCatalogName clusterCatalogName,
+            SchemaTableName schemaTableName,
+            Table newTable,
+            Map<String, String> newProperties)
+            throws MetastoreFailureException, NotFoundException
+    {
+        updateTable(clusterCatalogName, schemaTableName, newTable, _ -> newProperties);
+    }
+
+    void updateTable(
+            ClusterCatalogName clusterCatalogName,
+            SchemaTableName schemaTableName,
+            Table newTable,
+            Function<Map<String, String>, Map<String, String>> propertiesTransformer);
+
+    Map<String, String> getTableProperties(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName)
+            throws MetastoreFailureException;
+
+    default void setTableProperties(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName, Map<String, String> properties)
+            throws MetastoreFailureException, NotFoundException
+    {
+        setTableProperties(clusterCatalogName, schemaTableName, _ -> properties);
+    }
+
+    void setTableProperties(
+            ClusterCatalogName clusterCatalogName,
+            SchemaTableName schemaTableName,
+            Function<Map<String, String>, Map<String, String>> propertiesTransformer)
             throws MetastoreFailureException, NotFoundException;
 
     List<Schema> getSchemas(ClusterCatalogName clusterCatalogName)
@@ -110,8 +140,6 @@ public interface Metastore
     record Table(
             ClusterCatalogName clusterCatalogName,
             SchemaTableName schemaTableName,
-            Optional<String> metadataLocation,
-            Optional<String> previousMetadataLocation,
             Optional<String> viewDefinition,
             Optional<String> viewComment,
             Optional<String> owner,
@@ -123,37 +151,30 @@ public interface Metastore
         {
             requireNonNull(clusterCatalogName, "clusterCatalogName is null");
             requireNonNull(schemaTableName, "schemaTableName is null");
-            requireNonNull(metadataLocation, "metadataLocation is null");
-            requireNonNull(previousMetadataLocation, "previousMetadataLocation is null");
             requireNonNull(viewDefinition, "viewDefinition is null");
             requireNonNull(viewComment, "viewComment is null");
             requireNonNull(owner, "owner is null");
             requireNonNull(type, "type is null");
-            validate(type, viewDefinition, metadataLocation);
+            validateViewDefinition(type, viewDefinition);
         }
 
-        private void validate(RelationType type, Optional<String> viewDefinition, Optional<String> metadataLocation)
+        private void validateViewDefinition(RelationType type, Optional<String> viewDefinition)
         {
             switch (type) {
-                case VIEW -> {
-                    checkState(viewDefinition, "viewDefinition");
+                case VIEW, MATERIALIZED_VIEW -> {
+                    if (viewDefinition.isEmpty()) {
+                        throw new IllegalStateException("View definition must be present");
+                    }
                     if (viewDefinition.get().length() > MAX_VIEW_DEFINITION_LENGTH) {
                         throw new IllegalStateException("View definition can't be longer than " + MAX_VIEW_DEFINITION_LENGTH);
                     }
                 }
-                case TABLE -> checkState(metadataLocation, "metadataLocation");
-                case MATERIALIZED_VIEW -> {
-                    checkState(viewDefinition, "viewDefinition");
-                    checkState(metadataLocation, "metadataLocation");
+                case TABLE -> {
+                    if (viewDefinition.isPresent()) {
+                        throw new IllegalStateException("View definition cannot be present");
+                    }
                 }
             }
-        }
-    }
-
-    private static void checkState(Optional<String> value, String fieldName)
-    {
-        if (value.isEmpty()) {
-            throw new IllegalStateException(fieldName + " must be present");
         }
     }
 

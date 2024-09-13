@@ -38,17 +38,8 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public void createTable(Table table)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void updateTableMetadataLocation(
-            ClusterCatalogName clusterCatalogName,
-            SchemaTableName schemaTableName,
-            String newMetadataLocation,
-            String previousMetadataLocation)
+    public void createTable(Table table, Map<String, String> properties)
+            throws MetastoreFailureException, AlreadyExistsException
     {
         throw new UnsupportedOperationException();
     }
@@ -71,6 +62,27 @@ public class UnimplementedMetastore
 
     @Override
     public void updateTable(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName, Table newTable)
+            throws MetastoreFailureException, NotFoundException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateTable(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName, Table newTable, Function<Map<String, String>, Map<String, String>> propertiesTransformer)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Map<String, String> getTableProperties(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName)
+            throws MetastoreFailureException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setTableProperties(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName, Function<Map<String, String>, Map<String, String>> propertiesTransformer)
+            throws MetastoreFailureException, NotFoundException
     {
         throw new UnsupportedOperationException();
     }
