@@ -43,7 +43,7 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public int updateTableMetadataLocation(
+    public void updateTableMetadataLocation(
             ClusterCatalogName clusterCatalogName,
             SchemaTableName schemaTableName,
             String newMetadataLocation,
@@ -53,7 +53,7 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public int renameTable(
+    public void renameTable(
             ClusterCatalogName clusterCatalogName,
             SchemaTableName fromSchemaTableName,
             SchemaTableName toSchemaTableName,
@@ -63,13 +63,13 @@ public class UnimplementedMetastore
     }
 
     @Override
-    public int dropTable(ClusterCatalogName catalogName, SchemaTableName schemaTableName, RelationType type)
+    public void dropTable(ClusterCatalogName catalogName, SchemaTableName schemaTableName, RelationType type)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int updateTable(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName, Table newTable)
+    public void updateTable(ClusterCatalogName clusterCatalogName, SchemaTableName schemaTableName, Table newTable)
     {
         throw new UnsupportedOperationException();
     }

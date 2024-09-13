@@ -42,27 +42,27 @@ public interface Metastore
     void createTable(Table table)
             throws MetastoreFailureException, AlreadyExistsException;
 
-    int updateTableMetadataLocation(
+    void updateTableMetadataLocation(
             ClusterCatalogName clusterCatalogName,
             SchemaTableName schemaTableName,
             String newMetadataLocation,
             String previousMetadataLocation)
             throws MetastoreFailureException, NotFoundException;
 
-    int renameTable(
+    void renameTable(
             ClusterCatalogName clusterCatalogName,
             SchemaTableName fromSchemaTableName,
             SchemaTableName toSchemaTableName,
             RelationType type)
             throws MetastoreFailureException, NotFoundException;
 
-    int dropTable(
+    void dropTable(
             ClusterCatalogName clusterCatalogName,
             SchemaTableName schemaTableName,
             RelationType type)
             throws MetastoreFailureException, NotFoundException;
 
-    int updateTable(
+    void updateTable(
             ClusterCatalogName clusterCatalogName,
             SchemaTableName schemaTableName,
             Table newTable)
