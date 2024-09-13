@@ -141,7 +141,6 @@ public interface Metastore
             ClusterCatalogName clusterCatalogName,
             SchemaTableName schemaTableName,
             Optional<String> viewDefinition,
-            Optional<String> viewComment,
             Optional<String> owner,
             RelationType type)
     {
@@ -152,7 +151,6 @@ public interface Metastore
             requireNonNull(clusterCatalogName, "clusterCatalogName is null");
             requireNonNull(schemaTableName, "schemaTableName is null");
             requireNonNull(viewDefinition, "viewDefinition is null");
-            requireNonNull(viewComment, "viewComment is null");
             requireNonNull(owner, "owner is null");
             requireNonNull(type, "type is null");
             validateViewDefinition(type, viewDefinition);
