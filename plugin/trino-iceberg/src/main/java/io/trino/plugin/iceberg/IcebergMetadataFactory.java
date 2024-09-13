@@ -15,11 +15,14 @@ package io.trino.plugin.iceberg;
 
 import com.google.inject.Inject;
 import io.airlift.json.JsonCodec;
+import io.trino.plugin.base.connector.SystemTableProvider;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
+
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -32,6 +35,7 @@ public class IcebergMetadataFactory
     private final TrinoCatalogFactory catalogFactory;
     private final IcebergFileSystemFactory fileSystemFactory;
     private final TableStatisticsWriter tableStatisticsWriter;
+    private final Set<SystemTableProvider> systemTableProviders;
 
     @Inject
     public IcebergMetadataFactory(
@@ -41,7 +45,8 @@ public class IcebergMetadataFactory
             JsonCodec<CommitTaskData> commitTaskCodec,
             TrinoCatalogFactory catalogFactory,
             IcebergFileSystemFactory fileSystemFactory,
-            TableStatisticsWriter tableStatisticsWriter)
+            TableStatisticsWriter tableStatisticsWriter,
+            Set<SystemTableProvider> systemTableProviders)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
@@ -50,6 +55,7 @@ public class IcebergMetadataFactory
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.tableStatisticsWriter = requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
+        this.systemTableProviders = requireNonNull(systemTableProviders, "systemTableProviders is null");
     }
 
     public IcebergMetadata create(ConnectorIdentity identity)
@@ -61,6 +67,7 @@ public class IcebergMetadataFactory
                 commitTaskCodec,
                 catalogFactory.create(identity),
                 fileSystemFactory,
-                tableStatisticsWriter);
+                tableStatisticsWriter,
+                systemTableProviders);
     }
 }
