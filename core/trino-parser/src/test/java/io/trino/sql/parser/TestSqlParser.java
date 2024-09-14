@@ -5099,7 +5099,7 @@ public class TestSqlParser
         // basic
         assertThat(statement("CREATE MATERIALIZED VIEW a AS SELECT * FROM t"))
                 .isEqualTo(new CreateMaterializedView(
-                        Optional.of(new NodeLocation(1, 1)),
+                        new NodeLocation(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(new NodeLocation(1, 26), "a", false))),
                         new Query(
                                 new NodeLocation(1, 31),
@@ -5134,7 +5134,7 @@ public class TestSqlParser
         assertThat(statement("CREATE OR REPLACE MATERIALIZED VIEW catalog.schema.matview COMMENT 'A simple materialized view'" +
                 " AS SELECT * FROM catalog2.schema2.tab"))
                 .isEqualTo(new CreateMaterializedView(
-                        Optional.of(new NodeLocation(1, 1)),
+                        new NodeLocation(1, 1),
                         QualifiedName.of(ImmutableList.of(
                                 new Identifier(new NodeLocation(1, 37), "catalog", false),
                                 new Identifier(new NodeLocation(1, 45), "schema", false),
@@ -5174,7 +5174,7 @@ public class TestSqlParser
         // GRACE PERIOD
         assertThat(statement("CREATE MATERIALIZED VIEW a GRACE PERIOD INTERVAL '2' DAY AS SELECT * FROM t"))
                 .isEqualTo(new CreateMaterializedView(
-                        Optional.of(new NodeLocation(1, 1)),
+                        new NodeLocation(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(new NodeLocation(1, 26), "a", false))),
                         new Query(
                                 new NodeLocation(1, 61),
@@ -5212,7 +5212,7 @@ public class TestSqlParser
                  AS SELECT * FROM catalog2.schema2.tab
                 """))
                 .isEqualTo(new CreateMaterializedView(
-                        Optional.of(new NodeLocation(1, 1)),
+                        new NodeLocation(1, 1),
                         QualifiedName.of(ImmutableList.of(
                                 new Identifier(new NodeLocation(1, 37), "catalog", false),
                                 new Identifier(new NodeLocation(1, 45), "schema", false),
@@ -5261,7 +5261,7 @@ public class TestSqlParser
                  AS WITH a (t, u) AS (SELECT * FROM x), b AS (SELECT * FROM a) TABLE b
                 """))
                 .isEqualTo(new CreateMaterializedView(
-                        Optional.of(new NodeLocation(1, 1)),
+                        new NodeLocation(1, 1),
                         QualifiedName.of(ImmutableList.of(
                                 new Identifier(new NodeLocation(1, 37), "catalog", false),
                                 new Identifier(new NodeLocation(1, 45), "schema", false),

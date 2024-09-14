@@ -639,7 +639,7 @@ class AstBuilder
         }
 
         return new CreateMaterializedView(
-                Optional.of(getLocation(context)),
+                getLocation(context),
                 getQualifiedName(context.qualifiedName()),
                 (Query) visit(context.rootQuery()),
                 context.REPLACE() != null,
