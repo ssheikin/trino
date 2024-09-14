@@ -2405,8 +2405,8 @@ class AstBuilder
     public Node visitCurrentTime(SqlBaseParser.CurrentTimeContext context)
     {
         return parsePrecision(context.precision)
-                .map(precision -> new CurrentTime(getLocation(context), precision))
-                .orElseGet(() -> new CurrentTime(getLocation(context)));
+                .map(precision -> new CurrentTime(getLocation(context), Optional.of(precision)))
+                .orElseGet(() -> new CurrentTime(getLocation(context), Optional.empty()));
     }
 
     @Override
