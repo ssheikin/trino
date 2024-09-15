@@ -21,7 +21,7 @@ import io.trino.filesystem.azure.AzureFileSystemConfig.AuthType;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-public class AzureAuthCustomToken
+public final class AzureAuthCustomToken
         implements AzureAuth
 {
     private final TokenCredential credential;
