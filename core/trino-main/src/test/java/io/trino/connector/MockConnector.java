@@ -204,7 +204,6 @@ public class MockConnector
     private final BiFunction<ConnectorSession, ConnectorTableExecuteHandle, Optional<ConnectorTableLayout>> getLayoutForTableExecute;
     private final WriterScalingOptions writerScalingOptions;
     private final Supplier<Set<ConnectorCapabilities>> capabilities;
-    private final boolean supportsSingleColumnReads;
     private final boolean allowSplittingReadIntoMultipleSubQueries;
 
     MockConnector(
@@ -263,7 +262,6 @@ public class MockConnector
             BiFunction<ConnectorSession, ConnectorTableExecuteHandle, Optional<ConnectorTableLayout>> getLayoutForTableExecute,
             WriterScalingOptions writerScalingOptions,
             Supplier<Set<ConnectorCapabilities>> capabilities,
-            boolean supportsSingleColumnReads,
             boolean allowSplittingReadIntoMultipleSubQueries)
     {
         this.metadataWrapper = requireNonNull(metadataWrapper, "metadataWrapper is null");
@@ -321,7 +319,6 @@ public class MockConnector
         this.getCanonicalTableHandle = requireNonNull(getCanonicalTableHandle, "getCanonicalTableHandle is null");
         this.writerScalingOptions = requireNonNull(writerScalingOptions, "writerScalingOptions is null");
         this.capabilities = requireNonNull(capabilities, "capabilities is null");
-        this.supportsSingleColumnReads = supportsSingleColumnReads;
         this.allowSplittingReadIntoMultipleSubQueries = allowSplittingReadIntoMultipleSubQueries;
     }
 
@@ -340,7 +337,7 @@ public class MockConnector
     @Override
     public ConnectorMetadata getMetadata(ConnectorSession session, ConnectorTransactionHandle transaction)
     {
-        return metadataWrapper.apply(new MockConnectorMetadata(supportsSingleColumnReads, allowSplittingReadIntoMultipleSubQueries));
+        return metadataWrapper.apply(new MockConnectorMetadata(allowSplittingReadIntoMultipleSubQueries));
     }
 
     @Override
@@ -473,12 +470,10 @@ public class MockConnector
     private class MockConnectorMetadata
             implements ConnectorMetadata
     {
-        private final boolean supportsSingleColumnReads;
         private final boolean allowSplittingReadIntoMultipleSubQueries;
 
-        public MockConnectorMetadata(boolean supportsSingleColumnReads, boolean allowSplittingReadIntoMultipleSubQueries)
+        public MockConnectorMetadata(boolean allowSplittingReadIntoMultipleSubQueries)
         {
-            this.supportsSingleColumnReads = supportsSingleColumnReads;
             this.allowSplittingReadIntoMultipleSubQueries = allowSplittingReadIntoMultipleSubQueries;
         }
 
@@ -1024,12 +1019,6 @@ public class MockConnector
         public OptionalInt getMaxWriterTasks(ConnectorSession session)
         {
             return maxWriterTasks;
-        }
-
-        @Override
-        public boolean isColumnarTableScan(ConnectorSession session, ConnectorTableHandle tableHandle)
-        {
-            return supportsSingleColumnReads;
         }
 
         @Override
