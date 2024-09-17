@@ -178,11 +178,11 @@ public class TrinoGlueCatalog
     private final TrinoFileSystemFactory fileSystemFactory;
     private final Optional<String> defaultSchemaLocation;
     private final AWSGlueAsync glueClient;
-    private final GlueMetastoreStats stats;
+    protected final GlueMetastoreStats stats;
     private final boolean hideMaterializedViewStorageTable;
     private final boolean isUsingSystemSecurity;
 
-    private final Cache<SchemaTableName, com.amazonaws.services.glue.model.Table> glueTableCache = EvictableCacheBuilder.newBuilder()
+    protected final Cache<SchemaTableName, com.amazonaws.services.glue.model.Table> glueTableCache = EvictableCacheBuilder.newBuilder()
             // Even though this is query-scoped, this still needs to be bounded. information_schema queries can access large number of tables.
             .maximumSize(Math.max(PER_QUERY_CACHES_SIZE, IcebergMetadata.GET_METADATA_BATCH_SIZE))
             .build();
@@ -947,7 +947,7 @@ public class TrinoGlueCatalog
                 .run(() -> doCreateView(session, schemaViewName, viewTableInput, replace));
     }
 
-    private void doCreateView(ConnectorSession session, SchemaTableName schemaViewName, TableInput viewTableInput, boolean replace)
+    protected void doCreateView(ConnectorSession session, SchemaTableName schemaViewName, TableInput viewTableInput, boolean replace)
     {
         Optional<com.amazonaws.services.glue.model.Table> existing = getTableAndCacheMetadata(session, schemaViewName);
         if (existing.isPresent()) {
@@ -1473,7 +1473,7 @@ public class TrinoGlueCatalog
         tableMetadataCache.invalidate(schemaTableName);
     }
 
-    com.amazonaws.services.glue.model.Table getTable(SchemaTableName tableName, boolean invalidateCaches)
+    public com.amazonaws.services.glue.model.Table getTable(SchemaTableName tableName, boolean invalidateCaches)
     {
         if (invalidateCaches) {
             glueTableCache.invalidate(tableName);
