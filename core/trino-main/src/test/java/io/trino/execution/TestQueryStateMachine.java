@@ -870,6 +870,7 @@ public class TestQueryStateMachine
                     createPlanOptimizersStatsCollector(),
                     QUERY_TYPE,
                     false,
+                    Optional.empty(),
                     new NodeVersion("test"));
             stateMachine.setInputs(INPUTS);
             stateMachine.setOutput(OUTPUT);

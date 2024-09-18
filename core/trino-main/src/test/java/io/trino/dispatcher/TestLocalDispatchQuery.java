@@ -130,6 +130,7 @@ public class TestLocalDispatchQuery
                 createPlanOptimizersStatsCollector(),
                 Optional.of(QueryType.DATA_DEFINITION),
                 true,
+                Optional.empty(),
                 new NodeVersion("test"));
         QueryMonitor queryMonitor = new QueryMonitor(
                 JsonCodec.jsonCodec(StageInfo.class),
@@ -203,6 +204,7 @@ public class TestLocalDispatchQuery
                 createPlanOptimizersStatsCollector(),
                 Optional.of(QueryType.DATA_DEFINITION),
                 true,
+                Optional.empty(),
                 new NodeVersion("test"));
 
         DataDefinitionExecution.DataDefinitionExecutionFactory dataDefinitionExecutionFactory = new DataDefinitionExecution.DataDefinitionExecutionFactory(
