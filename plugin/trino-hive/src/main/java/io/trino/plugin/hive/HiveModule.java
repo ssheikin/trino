@@ -63,6 +63,7 @@ import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.SystemTable;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.function.table.ConnectorTableFunction;
 
@@ -90,6 +91,7 @@ public class HiveModule
         configBinder(binder).bindConfig(HiveMetastoreConfig.class);
         configBinder(binder).bindConfig(SortingFileWriterConfig.class, "hive");
 
+        newSetBinder(binder, SystemTable.class);
         binder.bind(HiveSessionProperties.class).in(Scopes.SINGLETON);
         binder.bind(HiveTableProperties.class).in(Scopes.SINGLETON);
         binder.bind(HiveViewProperties.class).in(Scopes.SINGLETON);

@@ -14,7 +14,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import io.starburst.schema.discovery.SchemaDiscoveryController;
+import io.starburst.schema.discovery.SchemaDiscoveryControllerFactory;
 import io.starburst.schema.discovery.SchemaExplorer;
 import io.starburst.schema.discovery.models.DiscoveredSchema;
 import io.starburst.schema.discovery.options.CommaDelimitedOptionsParser;
@@ -41,7 +43,6 @@ import static io.trino.spi.StandardErrorCode.INVALID_ARGUMENTS;
 import static io.trino.spi.StandardErrorCode.INVALID_PROCEDURE_ARGUMENT;
 import static io.trino.spi.StandardErrorCode.PROCEDURE_CALL_FAILED;
 import static io.trino.spi.connector.SystemTable.Distribution.SINGLE_COORDINATOR;
-import static java.util.Objects.requireNonNull;
 
 public final class ShallowDiscoverySystemTable
         extends DiscoverySystemTableBase
@@ -55,12 +56,13 @@ public final class ShallowDiscoverySystemTable
             buildColumn("options", "Discovery options - only [maxSampleFilesPerTable, maxSampleTables, excludePatterns, includePatterns, discoveryMode] are used"),
             buildColumn("shallow_metadata_json", "Discovered shallow tables as JSON")));
 
-    private final SchemaDiscoveryController schemaDiscoveryController;
-
-    public ShallowDiscoverySystemTable(SchemaDiscoveryController schemaDiscoveryController, ObjectMapper objectMapper, DiscoveryLocationAccessControlAdapter locationAccessControl)
+    @Inject
+    public ShallowDiscoverySystemTable(
+            SchemaDiscoveryControllerFactory controllerFactory,
+            ObjectMapper objectMapper,
+            DiscoveryLocationAccessControlAdapter locationAccessControl)
     {
-        super(objectMapper, locationAccessControl);
-        this.schemaDiscoveryController = requireNonNull(schemaDiscoveryController, "schemaDiscoveryController is null");
+        super(controllerFactory, objectMapper, locationAccessControl);
     }
 
     @Override
@@ -80,6 +82,7 @@ public final class ShallowDiscoverySystemTable
     {
         String uriStr = tryGetSingleVarcharValue(constraint, 0).orElseThrow(() -> new TrinoException(INVALID_ARGUMENTS, "Missing URI argument"));
         String options = tryGetSingleVarcharValue(constraint, 1).orElse("");
+        SchemaDiscoveryController schemaDiscoveryController = controllerFactory.createSchemaDiscoveryController(session);
         Map<String, String> finalOptions = new SchemaExplorer(schemaDiscoveryController, objectMapper(), new CommaDelimitedOptionsParser(ImmutableList.of(GeneralOptions.class)))
                 .buildOptions(options, DEFAULT_OPTIONS_OVERWRITE);
 

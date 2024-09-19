@@ -12,6 +12,7 @@ package io.starburst.schema.discovery.trino.system.table;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.slice.Slice;
+import io.starburst.schema.discovery.SchemaDiscoveryControllerFactory;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.predicate.Domain;
@@ -30,9 +31,14 @@ sealed class DiscoverySystemTableBase
 {
     private final ObjectMapper objectMapper;
     private final DiscoveryLocationAccessControlAdapter locationAccessControl;
+    protected final SchemaDiscoveryControllerFactory controllerFactory;
 
-    DiscoverySystemTableBase(ObjectMapper objectMapper, DiscoveryLocationAccessControlAdapter locationAccessControl)
+    DiscoverySystemTableBase(
+            SchemaDiscoveryControllerFactory controllerFactory,
+            ObjectMapper objectMapper,
+            DiscoveryLocationAccessControlAdapter locationAccessControl)
     {
+        this.controllerFactory = requireNonNull(controllerFactory, "controllerFactory is null");
         this.objectMapper = requireNonNull(objectMapper, "objectMapper is null");
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
     }

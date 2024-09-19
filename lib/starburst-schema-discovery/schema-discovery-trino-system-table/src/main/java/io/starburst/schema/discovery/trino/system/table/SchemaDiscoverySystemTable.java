@@ -12,7 +12,8 @@ package io.starburst.schema.discovery.trino.system.table;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import io.starburst.schema.discovery.SchemaDiscoveryController;
+import io.starburst.schema.discovery.SchemaDiscoveryConfig;
+import io.starburst.schema.discovery.SchemaDiscoveryControllerFactory;
 import io.starburst.schema.discovery.SchemaExplorer;
 import io.starburst.schema.discovery.SchemaExplorer.Discovered;
 import io.starburst.schema.discovery.SchemaExplorer.DiscoveryConfig;
@@ -45,14 +46,11 @@ import java.util.stream.Stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.spi.StandardErrorCode.INVALID_ARGUMENTS;
 import static io.trino.spi.connector.SystemTable.Distribution.SINGLE_COORDINATOR;
-import static java.util.Objects.requireNonNull;
 
 public final class SchemaDiscoverySystemTable
         extends DiscoverySystemTableBase
         implements SystemTable
 {
-    private final SchemaDiscoveryController schemaDiscoveryController;
-
     public static final SchemaTableName SCHEMA_TABLE_NAME = new SchemaTableName("schema_discovery", "discovery");
 
     private static final String DEFAULT_SCHEMA_NAME = "discovered";
@@ -72,10 +70,13 @@ public final class SchemaDiscoverySystemTable
     private static final int MAX_BUCKET_QTY = 10;
 
     @Inject
-    public SchemaDiscoverySystemTable(SchemaDiscoveryController schemaDiscoveryController, ObjectMapper objectMapper, DiscoveryLocationAccessControlAdapter locationAccessControl)
+    public SchemaDiscoverySystemTable(
+            SchemaDiscoveryConfig config,
+            SchemaDiscoveryControllerFactory controllerFactory,
+            ObjectMapper objectMapper,
+            DiscoveryLocationAccessControlAdapter locationAccessControl)
     {
-        super(objectMapper, locationAccessControl);
-        this.schemaDiscoveryController = requireNonNull(schemaDiscoveryController, "schemaDiscoveryController is null");
+        super(controllerFactory, objectMapper, locationAccessControl);
     }
 
     @Override
@@ -103,7 +104,7 @@ public final class SchemaDiscoverySystemTable
         Optional<String> rescanType = tryGetSingleVarcharValue(constraint, 9);
         Optional<String> rescanMetadata = tryGetSingleVarcharValue(constraint, 10);
 
-        SchemaExplorer schemaExplorer = new SchemaExplorer(schemaDiscoveryController, objectMapper(), new CommaDelimitedOptionsParser(ImmutableList.of(GeneralOptions.class, CsvOptions.class)));
+        SchemaExplorer schemaExplorer = new SchemaExplorer(controllerFactory.createSchemaDiscoveryController(session), objectMapper(), new CommaDelimitedOptionsParser(ImmutableList.of(GeneralOptions.class, CsvOptions.class)));
         DiscoveryConfig discoveryConfig = new DiscoveryConfig(
                 uri,
                 options,
