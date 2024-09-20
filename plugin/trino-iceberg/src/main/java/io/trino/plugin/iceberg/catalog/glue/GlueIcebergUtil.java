@@ -87,9 +87,10 @@ public final class GlueIcebergUtil
         if (cacheTableMetadata) {
             // Store table metadata sufficient to answer information_schema.columns and system.metadata.table_comments queries, which are often queried in bulk by e.g. BI tools
             Optional<List<Column>> glueColumns = glueColumns(typeManager, metadata);
-
-            glueColumns.ifPresent(columns -> tableInput.withStorageDescriptor(new StorageDescriptor()
-                    .withColumns(columns)));
+            StorageDescriptor storageDescriptor = new StorageDescriptor()
+                    .withLocation(metadata.location());
+            glueColumns.ifPresent(storageDescriptor::withColumns);
+            tableInput.withStorageDescriptor(storageDescriptor);
 
             String comment = metadata.properties().get(TABLE_COMMENT);
             if (comment != null) {
