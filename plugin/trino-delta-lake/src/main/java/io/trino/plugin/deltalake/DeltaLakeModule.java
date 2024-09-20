@@ -25,7 +25,6 @@ import io.trino.filesystem.cache.CacheKeyProvider;
 import io.trino.plugin.base.ConnectorSplitManagerDecorator;
 import io.trino.plugin.base.DecoratingConnectorSplitManager;
 import io.trino.plugin.base.ForDecorator;
-import io.trino.plugin.base.connector.SystemTableProvider;
 import io.trino.plugin.base.security.ConnectorAccessControlModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.deltalake.cache.DeltaLakeCacheKeyProvider;
@@ -53,6 +52,7 @@ import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogSynchronize
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogWriterFactory;
 import io.trino.plugin.hive.FileFormatDataSourceStats;
 import io.trino.plugin.hive.PropertiesSystemTableProvider;
+import io.trino.plugin.hive.SystemTableProvider;
 import io.trino.plugin.hive.metastore.thrift.TranslateHiveViews;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.plugin.hive.parquet.ParquetWriterConfig;

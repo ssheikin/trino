@@ -24,7 +24,6 @@ import io.trino.filesystem.cache.CacheKeyProvider;
 import io.trino.plugin.base.ConnectorSplitManagerDecorator;
 import io.trino.plugin.base.DecoratingConnectorSplitManager;
 import io.trino.plugin.base.ForDecorator;
-import io.trino.plugin.base.connector.SystemTableProvider;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.hive.FileFormatDataSourceStats;
 import io.trino.plugin.hive.SortingFileWriterConfig;
@@ -83,7 +82,6 @@ public class IcebergModule
         configBinder(binder).bindConfig(IcebergConfig.class);
         configBinder(binder).bindConfig(SortingFileWriterConfig.class, "iceberg");
 
-        newSetBinder(binder, SystemTableProvider.class);
         newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(IcebergSessionProperties.class).in(Scopes.SINGLETON);
         binder.bind(IcebergTableProperties.class).in(Scopes.SINGLETON);
         binder.bind(IcebergMaterializedViewProperties.class).in(Scopes.SINGLETON);

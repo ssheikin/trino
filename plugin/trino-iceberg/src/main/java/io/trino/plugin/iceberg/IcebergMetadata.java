@@ -35,7 +35,6 @@ import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.metastore.TableInfo;
 import io.trino.plugin.base.classloader.ClassLoaderSafeSystemTable;
-import io.trino.plugin.base.connector.SystemTableProvider;
 import io.trino.plugin.base.filter.UtcConstraintExtractor;
 import io.trino.plugin.base.projection.ApplyProjectionUtil;
 import io.trino.plugin.base.projection.ApplyProjectionUtil.ProjectedColumnRepresentation;
@@ -357,7 +356,6 @@ public class IcebergMetadata
     private final TrinoCatalog catalog;
     private final IcebergFileSystemFactory fileSystemFactory;
     private final TableStatisticsWriter tableStatisticsWriter;
-    private final Set<SystemTableProvider> systemTableProviders;
 
     private final Map<IcebergTableHandle, AtomicReference<TableStatistics>> tableStatisticsCache = new ConcurrentHashMap<>();
 
@@ -371,8 +369,7 @@ public class IcebergMetadata
             JsonCodec<CommitTaskData> commitTaskCodec,
             TrinoCatalog catalog,
             IcebergFileSystemFactory fileSystemFactory,
-            TableStatisticsWriter tableStatisticsWriter,
-            Set<SystemTableProvider> systemTableProviders)
+            TableStatisticsWriter tableStatisticsWriter)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
@@ -381,7 +378,6 @@ public class IcebergMetadata
         this.catalog = requireNonNull(catalog, "catalog is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.tableStatisticsWriter = requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
-        this.systemTableProviders = requireNonNull(systemTableProviders, "systemTableProviders is null");
     }
 
     @Override
@@ -577,14 +573,6 @@ public class IcebergMetadata
     @Override
     public Optional<SystemTable> getSystemTable(ConnectorSession session, SchemaTableName tableName)
     {
-        for (SystemTableProvider systemTableProvider : systemTableProviders) {
-            Optional<SystemTable> systemTable = systemTableProvider.getSystemTable(this, session, tableName);
-            if (systemTable.isPresent()) {
-                return systemTable
-                        .map(table -> new ClassLoaderSafeSystemTable(table, getClass().getClassLoader()));
-            }
-        }
-
         return getRawSystemTable(session, tableName)
                 .map(systemTable -> new ClassLoaderSafeSystemTable(systemTable, getClass().getClassLoader()));
     }
