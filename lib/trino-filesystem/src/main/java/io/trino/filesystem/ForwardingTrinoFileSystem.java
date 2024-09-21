@@ -16,6 +16,7 @@ package io.trino.filesystem;
 import io.airlift.units.Duration;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
@@ -48,6 +49,12 @@ public abstract class ForwardingTrinoFileSystem
     public TrinoInputFile newInputFile(Location location, long length)
     {
         return delegate().newInputFile(location, length);
+    }
+
+    @Override
+    public TrinoInputFile newInputFile(Location location, long length, Instant lastModified)
+    {
+        return delegate().newInputFile(location, length, lastModified);
     }
 
     @Override
