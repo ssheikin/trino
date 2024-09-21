@@ -16,6 +16,7 @@ package io.trino.plugin.iceberg.catalog.glue;
 import com.amazonaws.services.glue.AWSGlueAsync;
 import com.amazonaws.services.glue.model.AWSGlueException;
 import com.amazonaws.services.glue.model.AlreadyExistsException;
+import com.amazonaws.services.glue.model.Column;
 import com.amazonaws.services.glue.model.ConcurrentModificationException;
 import com.amazonaws.services.glue.model.CreateTableRequest;
 import com.amazonaws.services.glue.model.EntityNotFoundException;
@@ -40,11 +41,13 @@ import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.io.FileIO;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
 import static com.google.common.base.Verify.verify;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.plugin.hive.ViewReaderUtil.isTrinoMaterializedView;
 import static io.trino.plugin.hive.ViewReaderUtil.isTrinoView;
 import static io.trino.plugin.hive.metastore.glue.v1.converter.GlueToTrinoConverter.getTableParameters;
@@ -54,6 +57,7 @@ import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
 import static io.trino.plugin.iceberg.IcebergTableName.isMaterializedViewStorage;
 import static io.trino.plugin.iceberg.IcebergTableName.tableNameFrom;
+import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
 import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getMaterializedViewTableInput;
 import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getTableInput;
 import static java.lang.String.format;
@@ -186,8 +190,21 @@ public class GlueIcebergTableOperations
                             table.getName(),
                             table.getViewOriginalText(),
                             table.getOwner(),
-                            parameters);
+                            parameters,
+                            extractGlueColumns(metadata));
                 });
+    }
+
+    private List<Column> extractGlueColumns(TableMetadata metadata)
+    {
+        return metadata.schema()
+                .columns()
+                .stream()
+                .map(nestedField -> new Column()
+                        .withName(nestedField.name())
+                        .withType(typeManager.getType(toTrinoType(nestedField.type(), typeManager).getTypeId()).getBaseName())
+                        .withComment(nestedField.doc()))
+                .collect(toImmutableList());
     }
 
     private void commitTableUpdate(Table table, TableMetadata metadata, BiFunction<Table, String, TableInput> tableUpdateFunction)

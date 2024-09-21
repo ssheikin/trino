@@ -1130,7 +1130,8 @@ public class TrinoGlueCatalog
                     viewName.getTableName(),
                     encodeMaterializedViewData(fromConnectorMaterializedViewDefinition(definition)),
                     isUsingSystemSecurity ? null : session.getUser(),
-                    createMaterializedViewProperties(session, storageMetadataLocation));
+                    createMaterializedViewProperties(session, storageMetadataLocation),
+                    toGlueColumns(definition.getColumns()));
             try {
                 if (existing.isPresent()) {
                     updateTable(viewName.getSchemaName(), materializedViewTableInput);
@@ -1159,6 +1160,15 @@ public class TrinoGlueCatalog
         }
     }
 
+    private List<Column> toGlueColumns(List<ConnectorMaterializedViewDefinition.Column> columns)
+    {
+        return columns.stream().map(column -> new Column()
+                .withName(column.getName())
+                .withType(typeManager.getType(column.getType()).getBaseName())
+                .withComment(column.getComment().orElse("")))
+                .collect(toImmutableList());
+    }
+
     private void createMaterializedViewWithStorageTable(
             ConnectorSession session,
             SchemaTableName viewName,
@@ -1173,7 +1183,8 @@ public class TrinoGlueCatalog
                 viewName.getTableName(),
                 encodeMaterializedViewData(fromConnectorMaterializedViewDefinition(definition)),
                 isUsingSystemSecurity ? null : session.getUser(),
-                createMaterializedViewProperties(session, storageTable));
+                createMaterializedViewProperties(session, storageTable),
+                toGlueColumns(definition.getColumns()));
 
         if (existing.isPresent()) {
             try {
@@ -1226,7 +1237,8 @@ public class TrinoGlueCatalog
                 viewName.getTableName(),
                 encodeMaterializedViewData(fromConnectorMaterializedViewDefinition(newDefinition)),
                 table.getOwner(),
-                getTableParameters(table));
+                getTableParameters(table),
+                toGlueColumns(newDefinition.getColumns()));
         try {
             updateTable(viewName.getSchemaName(), materializedViewTableInput);
         }
@@ -1401,7 +1413,12 @@ public class TrinoGlueCatalog
             if (!isTrinoMaterializedView(getTableType(glueTable), tableParameters)) {
                 throw new TrinoException(UNSUPPORTED_TABLE_TYPE, "Not a Materialized View: " + source);
             }
-            TableInput tableInput = getMaterializedViewTableInput(target.getTableName(), glueTable.getViewOriginalText(), glueTable.getOwner(), tableParameters);
+            TableInput tableInput = getMaterializedViewTableInput(
+                    target.getTableName(),
+                    glueTable.getViewOriginalText(),
+                    glueTable.getOwner(),
+                    tableParameters,
+                    glueTable.getStorageDescriptor().getColumns());
             createTable(target.getSchemaName(), tableInput);
             newTableCreated = true;
             deleteTable(source.getSchemaName(), source.getTableName());

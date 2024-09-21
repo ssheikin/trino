@@ -212,12 +212,19 @@ public final class GlueIcebergUtil
                 .withParameters(parameters);
     }
 
-    public static TableInput getMaterializedViewTableInput(String viewName, String viewOriginalText, String owner, Map<String, String> parameters)
+    public static TableInput getMaterializedViewTableInput(
+            String viewName,
+            String viewOriginalText,
+            String owner,
+            Map<String, String> parameters,
+            List<Column> columns)
     {
         return new TableInput()
                 .withName(viewName)
                 .withTableType(VIRTUAL_VIEW.name())
                 .withViewOriginalText(viewOriginalText)
+                .withStorageDescriptor(new StorageDescriptor()
+                        .withColumns(columns))
                 .withViewExpandedText(ICEBERG_MATERIALIZED_VIEW_COMMENT)
                 .withOwner(owner)
                 .withParameters(parameters);
