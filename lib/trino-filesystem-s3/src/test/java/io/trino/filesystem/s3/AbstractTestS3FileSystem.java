@@ -24,6 +24,8 @@ import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoInputFile;
 import io.trino.filesystem.TrinoInputStream;
+import io.trino.filesystem.encryption.EncryptionEnforcingFileSystem;
+import io.trino.filesystem.encryption.EncryptionKey;
 import io.trino.spi.security.ConnectorIdentity;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,13 +41,18 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static io.trino.filesystem.encryption.EncryptionKey.randomAes256;
+import static io.trino.filesystem.s3.S3SseCUtils.encoded;
+import static io.trino.filesystem.s3.S3SseCUtils.md5Checksum;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static software.amazon.awssdk.services.s3.model.ServerSideEncryption.AES256;
 
 public abstract class AbstractTestS3FileSystem
         extends AbstractTestTrinoFileSystem
 {
+    protected final EncryptionKey randomEncryptionKey = randomAes256();
     private S3FileSystemFactory fileSystemFactory;
     private TrinoFileSystem fileSystem;
 
@@ -86,6 +93,9 @@ public abstract class AbstractTestS3FileSystem
     @Override
     protected final TrinoFileSystem getFileSystem()
     {
+        if (useServerSideEncryptionWithCustomerKey()) {
+            return new EncryptionEnforcingFileSystem(fileSystem, randomEncryptionKey);
+        }
         return fileSystem;
     }
 
@@ -146,9 +156,20 @@ public abstract class AbstractTestS3FileSystem
         try (S3Client s3Client = createS3Client()) {
             String key = "foo/bar with whitespace ";
             byte[] contents = "abc foo bar".getBytes(UTF_8);
-            s3Client.putObject(
-                    request -> configure(request).bucket(bucket()).key(key),
-                    RequestBody.fromBytes(contents.clone()));
+
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket())
+                    .key(key)
+                    .applyMutation(builder -> {
+                        if (useServerSideEncryptionWithCustomerKey()) {
+                            builder.sseCustomerAlgorithm(AES256.toString());
+                            builder.sseCustomerKey(encoded(randomEncryptionKey));
+                            builder.sseCustomerKeyMD5(md5Checksum(randomEncryptionKey));
+                        }
+                    })
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(contents.clone()));
             try {
                 // Verify listing
                 List<FileEntry> listing = toList(getFileSystem().listFiles(getRootLocation().appendPath("foo")));
@@ -168,7 +189,19 @@ public abstract class AbstractTestS3FileSystem
                 // Verify writing
                 byte[] newContents = "bar bar baz new content".getBytes(UTF_8);
                 getFileSystem().newOutputFile(fileEntry.location()).createOrOverwrite(newContents);
-                assertThat(s3Client.getObjectAsBytes(request -> request.bucket(bucket()).key(key)).asByteArray())
+                GetObjectRequest request = GetObjectRequest.builder()
+                        .bucket(bucket())
+                        .key(key)
+                        .applyMutation(builder -> {
+                            if (useServerSideEncryptionWithCustomerKey()) {
+                                builder.sseCustomerAlgorithm(AES256.toString());
+                                builder.sseCustomerKey(encoded(randomEncryptionKey));
+                                builder.sseCustomerKeyMD5(md5Checksum(randomEncryptionKey));
+                            }
+                        })
+                        .build();
+
+                assertThat(s3Client.getObjectAsBytes(request).asByteArray())
                         .isEqualTo(newContents);
 
                 // Verify deleting
