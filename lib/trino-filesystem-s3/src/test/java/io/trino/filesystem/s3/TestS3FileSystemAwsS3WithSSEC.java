@@ -15,6 +15,7 @@ package io.trino.filesystem.s3;
 
 import io.airlift.units.DataSize;
 import io.opentelemetry.api.OpenTelemetry;
+import org.junit.jupiter.api.Disabled;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -32,6 +33,7 @@ import java.security.SecureRandom;
 import static io.trino.filesystem.s3.S3FileSystemConfig.S3SseType.CUSTOMER;
 import static java.util.Objects.requireNonNull;
 
+@Disabled("https://starburstdata.atlassian.net/browse/SEP-14754")
 public class TestS3FileSystemAwsS3WithSSEC
         extends AbstractTestS3FileSystem
 {
