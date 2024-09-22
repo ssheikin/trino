@@ -712,6 +712,16 @@
                                     <new>method java.lang.String io.trino.spi.protocol.SpooledSegmentHandle::encoding()</new>
                                     <justification>Spooling encodingId renamed to encoding across the whole codebase</justification>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method boolean io.trino.spi.resourcegroups.ResourceGroup::isDisabled()</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.resourcegroups.ResourceGroup::setDisabled(boolean)</new>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
