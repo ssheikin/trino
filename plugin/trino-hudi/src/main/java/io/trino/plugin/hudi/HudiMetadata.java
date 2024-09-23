@@ -296,8 +296,8 @@ public class HudiMetadata
     @Override
     public boolean allowSplittingReadIntoMultipleSubQueries(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
-        // hudi supports only a columnar (parquet) storage format
-        return true;
+        // dont split to subqueries if tableHandle is systemTableHandle, hudi supports only a columnar (parquet) storage format
+        return tableHandle instanceof HudiTableHandle;
     }
 
     HiveMetastore getMetastore()
