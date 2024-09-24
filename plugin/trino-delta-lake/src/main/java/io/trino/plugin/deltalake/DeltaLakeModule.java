@@ -22,6 +22,9 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.filesystem.cache.CacheKeyProvider;
+import io.trino.plugin.base.ConnectorSplitManagerDecorator;
+import io.trino.plugin.base.DecoratingConnectorSplitManager;
+import io.trino.plugin.base.ForDecorator;
 import io.trino.plugin.base.connector.SystemTableProvider;
 import io.trino.plugin.base.security.ConnectorAccessControlModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
@@ -62,6 +65,7 @@ import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.SystemTable;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.function.table.ConnectorTableFunction;
@@ -97,6 +101,7 @@ public class DeltaLakeModule
         install(new ConnectorAccessControlModule());
         newOptionalBinder(binder, DeltaLakeAccessControlMetadataFactory.class).setDefault().toInstance(SYSTEM);
 
+        newSetBinder(binder, SystemTable.class);
         Multibinder<SystemTableProvider> systemTableProviders = newSetBinder(binder, SystemTableProvider.class);
         systemTableProviders.addBinding().to(PropertiesSystemTableProvider.class).in(Scopes.SINGLETON);
 
@@ -106,11 +111,13 @@ public class DeltaLakeModule
         binder.bind(DeltaLakeAnalyzeProperties.class).in(Scopes.SINGLETON);
 
         binder.bind(DeltaLakeTransactionManager.class).in(Scopes.SINGLETON);
-        binder.bind(ConnectorSplitManager.class).to(DeltaLakeSplitManager.class).in(Scopes.SINGLETON);
+        binder.bind(ConnectorSplitManager.class).annotatedWith(ForDecorator.class).to(DeltaLakeSplitManager.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, ConnectorPageSourceProvider.class)
                 .setDefault().to(DeltaLakePageSourceProvider.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorPageSinkProvider.class).to(DeltaLakePageSinkProvider.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorNodePartitioningProvider.class).to(DeltaLakeNodePartitioningProvider.class).in(Scopes.SINGLETON);
+        newSetBinder(binder, ConnectorSplitManagerDecorator.class);
+        binder.bind(ConnectorSplitManager.class).to(DecoratingConnectorSplitManager.class).in(Scopes.SINGLETON);
 
         binder.bind(DeltaLakeMetadataFactory.class).in(Scopes.SINGLETON);
         binder.bind(CachingExtendedStatisticsAccess.class).in(Scopes.SINGLETON);
@@ -165,7 +172,7 @@ public class DeltaLakeModule
         tableProcedures.addBinding().toProvider(OptimizeTableProcedure.class).in(Scopes.SINGLETON);
 
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(TableChangesFunctionProvider.class).in(Scopes.SINGLETON);
-        binder.bind(FunctionProvider.class).to(DeltaLakeFunctionProvider.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, FunctionProvider.class).setDefault().to(DeltaLakeFunctionProvider.class).in(Scopes.SINGLETON);
         binder.bind(TableChangesProcessorProvider.class).in(Scopes.SINGLETON);
 
         newOptionalBinder(binder, CacheKeyProvider.class).setBinding().to(DeltaLakeCacheKeyProvider.class).in(Scopes.SINGLETON);

@@ -13,7 +13,6 @@
  */
 package io.trino.plugin.deltalake;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -34,6 +33,7 @@ import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSourceProvid
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorSplitManager;
 import io.trino.plugin.base.classloader.ClassLoaderSafeEventListener;
 import io.trino.plugin.base.classloader.ClassLoaderSafeNodePartitioningProvider;
+import io.trino.plugin.base.classloader.ClassLoaderSafeSystemTable;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
@@ -53,6 +53,7 @@ import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.SystemTable;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.function.FunctionProvider;
@@ -138,6 +139,7 @@ public class DeltaLakeConnectorFactory
             ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
             ConnectorPageSinkProvider connectorPageSink = injector.getInstance(ConnectorPageSinkProvider.class);
             ConnectorNodePartitioningProvider connectorDistributionProvider = injector.getInstance(ConnectorNodePartitioningProvider.class);
+            Set<SystemTable> systemTables = injector.getInstance(new Key<>() {});
             Set<SessionPropertiesProvider> sessionPropertiesProviders = injector.getInstance(new Key<>() {});
             DeltaLakeTableProperties deltaLakeTableProperties = injector.getInstance(DeltaLakeTableProperties.class);
             DeltaLakeAnalyzeProperties deltaLakeAnalyzeProperties = injector.getInstance(DeltaLakeAnalyzeProperties.class);
@@ -168,7 +170,7 @@ public class DeltaLakeConnectorFactory
                     new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
                     new ClassLoaderSafeConnectorPageSinkProvider(connectorPageSink, classLoader),
                     new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
-                    ImmutableSet.of(),
+                    systemTables.stream().map(systemTable -> new ClassLoaderSafeSystemTable(systemTable, classLoader)).collect(toImmutableSet()),
                     procedures,
                     tableProcedures,
                     sessionPropertiesProviders,
