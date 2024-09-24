@@ -4117,12 +4117,7 @@ public class HiveMetadata
     @Override
     public boolean allowSplittingReadIntoMultipleSubQueries(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
-        // dont split to subqueries if tableHandle is systemTableHandle
-        if (!(tableHandle instanceof HiveTableHandle hiveTableHandle)) {
-            return false;
-        }
-
-        SchemaTableName tableName = hiveTableHandle.getSchemaTableName();
+        SchemaTableName tableName = ((HiveTableHandle) tableHandle).getSchemaTableName();
 
         Table table = getMetastore(session).getTable(tableName.getSchemaName(), tableName.getTableName())
                 .orElseThrow(() -> new TableNotFoundException(tableName));
