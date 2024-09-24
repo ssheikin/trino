@@ -38,6 +38,12 @@ public class UnimplementedMetastore
     }
 
     @Override
+    public List<Table> findTablesByProperty(String propertyKey, PropertyMatch propertyMatch)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void createTable(Table table, Map<String, String> properties)
             throws MetastoreFailureException, AlreadyExistsException
     {

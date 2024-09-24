@@ -40,6 +40,8 @@ public interface Metastore
             RelationType type)
             throws MetastoreFailureException;
 
+    List<Table> findTablesByProperty(String propertyKey, PropertyMatch propertyMatch);
+
     default void createTable(Table table)
             throws MetastoreFailureException, AlreadyExistsException
     {
@@ -190,6 +192,39 @@ public interface Metastore
         {
             clusterName = clusterName.toLowerCase(ENGLISH);
             catalogName = catalogName.toLowerCase(ENGLISH);
+        }
+    }
+
+    sealed interface PropertyMatch
+            permits PropertyMatch.MatchByPrefix, PropertyMatch.Reverse
+    {
+        default PropertyMatch reverse()
+        {
+            return new Reverse(this);
+        }
+
+        /**
+         * Match all values that the given value is a prefix of.
+         */
+        record MatchByPrefix(String prefix)
+                implements PropertyMatch
+        {
+            public MatchByPrefix
+            {
+                requireNonNull(prefix, "prefix is null");
+            }
+        }
+
+        /**
+         * Reverses the search, treating the stored values as the search predicate.
+         */
+        record Reverse(PropertyMatch match)
+                implements PropertyMatch
+        {
+            public Reverse
+            {
+                requireNonNull(match, "match is null");
+            }
         }
     }
 
