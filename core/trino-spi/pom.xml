@@ -722,6 +722,12 @@
                                     <code>java.method.addedToInterface</code>
                                     <new>method void io.trino.spi.resourcegroups.ResourceGroup::setDisabled(boolean)</new>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.removed</code>
+                                    <old>method long io.trino.spi.protocol.SpoolingContext::rowCount()</old>
+                                    <justification>Align better when naming in other places</justification>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
