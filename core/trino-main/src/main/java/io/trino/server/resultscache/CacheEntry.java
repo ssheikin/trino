@@ -16,7 +16,6 @@ package io.trino.server.resultscache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.trino.client.Column;
-import io.trino.spi.Page;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,7 +32,7 @@ public record CacheEntry(
         String queryId,
         String queryText,
         List<Column> columns,
-        List<Page> rows,
+        List<List<Object>> rows,
         Optional<Set<Reference>> tables,
         Optional<Set<Reference>> views)
 {

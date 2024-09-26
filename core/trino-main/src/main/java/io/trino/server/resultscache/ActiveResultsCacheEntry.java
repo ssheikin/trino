@@ -22,13 +22,15 @@ import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.concurrent.MoreFutures;
 import io.airlift.log.Logger;
 import io.trino.client.Column;
+import io.trino.client.QueryData;
+import io.trino.client.RawQueryData;
 import io.trino.execution.Input;
 import io.trino.server.protocol.QueryResultRows;
 import io.trino.server.resultscache.CacheEntry.Reference;
-import io.trino.spi.Page;
 import io.trino.spi.QueryId;
 import io.trino.spi.eventlistener.TableInfo;
 import io.trino.sql.analyzer.Output;
+import jakarta.annotation.Nullable;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -44,6 +46,7 @@ import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CACHING;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.NO_COLUMNS;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.OVER_MAX_SIZE;
+import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.UNSUPPORTED_QUERY_DATA_FORMAT;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 
@@ -147,7 +150,8 @@ public class ActiveResultsCacheEntry
             Optional<Output> output,
             List<TableInfo> referencedTables,
             List<Column> columns,
-            QueryResultRows resultRows)
+            QueryResultRows resultRows,
+            @Nullable QueryData queryData)
     {
         List<CompletionCallback> completionCallbacks = new ArrayList<>();
         try {
@@ -194,8 +198,20 @@ public class ActiveResultsCacheEntry
                     return;
                 }
 
+                if (queryData == null) {
+                    log.debug("QueryId: %s, received null data for cache entry %s, ignoring", queryId, cacheKey);
+                    return;
+                }
+
                 log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, logicalSizeInBytes, currentSize);
-                resultsData.get().addRecords(resultRows.getPages());
+                if (queryData instanceof RawQueryData) {
+                    resultsData.get().addRecords(queryData.getData());
+                }
+                else {
+                    // TODO: add support for encoded and spooled query data
+                    log.debug("QueryId: %s, query produced unsupported data format, not caching", queryId);
+                    completionCallbacks.add(setInvalidState(UNSUPPORTED_QUERY_DATA_FORMAT));
+                }
             }
         }
         finally {
@@ -238,7 +254,7 @@ public class ActiveResultsCacheEntry
     private static class ResultsData
     {
         private final List<Column> columns;
-        private final List<Page> data = new ArrayList<>();
+        private final List<List<Object>> data = new ArrayList<>();
         private final Set<Reference> tablesReferences;
         private final Set<Reference> viewsReferences;
 
@@ -249,7 +265,7 @@ public class ActiveResultsCacheEntry
             this.viewsReferences = ImmutableSet.copyOf(requireNonNull(viewsReferences, "viewsReferences is null"));
         }
 
-        public void addRecords(List<Page> records)
+        public void addRecords(Iterable<List<Object>> records)
         {
             Iterables.addAll(data, records);
         }
