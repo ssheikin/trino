@@ -16,6 +16,7 @@ import jakarta.validation.constraints.Min;
 public class SchemaDiscoveryConfig
 {
     private int schemaDiscoveryConcurrency = 8;
+    private int maxBucketQuantity = 10;
 
     @Min(1)
     public int getSchemaDiscoveryConcurrency()
@@ -28,6 +29,20 @@ public class SchemaDiscoveryConfig
     public SchemaDiscoveryConfig setSchemaDiscoveryConcurrency(int schemaDiscoveryConcurrency)
     {
         this.schemaDiscoveryConcurrency = schemaDiscoveryConcurrency;
+        return this;
+    }
+
+    @Min(1)
+    public int getMaxBucketQuantity()
+    {
+        return maxBucketQuantity;
+    }
+
+    @Config("schema-discovery.max-buckets")
+    @ConfigDescription("Maximum number of scanned buckets")
+    public SchemaDiscoveryConfig setMaxBucketQuantity(int maxBucketQuantity)
+    {
+        this.maxBucketQuantity = maxBucketQuantity;
         return this;
     }
 }

@@ -27,7 +27,8 @@ public class TestSchemaDiscoveryConfig
     public void testDefaults()
     {
         assertRecordedDefaults(recordDefaults(SchemaDiscoveryConfig.class)
-                .setSchemaDiscoveryConcurrency(8));
+                .setSchemaDiscoveryConcurrency(8)
+                .setMaxBucketQuantity(10));
     }
 
     @Test
@@ -35,10 +36,12 @@ public class TestSchemaDiscoveryConfig
     {
         Map<String, String> properties = ImmutableMap.<String, String>builder()
                 .put("schema-discovery.concurrency", "16")
+                .put("schema-discovery.max-buckets", "15")
                 .buildOrThrow();
 
         SchemaDiscoveryConfig expected = new SchemaDiscoveryConfig()
-                .setSchemaDiscoveryConcurrency(16);
+                .setSchemaDiscoveryConcurrency(16)
+                .setMaxBucketQuantity(15);
 
         assertFullMapping(properties, expected);
     }
@@ -51,6 +54,13 @@ public class TestSchemaDiscoveryConfig
         assertFailsValidation(
                 invalidConfig,
                 "schemaDiscoveryConcurrency",
+                "must be greater than or equal to 1",
+                Min.class);
+        invalidConfig = new SchemaDiscoveryConfig()
+                .setMaxBucketQuantity(0);
+        assertFailsValidation(
+                invalidConfig,
+                "maxBucketQuantity",
                 "must be greater than or equal to 1",
                 Min.class);
 

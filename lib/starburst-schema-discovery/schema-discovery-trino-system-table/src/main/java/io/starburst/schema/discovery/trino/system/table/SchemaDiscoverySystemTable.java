@@ -67,7 +67,7 @@ public final class SchemaDiscoverySystemTable
             buildColumn("rescan_type", "Rescan single table mode - discovery type to use (requires rescan_uri). One of: " + Arrays.toString(TableFormat.values())),
             buildColumn("rescan_metadata_json", "Rescan single table mode. Metadata from initial scan. If provided, generated output will contain initial scan combined with this rescan")));
 
-    private static final int MAX_BUCKET_QTY = 10;
+    private final int maxBucketQuantity;
 
     @Inject
     public SchemaDiscoverySystemTable(
@@ -77,6 +77,7 @@ public final class SchemaDiscoverySystemTable
             DiscoveryLocationAccessControlAdapter locationAccessControl)
     {
         super(controllerFactory, objectMapper, locationAccessControl);
+        this.maxBucketQuantity = config.getMaxBucketQuantity();
     }
 
     @Override
@@ -108,7 +109,7 @@ public final class SchemaDiscoverySystemTable
         DiscoveryConfig discoveryConfig = new DiscoveryConfig(
                 uri,
                 options,
-                new GenerateOptions(schema.isBlank() ? "discovered" : schema, MAX_BUCKET_QTY, true, Optional.empty()),
+                new GenerateOptions(schema.isBlank() ? "discovered" : schema, maxBucketQuantity, true, Optional.empty()),
                 previousMetadataJson,
                 rescanType,
                 rescanUri,
