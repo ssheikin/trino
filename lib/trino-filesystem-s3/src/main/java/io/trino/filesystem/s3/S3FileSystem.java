@@ -65,11 +65,11 @@ public final class S3FileSystem
 {
     private final Executor uploadExecutor;
     private final S3Client client;
-    private final S3Presigner preSigner;
+    private final Optional<S3Presigner> preSigner;
     private final S3Context context;
     private final RequestPayer requestPayer;
 
-    public S3FileSystem(Executor uploadExecutor, S3Client client, S3Presigner preSigner, S3Context context)
+    public S3FileSystem(Executor uploadExecutor, S3Client client, Optional<S3Presigner> preSigner, S3Context context)
     {
         this.uploadExecutor = requireNonNull(uploadExecutor, "uploadExecutor is null");
         this.client = requireNonNull(client, "client is null");
@@ -297,6 +297,9 @@ public final class S3FileSystem
     public Optional<UriLocation> preSignedUri(Location location, Duration ttl)
             throws IOException
     {
+        if (preSigner.isEmpty()) {
+            return TrinoFileSystem.super.preSignedUri(location, ttl);
+        }
         location.verifyValidFileLocation();
         S3Location s3Location = new S3Location(location);
 
@@ -312,7 +315,7 @@ public final class S3FileSystem
                 .getObjectRequest(request)
                 .build();
         try {
-            PresignedGetObjectRequest preSigned = preSigner.presignGetObject(preSignRequest);
+            PresignedGetObjectRequest preSigned = preSigner.get().presignGetObject(preSignRequest);
             return Optional.of(new UriLocation(preSigned.url().toURI(), filterHeaders(preSigned.httpRequest().headers())));
         }
         catch (SdkException e) {

@@ -67,6 +67,6 @@ final class S3SecurityMappingFileSystemFactory
             context = context.withKmsKeyId(mapping.get().kmsKeyId().get());
         }
 
-        return new S3FileSystem(uploadExecutor, client, preSigner, context);
+        return new S3FileSystem(uploadExecutor, client, Optional.of(preSigner), context);
     }
 }
