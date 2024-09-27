@@ -231,7 +231,9 @@ public class ClickHouseClient
                 .addStandardRules(this::quoted)
                 .add(new RewriteStringComparison())
                 .add(new RewriteStringIn())
+                .map("$not($is_null(value))").to("value IS NOT NULL")
                 .map("$not(value: boolean)").to("NOT value")
+                .map("$is_null(value)").to("value IS NULL")
                 .build();
         this.aggregateFunctionRewriter = new AggregateFunctionRewriter<>(
                 this.connectorExpressionRewriter,
