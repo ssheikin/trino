@@ -262,7 +262,7 @@ public class TestCachingHiveMetastore
     @Test
     public void testInvalidDbGetAllTAbles()
     {
-        assertThat(metastore.getTables(BAD_DATABASE).isEmpty()).isTrue();
+        assertThat(metastore.getTables(BAD_DATABASE)).isEmpty();
     }
 
     @Test
@@ -303,7 +303,7 @@ public class TestCachingHiveMetastore
     @Test
     public void testInvalidDbGetTable()
     {
-        assertThat(metastore.getTable(BAD_DATABASE, TEST_TABLE).isPresent()).isFalse();
+        assertThat(metastore.getTable(BAD_DATABASE, TEST_TABLE)).isEmpty();
 
         assertThat(stats.getGetTable().getThriftExceptions().getTotalCount()).isEqualTo(0);
         assertThat(stats.getGetTable().getTotalFailures().getTotalCount()).isEqualTo(0);
@@ -394,7 +394,7 @@ public class TestCachingHiveMetastore
     @Test
     public void testInvalidGetPartitionNamesByFilterAll()
     {
-        assertThat(metastore.getPartitionNamesByFilter(BAD_DATABASE, TEST_TABLE, PARTITION_COLUMN_NAMES, TupleDomain.all()).isEmpty()).isTrue();
+        assertThat(metastore.getPartitionNamesByFilter(BAD_DATABASE, TEST_TABLE, PARTITION_COLUMN_NAMES, TupleDomain.all())).isEmpty();
     }
 
     @Test
@@ -452,7 +452,7 @@ public class TestCachingHiveMetastore
     @Test
     public void testInvalidGetPartitionNamesByParts()
     {
-        assertThat(metastore.getPartitionNamesByFilter(BAD_DATABASE, TEST_TABLE, PARTITION_COLUMN_NAMES, TupleDomain.all()).isPresent()).isFalse();
+        assertThat(metastore.getPartitionNamesByFilter(BAD_DATABASE, TEST_TABLE, PARTITION_COLUMN_NAMES, TupleDomain.all())).isEmpty();
     }
 
     @Test
@@ -937,7 +937,7 @@ public class TestCachingHiveMetastore
         Map<String, Optional<Partition>> partitionsByNames = metastore.getPartitionsByNames(table, ImmutableList.of(BAD_PARTITION));
         assertThat(partitionsByNames.size()).isEqualTo(1);
         Optional<Partition> onlyElement = Iterables.getOnlyElement(partitionsByNames.values());
-        assertThat(onlyElement.isPresent()).isFalse();
+        assertThat(onlyElement).isEmpty();
     }
 
     @Test

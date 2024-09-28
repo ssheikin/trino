@@ -167,7 +167,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction("simple_exact_aggregate", DoubleType.DOUBLE, ImmutableList.of(DoubleType.DOUBLE));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -267,7 +267,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), DoubleType.DOUBLE, ImmutableList.of(DoubleType.DOUBLE));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -308,7 +308,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), DoubleType.DOUBLE, ImmutableList.of(DoubleType.DOUBLE));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isTrue();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -388,7 +388,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), DoubleType.DOUBLE, ImmutableList.of(DoubleType.DOUBLE));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -445,7 +445,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), DoubleType.DOUBLE, ImmutableList.of(DoubleType.DOUBLE));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -535,7 +535,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), DoubleType.DOUBLE, ImmutableList.of(new ArrayType(DoubleType.DOUBLE)));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -624,7 +624,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), DoubleType.DOUBLE, ImmutableList.of(new ArrayType(DoubleType.DOUBLE)));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -707,7 +707,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation1.getFunctionMetadata().getCanonicalName(), DoubleType.DOUBLE, ImmutableList.of(DoubleType.DOUBLE));
         AggregationFunctionMetadata aggregationMetadata = aggregation1.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation1.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -773,9 +773,9 @@ public class TestAnnotationEngineForAggregates
         assertThat(implementation.getDefinitionClass()).isEqualTo(InjectOperatorAggregateFunction.class);
         assertDependencyCount(implementation, 1, 1, 1);
 
-        assertThat(implementation.getInputDependencies().get(0) instanceof OperatorImplementationDependency).isTrue();
-        assertThat(implementation.getCombineDependencies().get(0) instanceof OperatorImplementationDependency).isTrue();
-        assertThat(implementation.getOutputDependencies().get(0) instanceof OperatorImplementationDependency).isTrue();
+        assertThat(implementation.getInputDependencies().get(0)).isInstanceOf(OperatorImplementationDependency.class);
+        assertThat(implementation.getCombineDependencies().get(0)).isInstanceOf(OperatorImplementationDependency.class);
+        assertThat(implementation.getOutputDependencies().get(0)).isInstanceOf(OperatorImplementationDependency.class);
 
         assertThat(implementation.hasSpecializedTypeParameters()).isFalse();
         assertThat(implementation.getInputParameterKinds()).isEqualTo(ImmutableList.of(STATE, INPUT_CHANNEL));
@@ -837,9 +837,9 @@ public class TestAnnotationEngineForAggregates
         assertThat(implementation.getDefinitionClass()).isEqualTo(InjectTypeAggregateFunction.class);
         assertDependencyCount(implementation, 1, 1, 1);
 
-        assertThat(implementation.getInputDependencies().get(0) instanceof TypeImplementationDependency).isTrue();
-        assertThat(implementation.getCombineDependencies().get(0) instanceof TypeImplementationDependency).isTrue();
-        assertThat(implementation.getOutputDependencies().get(0) instanceof TypeImplementationDependency).isTrue();
+        assertThat(implementation.getInputDependencies().get(0)).isInstanceOf(TypeImplementationDependency.class);
+        assertThat(implementation.getCombineDependencies().get(0)).isInstanceOf(TypeImplementationDependency.class);
+        assertThat(implementation.getOutputDependencies().get(0)).isInstanceOf(TypeImplementationDependency.class);
 
         assertThat(implementation.hasSpecializedTypeParameters()).isFalse();
         assertThat(implementation.getInputParameterKinds()).isEqualTo(ImmutableList.of(STATE, INPUT_CHANNEL));
@@ -900,9 +900,9 @@ public class TestAnnotationEngineForAggregates
         assertThat(implementation.getDefinitionClass()).isEqualTo(InjectLiteralAggregateFunction.class);
         assertDependencyCount(implementation, 1, 1, 1);
 
-        assertThat(implementation.getInputDependencies().get(0) instanceof LiteralImplementationDependency).isTrue();
-        assertThat(implementation.getCombineDependencies().get(0) instanceof LiteralImplementationDependency).isTrue();
-        assertThat(implementation.getOutputDependencies().get(0) instanceof LiteralImplementationDependency).isTrue();
+        assertThat(implementation.getInputDependencies().get(0)).isInstanceOf(LiteralImplementationDependency.class);
+        assertThat(implementation.getCombineDependencies().get(0)).isInstanceOf(LiteralImplementationDependency.class);
+        assertThat(implementation.getOutputDependencies().get(0)).isInstanceOf(LiteralImplementationDependency.class);
 
         assertThat(implementation.hasSpecializedTypeParameters()).isFalse();
         assertThat(implementation.getInputParameterKinds()).isEqualTo(ImmutableList.of(STATE, INPUT_CHANNEL));
@@ -910,7 +910,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), createVarcharType(17), ImmutableList.of(createVarcharType(17)));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -973,7 +973,7 @@ public class TestAnnotationEngineForAggregates
         BoundSignature boundSignature = builtinFunction(aggregation.getFunctionMetadata().getCanonicalName(), createVarcharType(30), ImmutableList.of(createVarcharType(17), createVarcharType(13)));
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         aggregation.specialize(boundSignature, NO_FUNCTION_DEPENDENCIES);
     }
 
@@ -1167,7 +1167,7 @@ public class TestAnnotationEngineForAggregates
 
         AggregationFunctionMetadata aggregationMetadata = aggregation.getAggregationMetadata();
         assertThat(aggregationMetadata.isOrderSensitive()).isFalse();
-        assertThat(aggregationMetadata.getIntermediateTypes().isEmpty()).isFalse();
+        assertThat(aggregationMetadata.getIntermediateTypes()).isNotEmpty();
         FunctionDependencyDeclaration dependencyDeclaration = aggregation.getFunctionDependencies(boundSignature);
 
         ImmutableMap.Builder<TypeSignature, Type> typeDependencies = ImmutableMap.builder();

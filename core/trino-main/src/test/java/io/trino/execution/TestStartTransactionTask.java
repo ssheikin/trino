@@ -91,17 +91,17 @@ public class TestStartTransactionTask
         Session session = sessionBuilder().build();
         TransactionManager transactionManager = createTestTransactionManager();
         QueryStateMachine stateMachine = createQueryStateMachine("START TRANSACTION", session, transactionManager);
-        assertThat(stateMachine.getSession().getTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getSession().getTransactionId()).isEmpty();
 
         assertTrinoExceptionThrownBy(
                 () -> getFutureValue(new StartTransactionTask(transactionManager)
                         .execute(new StartTransaction(new NodeLocation(1, 1), ImmutableList.of()), stateMachine, emptyList(), WarningCollector.NOOP)))
                 .hasErrorCode(INCOMPATIBLE_CLIENT);
 
-        assertThat(transactionManager.getAllTransactionInfos().isEmpty()).isTrue();
+        assertThat(transactionManager.getAllTransactionInfos()).isEmpty();
 
         assertThat(stateMachine.getQueryInfo(Optional.empty()).isClearTransactionId()).isFalse();
-        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId()).isEmpty();
     }
 
     @Test
@@ -119,10 +119,10 @@ public class TestStartTransactionTask
                         .execute(new StartTransaction(new NodeLocation(1, 1), ImmutableList.of()), stateMachine, emptyList(), WarningCollector.NOOP)))
                 .hasErrorCode(NOT_SUPPORTED);
 
-        assertThat(transactionManager.getAllTransactionInfos().isEmpty()).isTrue();
+        assertThat(transactionManager.getAllTransactionInfos()).isEmpty();
 
         assertThat(stateMachine.getQueryInfo(Optional.empty()).isClearTransactionId()).isFalse();
-        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId()).isEmpty();
     }
 
     @Test
@@ -133,11 +133,11 @@ public class TestStartTransactionTask
                 .build();
         TransactionManager transactionManager = createTestTransactionManager();
         QueryStateMachine stateMachine = createQueryStateMachine("START TRANSACTION", session, transactionManager);
-        assertThat(stateMachine.getSession().getTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getSession().getTransactionId()).isEmpty();
 
         getFutureValue(new StartTransactionTask(transactionManager).execute(new StartTransaction(new NodeLocation(1, 1), ImmutableList.of()), stateMachine, emptyList(), WarningCollector.NOOP));
         assertThat(stateMachine.getQueryInfo(Optional.empty()).isClearTransactionId()).isFalse();
-        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().isPresent()).isTrue();
+        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId()).isPresent();
         assertThat(transactionManager.getAllTransactionInfos().size()).isEqualTo(1);
 
         TransactionInfo transactionInfo = transactionManager.getTransactionInfo(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().get());
@@ -152,7 +152,7 @@ public class TestStartTransactionTask
                 .build();
         TransactionManager transactionManager = createTestTransactionManager();
         QueryStateMachine stateMachine = createQueryStateMachine("START TRANSACTION", session, transactionManager);
-        assertThat(stateMachine.getSession().getTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getSession().getTransactionId()).isEmpty();
 
         getFutureValue(new StartTransactionTask(transactionManager).execute(
                 new StartTransaction(new NodeLocation(1, 1), ImmutableList.of(new Isolation(new NodeLocation(1, 1), Isolation.Level.SERIALIZABLE), new TransactionAccessMode(new NodeLocation(1, 1), true))),
@@ -160,7 +160,7 @@ public class TestStartTransactionTask
                 emptyList(),
                 WarningCollector.NOOP));
         assertThat(stateMachine.getQueryInfo(Optional.empty()).isClearTransactionId()).isFalse();
-        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().isPresent()).isTrue();
+        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId()).isPresent();
         assertThat(transactionManager.getAllTransactionInfos().size()).isEqualTo(1);
 
         TransactionInfo transactionInfo = transactionManager.getTransactionInfo(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().get());
@@ -177,7 +177,7 @@ public class TestStartTransactionTask
                 .build();
         TransactionManager transactionManager = createTestTransactionManager();
         QueryStateMachine stateMachine = createQueryStateMachine("START TRANSACTION", session, transactionManager);
-        assertThat(stateMachine.getSession().getTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getSession().getTransactionId()).isEmpty();
 
         assertTrinoExceptionThrownBy(() ->
                 getFutureValue(new StartTransactionTask(transactionManager).execute(
@@ -187,10 +187,10 @@ public class TestStartTransactionTask
                         WarningCollector.NOOP)))
                 .hasErrorCode(SYNTAX_ERROR);
 
-        assertThat(transactionManager.getAllTransactionInfos().isEmpty()).isTrue();
+        assertThat(transactionManager.getAllTransactionInfos()).isEmpty();
 
         assertThat(stateMachine.getQueryInfo(Optional.empty()).isClearTransactionId()).isFalse();
-        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId()).isEmpty();
     }
 
     @Test
@@ -201,7 +201,7 @@ public class TestStartTransactionTask
                 .build();
         TransactionManager transactionManager = createTestTransactionManager();
         QueryStateMachine stateMachine = createQueryStateMachine("START TRANSACTION", session, transactionManager);
-        assertThat(stateMachine.getSession().getTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getSession().getTransactionId()).isEmpty();
 
         assertTrinoExceptionThrownBy(() ->
                 getFutureValue(new StartTransactionTask(transactionManager).execute(
@@ -211,10 +211,10 @@ public class TestStartTransactionTask
                         WarningCollector.NOOP)))
                 .hasErrorCode(SYNTAX_ERROR);
 
-        assertThat(transactionManager.getAllTransactionInfos().isEmpty()).isTrue();
+        assertThat(transactionManager.getAllTransactionInfos()).isEmpty();
 
         assertThat(stateMachine.getQueryInfo(Optional.empty()).isClearTransactionId()).isFalse();
-        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId()).isEmpty();
     }
 
     @Test
@@ -232,7 +232,7 @@ public class TestStartTransactionTask
                 NO_CATALOGS,
                 executor);
         QueryStateMachine stateMachine = createQueryStateMachine("START TRANSACTION", session, transactionManager);
-        assertThat(stateMachine.getSession().getTransactionId().isPresent()).isFalse();
+        assertThat(stateMachine.getSession().getTransactionId()).isEmpty();
 
         getFutureValue(new StartTransactionTask(transactionManager).execute(
                 new StartTransaction(new NodeLocation(1, 1), ImmutableList.of()),
@@ -240,7 +240,7 @@ public class TestStartTransactionTask
                 emptyList(),
                 WarningCollector.NOOP));
         assertThat(stateMachine.getQueryInfo(Optional.empty()).isClearTransactionId()).isFalse();
-        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId().isPresent()).isTrue();
+        assertThat(stateMachine.getQueryInfo(Optional.empty()).getStartedTransactionId()).isPresent();
 
         long start = System.nanoTime();
         while (!transactionManager.getAllTransactionInfos().isEmpty()) {
