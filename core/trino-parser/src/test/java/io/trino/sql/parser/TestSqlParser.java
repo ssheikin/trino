@@ -1799,7 +1799,7 @@ public class TestSqlParser
                                 DereferenceExpression.from(QualifiedName.of("a")),
                                 DereferenceExpression.from(QualifiedName.of("b")),
                                 new GroupingOperation(
-                                        Optional.empty(),
+                                        location(1, 14),
                                         ImmutableList.of(QualifiedName.of("a"), QualifiedName.of("b")))),
                         new Table(QualifiedName.of("table1")),
                         Optional.empty(),
@@ -1815,7 +1815,7 @@ public class TestSqlParser
 
         assertStatement("SELECT * FROM table1 GROUP BY ALL GROUPING SETS ((a, b), (a), ()), CUBE (c), ROLLUP (d)",
                 simpleQuery(
-                        selectList(new AllColumns()),
+                        selectList(new AllColumns(location(1, 8))),
                         new Table(QualifiedName.of("table1")),
                         Optional.empty(),
                         Optional.of(new GroupBy(false, ImmutableList.of(
@@ -3465,8 +3465,8 @@ public class TestSqlParser
         assertThat(statement("EXPLAIN ANALYZE ANALYZE foo")).isEqualTo(
                 new ExplainAnalyze(
                         location(1, 1),
-                        false,
-                        new Analyze(location(1, 17), QualifiedName.of(ImmutableList.of(new Identifier(location(1, 25), "foo", false))), ImmutableList.of())));
+                        new Analyze(location(1, 17), QualifiedName.of(ImmutableList.of(new Identifier(location(1, 25), "foo", false))), ImmutableList.of()), false
+                ));
     }
 
     @Test
@@ -4365,7 +4365,7 @@ public class TestSqlParser
         assertThat(expression("x -> sin(x)"))
                 .isEqualTo(new LambdaExpression(
                         location(1, 1),
-                        ImmutableList.of(new LambdaArgumentDeclaration(new Identifier(location(1, 1), "x", false))),
+                        ImmutableList.of(new LambdaArgumentDeclaration(location(1, 1),new Identifier(location(1, 1), "x", false))),
                         new FunctionCall(
                                 location(1, 6),
                                 QualifiedName.of(ImmutableList.of(new Identifier(location(1, 6), "sin", false))),
@@ -4374,8 +4374,8 @@ public class TestSqlParser
                 .isEqualTo(new LambdaExpression(
                         location(1, 1),
                         ImmutableList.of(
-                                new LambdaArgumentDeclaration(new Identifier(location(1, 2), "x", false)),
-                                new LambdaArgumentDeclaration(new Identifier(location(1, 5), "y", false))),
+                                new LambdaArgumentDeclaration(location(1, 2), new Identifier(location(1, 2), "x", false)),
+                                new LambdaArgumentDeclaration(location(1, 5), new Identifier(location(1, 5), "y", false))),
                         new FunctionCall(
                                 location(1, 11),
                                 QualifiedName.of(ImmutableList.of(new Identifier(location(1, 11), "mod", false))),
@@ -4684,7 +4684,7 @@ public class TestSqlParser
         assertThat(statement("SHOW STATS FOR (SELECT * FROM t LIMIT 10)"))
                 .isEqualTo(
                         new ShowStats(
-                                Optional.of(location(1, 1)),
+                                location(1, 1),
                                 new TableSubquery(
                                         new Query(
                                                 location(1, 17),
@@ -4714,7 +4714,7 @@ public class TestSqlParser
         assertThat(statement("SHOW STATS FOR (SELECT * FROM t ORDER BY field LIMIT 10)"))
                 .isEqualTo(
                         new ShowStats(
-                                Optional.of(location(1, 1)),
+                                location(1, 1),
                                 new TableSubquery(
                                         new Query(
                                                 location(1, 17),
@@ -4749,7 +4749,7 @@ public class TestSqlParser
                 """))
                 .isEqualTo(
                         new ShowStats(
-                                Optional.of(location(1, 1)),
+                                location(1, 1),
                                 new TableSubquery(
                                         new Query(
                                                 location(2, 4),
@@ -4930,7 +4930,7 @@ public class TestSqlParser
                         QualifiedName.of(ImmutableList.of(new Identifier(location(1, 1), "array_agg", false))),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(1, 22), new Identifier(location(1, 22), "x", false), DESCENDING, UNDEFINED)))),
+                        Optional.of(new OrderBy(location(1, 13), ImmutableList.of(new SortItem(location(1, 22), new Identifier(location(1, 22), "x", false), DESCENDING, UNDEFINED)))),
                         false,
                         Optional.empty(),
                         Optional.empty(),
@@ -5972,7 +5972,7 @@ public class TestSqlParser
                         QualifiedName.of(ImmutableList.of(new Identifier("LISTAGG", false))),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(1, 35), new Identifier(location(1, 35), "x", false), ASCENDING, UNDEFINED)))),
+                        Optional.of(new OrderBy(location(1, 26), ImmutableList.of(new SortItem(location(1, 35), new Identifier(location(1, 35), "x", false), ASCENDING, UNDEFINED)))),
                         false,
                         Optional.empty(),
                         Optional.empty(),
@@ -5989,7 +5989,7 @@ public class TestSqlParser
                         QualifiedName.of(ImmutableList.of(new Identifier("LISTAGG", false))),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(1, 45), new Identifier(location(1, 45), "x", false), ASCENDING, UNDEFINED)))),
+                        Optional.of(new OrderBy(location(1, 36), ImmutableList.of(new SortItem(location(1, 45), new Identifier(location(1, 45), "x", false), ASCENDING, UNDEFINED)))),
                         true,
                         Optional.empty(),
                         Optional.empty(),
@@ -6006,7 +6006,7 @@ public class TestSqlParser
                         QualifiedName.of(ImmutableList.of(new Identifier("LISTAGG", false))),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(1, 40), new Identifier(location(1, 40), "y", false), ASCENDING, UNDEFINED)))),
+                        Optional.of(new OrderBy(location(1, 31), ImmutableList.of(new SortItem(location(1, 40), new Identifier(location(1, 40), "y", false), ASCENDING, UNDEFINED)))),
                         false,
                         Optional.empty(),
                         Optional.empty(),
@@ -6023,7 +6023,7 @@ public class TestSqlParser
                         QualifiedName.of(ImmutableList.of(new Identifier("LISTAGG", false))),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(1, 58), new Identifier(location(1, 58), "x", false), ASCENDING, UNDEFINED)))),
+                        Optional.of(new OrderBy(location(1, 49), ImmutableList.of(new SortItem(location(1, 58), new Identifier(location(1, 58), "x", false), ASCENDING, UNDEFINED)))),
                         false,
                         Optional.empty(),
                         Optional.empty(),
@@ -6040,7 +6040,7 @@ public class TestSqlParser
                         QualifiedName.of(ImmutableList.of(new Identifier("LISTAGG", false))),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(1, 72), new Identifier(location(1, 72), "x", false), ASCENDING, UNDEFINED)))),
+                        Optional.of(new OrderBy(location(1, 63), ImmutableList.of(new SortItem(location(1, 72), new Identifier(location(1, 72), "x", false), ASCENDING, UNDEFINED)))),
                         false,
                         Optional.empty(),
                         Optional.empty(),
@@ -6057,7 +6057,7 @@ public class TestSqlParser
                         QualifiedName.of(ImmutableList.of(new Identifier("LISTAGG", false))),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(1, 84), new Identifier(location(1, 84), "x", false), ASCENDING, UNDEFINED)))),
+                        Optional.of(new OrderBy(location(1, 75), ImmutableList.of(new SortItem(location(1, 84), new Identifier(location(1, 84), "x", false), ASCENDING, UNDEFINED)))),
                         false,
                         Optional.empty(),
                         Optional.empty(),
@@ -6112,7 +6112,7 @@ public class TestSqlParser
                                                                 new Identifier(location(2, 37), "b", false),
                                                                 new Identifier(location(2, 40), "c", false))),
                                                 Optional.of(ImmutableList.of(new Identifier(location(3, 22), "a", false))),
-                                                Optional.of(new OrderBy(ImmutableList.of(new SortItem(location(5, 18), new Identifier(location(5, 18), "b", false), ASCENDING, LAST)))),
+                                                Optional.of(new OrderBy(location(5, 9), ImmutableList.of(new SortItem(location(5, 18), new Identifier(location(5, 18), "b", false), ASCENDING, LAST)))),
                                                 Optional.of(new EmptyTableTreatment(location(4, 9), PRUNE)))),
                                 new TableFunctionArgument(
                                         location(6, 5),
@@ -6305,9 +6305,9 @@ public class TestSqlParser
         // test defaults
         assertThat(expression("JSON_EXISTS(json_column, 'lax $[5]')"))
                 .isEqualTo(new JsonExists(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         new JsonPathInvocation(
-                                Optional.of(location(1, 13)),
+                                location(1, 13),
                                 new Identifier(location(1, 13), "json_column", false),
                                 JSON,
                                 new StringLiteral(location(1, 26), "lax $[5]"),
@@ -6325,21 +6325,21 @@ public class TestSqlParser
                     UNKNOWN ON ERROR)
                 """))
                 .isEqualTo(new JsonExists(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         new JsonPathInvocation(
-                                Optional.of(location(2, 5)),
+                                location(2, 5),
                                 new Identifier(location(2, 5), "json_column", false),
                                 UTF8,
                                 new StringLiteral(location(3, 5), "lax $[start_parameter TO end_parameter.ceiling()]"),
                                 Optional.empty(),
                                 ImmutableList.of(
                                         new JsonPathParameter(
-                                                Optional.of(location(5, 17)),
+                                                location(5, 17),
                                                 new Identifier(location(5, 33), "start_parameter", false),
                                                 new Identifier(location(5, 17), "start_column", false),
                                                 Optional.empty()),
                                         new JsonPathParameter(
-                                                Optional.of(location(6, 17)),
+                                                location(6, 17),
                                                 new Identifier(location(6, 58), "end_parameter", false),
                                                 new Identifier(location(6, 17), "end_column", false),
                                                 Optional.of(UTF16)))),
@@ -6352,9 +6352,9 @@ public class TestSqlParser
         // test defaults
         assertThat(expression("JSON_VALUE(json_column, 'lax $[5]')"))
                 .isEqualTo(new JsonValue(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         new JsonPathInvocation(
-                                Optional.of(location(1, 12)),
+                                location(1, 12),
                                 new Identifier(location(1, 12), "json_column", false),
                                 JSON,
                                 new StringLiteral(location(1, 25), "lax $[5]"),
@@ -6378,21 +6378,21 @@ public class TestSqlParser
                     ERROR ON ERROR)
                 """))
                 .isEqualTo(new JsonValue(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         new JsonPathInvocation(
-                                Optional.of(location(2, 5)),
+                                location(2, 5),
                                 new Identifier(location(2, 5), "json_column", false),
                                 UTF8,
                                 new StringLiteral(location(3, 5), "lax $[start_parameter TO end_parameter.ceiling()]"),
                                 Optional.empty(),
                                 ImmutableList.of(
                                         new JsonPathParameter(
-                                                Optional.of(location(5, 17)),
+                                                location(5, 17),
                                                 new Identifier(location(5, 33), "start_parameter", false),
                                                 new Identifier(location(5, 17), "start_column", false),
                                                 Optional.empty()),
                                         new JsonPathParameter(
-                                                Optional.of(location(6, 17)),
+                                                location(6, 17),
                                                 new Identifier(location(6, 58), "end_parameter", false),
                                                 new Identifier(location(6, 17), "end_column", false),
                                                 Optional.of(UTF16)))),
@@ -6409,9 +6409,9 @@ public class TestSqlParser
         // test defaults
         assertThat(expression("JSON_QUERY(json_column, 'lax $[5]')"))
                 .isEqualTo(new JsonQuery(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         new JsonPathInvocation(
-                                Optional.of(location(1, 12)),
+                                location(1, 12),
                                 new Identifier(location(1, 12), "json_column", false),
                                 JSON,
                                 new StringLiteral(location(1, 25), "lax $[5]"),
@@ -6438,21 +6438,21 @@ public class TestSqlParser
                     ERROR ON ERROR)
                 """))
                 .isEqualTo(new JsonQuery(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         new JsonPathInvocation(
-                                Optional.of(location(2, 5)),
+                                location(2, 5),
                                 new Identifier(location(2, 5), "json_column", false),
                                 UTF8,
                                 new StringLiteral(location(3, 5), "lax $[start_parameter TO end_parameter.ceiling()]"),
                                 Optional.empty(),
                                 ImmutableList.of(
                                         new JsonPathParameter(
-                                                Optional.of(location(5, 17)),
+                                                location(5, 17),
                                                 new Identifier(location(5, 33), "start_parameter", false),
                                                 new Identifier(location(5, 17), "start_column", false),
                                                 Optional.empty()),
                                         new JsonPathParameter(
-                                                Optional.of(location(6, 17)),
+                                                location(6, 17),
                                                 new Identifier(location(6, 58), "end_parameter", false),
                                                 new Identifier(location(6, 17), "end_column", false),
                                                 Optional.of(UTF16)))),
@@ -6470,7 +6470,7 @@ public class TestSqlParser
         // test create empty JSON object
         assertThat(expression("JSON_OBJECT()"))
                 .isEqualTo(new JsonObject(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         ImmutableList.of(),
                         true,
                         false,
@@ -6480,7 +6480,7 @@ public class TestSqlParser
         // test defaults
         assertThat(expression("JSON_OBJECT(key_column : value_column)"))
                 .isEqualTo(new JsonObject(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         ImmutableList.of(new JsonObjectMember(
                                 location(1, 13),
                                 new Identifier(location(1, 13), "key_column", false),
@@ -6501,7 +6501,7 @@ public class TestSqlParser
                      RETURNING varbinary FORMAT JSON ENCODING UTF32)
                 """))
                 .isEqualTo(new JsonObject(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         ImmutableList.of(
                                 new JsonObjectMember(
                                         location(2, 6),
@@ -6530,7 +6530,7 @@ public class TestSqlParser
         // test create empty JSON array
         assertThat(expression("JSON_ARRAY()"))
                 .isEqualTo(new JsonArray(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         ImmutableList.of(),
                         false,
                         Optional.empty(),
@@ -6539,7 +6539,7 @@ public class TestSqlParser
         // test defaults
         assertThat(expression("JSON_ARRAY(value_column)"))
                 .isEqualTo(new JsonArray(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         ImmutableList.of(new JsonArrayElement(
                                 location(1, 12),
                                 new Identifier(location(1, 12), "value_column", false),
@@ -6556,7 +6556,7 @@ public class TestSqlParser
                     RETURNING varbinary FORMAT JSON ENCODING UTF32)
                 """))
                 .isEqualTo(new JsonArray(
-                        Optional.of(location(1, 1)),
+                        location(1, 1),
                         ImmutableList.of(
                                 new JsonArrayElement(
                                         location(1, 12),
@@ -6588,7 +6588,7 @@ public class TestSqlParser
                 .isEqualTo(selectAllFrom(new JsonTable(
                         location(1, 15),
                         new JsonPathInvocation(
-                                Optional.of(location(1, 26)),
+                                location(1, 26),
                                 new Identifier(location(1, 26), "col", false),
                                 JSON,
                                 new StringLiteral(location(1, 31), "lax $"),
@@ -6646,7 +6646,7 @@ public class TestSqlParser
                 .isEqualTo(selectAllFrom(new JsonTable(
                         location(1, 15),
                         new JsonPathInvocation(
-                                Optional.of(location(1, 26)),
+                                location(1, 26),
                                 new Identifier(location(1, 26), "col", false),
                                 JSON,
                                 new StringLiteral(location(1, 31), "lax $"),
