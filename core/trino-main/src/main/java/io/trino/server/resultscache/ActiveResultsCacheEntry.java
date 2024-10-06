@@ -186,9 +186,9 @@ public class ActiveResultsCacheEntry
                     resultsData = Optional.of(new ResultsData(columns, tablesReferences, viewsReferences));
                 }
 
-                long logicalSizeInBytes = resultRows.countLogicalSizeInBytes();
-                currentSize += logicalSizeInBytes;
-                if (logicalSizeInBytes > 0) {
+                long retainedSizeInBytes = resultRows.countRetainedSizeInBytes();
+                currentSize += retainedSizeInBytes;
+                if (retainedSizeInBytes > 0) {
                     entryResult = entryResult.withCurrentSize(currentSize);
                 }
 
@@ -203,7 +203,7 @@ public class ActiveResultsCacheEntry
                     return;
                 }
 
-                log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, logicalSizeInBytes, currentSize);
+                log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, retainedSizeInBytes, currentSize);
                 if (queryData instanceof RawQueryData) {
                     resultsData.get().addRecords(queryData.getData());
                 }

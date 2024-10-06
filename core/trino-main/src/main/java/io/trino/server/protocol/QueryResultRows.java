@@ -130,13 +130,13 @@ public class QueryResultRows
                 .toString();
     }
 
-    public long countLogicalSizeInBytes()
+    public long countRetainedSizeInBytes()
     {
-        long logicalSizeInBytes = 0;
+        long retainedSizeInBytes = 0;
         for (Page page : pages) {
-            logicalSizeInBytes += page.getLogicalSizeInBytes();
+            retainedSizeInBytes += page.getRetainedSizeInBytes();
         }
-        return logicalSizeInBytes;
+        return retainedSizeInBytes;
     }
 
     public static QueryResultRows empty(Session session)
