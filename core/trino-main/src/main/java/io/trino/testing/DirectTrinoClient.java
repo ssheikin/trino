@@ -45,7 +45,6 @@ import java.util.concurrent.ExecutionException;
 import static io.airlift.concurrent.MoreFutures.whenAnyComplete;
 import static io.trino.SystemSessionProperties.getRetryPolicy;
 import static io.trino.execution.QueryState.FAILED;
-import static io.trino.execution.QueryState.FINISHED;
 import static io.trino.execution.QueryState.FINISHING;
 import static io.trino.execution.buffer.CompressionCodec.NONE;
 import static io.trino.memory.context.AggregatedMemoryContext.newSimpleAggregatedMemoryContext;
@@ -127,74 +126,6 @@ public class DirectTrinoClient
                 new SimpleLocalMemoryContext(newSimpleAggregatedMemoryContext(), "Query"),
                 queryManager::outputTaskFailed,
                 getRetryPolicy(dispatchQuery.getSession()));
-    }
-
-    private static MaterializedResult toMaterializedRows(DispatchQuery dispatchQuery, List<Type> columnTypes, List<String> columnNames, List<Page> pages)
-    {
-        QueryInfo queryInfo = dispatchQuery.getFullQueryInfo();
-        ConnectorSession session = dispatchQuery.getSession().toConnectorSession();
-
-        if (queryInfo.getState() != FINISHED) {
-            if (queryInfo.getFailureInfo() == null) {
-                throw new QueryFailedException(queryInfo.getQueryId(), "Query failed without failure info");
-            }
-            RuntimeException remoteException = queryInfo.getFailureInfo().toException();
-            throw new QueryFailedException(queryInfo.getQueryId(), Optional.ofNullable(remoteException.getMessage()).orElseGet(remoteException::toString), remoteException);
-        }
-        if (pages.isEmpty() && columnTypes == null) {
-            // the query did not produce any output
-            return new MaterializedResult(
-                    ImmutableList.of(),
-                    ImmutableList.of(),
-                    ImmutableList.of(),
-                    queryInfo.getSetSessionProperties(),
-                    queryInfo.getResetSessionProperties(),
-                    Optional.ofNullable(queryInfo.getUpdateType()),
-                    OptionalLong.empty(),
-                    mappedCopy(queryInfo.getWarnings(), ProtocolUtil::toClientWarning),
-                    Optional.of(ProtocolUtil.toStatementStats(new ResultQueryInfo(queryInfo))));
-        }
-
-        List<MaterializedRow> materializedRows = toMaterializedRows(session, columnTypes, pages);
-
-        OptionalLong updateCount = OptionalLong.empty();
-        if (queryInfo.getUpdateType() != null && materializedRows.size() == 1 && columnTypes.size() == 1 && columnTypes.get(0).equals(BIGINT)) {
-            Number value = (Number) materializedRows.get(0).getField(0);
-            if (value != null) {
-                updateCount = OptionalLong.of(value.longValue());
-            }
-        }
-
-        return new MaterializedResult(
-                materializedRows,
-                columnTypes,
-                columnNames,
-                queryInfo.getSetSessionProperties(),
-                queryInfo.getResetSessionProperties(),
-                Optional.ofNullable(queryInfo.getUpdateType()),
-                updateCount,
-                mappedCopy(queryInfo.getWarnings(), ProtocolUtil::toClientWarning),
-                Optional.of(ProtocolUtil.toStatementStats(new ResultQueryInfo(queryInfo))));
-    }
-
-    private static List<MaterializedRow> toMaterializedRows(ConnectorSession session, List<Type> types, List<Page> pages)
-    {
-        ImmutableList.Builder<MaterializedRow> rows = ImmutableList.builder();
-        for (Page page : pages) {
-            checkArgument(page.getChannelCount() == types.size(), "Expected a page with %s columns, but got %s columns", types.size(), page.getChannelCount());
-            for (int position = 0; position < page.getPositionCount(); position++) {
-                List<Object> values = new ArrayList<>(page.getChannelCount());
-                for (int channel = 0; channel < page.getChannelCount(); channel++) {
-                    Type type = types.get(channel);
-                    Block block = page.getBlock(channel);
-                    values.add(type.getObjectValue(session, block, position));
-                }
-                values = Collections.unmodifiableList(values);
-
-                rows.add(new MaterializedRow(DEFAULT_PRECISION, values));
-            }
-        }
-        return rows.build();
     }
 
     private static <T> void getQueryFuture(ListenableFuture<T> future)
