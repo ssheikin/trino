@@ -63,6 +63,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.threadsNamed;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
+import static io.trino.client.ProtocolHeaders.TRINO_HEADERS;
 import static io.trino.server.DisconnectionAwareAsyncResponse.bindDisconnectionAwareAsyncResponse;
 import static io.trino.server.protocol.Slug.Context.EXECUTING_QUERY;
 import static io.trino.server.security.ResourceSecurity.AccessType.PUBLIC;
@@ -238,12 +239,13 @@ public class ExecutingStatementResource
         }
         ListenableFuture<QueryResultsResponse> queryResultsFuture = query.waitForResults(token, externalUriInfo, wait, targetResultSize);
 
-        ListenableFuture<Response> response = Futures.transform(queryResultsFuture, this::toResponse, directExecutor());
+        ListenableFuture<Response> response = Futures.transform(queryResultsFuture, results ->
+                toResponse(results, query.getQueryInfo().getSession().getQueryDataEncoding()), directExecutor());
 
         bindDisconnectionAwareAsyncResponse(asyncResponse, response, responseExecutor);
     }
 
-    private Response toResponse(QueryResultsResponse resultsResponse)
+    private Response toResponse(QueryResultsResponse resultsResponse, Optional<String> queryDataEncoding)
     {
         ResponseBuilder response = Response.ok(resultsResponse.queryResults());
 
@@ -292,6 +294,9 @@ public class ExecutingStatementResource
         if (!compressionEnabled) {
             response.encoding("identity");
         }
+
+        queryDataEncoding
+                .ifPresent(encoding -> response.header(TRINO_HEADERS.responseQueryDataEncoding(), encoding));
 
         return response.build();
     }
