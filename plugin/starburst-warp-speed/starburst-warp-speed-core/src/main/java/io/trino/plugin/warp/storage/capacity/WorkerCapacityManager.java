@@ -192,6 +192,9 @@ public class WorkerCapacityManager
 
         try {
             warpDir = new File(localStorePath);
+            if (!warpDir.exists()) {
+                warpDir = warpDir.getParentFile();
+            }
             totalCapacity = warpDir.getTotalSpace(); // As we are the sole users of the mount we can use total space
             statsWarmupDemoter.addtotalUsage(totalCapacity);
             logger.info("totalCapacity %dMB", totalCapacity >> 20);
@@ -206,12 +209,6 @@ public class WorkerCapacityManager
     {
         if (!createCatalogLocalStore()) {
             logger.info("cleanLocalStorage exiting since cannot write to local store");
-            calculateTotalCapacity();
-            return;
-        }
-
-        if (!globalConfig.isEnableLocalStoreCleanOnLoad()) {
-            logger.info("cleanLocalStorage exiting since clean is disabled");
             calculateTotalCapacity();
             return;
         }
@@ -238,6 +235,17 @@ public class WorkerCapacityManager
                 boolean cleaned = ((fileList == null) || (fileList.length == 0));
                 int iterations = 0;
 
+                try {
+                    if (!cleaned) {
+                        FileUtils.deleteDirectory(localStore);
+                        localStore.mkdirs();
+                        cleaned = true;
+                    }
+                }
+                catch (IOException io) {
+                    logger.warn(io, "Failed to delete directory %s", localStorePath);
+                }
+
                 while (!cleaned && (iterations < 3)) {
                     try {
                         FileUtils.cleanDirectory(new File(localStorePath));
@@ -263,5 +271,31 @@ public class WorkerCapacityManager
             }
         });
         cleanLocalStorageThread.start();
+    }
+
+    public void deleteLocalStorageFiles()
+    {
+        String localStorePath = PathUtils.getUriPath(globalConfig.getLocalStorePath(), catalogNameProvider.get());
+        File localStore = new File(localStorePath);
+        try {
+            String[] fileList = localStore.list();
+            boolean cleaned = ((fileList == null) || (fileList.length == 0));
+            int iterations = 0;
+
+            while (!cleaned && (iterations < 3)) {
+                try {
+                    FileUtils.cleanDirectory(new File(localStorePath));
+                    cleaned = true;
+                }
+                catch (FileNotFoundException e) {
+                    fileList = localStore.list();
+                    cleaned = ((fileList == null) || (fileList.length == 0));
+                }
+                iterations++;
+            }
+        }
+        catch (IOException e) {
+            logger.error(e, "deleteLocalStorageFiles failed to clean localStorePath %s", localStorePath);
+        }
     }
 }

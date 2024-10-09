@@ -23,9 +23,7 @@ import io.airlift.json.ObjectMapperProvider;
 import io.opentelemetry.api.OpenTelemetry;
 import io.trino.plugin.hive.util.BlockJsonSerde;
 import io.trino.plugin.hive.util.HiveBlockEncodingSerde;
-import io.trino.plugin.warp.CoordinatorNodeManager;
 import io.trino.plugin.warp.WarpSessionProperties;
-import io.trino.plugin.warp.WorkerNodeManager;
 import io.trino.plugin.warp.annotation.ForWarp;
 import io.trino.plugin.warp.cloudvendors.config.CloudVendorConfig;
 import io.trino.plugin.warp.config.DictionaryConfig;
@@ -34,6 +32,7 @@ import io.trino.plugin.warp.config.MetricsConfig;
 import io.trino.plugin.warp.config.NativeConfig;
 import io.trino.plugin.warp.config.ProxiedConnectorConfig;
 import io.trino.plugin.warp.config.WarmupDemoterConfig;
+import io.trino.plugin.warp.dispatcher.warmup.demoter.WarmupRuleProvider;
 import io.trino.plugin.warp.juffer.BufferAllocator;
 import io.trino.plugin.warp.juffer.StorageEngineTxService;
 import io.trino.plugin.warp.metrics.MetricsManager;
@@ -41,6 +40,8 @@ import io.trino.plugin.warp.metrics.MetricsTimerTask;
 import io.trino.plugin.warp.metrics.PrintMetricsTimerTask;
 import io.trino.plugin.warp.metrics.ScheduledMetricsHandler;
 import io.trino.plugin.warp.node.CoordinatorInitializedEventHandler;
+import io.trino.plugin.warp.node.CoordinatorNodeManager;
+import io.trino.plugin.warp.node.WorkerNodeManager;
 import io.trino.plugin.warp.storage.capacity.WorkerCapacityManager;
 import io.trino.plugin.warp.storage.flows.FlowsSequencer;
 import io.trino.plugin.warp.tools.CatalogNameProvider;
@@ -49,6 +50,7 @@ import io.trino.spi.block.Block;
 import io.trino.spi.connector.ConnectorContext;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.json.JsonBinder.jsonBinder;
@@ -141,5 +143,12 @@ public class WarpMainModule
     public CatalogNameProvider provideCatalogName()
     {
         return new CatalogNameProvider(context.getCatalogHandle().getCatalogName() + "_" + context.getCatalogHandle().getVersion());
+    }
+
+    @Provides
+    @Singleton
+    public WarmupRuleProvider provideWarmupRuleProvider(WarmupRuleService warmupRuleService)
+    {
+        return new WarmupRuleProvider(Optional.of(warmupRuleService));
     }
 }

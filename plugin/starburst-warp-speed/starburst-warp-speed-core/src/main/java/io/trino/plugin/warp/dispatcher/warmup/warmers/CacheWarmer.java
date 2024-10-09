@@ -165,35 +165,26 @@ public class CacheWarmer
         long[] fileCookieParams = storageWarmerService.fileOpen(tmpRowGroupKey);
         fileCookieParams[FILE_COOKIE_PARAMS_START_OFFSET.ordinal()] = getFileOffset(tmpRowGroupKey);
         fileCookieParams[FILE_COOKIE_PARAMS_WRITE_BUF_ADDR.ordinal()] = storageWriterSplitConfig.writeBuff().address();
-        List<DictionaryWarmInfo> outDictionaryWarmInfos = new ArrayList<>();
 
-        pageSink.open(fileCookieParams, warmUpElementToWarm, outDictionaryWarmInfos);
+        DictionaryWarmInfo dictionaryWarmInfo = pageSink.open(fileCookieParams, warmUpElementToWarm);
         return new WarmingCandidate(fileCookieParams,
                 pageSink,
                 (int) fileCookieParams[FILE_COOKIE_PARAMS_START_OFFSET.ordinal()],
                 warmUpElementToWarm,
-                outDictionaryWarmInfos,
+                dictionaryWarmInfo,
                 tmpRowGroupKey);
     }
 
-    public StorageWriterSplitConfig lockAndStartWarming(RowGroupKey permanentRowGroupKey)
-            throws InterruptedException
+    public StorageWriterSplitConfig startWarming(RowGroupKey permanentRowGroupKey)
     {
-        RowGroupData rowGroupData = rowGroupDataService.getOrCreateRowGroupData(permanentRowGroupKey, Collections.emptyMap());
-        storageWarmerService.lockRowGroup(rowGroupData);
+        rowGroupDataService.getOrCreateRowGroupData(permanentRowGroupKey, Collections.emptyMap());
         return storageWriterService.startWarming("WarpCacheManager", permanentRowGroupKey.filePath(), dictionaryConfig.getEnableDictionary());
     }
 
-    public void finishWarmingAndUnlock(StorageWriterSplitConfig storageWriterSplitConfig, RowGroupKey permanentRowGroupKey)
+    public void finishWarming(StorageWriterSplitConfig storageWriterSplitConfig)
     {
-        try {
-            if (storageWriterSplitConfig != null) {
-                storageWriterService.finishWarming(storageWriterSplitConfig);
-            }
-        }
-        finally {
-            RowGroupData rowGroupData = rowGroupDataService.getOrCreateRowGroupData(permanentRowGroupKey, Collections.emptyMap());
-            storageWarmerService.releaseRowGroup(rowGroupData, true);
+        if (storageWriterSplitConfig != null) {
+            storageWriterService.finishWarming(storageWriterSplitConfig);
         }
     }
 

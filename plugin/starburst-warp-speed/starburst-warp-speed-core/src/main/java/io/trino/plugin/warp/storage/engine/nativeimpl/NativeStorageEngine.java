@@ -42,6 +42,8 @@ public class NativeStorageEngine
     private static final Logger logger = Logger.get(NativeStorageEngine.class);
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final ExceptionThrower exceptionThrower; // we keep a reference to hold this object for native layer ref
+    private final boolean loaded;
+
     // file API
     private final MethodHandle mFileOpen;
     private final MethodHandle mFileClose;
@@ -119,12 +121,13 @@ public class NativeStorageEngine
                     nativeConfig.getSkipIndexPercent(),
                     WarpNativeStorageEngineModule.getNativeLibrariesDirectory().toString(),
                     nativeConfig.getEnableSingleChunk(),
-                    nativeConfig.getEnableQueryResultType(),
+                    false,
                     nativeConfig.getEnablePackedChunk(),
                     nativeConfig.getEnableWarmingExtraLogs(),
                     nativeConfig.getEnableCompression(),
                     nativeConfig.getExceptionalListCompression(),
                     globalConfig.getDebugWarming());
+            loaded = true;
         }
         catch (Throwable t) {
             logger.error(t, "failed loading storage engine");
@@ -319,6 +322,12 @@ public class NativeStorageEngine
     }
 
     @Override
+    public boolean isLoaded()
+    {
+        return loaded;
+    }
+
+    @Override
     public native long warmupElementOpen(long context, int recTypeCode, int recTypeLength, int warmUpType);
 
     @Override
@@ -349,13 +358,13 @@ public class NativeStorageEngine
     public native long queryGetCollectStateSize(int numMatchCollect);
 
     @Override
-    public native long collectOpen(int totalNumRecords, long[] fileCookie, byte[] parsingBuff, byte[] collect2MatchParams, int numCollectWes,
-            int numChunksInRange, int[] weCollectParams, int connectorId, long matchBitmapAddress, int minOffset,
+    public native void collectOpen(int totalNumRecords, long[] fileCookie, int collectTxId, byte[] parsingBuff, byte[] collect2MatchParams,
+            int numCollectWes, int numChunksInRange, int[] weCollectParams, long catalogContext, long matchBitmapAddress, int minOffset,
             long[][] outCollectColBuffIds, long[] outMetadataBuffIds);
 
     @Override
     public native long matchOpen(int totalNumRecords, long[] fileCookie, int collectTxId, byte[] parsingBuff, byte[] collect2MatchParams, int numMatchWes,
-            int numChunksInRange, int[] weMatchTree, long matchBitmapAddress, int minOffset, long[][] outMatchColBuffIds);
+            int numChunksInRange, int[] weMatchTree, long matchBitmapAddress, long luceneBitmapAddress, int minOffset);
 
     @Override
     public native long collectRestoreState(int txId, int chunkIndex, StorageCollectorCallBack collectStateObj);
@@ -382,7 +391,7 @@ public class NativeStorageEngine
     public native void collect(int txId, int numWes, int chunkIndex, int numToCollect, int[] outResultTypes);
 
     @Override
-    public native long collectClose(int txId, int[] chunksWithBitmapsToStore, int numChunksWithBitmaps, StorageCollectorCallBack obj);
+    public native void collectClose(int txId, int[] chunksWithBitmapsToStore, int numChunksWithBitmaps, StorageCollectorCallBack obj, long[] outCollectStats);
 
     @Override
     public native void matchClose(int txId);
@@ -395,4 +404,7 @@ public class NativeStorageEngine
 
     @Override
     public native String executeDebugCommand(String commandName, int numParams, String[] paramNames, String[] paramValues);
+
+    @Override
+    public native void cleanStorageCache();
 }

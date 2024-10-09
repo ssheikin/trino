@@ -41,7 +41,6 @@ import io.trino.plugin.warp.dispatcher.services.RowGroupDataService;
 import io.trino.plugin.warp.dispatcher.warmup.WarmupProperties;
 import io.trino.plugin.warp.dispatcher.warmup.WorkerWarmingService;
 import io.trino.plugin.warp.dispatcher.warmup.demoter.events.WarmupDemoterFinishEvent;
-import io.trino.plugin.warp.dispatcher.warmup.fetcher.WarmupRuleFetcher;
 import io.trino.plugin.warp.expression.TransformFunction;
 import io.trino.plugin.warp.gen.constants.DemoteStatus;
 import io.trino.plugin.warp.gen.constants.WarmUpType;
@@ -104,7 +103,7 @@ public class WarmupDemoterService
     private final WarmupDemoterStats globalStatsDemoter;
     private final ExecutorService rowGroupExecutorService;
     private final FlowsSequencer flowsSequencer;
-    private final WarmupRuleFetcher<WarmupRule> warmupRuleFetcher;
+    private final WarmupRuleProvider warmupRuleProvider;
     private WarmupProperties defaultWarmupProperties;
     private AtomicDouble highestPriority = new AtomicDouble(0);
     private AtomicBoolean isExecuting = new AtomicBoolean(false);
@@ -123,7 +122,7 @@ public class WarmupDemoterService
     @Inject
     public WarmupDemoterService(WorkerCapacityManager workerCapacityManager,
             RowGroupDataService rowGroupDataService,
-            WarmupRuleFetcher<WarmupRule> warmupRuleFetcher,
+            WarmupRuleProvider warmupRuleProvider,
             WarmupDemoterConfig warmupDemoterConfig,
             NativeConfig nativeConfig,
             MetricsManager metricsManager,
@@ -134,7 +133,7 @@ public class WarmupDemoterService
     {
         this.workerCapacityManager = requireNonNull(workerCapacityManager);
         this.rowGroupDataService = requireNonNull(rowGroupDataService);
-        this.warmupRuleFetcher = requireNonNull(warmupRuleFetcher);
+        this.warmupRuleProvider = requireNonNull(warmupRuleProvider);
         this.warmupDemoterConfig = requireNonNull(warmupDemoterConfig);
         this.globalStatsDemoter = (WarmupDemoterStats) metricsManager.registerMetric(WarmupDemoterStats.create(WARMUP_DEMOTER_STAT_GROUP));
         this.flowsSequencer = requireNonNull(flowsSequencer);
@@ -156,7 +155,7 @@ public class WarmupDemoterService
     private void init()
     {
         logger.debug("WarmupDemoterService init = %d", System.identityHashCode(connectorSync));
-        connectorSync.setWarmupDemoterService(this);
+        connectorSync.init(this);
     }
 
     //called from warmup - async
@@ -256,7 +255,7 @@ public class WarmupDemoterService
     void cancelDemoteExecution()
     {
         logger.error("failed to execute demote, call native to cancel demote with sequenceId = %d", demoteArguments.demoterSequence);
-        connectorSync.syncDemoteCycleEnd(demoteArguments.demoterSequence,
+        connectorSync.syncDemoteEnd(demoteArguments.demoterSequence,
                 demoteArguments.getLowestPriority(),
                 highestPriority.get(),
                 DemoteStatus.DEMOTE_STATUS_REACHED_THRESHOLD);
@@ -308,7 +307,7 @@ public class WarmupDemoterService
         List<TupleRank> immediateObjects = new ArrayList<>();
         List<TupleRank> failedObjects = new ArrayList<>();
         List<RowGroupData> rowGroupData = rowGroupDataService.getAll();
-        List<WarmupRule> warmupRules = warmupRuleFetcher.getWarmupRules();
+        List<WarmupRule> warmupRules = warmupRuleProvider.getAll();
         logger.debug("%s: build tupleRank", catalogNameProvider.get());
         buildTupleRank(warmupRules,
                 rowGroupData,
@@ -360,7 +359,7 @@ public class WarmupDemoterService
         }
         logger.debug("%s: demoteCycleEnd: call connectorSync.syncDemoteCycleEnd (demoteSequence = %d, lowestPriority = %f, highestPriority = %f, demoteStatus = %s)",
                 catalogNameProvider.get(), demoteArguments.demoterSequence, demoteArguments.getLowestPriority(), highestPriority.get(), demoteStatus.name());
-        connectorSync.syncDemoteCycleEnd(demoteArguments.demoterSequence, demoteArguments.getLowestPriority(), highestPriority.get(), demoteStatus);
+        connectorSync.syncDemoteEnd(demoteArguments.demoterSequence, demoteArguments.getLowestPriority(), highestPriority.get(), demoteStatus);
     }
 
     void abortActiveDemote()
@@ -398,7 +397,7 @@ public class WarmupDemoterService
                 demoteStatus = DemoteStatus.DEMOTE_STATUS_NOT_COMPLETED;
             }
             double lowestPriority = demoteArguments.getLowestPriority();
-            connectorSync.syncDemoteCycleEnd(demoteArguments.demoterSequence, lowestPriority, highestPriority.get(), demoteStatus);
+            connectorSync.syncDemoteEnd(demoteArguments.demoterSequence, lowestPriority, highestPriority.get(), demoteStatus);
         }
         catch (Exception e) {
             if (e instanceof TrinoException) {

@@ -11,10 +11,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.warp.tools.certification;
+package io.trino.plugin.warp.storage.read;
 
-public enum SwaggerExposingLevel
+import io.trino.plugin.warp.storage.juffers.ReadJuffersWarmUpElement;
+import io.trino.plugin.warp.storage.lucene.LuceneMatcher;
+
+import java.util.List;
+
+public record MatchArgs(int[] weMatchTree,
+                        List<ReadJuffersWarmUpElement> matchJuffersWe,
+                        LuceneMatcher[] luceneMatchers)
 {
-    DEBUG,
-    PRODUCTION
 }

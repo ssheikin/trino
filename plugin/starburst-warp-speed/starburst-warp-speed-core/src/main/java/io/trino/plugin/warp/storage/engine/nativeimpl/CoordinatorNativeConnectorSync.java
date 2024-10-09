@@ -33,7 +33,6 @@ public class CoordinatorNativeConnectorSync
     private static final Logger logger = Logger.get(CoordinatorNativeConnectorSync.class);
     private final CatalogName catalogName;
     private final EventBus eventBus;
-    private Integer catalogSequence;
 
     @Inject
     public CoordinatorNativeConnectorSync(CatalogName catalogName,
@@ -47,47 +46,29 @@ public class CoordinatorNativeConnectorSync
     @PreDestroy
     public void shutdown()
     {
-        try {
-            logger.debug("nativeConnectorSync from shutdown, %d", System.identityHashCode(this));
-            if (!unregister(catalogSequence)) {
-                logger.error("failed to unregister");
-                return;
-            }
-            logger.info("unregister catalog name %s sequence %d", catalogName, catalogSequence);
-        }
-        catch (Throwable e) {
-            logger.error(e, "failed to unregister");
-        }
-        finally {
-            logger.debug("unregister finally");
-        }
     }
 
     @Subscribe
     public void init(CoordinatorInitializedEvent coordinatorInitializedEvent)
     {
         try {
-            logger.debug("nativeConnectorSync from init, %d", System.identityHashCode(this));
-            catalogSequence = register(catalogName.toString(), 1800);
-            logger.info("catalog name %s sequence %d", catalogName, catalogSequence);
-            eventBus.post(new ConnectorSyncInitializedEvent(catalogSequence));
+            eventBus.post(new ConnectorSyncInitializedEvent(true));
         }
         catch (Throwable e) {
             logger.error(e, "failed to register");
             throw new RuntimeException(e);
         }
-        finally {
-            logger.debug("register finally");
-        }
     }
 
     @Override
-    public int getCatalogSequence()
+    public String getCatalogName()
     {
-        return catalogSequence;
+        return catalogName.toString();
     }
 
-    public native int register(String catalogName, int timeoutSec);
-
-    public native boolean unregister(int connectorId);
+    @Override
+    public boolean isDefaultCatalog()
+    {
+        return true;
+    }
 }

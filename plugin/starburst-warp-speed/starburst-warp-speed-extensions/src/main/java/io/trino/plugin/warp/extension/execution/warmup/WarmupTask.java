@@ -24,7 +24,6 @@ import io.airlift.http.client.HttpUriBuilder;
 import io.airlift.http.client.Request;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
-import io.trino.plugin.warp.CoordinatorNodeManager;
 import io.trino.plugin.warp.annotation.Audit;
 import io.trino.plugin.warp.annotation.ForWarmupRuleCloudFetcher;
 import io.trino.plugin.warp.api.warmup.RuleResultDTO;
@@ -40,6 +39,7 @@ import io.trino.plugin.warp.dispatcher.warmup.fetcher.WarmupRuleFetcher;
 import io.trino.plugin.warp.execution.WarpClient;
 import io.trino.plugin.warp.extension.execution.TaskResource;
 import io.trino.plugin.warp.extension.execution.TaskResourceMarker;
+import io.trino.plugin.warp.node.CoordinatorNodeManager;
 import io.trino.plugin.warp.tools.util.Pair;
 import io.trino.plugin.warp.tools.util.StringUtils;
 import io.trino.plugin.warp.util.UriUtils;
@@ -95,6 +95,7 @@ public class WarmupTask
     private final WarmupRuleFetcher<WarmupRule> warmupRuleFetcher;
     private final CoordinatorNodeManager coordinatorNodeManager;
     private final WarpClient warpClient;
+    private final EventBus eventBus;
     private final WarmupRuleCloudFetcherConfig warmupRuleCloudFetcherConfig;
 
     @Inject
@@ -109,6 +110,7 @@ public class WarmupTask
         this.warmupRuleFetcher = requireNonNull(warmupRuleFetcher);
         this.coordinatorNodeManager = requireNonNull(coordinatorNodeManager);
         this.warpClient = requireNonNull(warpClient);
+        this.eventBus = requireNonNull(eventBus);
         this.warmupRuleCloudFetcherConfig = requireNonNull(warmupRuleCloudFetcherConfig);
 
         requireNonNull(eventBus).register(this);
@@ -163,6 +165,7 @@ public class WarmupTask
                 .map(WarmupRuleApiMapper::toModel)
                 .collect(Collectors.toList());
         WarmupRuleResult warmupRuleResult = warmupRuleService.save(collect);
+        eventBus.post(new WarmRulesChangedEvent());
         ImmutableList<WarmupColRuleData> appliedRules = warmupRuleResult.appliedRules().stream().map(WarmupRuleApiMapper::fromModel).collect(toImmutableList());
         ImmutableList<WarmupColRuleRejectionData> rejectedRules = warmupRuleResult.rejectedRules().entrySet().stream()
                 .map(e -> new WarmupColRuleRejectionData(WarmupRuleApiMapper.fromModel(e.getKey()), ImmutableSet.copyOf(e.getValue()))).collect(toImmutableList());
@@ -175,6 +178,7 @@ public class WarmupTask
     public RuleResultDTO replace(@JsonProperty("warmupColRuleDataList") List<WarmupColRuleData> warmupColRuleDataList)
     {
         WarmupRuleResult warmupRuleResult = warmupRuleService.replaceAll(warmupColRuleDataList.stream().map(WarmupRuleApiMapper::toModel).collect(Collectors.toList()));
+        eventBus.post(new WarmRulesChangedEvent());
         ImmutableList<WarmupColRuleData> appliedRules = warmupRuleResult.appliedRules().stream().map(WarmupRuleApiMapper::fromModel).collect(toImmutableList());
         ImmutableList<WarmupColRuleRejectionData> rejectedRules = warmupRuleResult.rejectedRules().entrySet().stream()
                 .map(e -> new WarmupColRuleRejectionData(WarmupRuleApiMapper.fromModel(e.getKey()), ImmutableSet.copyOf(e.getValue()))).collect(toImmutableList());
@@ -186,7 +190,7 @@ public class WarmupTask
     @Audit
     public Map<String, List<WarmupColRuleData>> fetch()
     {
-        warmupRuleFetcher.getWarmupRules(true);
+        warmupRuleFetcher.fetch();
         List<Node> workers = coordinatorNodeManager.getWorkerNodes();
         return workers.stream()
                 .parallel()
@@ -210,6 +214,7 @@ public class WarmupTask
     public void delete(@JsonProperty("ids") List<Integer> ids)
     {
         warmupRuleService.delete(ids);
+        eventBus.post(new WarmRulesChangedEvent());
     }
 
     @Path(TASK_NAME_GET_USAGE)
@@ -249,7 +254,7 @@ public class WarmupTask
         warmupRulesUsageData.warmupColRuleUsageDataList()
                 .forEach(warmupColRuleUsageData -> hashToWarmupColRuleUsageDataMapBuilder.compute(
                         warmupColRuleDataHashWithoutUsage(warmupColRuleUsageData),
-                        (key, oldValue) -> {
+                        (_, oldValue) -> {
                             if (Objects.isNull(oldValue)) {
                                 return WarmupColRuleUsageData.builder(warmupColRuleUsageData);
                             }
@@ -262,7 +267,7 @@ public class WarmupTask
         warmupRulesUsageData.warmupDefaultRuleUsageDataList()
                 .forEach(warmupDefaultRuleUsageData -> warmupTypeToWarmupDefaultRuleUsageDataMap.compute(
                         warmupDefaultRuleUsageData.warmUpType(),
-                        (key, oldValue) -> {
+                        (_, oldValue) -> {
                             if (Objects.isNull(oldValue)) {
                                 return warmupDefaultRuleUsageData;
                             }

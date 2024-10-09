@@ -52,6 +52,7 @@ import io.trino.plugin.warp.storage.read.ChunksQueueService;
 import io.trino.plugin.warp.storage.read.CollectTxService;
 import io.trino.plugin.warp.storage.read.LazyCollectTxService;
 import io.trino.plugin.warp.storage.read.LazyCollectorService;
+import io.trino.plugin.warp.storage.read.MatchService;
 import io.trino.plugin.warp.storage.read.StorageCollectorService;
 import io.trino.plugin.warp.storage.read.fill.BlockFillersFactory;
 import io.trino.plugin.warp.storage.write.StorageWriterService;
@@ -60,7 +61,6 @@ import io.trino.plugin.warp.storage.write.WarpPageSinkFactory;
 import io.trino.plugin.warp.storage.write.appenders.BlockAppenderFactory;
 import io.trino.plugin.warp.storage.write.dictionary.DictionaryWriterFactory;
 import io.trino.plugin.warp.util.FailureGeneratorInvocationHandler;
-import io.trino.plugin.warp.warmup.dal.WarmupRuleDao;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.ConnectorContext;
 
@@ -124,6 +124,7 @@ public class DispatcherMainModule
             binder.bind(BlockAppenderFactory.class);
             binder.bind(BlockTransformerFactory.class);
             binder.bind(DomainToMapBlockConvertor.class);
+            binder.bind(MatchService.class);
         }
         if (WarpBaseModule.isSingle(config)) {
             binder.bind(DispatcherConnectorBase.class).to(SingleDispatcherConnector.class);
@@ -136,7 +137,6 @@ public class DispatcherMainModule
         else {
             binder.bind(DispatcherConnectorBase.class).to(WorkerDispatcherConnector.class);
         }
-        binder.bind(WarmupRuleDao.class);
         binder.bind(DispatcherTableHandleBuilderProvider.class);
         binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
     }

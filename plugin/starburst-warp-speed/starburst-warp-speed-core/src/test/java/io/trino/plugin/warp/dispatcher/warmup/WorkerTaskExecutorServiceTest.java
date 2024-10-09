@@ -15,6 +15,7 @@ package io.trino.plugin.warp.dispatcher.warmup;
 
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
+import io.trino.plugin.warp.cloudvendors.config.CloudVendorConfig;
 import io.trino.plugin.warp.config.GlobalConfig;
 import io.trino.plugin.warp.config.NativeConfig;
 import io.trino.plugin.warp.config.WarmupDemoterConfig;
@@ -47,12 +48,17 @@ public class WorkerTaskExecutorServiceTest
         this.statsWorkerTaskExecutorService = new WorkerTaskExecutorServiceStats(WORKER_TASK_EXECUTOR_STAT_GROUP);
         MetricsManager metricManager = mock(MetricsManager.class);
         when(metricManager.registerMetric(any())).thenReturn(statsWorkerTaskExecutorService);
+        GlobalConfig globalConfig = new GlobalConfig();
+        globalConfig.setEnableImportExport(true);
+        CloudVendorConfig cloudVendorConfig = new CloudVendorConfig();
+        cloudVendorConfig.setStoreType("s3");
         this.taskExecutorService = new WorkerTaskExecutorService(
                 new WarmupDemoterConfig(),
                 new NativeConfig(),
                 mock(ConnectorSync.class),
                 metricManager,
-                new GlobalConfig(),
+                globalConfig,
+                cloudVendorConfig,
                 mock(WarpInitializedServiceRegistry.class));
         this.taskExecutorService.init();
     }
@@ -98,6 +104,22 @@ public class WorkerTaskExecutorServiceTest
         TestSubmittableTask task1 = new TestSubmittableTask(key1, 1);
         TestSubmittableTask task2 = new TestSubmittableTask(key1, 1);
         TestSubmittableTask task3 = new TestSubmittableTask(key1, 1);
+        taskExecutorService.submitTask(task1, true);
+        taskExecutorService.submitTask(task2, true);
+        taskExecutorService.submitTask(task3, true);
+        taskExecutorService.taskFinished(key1);
+        taskExecutorService.taskFinished(key1);
+        taskExecutorService.taskFinished(key1);
+        assertThat(this.statsWorkerTaskExecutorService.gettask_scheduled()).isEqualTo(3);
+    }
+
+    @Test
+    public void testToMuchPendingShouldGetRejeced()
+    {
+        RowGroupKey key1 = new RowGroupKey("s", "t", "fp", 0, 0, 0, "", "");
+        TestSubmittableTask task1 = new TestSubmittableTask(key1, 1);
+        TestSubmittableTask task2 = new TestSubmittableTask(key1, 1);
+        TestSubmittableTask task3 = new TestSubmittableTask(key1, 1);
         TestSubmittableTask task4 = new TestSubmittableTask(key1, 1);
         TestSubmittableTask task5 = new TestSubmittableTask(key1, 1);
         taskExecutorService.submitTask(task1, true);
@@ -110,7 +132,8 @@ public class WorkerTaskExecutorServiceTest
         taskExecutorService.taskFinished(key1);
         taskExecutorService.taskFinished(key1);
         taskExecutorService.taskFinished(key1);
-        assertThat(this.statsWorkerTaskExecutorService.gettask_scheduled()).isEqualTo(5);
+        assertThat(this.statsWorkerTaskExecutorService.gettask_scheduled()).isEqualTo(4);
+        assertThat(this.statsWorkerTaskExecutorService.gettask_skipped_due_queue_size()).isEqualTo(1);
     }
 
     @Test

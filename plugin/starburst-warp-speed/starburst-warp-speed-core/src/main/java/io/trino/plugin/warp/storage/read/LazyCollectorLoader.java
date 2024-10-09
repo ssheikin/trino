@@ -19,6 +19,7 @@ import io.trino.plugin.warp.config.GlobalConfig;
 import io.trino.plugin.warp.gen.constants.QueryResultType;
 import io.trino.plugin.warp.gen.stats.DictionaryStats;
 import io.trino.plugin.warp.gen.stats.DispatcherPageSourceStats;
+import io.trino.plugin.warp.gen.stats.TestStats;
 import io.trino.plugin.warp.log.ShapingLogger;
 import io.trino.plugin.warp.storage.juffers.ReadJuffersWarmUpElement;
 import io.trino.spi.block.Block;
@@ -35,6 +36,7 @@ public class LazyCollectorLoader
     private final DispatcherPageSourceStats dispatcherPageSourceStats;
     private final DictionaryStats dictionaryStats;
     private final ShapingLogger shapingLogger;
+    private final TestStats testStats;
     private boolean loaded;
 
     public LazyCollectorLoader(
@@ -42,7 +44,8 @@ public class LazyCollectorLoader
             LazyCollectorLoaderArgs lazyCollectorLoaderArgs,
             DictionaryStats varadaStatsDictionary,
             DispatcherPageSourceStats dispatcherPageSourceStats,
-            GlobalConfig globalConfig)
+            GlobalConfig globalConfig,
+            TestStats testStats)
     {
         this.collectTxService = collectTxService;
         this.dispatcherPageSourceStats = dispatcherPageSourceStats;
@@ -53,6 +56,7 @@ public class LazyCollectorLoader
                 globalConfig.getShapingLoggerThreshold(),
                 globalConfig.getShapingLoggerDuration(),
                 globalConfig.getShapingLoggerNumberOfSamples());
+        this.testStats = testStats;
     }
 
     @Override
@@ -65,17 +69,17 @@ public class LazyCollectorLoader
         int chunkIndexToCollect = lazyCollectorLoaderArgs.lazyCollectStartRowIndex() / lazyCollectorLoaderArgs.chunkSize();
         int startRowIndexInChunk = lazyCollectorLoaderArgs.lazyCollectStartRowIndex() % lazyCollectorLoaderArgs.chunkSize();
         int numRowsToCollect = lazyCollectorLoaderArgs.numToCollect();
-        int collectTxId = BaseCollectTxService.INVALID_TX_ID;
+        int queryMemoryId = BaseCollectTxService.INVALID_TX_ID;
         LazyCollectOpenResult collectOpenResult = null;
         try {
             // open
             collectOpenResult = collectTxService.collectOpen(numRowsToCollect, lazyCollectorLoaderArgs);
-            collectTxId = collectOpenResult.collectTxId();
+            queryMemoryId = collectOpenResult.queryMemoryId();
 
             // prepare and collect
             int[] queryResultTypes = new int[1];
-            collectTxService.prepareChunkFullScan(collectTxId, chunkIndexToCollect, numRowsToCollect, startRowIndexInChunk);
-            collectTxService.collect(collectTxId, 1, chunkIndexToCollect, numRowsToCollect, queryResultTypes);
+            collectTxService.prepareChunkFullScan(queryMemoryId, chunkIndexToCollect, numRowsToCollect, startRowIndexInChunk);
+            collectTxService.collect(queryMemoryId, 1, chunkIndexToCollect, numRowsToCollect, queryResultTypes);
 
             // fill block
             WarmupElementCollectParams collectParams = lazyCollectorLoaderArgs.collectParams();
@@ -84,14 +88,14 @@ public class LazyCollectorLoader
             retBlock = lazyCollectorLoaderArgs.blockFiller().fillBlockWithRecords(collectParams, readJuffersWarmUpElement, numRowsToCollect, queryResultType, dictionaryStats);
 
             // close
-            collectTxService.collectClose(collectTxId);
+            collectTxService.collectClose(collectOpenResult.queryMemoryId(), testStats);
             dispatcherPageSourceStats.inclazy_collect_loaded_blocks();
         }
         catch (Exception e) {
             shapingLogger.error(e, "lazy collect failed LazyCollectorArgs %s collectParams %s, collectOpenResults %s",
                     lazyCollectorLoaderArgs, lazyCollectorLoaderArgs.collectParams(), collectOpenResult);
             dispatcherPageSourceStats.inclazy_collect_failed_load();
-            collectTxService.collectAbort(e, collectTxId);
+            collectTxService.collectAbort(e, queryMemoryId);
             throw e;
         }
         return retBlock;

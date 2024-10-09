@@ -18,6 +18,7 @@ import com.google.inject.Singleton;
 import io.trino.plugin.warp.dispatcher.warmup.demoter.WarmupDemoterService;
 import io.trino.plugin.warp.gen.constants.DemoteStatus;
 
+import java.lang.foreign.Arena;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -41,6 +42,47 @@ public class StubsConnectorSync
     }
 
     @Override
+    public void init(WarmupDemoterService warmupDemoterService)
+    {
+        this.warmupDemoterService = warmupDemoterService;
+    }
+
+    @Override
+    public String getCatalogName()
+    {
+        return "stub-catalog";
+    }
+
+    @Override
+    public long getCatalogContext()
+    {
+        return 0;
+    }
+
+    @Override
+    public boolean isDefaultCatalog()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean isCatalogReducedResources()
+    {
+        return false;
+    }
+
+    @Override
+    public QueryMemory allocQueryMemory()
+    {
+        return new QueryMemory(0, Arena.ofAuto().allocate(1024 * 1024, 4));
+    }
+
+    @Override
+    public void freeQueryMemory(int queryMemoryId)
+    {
+    }
+
+    @Override
     public void startDemote(int demoteSequence)
     {
         if (this.demoteSequence.get() > 0 && this.demoteSequence.get() != demoteSequence) {
@@ -59,7 +101,7 @@ public class StubsConnectorSync
     }
 
     @Override
-    public void syncDemoteCycleEnd(int demoteSequence, double lowestPriorityExist, double highestPriorityDemoted, DemoteStatus demoteStatus)
+    public void syncDemoteEnd(int demoteSequence, double lowestPriorityExist, double highestPriorityDemoted, DemoteStatus demoteStatus)
     {
         if (this.demoteSequence.get() > 0 && this.demoteSequence.get() != demoteSequence) {
             throw new RuntimeException(
@@ -104,11 +146,5 @@ public class StubsConnectorSync
         }
         this.epsilon = epsilon;
         return demoteSequence.incrementAndGet();
-    }
-
-    @Override
-    public void setWarmupDemoterService(WarmupDemoterService warmupDemoterService)
-    {
-        this.warmupDemoterService = warmupDemoterService;
     }
 }

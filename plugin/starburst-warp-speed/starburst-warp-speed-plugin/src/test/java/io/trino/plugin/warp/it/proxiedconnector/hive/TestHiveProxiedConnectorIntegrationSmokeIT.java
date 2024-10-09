@@ -449,7 +449,7 @@ public class TestHiveProxiedConnectorIntegrationSmokeIT
                 "t",
                 Map.of(C1, Set.of(new WarmupPropertiesData(WarmUpType.WARM_UP_TYPE_DATA, DEFAULT_PRIORITY, DEFAULT_TTL)),
                         C2, Set.of(new WarmupPropertiesData(WarmUpType.WARM_UP_TYPE_DATA, DEFAULT_PRIORITY, DEFAULT_TTL),
-                                    new WarmupPropertiesData(WarmUpType.WARM_UP_TYPE_BASIC, DEFAULT_PRIORITY, DEFAULT_TTL))));
+                                new WarmupPropertiesData(WarmUpType.WARM_UP_TYPE_BASIC, DEFAULT_PRIORITY, DEFAULT_TTL))));
         warmAndValidate("select * from t", false, 3, 1);
 
         Map<String, Long> expectedQueryStats = Map.of(
@@ -1829,6 +1829,10 @@ public class TestHiveProxiedConnectorIntegrationSmokeIT
 
         query = "select * from %s.%s where cast(timestamp_col as varchar) = '2021-04-12 00:00:00.000'".formatted(schema, table);
         validateQueryStats(query, session, expectedJmxQueryStats);
+
+        session = Session.builder(getSession())
+                .setSystemProperty(catalog + "." + ENABLE_DEFAULT_WARMING, "false")
+                .build();
 
         query = "select * from %s.%s where cast(date_col as varchar) = '2021-04-12'".formatted(schema, table);
         validateQueryStats(query, session, expectedJmxQueryStats);

@@ -19,7 +19,6 @@ import com.google.common.eventbus.EventBus;
 import io.airlift.http.client.FullJsonResponseHandler;
 import io.airlift.http.client.HttpUriBuilder;
 import io.airlift.http.client.Request;
-import io.trino.plugin.warp.CoordinatorNodeManager;
 import io.trino.plugin.warp.api.warmup.WarmUpType;
 import io.trino.plugin.warp.api.warmup.WarmupColRuleData;
 import io.trino.plugin.warp.api.warmup.WarmupColRuleRejectionData;
@@ -30,6 +29,7 @@ import io.trino.plugin.warp.dispatcher.model.RegularColumn;
 import io.trino.plugin.warp.dispatcher.warmup.fetcher.WarmupRuleCloudFetcherConfig;
 import io.trino.plugin.warp.dispatcher.warmup.fetcher.WarmupRuleFetcher;
 import io.trino.plugin.warp.execution.WarpClient;
+import io.trino.plugin.warp.node.CoordinatorNodeManager;
 import io.trino.plugin.warp.util.NodeUtils;
 import io.trino.plugin.warp.warmup.WarmupRuleApiMapper;
 import io.trino.plugin.warp.warmup.WarmupRuleService;
@@ -65,11 +65,12 @@ public class WarmupTaskTest
     private WarpClient warpClient;
     private WarmupTask task;
 
+    @SuppressWarnings("unchecked")
     @BeforeEach
     public void before()
     {
         warmupRuleService = mock(WarmupRuleService.class);
-        warmupRuleFetcher = mock(WarmupRuleFetcher.class);
+        warmupRuleFetcher = (WarmupRuleFetcher<WarmupRule>) mock(WarmupRuleFetcher.class);
         coordinatorNodeManager = mock(CoordinatorNodeManager.class);
         warpClient = mock(WarpClient.class);
 
@@ -186,6 +187,6 @@ public class WarmupTaskTest
     public void testFetch()
     {
         task.fetch();
-        verify(warmupRuleFetcher, times(1)).getWarmupRules(eq(true));
+        verify(warmupRuleFetcher, times(1)).fetch();
     }
 }

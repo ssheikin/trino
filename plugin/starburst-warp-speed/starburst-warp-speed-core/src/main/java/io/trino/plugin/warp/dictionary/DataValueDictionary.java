@@ -21,6 +21,8 @@ import io.trino.plugin.warp.dispatcher.model.WarmUpElementState;
 import io.trino.plugin.warp.gen.stats.DictionaryStats;
 import io.trino.spi.block.Block;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -38,12 +40,13 @@ public class DataValueDictionary
     private final int fixedRecTypeLength;
     private final DictionaryStats dictionaryStats;
     private final AtomicInteger usingTransactions = new AtomicInteger();
+    private final int dictionaryMaxSize;
     private final int maxDictionaryCacheWeight;
 
     private int dictionaryWeight;
     private int attachedDictionarySize;
     private int maxRecTypeLength;
-    private Object[] readDictionary;
+    private List<Object> readDictionary;
     private Block preBlock; //optimization. dictionary values as block. Used by Fillers
     private boolean shouldExport;
     private boolean isImmutable;
@@ -64,7 +67,8 @@ public class DataValueDictionary
         this.writeDictionary = new ConcurrentHashMap<>() {};
         this.dictionaryWeight = 0;
         this.attachedDictionarySize = 0;
-        this.readDictionary = new Object[dictionaryConfig.getDictionaryMaxSize()];
+        this.readDictionary = new ArrayList<>();
+        this.dictionaryMaxSize = dictionaryConfig.getDictionaryMaxSize();
         this.fixedRecTypeLength = fixedRecTypeLength;
         this.maxDictionaryCacheWeight = dictionaryConfig.getMaxDictionaryCacheWeight();
         // maxRecTypeLength
@@ -82,19 +86,20 @@ public class DataValueDictionary
         if (index == null) {
             addKeyLock.lock();
             try {
-                index = writeDictionary.computeIfAbsent(key, (x) -> {
-                    int incDictionaryWeight = addedWeight(key);
-                    if (writeDictionary.size() == readDictionary.length || (incDictionaryWeight + dictionaryWeight > maxDictionaryCacheWeight)) {
+                Object value = getKeyValue(key);
+                index = writeDictionary.computeIfAbsent(value, (x) -> {
+                    int incDictionaryWeight = addedWeight(value);
+                    if (writeDictionary.size() == dictionaryMaxSize || (incDictionaryWeight + dictionaryWeight > maxDictionaryCacheWeight)) {
                         throw new DictionaryMaxException("dictionary get failed", WarmUpElementState.State.FAILED_TEMPORARILY, dictionaryKey);
                     }
                     try {
                         increaseDictionaryWeight(incDictionaryWeight);
                         int newIndex = writeDictionary.size();
-                        readDictionary[newIndex] = key;
+                        readDictionary.add(value);
                         return (short) newIndex;
                     }
                     catch (Exception e) {
-                        logger.error(e, "failed to append key %s to dictionary %s", key, this);
+                        logger.error(e, "failed to append key %s to dictionary %s", value, this);
                         throw new RuntimeException(e);
                     }
                 });
@@ -106,11 +111,19 @@ public class DataValueDictionary
         return index;
     }
 
+    private Object getKeyValue(Object key)
+    {
+        if (key instanceof Slice && !((Slice) key).isCompact()) {
+            return ((Slice) key).copy();
+        }
+        return key;
+    }
+
     // we assume this API is called under a lock to get a dictionary reference, thus no need to take the key lock
     @Override
     public void loadKey(Object key, int index)
     {
-        readDictionary[index] = key;
+        readDictionary.add(key);
         attachedDictionarySize++;
         writeDictionary.put(key, (short) index);
         int incDictionaryWeight = addedWeight(key);
@@ -126,7 +139,7 @@ public class DataValueDictionary
     @Override
     public Object get(int index)
     {
-        return readDictionary[index];
+        return readDictionary.get(index);
     }
 
     @Override
@@ -191,7 +204,7 @@ public class DataValueDictionary
     {
         addKeyLock.lock();
         try {
-            return new DictionaryToWrite(readDictionary, writeDictionary.size(), maxRecTypeLength, dictionaryWeight);
+            return new DictionaryToWrite(readDictionary.toArray(), writeDictionary.size(), maxRecTypeLength, dictionaryWeight);
         }
         finally {
             addKeyLock.unlock();
@@ -212,7 +225,7 @@ public class DataValueDictionary
     void reset()
     {
         writeDictionary.clear();
-        readDictionary = new Object[readDictionary.length];
+        readDictionary = new ArrayList<>();
         preBlock = null;
         attachedDictionarySize = 0;
     }

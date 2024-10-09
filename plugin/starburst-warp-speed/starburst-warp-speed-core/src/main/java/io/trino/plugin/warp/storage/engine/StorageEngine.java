@@ -146,25 +146,24 @@ public interface StorageEngine
      *
      * @param totalNumRecords - total number of records in the warm up element
      * @param fileCookie - hot file to read from
+     * @param collectTxId - transaction id
      * @param parsingBuff - buffer for native to parse the collect parameters
      * @param collect2MatchParams - parameters to pass from collect to match
      * @param numCollectWes - number of collect warm up elements
      * @param weCollectParams - parameters for collect warmup elements dumped into an array
-     * @param connectorId - connector id
+     * @param catalogContext - connector context used for callbacks handles
      * @param outCollectColBuffIds - buffer ids for data and nulls per warm up element
      * @param outMetadataBuffIds - buffer id for row numbers. buffer id for record buffer state. valid id is zero of positive, -1 for invalid.
-     *
-     * @return transaction id
      */
-    default long collectOpen(int totalNumRecords, long[] fileCookie, byte[] parsingBuff, byte[] collect2MatchParams, int numCollectWes,
-            int numChunksInRange, int[] weCollectParams, int connectorId, long matchBitmapAddress, int minOffset,
+    default void collectOpen(int totalNumRecords, long[] fileCookie, int collectTxId, byte[] parsingBuff, byte[] collect2MatchParams,
+            int numCollectWes, int numChunksInRange, int[] weCollectParams, long catalogContext, long matchBitmapAddress, int minOffset,
             long[][] outCollectColBuffIds, long[] outMetadataBuffIds)
     {
         throw new UnsupportedOperationException();
     }
 
     default long matchOpen(int totalNumRecords, long[] fileCookie, int collectTxId, byte[] parsingBuff, byte[] collect2MatchParams, int numMatchWes,
-            int numChunksInRange, int[] weMatchTree, long matchBitmapAddress, int minOffset, long[][] outMatchColBuffIds)
+            int numChunksInRange, int[] weMatchTree, long matchBitmapAddress, long luceneBitmapAddress, int minOffset)
     {
         throw new UnsupportedOperationException();
     }
@@ -287,7 +286,7 @@ public interface StorageEngine
         throw new UnsupportedOperationException();
     }
 
-    default long collectClose(int txId, int[] chunksWithBitmapsToStore, int numChunksWithBitmaps, StorageCollectorCallBack obj)
+    default void collectClose(int txId, int[] chunksWithBitmapsToStore, int numChunksWithBitmaps, StorageCollectorCallBack obj, long[] outCollectStats)
     {
         throw new UnsupportedOperationException();
     }
@@ -304,6 +303,16 @@ public interface StorageEngine
     }
 
     default String executeDebugCommand(String commandName, int numParams, String[] paramNames, String[] paramValues)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default boolean isLoaded()
+    {
+        return true;
+    }
+
+    default void cleanStorageCache()
     {
         throw new UnsupportedOperationException();
     }

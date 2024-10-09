@@ -14,12 +14,10 @@
 package io.trino.plugin.warp.warmup;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.eventbus.EventBus;
 import io.trino.plugin.warp.WarpErrorCode;
 import io.trino.plugin.warp.config.GlobalConfig;
 import io.trino.plugin.warp.config.WarmupDemoterConfig;
 import io.trino.plugin.warp.di.DefaultFakeConnectorSessionProvider;
-import io.trino.plugin.warp.di.WarpInitializedServiceRegistry;
 import io.trino.plugin.warp.dispatcher.DispatcherProxiedConnectorTransformer;
 import io.trino.plugin.warp.dispatcher.model.RegularColumn;
 import io.trino.plugin.warp.dispatcher.model.WarpColumn;
@@ -27,7 +25,6 @@ import io.trino.plugin.warp.gen.constants.WarmUpType;
 import io.trino.plugin.warp.storage.engine.StorageEngineConstants;
 import io.trino.plugin.warp.storage.engine.StubsStorageEngineConstants;
 import io.trino.plugin.warp.tools.util.Pair;
-import io.trino.plugin.warp.warmup.dal.WarmupRuleDao;
 import io.trino.plugin.warp.warmup.model.PartitionValueWarmupPredicateRule;
 import io.trino.plugin.warp.warmup.model.WarmupPredicateRule;
 import io.trino.plugin.warp.warmup.model.WarmupRule;
@@ -85,25 +82,22 @@ public class WarmupRuleServiceTest
     {
         columnMap = new HashMap<>();
 
-        this.storageEngineConstants = spy(new StubsStorageEngineConstants(1000));
+        storageEngineConstants = spy(new StubsStorageEngineConstants(1000));
         DispatcherProxiedConnectorTransformer dispatcherProxiedConnectorTransformer = mock(DispatcherProxiedConnectorTransformer.class);
-        this.connectorMetadata = mock(ConnectorMetadata.class);
+        connectorMetadata = mock(ConnectorMetadata.class);
         ConnectorTransactionHandle connectorTransactionHandle = mock(ConnectorTransactionHandle.class);
         Connector proxiedConnector = mock(Connector.class);
         when(dispatcherProxiedConnectorTransformer.createProxiedMetadata(eq(proxiedConnector), any(ConnectorSession.class)))
                 .thenReturn(Pair.of(connectorMetadata, connectorTransactionHandle));
-        this.tableHandle = mock(ConnectorTableHandle.class);
+        tableHandle = mock(ConnectorTableHandle.class);
         when(connectorMetadata.getTableHandle(any(ConnectorSession.class), any(SchemaTableName.class), eq(Optional.empty()), eq(Optional.empty()))).thenAnswer(inv -> tableHandle);
         when(connectorMetadata.getColumnHandles(any(ConnectorSession.class), eq(tableHandle))).thenAnswer((inv) -> columnMap);
-        this.globalConfig = new GlobalConfig();
+        globalConfig = new GlobalConfig();
         warmupRuleService = new WarmupRuleService(proxiedConnector,
                 storageEngineConstants,
                 new WarmupDemoterConfig(),
                 dispatcherProxiedConnectorTransformer,
                 new DefaultFakeConnectorSessionProvider(),
-                new WarmupRuleDao(),
-                mock(EventBus.class),
-                new WarpInitializedServiceRegistry(),
                 globalConfig);
     }
 

@@ -16,6 +16,7 @@ package io.trino.plugin.warp.storage.engine.nativeimpl;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.airlift.log.Logger;
+import io.trino.plugin.warp.storage.engine.StorageEngine;
 import io.trino.plugin.warp.storage.engine.StorageEngineConstants;
 
 import java.lang.foreign.FunctionDescriptor;
@@ -61,14 +62,17 @@ public class NativeStorageEngineConstants
     private final int maxChunksInRange;
     private final int matchCollectNumIds;
     private final int maxMatchColumns;
-    private final int maxLuceneColumnsInBundle;
     private final int matchTxSize;
 
     @Inject
-    public NativeStorageEngineConstants()
+    public NativeStorageEngineConstants(StorageEngine storageEngine)
     {
         try {
             SymbolLookup libraryHandle = SymbolLookup.loaderLookup();
+
+            if (!storageEngine.isLoaded()) {
+                throw new RuntimeException("storage engine not loaded");
+            }
 
             // page size
             pageSizeShift = getWarpSpeedConstant(libraryHandle, "warp_speed_constants_get_page_size_shift");
@@ -106,7 +110,6 @@ public class NativeStorageEngineConstants
             maxChunksInRange = getWarpSpeedConstant(libraryHandle, "warp_speed_constants_get_max_chunks_in_range");
             matchCollectNumIds = getWarpSpeedConstant(libraryHandle, "warp_speed_constants_get_match_collect_num_ids");
             maxMatchColumns = getWarpSpeedConstant(libraryHandle, "warp_speed_constants_get_max_match_columns");
-            maxLuceneColumnsInBundle = getWarpSpeedConstant(libraryHandle, "warp_speed_constants_get_max_lucene_columns_in_bundle");
             matchTxSize = getWarpSpeedConstant(libraryHandle, "warp_speed_constants_get_match_tx_size");
         }
         catch (Throwable t) {
@@ -281,12 +284,6 @@ public class NativeStorageEngineConstants
     public int getMaxMatchColumns()
     {
         return maxMatchColumns;
-    }
-
-    @Override
-    public int getMaxLuceneColumnsInBundle()
-    {
-        return maxLuceneColumnsInBundle;
     }
 
     @Override

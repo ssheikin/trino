@@ -157,19 +157,18 @@ public class StubsStorageEngine
     }
 
     @Override
-    public long collectOpen(int totalNumRecords, long[] fileCookie, byte[] parsingBuff, byte[] collect2MatchParams, int numCollectWes,
-            int numChunksInRange, int[] weCollectParams, int connectorId, long matchBitmapAddress, int minOffset,
+    public void collectOpen(int totalNumRecords, long[] fileCookie, int collectTxId, byte[] parsingBuff, byte[] collect2MatchParams,
+            int numCollectWes, int numChunksInRange, int[] weCollectParams, long catalogContext, long matchBitmapAddress, int minOffset,
             long[][] outCollectColBuffIds, long[] outMetadataBuffIds)
     {
         Arrays.fill(outMetadataBuffIds, 0);
         Arrays.fill(firstBundle.array(), (byte) 0);
         firstBundle.position(0);
-        return 0;
     }
 
     @Override
     public long matchOpen(int totalNumRecords, long[] fileCookie, int collectTxId, byte[] parsingBuff, byte[] collect2MatchParams, int numMatchWes,
-            int numChunksInRange, int[] weMatchTree, long matchBitmapAddress, int minOffset, long[][] outMatchColBuffIds)
+            int numChunksInRange, int[] weMatchTree, long matchBitmapAddress, long luceneBitmapAddress, int minOffset)
     {
         return 0;
     }
@@ -224,9 +223,8 @@ public class StubsStorageEngine
     }
 
     @Override
-    public long collectClose(int txId, int[] chunksWithBitmapsToStore, int numChunksWithBitmaps, StorageCollectorCallBack obj)
+    public void collectClose(int txId, int[] chunksWithBitmapsToStore, int numChunksWithBitmaps, StorageCollectorCallBack obj, long[] outCollectStats)
     {
-        return 0;
     }
 
     @Override
@@ -255,6 +253,12 @@ public class StubsStorageEngine
         return "";
     }
 
+    @Override
+    public boolean isLoaded()
+    {
+        return true;
+    }
+
     public synchronized void clear()
     {
         throwOnColletRuntimeExceptionList.clear();
@@ -263,5 +267,10 @@ public class StubsStorageEngine
     public void setThrowOnCollect(RuntimeException... e)
     {
         throwOnColletRuntimeExceptionList.addAll(Arrays.asList(e));
+    }
+
+    @Override
+    public void cleanStorageCache()
+    {
     }
 }

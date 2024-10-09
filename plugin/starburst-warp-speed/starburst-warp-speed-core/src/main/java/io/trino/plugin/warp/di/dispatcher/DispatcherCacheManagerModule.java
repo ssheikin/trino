@@ -23,7 +23,6 @@ import com.google.inject.multibindings.Multibinder;
 import io.airlift.json.ObjectMapperProvider;
 import io.trino.plugin.hive.util.BlockJsonSerde;
 import io.trino.plugin.hive.util.HiveBlockEncodingSerde;
-import io.trino.plugin.warp.WorkerNodeManager;
 import io.trino.plugin.warp.annotation.ForWarp;
 import io.trino.plugin.warp.cloudvendors.CloudVendorModule;
 import io.trino.plugin.warp.cloudvendors.config.CloudVendorConfig;
@@ -41,6 +40,7 @@ import io.trino.plugin.warp.dictionary.AttachDictionaryService;
 import io.trino.plugin.warp.dictionary.DictionaryCacheService;
 import io.trino.plugin.warp.dispatcher.DispatcherProxiedConnectorTransformer;
 import io.trino.plugin.warp.dispatcher.ReadErrorHandler;
+import io.trino.plugin.warp.dispatcher.cache.CacheMgrWarmupRuleService;
 import io.trino.plugin.warp.dispatcher.cache.DispatcherCacheTransformer;
 import io.trino.plugin.warp.dispatcher.cache.PredicateHashCalculator;
 import io.trino.plugin.warp.dispatcher.cache.WarpCachePageSourceFactory;
@@ -52,6 +52,7 @@ import io.trino.plugin.warp.dispatcher.query.classifier.QueryClassifier;
 import io.trino.plugin.warp.dispatcher.services.RowGroupDataService;
 import io.trino.plugin.warp.dispatcher.warmup.WorkerTaskExecutorService;
 import io.trino.plugin.warp.dispatcher.warmup.demoter.WarmupDemoterService;
+import io.trino.plugin.warp.dispatcher.warmup.demoter.WarmupRuleProvider;
 import io.trino.plugin.warp.dispatcher.warmup.transform.BlockTransformerFactory;
 import io.trino.plugin.warp.dispatcher.warmup.warmers.EmptyRowGroupWarmer;
 import io.trino.plugin.warp.dispatcher.warmup.warmers.StorageWarmerService;
@@ -67,12 +68,14 @@ import io.trino.plugin.warp.metrics.MetricsModule;
 import io.trino.plugin.warp.metrics.MetricsTimerTask;
 import io.trino.plugin.warp.metrics.PrintMetricsTimerTask;
 import io.trino.plugin.warp.metrics.ScheduledMetricsHandler;
+import io.trino.plugin.warp.node.WorkerNodeManager;
 import io.trino.plugin.warp.storage.capacity.WorkerCapacityManager;
 import io.trino.plugin.warp.storage.flows.FlowsSequencer;
 import io.trino.plugin.warp.storage.read.ChunksQueueService;
 import io.trino.plugin.warp.storage.read.CollectTxService;
 import io.trino.plugin.warp.storage.read.LazyCollectTxService;
 import io.trino.plugin.warp.storage.read.LazyCollectorService;
+import io.trino.plugin.warp.storage.read.MatchService;
 import io.trino.plugin.warp.storage.read.StorageCollectorService;
 import io.trino.plugin.warp.storage.read.fill.BlockFillersFactory;
 import io.trino.plugin.warp.storage.write.StorageWriterService;
@@ -161,6 +164,7 @@ public class DispatcherCacheManagerModule
         binder.bind(LazyCollectTxService.class);
         binder.bind(LazyCollectorService.class);
         binder.bind(MatchCollectIdService.class);
+        binder.bind(MatchService.class);
         binder.bind(PredicateContextFactory.class);
         binder.bind(PredicatesCacheService.class);
         binder.bind(QueryClassifier.class);
@@ -182,6 +186,7 @@ public class DispatcherCacheManagerModule
         binder.bind(WorkerNodeManager.class);
         binder.bind(WorkerTaskExecutorService.class);
         binder.bind(PredicateHashCalculator.class);
+        binder.bind(CacheMgrWarmupRuleService.class);
         bindMetricsServices(binder);
     }
 
@@ -206,5 +211,12 @@ public class DispatcherCacheManagerModule
     public CatalogNameProvider provideCatalogName()
     {
         return new CatalogNameProvider(cacheManagerName);
+    }
+
+    @Provides
+    @Singleton
+    public WarmupRuleProvider provideWarmupRuleProvider()
+    {
+        return new WarmupRuleProvider(Optional.empty());
     }
 }

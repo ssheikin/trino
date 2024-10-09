@@ -11,14 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.warp.storage.read;
+package io.trino.plugin.warp.storage.write;
 
-public record CollectTxArgs(
-        int[] weCollectParams,
-        long[][] collectBuffIds,
-        byte[] collectStoreBuff,
-        byte[] collect2MatchParams,
-        QueryParams queryParams,
-        long[] fileCookie)
+import io.trino.plugin.warp.dictionary.DictionaryWarmInfo;
+
+record WriteOpenResult(StorageWriterContext storageWriterContext, DictionaryWarmInfo dictionaryInfo)
 {
 }

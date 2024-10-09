@@ -15,35 +15,64 @@ package io.trino.plugin.warp.storage.read;
 
 import com.google.inject.Inject;
 import io.trino.plugin.warp.config.GlobalConfig;
+import io.trino.plugin.warp.gen.constants.CollectStats;
+import io.trino.plugin.warp.gen.stats.TestStats;
+import io.trino.plugin.warp.storage.engine.ConnectorSync;
+import io.trino.plugin.warp.storage.engine.QueryMemory;
 import io.trino.plugin.warp.storage.engine.StorageEngine;
 
 public class LazyCollectTxService
         extends BaseCollectTxService
 {
     @Inject
-    public LazyCollectTxService(StorageEngine storageEngine, GlobalConfig globalConfig)
+    public LazyCollectTxService(StorageEngine storageEngine,
+            GlobalConfig globalConfig,
+            ConnectorSync connectorSync)
     {
-        super(storageEngine, globalConfig);
+        super(storageEngine, globalConfig, connectorSync);
     }
 
     LazyCollectOpenResult collectOpen(int rowsLimit, LazyCollectorLoaderArgs lazyCollectorLoaderArgs)
     {
         long[] metadataBuffIds = new long[2];
-        int collectTxId = collectOpen(lazyCollectorLoaderArgs.collectTxArgs(), 1, lazyCollectorLoaderArgs.numChunksInRange(), 0, metadataBuffIds);
+        QueryMemory queryMemory = allocQueryMemory();
+        int queryMemoryId = queryMemory.id();
+        collectOpen(lazyCollectorLoaderArgs.queryParams(),
+                lazyCollectorLoaderArgs.txArgs(),
+                queryMemoryId,
+                1,
+                lazyCollectorLoaderArgs.numChunksInRange(),
+                0,
+                metadataBuffIds);
 
         WarmupElementCollectParams collectParams = lazyCollectorLoaderArgs.collectParams();
         lazyCollectorLoaderArgs.collectJufferWE().createBuffers(
                 collectParams.getRecTypeCode(),
                 collectParams.getRecTypeLength(),
                 collectParams.hasDictionary(),
-                lazyCollectorLoaderArgs.collectTxArgs().collectBuffIds()[0]);
-        logger.debug("collectOpen collectTxId %d rowsLimit %d", collectTxId, rowsLimit);
-        return new LazyCollectOpenResult(collectTxId);
+                lazyCollectorLoaderArgs.txArgs().collectBuffIds()[0]);
+        logger.debug("collectOpen queryMemoryId %d rowsLimit %d", queryMemoryId, rowsLimit);
+        return new LazyCollectOpenResult(queryMemoryId);
     }
 
     // Lazy collect doesn't use store/restore mechanism, so store/restore params are not initialized
-    void collectClose(int collectTxId)
+    void collectClose(int queryMemoryId, TestStats testStats)
     {
-        storageEngine.collectClose(collectTxId, null, 0, null);
+        long[] collectStats = new long[CollectStats.COLLECT_STATS_NUM_OF.ordinal()];
+        storageEngine.collectClose(queryMemoryId, null, 0, null, collectStats);
+        testStats.addread_cache_md_chunk_hits(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_CHUNK_HITS.ordinal()]);
+        testStats.addread_cache_md_basic_hits(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_BASIC_HITS.ordinal()]);
+        testStats.addread_cache_md_data_hits(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_DATA_HITS.ordinal()]);
+        testStats.addread_cache_md_nulls_hits(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_NULLS_HITS.ordinal()]);
+        testStats.addread_cache_md_chunk_misses(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_CHUNK_MISSES.ordinal()]);
+        testStats.addread_cache_md_basic_misses(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_BASIC_MISSES.ordinal()]);
+        testStats.addread_cache_md_data_misses(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_DATA_MISSES.ordinal()]);
+        testStats.addread_cache_md_nulls_misses(collectStats[CollectStats.COLLECT_STATS_CACHE_MD_NULLS_MISSES.ordinal()]);
+        testStats.addread_uncache_misses(collectStats[CollectStats.COLLECT_STATS_UNCACHE_MISSES.ordinal()]);
+        testStats.addread_uncache_data_misses(collectStats[CollectStats.COLLECT_STATS_UNCACHE_DATA_MISSES.ordinal()]);
+        testStats.addread_uncache_ext_data_misses(collectStats[CollectStats.COLLECT_STATS_UNCACHE_EXT_DATA_MISSES.ordinal()]);
+        testStats.addread_time_wait_nanos(collectStats[CollectStats.COLLECT_STATS_READ_TIME_WAIT_NANOS.ordinal()]);
+
+        freeQueryMemory(queryMemoryId);
     }
 }

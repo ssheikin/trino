@@ -272,7 +272,7 @@ public class BufferAllocator
     @Override
     public void init()
     {
-        int minNumSegments = nativeConfig.getTaskMinWorkerThreads();
+        int minNumSegments = (connectorSync.getCatalogContext() != 0) ? nativeConfig.getTaskMinWorkerThreads() : 1;
         int numSegments = connectorSync.isCatalogReducedResources() ? minNumSegments : nativeConfig.getTaskMaxWorkerThreads();
         checkArgument(numSegments > 0, "no segments configured for warming resources");
         long predicateBundleSize = 0;
@@ -287,14 +287,14 @@ public class BufferAllocator
                 success = true;
             }
             catch (Throwable t) {
-                logger.warn("catalog %d failed to load with numSegments %d", connectorSync.getCatalogSequence(), numSegments);
+                logger.warn("catalog %s failed to load with numSegments %d", connectorSync.getCatalogName(), numSegments);
                 clear();
                 numSegments /= 2;
             }
         }
 
         if (numSegments < minNumSegments) {
-            throw new TrinoException(WarpErrorCode.WARP_CATALOG_FAILED_TO_LOAD, "catalog " + connectorSync.getCatalogSequence() + " failed to load");
+            throw new TrinoException(WarpErrorCode.WARP_CATALOG_FAILED_TO_LOAD, "catalog " + connectorSync.getCatalogName() + " failed to load");
         }
 
         // read bundles
@@ -306,8 +306,8 @@ public class BufferAllocator
             }
         }
 
-        logger.info("catalog %d loadSegmentsSize %d warmBundleSize %d warmWriteBufferSize %d warmContextBufferSize %d readNumBundles %d predicateBundleSize %dMB",
-                connectorSync.getCatalogSequence(),
+        logger.info("catalog %s loadSegmentsSize %d warmBundleSize %d warmWriteBufferSize %d warmContextBufferSize %d readNumBundles %d predicateBundleSize %dMB",
+                connectorSync.getCatalogName(),
                 loadSegmentsQueue.size(),
                 warmBundleSize,
                 warmWriteBufferSize,
@@ -450,9 +450,9 @@ public class BufferAllocator
         return memorySegment2ByteBuffer(buff);
     }
 
-    public ByteBuffer ids2LuceneResultBM(long[] idsByType)
+    public ByteBuffer memorySegment2LuceneResultBM(MemorySegment buff, int offset)
     {
-        return id2Buff(idsByType[JbufType.JBUF_TYPE_LUCENE_MATCH_BM.ordinal()]);
+        return memorySegment2ByteBuffer(buff, offset);
     }
 
     public IntBuffer memorySegment2VarlenMdBuff(MemorySegment[] buffs)
@@ -470,6 +470,11 @@ public class BufferAllocator
     private ByteBuffer memorySegment2ByteBuffer(MemorySegment buff)
     {
         return createBuffView(buff.asByteBuffer());
+    }
+
+    private ByteBuffer memorySegment2ByteBuffer(MemorySegment buff, int offset)
+    {
+        return createBuffView(buff.asByteBuffer().position(offset).slice());
     }
 
     public ByteBuffer createBuffView(ByteBuffer buf)

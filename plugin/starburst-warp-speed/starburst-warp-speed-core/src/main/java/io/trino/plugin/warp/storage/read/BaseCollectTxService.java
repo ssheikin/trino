@@ -17,11 +17,14 @@ import io.airlift.log.Logger;
 import io.trino.plugin.warp.config.GlobalConfig;
 import io.trino.plugin.warp.gen.constants.QueryResultType;
 import io.trino.plugin.warp.log.ShapingLogger;
+import io.trino.plugin.warp.storage.engine.ConnectorSync;
 import io.trino.plugin.warp.storage.engine.ExceptionThrower;
+import io.trino.plugin.warp.storage.engine.QueryMemory;
 import io.trino.plugin.warp.storage.engine.StorageEngine;
 import io.trino.spi.TrinoException;
 
-import static io.trino.plugin.warp.WarpErrorCode.WARP_TX_ALLOCATION_FAILED;
+import java.lang.foreign.SegmentAllocator;
+
 import static io.trino.plugin.warp.WarpErrorCode.WARP_UNRECOVERABLE_COLLECT_FAILED;
 
 public abstract class BaseCollectTxService
@@ -30,11 +33,15 @@ public abstract class BaseCollectTxService
     protected static final int INVALID_TX_ID = -1;
 
     protected final StorageEngine storageEngine;
+    protected final ConnectorSync connectorSync;
     protected final ShapingLogger shapingLogger;
 
-    public BaseCollectTxService(StorageEngine storageEngine, GlobalConfig globalConfig)
+    public BaseCollectTxService(StorageEngine storageEngine,
+            GlobalConfig globalConfig,
+            ConnectorSync connectorSync)
     {
         this.storageEngine = storageEngine;
+        this.connectorSync = connectorSync;
         this.shapingLogger = ShapingLogger.getInstance(
                 logger,
                 globalConfig.getShapingLoggerThreshold(),
@@ -42,29 +49,47 @@ public abstract class BaseCollectTxService
                 globalConfig.getShapingLoggerNumberOfSamples());
     }
 
+    protected QueryMemory allocQueryMemory()
+    {
+        return connectorSync.allocQueryMemory();
+    }
+
+    protected SegmentAllocator getQueryMemoryAllocator(QueryMemory queryMemory)
+    {
+        return SegmentAllocator.slicingAllocator(queryMemory.memory());
+    }
+
+    protected void freeQueryMemory(int queryMemoryId)
+    {
+        if (queryMemoryId != INVALID_TX_ID) {
+            connectorSync.freeQueryMemory(queryMemoryId);
+        }
+    }
+
     // LazyCollect collects 1 WE at a time, therefore not using queryParams.getCollectElementsParamsList()
-    int collectOpen(CollectTxArgs collectTxArgs, int numCollectElements, int numChunksInRange, long matchBmAddr, long[] metadataBuffIds)
+    void collectOpen(QueryParams queryParams,
+            TxArgs txArgs,
+            int collectTxId,
+            int numCollectElements,
+            int numChunksInRange,
+            long matchBmAddr,
+            long[] metadataBuffIds)
     {
         metadataBuffIds[0] = -1;
         metadataBuffIds[1] = -1;
-        QueryParams queryParams = collectTxArgs.queryParams();
-
-        int collectTxId = (int) storageEngine.collectOpen(queryParams.getTotalNumRecords(),
-                collectTxArgs.fileCookie(),
-                collectTxArgs.collectStoreBuff(),
-                collectTxArgs.collect2MatchParams(),
+        storageEngine.collectOpen(queryParams.getTotalNumRecords(),
+                txArgs.fileCookie(),
+                collectTxId,
+                txArgs.collectStoreBuff(),
+                txArgs.collect2MatchParams(),
                 numCollectElements,
                 numChunksInRange,
-                collectTxArgs.weCollectParams(),
-                queryParams.getCatalogSequence(),
+                txArgs.weCollectParams(),
+                queryParams.getCatalogContext(),
                 matchBmAddr,
                 queryParams.getMinCollectOffset(),
-                collectTxArgs.collectBuffIds(),
+                txArgs.collectBuffIds(),
                 metadataBuffIds);
-        if (collectTxId < 0) {
-            throw new TrinoException(WARP_TX_ALLOCATION_FAILED, "failed to allocate tx for collect");
-        }
-        return collectTxId;
     }
 
     // prepare chunk with match result, error throws and exception
@@ -123,7 +148,7 @@ public abstract class BaseCollectTxService
                 nativeThrowed = ExceptionThrower.isNativeException((TrinoException) e);
             }
             if (!nativeThrowed) {
-                storageEngine.collectClose(collectTxId, null, 0, null);
+                storageEngine.collectClose(collectTxId, null, 0, null, null);
             }
         }
     }
