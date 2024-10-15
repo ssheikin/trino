@@ -5814,6 +5814,7 @@ public abstract class BaseConnectorTest
 
     protected void testDataMapping(DataMappingTestSetup dataMappingTestSetup)
     {
+        log.info("dataMappingTestSetup=%s", dataMappingTestSetup);
         String trinoTypeName = dataMappingTestSetup.getTrinoTypeName();
         String sampleValueLiteral = dataMappingTestSetup.getSampleValueLiteral();
         String highValueLiteral = dataMappingTestSetup.getHighValueLiteral();
