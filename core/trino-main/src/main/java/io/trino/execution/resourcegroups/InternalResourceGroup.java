@@ -298,6 +298,14 @@ public class InternalResourceGroup
         }
     }
 
+    // used by SEP
+    public int getQueuedQueriesExcludingDescendants()
+    {
+        synchronized (root) {
+            return queuedQueries.size();
+        }
+    }
+
     @Managed
     public int getWaitingQueuedQueries()
     {
