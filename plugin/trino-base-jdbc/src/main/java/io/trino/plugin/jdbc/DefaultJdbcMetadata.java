@@ -104,6 +104,7 @@ import static io.trino.plugin.base.expression.ConnectorExpressions.and;
 import static io.trino.plugin.base.expression.ConnectorExpressions.extractConjuncts;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.replaceWithNewVariables;
 import static io.trino.plugin.jdbc.JdbcErrorCode.JDBC_NON_TRANSIENT_ERROR;
+import static io.trino.plugin.jdbc.JdbcMetadata.getColumns;
 import static io.trino.plugin.jdbc.JdbcMetadataSessionProperties.isAggregationPushdownEnabled;
 import static io.trino.plugin.jdbc.JdbcMetadataSessionProperties.isBulkListColumns;
 import static io.trino.plugin.jdbc.JdbcMetadataSessionProperties.isComplexExpressionPushdown;
@@ -292,7 +293,7 @@ public class DefaultJdbcMetadata
 
     private JdbcTableHandle flushAttributesAsQuery(ConnectorSession session, JdbcTableHandle handle)
     {
-        List<JdbcColumnHandle> columns = jdbcClient.getColumns(session, handle);
+        List<JdbcColumnHandle> columns = getColumns(session, jdbcClient, handle);
         PreparedQuery preparedQuery = jdbcClient.prepareQuery(session, handle, Optional.empty(), columns, ImmutableMap.of());
 
         return new JdbcTableHandle(
@@ -658,14 +659,14 @@ public class DefaultJdbcMetadata
 
         ImmutableMap.Builder<JdbcColumnHandle, JdbcColumnHandle> newLeftColumnsBuilder = ImmutableMap.builder();
         OptionalInt maxColumnNameLength = jdbcClient.getMaxColumnNameLength(session);
-        for (JdbcColumnHandle column : jdbcClient.getColumns(session, leftHandle)) {
+        for (JdbcColumnHandle column : getColumns(session, jdbcClient, leftHandle)) {
             newLeftColumnsBuilder.put(column, createSyntheticJoinProjectionColumn(column, nextSyntheticColumnId, maxColumnNameLength));
             nextSyntheticColumnId++;
         }
         Map<JdbcColumnHandle, JdbcColumnHandle> newLeftColumns = newLeftColumnsBuilder.buildOrThrow();
 
         ImmutableMap.Builder<JdbcColumnHandle, JdbcColumnHandle> newRightColumnsBuilder = ImmutableMap.builder();
-        for (JdbcColumnHandle column : jdbcClient.getColumns(session, rightHandle)) {
+        for (JdbcColumnHandle column : getColumns(session, jdbcClient, rightHandle)) {
             newRightColumnsBuilder.put(column, createSyntheticJoinProjectionColumn(column, nextSyntheticColumnId, maxColumnNameLength));
             nextSyntheticColumnId++;
         }
@@ -759,14 +760,14 @@ public class DefaultJdbcMetadata
 
         ImmutableMap.Builder<JdbcColumnHandle, JdbcColumnHandle> newLeftColumnsBuilder = ImmutableMap.builder();
         OptionalInt maxColumnNameLength = jdbcClient.getMaxColumnNameLength(session);
-        for (JdbcColumnHandle column : jdbcClient.getColumns(session, leftHandle)) {
+        for (JdbcColumnHandle column : getColumns(session, jdbcClient, leftHandle)) {
             newLeftColumnsBuilder.put(column, createSyntheticJoinProjectionColumn(column, nextSyntheticColumnId, maxColumnNameLength));
             nextSyntheticColumnId++;
         }
         Map<JdbcColumnHandle, JdbcColumnHandle> newLeftColumns = newLeftColumnsBuilder.buildOrThrow();
 
         ImmutableMap.Builder<JdbcColumnHandle, JdbcColumnHandle> newRightColumnsBuilder = ImmutableMap.builder();
-        for (JdbcColumnHandle column : jdbcClient.getColumns(session, rightHandle)) {
+        for (JdbcColumnHandle column : getColumns(session, jdbcClient, rightHandle)) {
             newRightColumnsBuilder.put(column, createSyntheticJoinProjectionColumn(column, nextSyntheticColumnId, maxColumnNameLength));
             nextSyntheticColumnId++;
         }
@@ -1030,9 +1031,11 @@ public class DefaultJdbcMetadata
     public ConnectorTableSchema getTableSchema(ConnectorSession session, ConnectorTableHandle table)
     {
         JdbcTableHandle handle = (JdbcTableHandle) table;
+        SchemaTableName schemaTableName = handle.getRequiredNamedRelation().getSchemaTableName();
+        RemoteTableName remoteTableName = handle.getRequiredNamedRelation().getRemoteTableName();
         return new ConnectorTableSchema(
-                handle.getRequiredNamedRelation().getSchemaTableName(),
-                jdbcClient.getColumns(session, handle).stream()
+                schemaTableName,
+                jdbcClient.getColumns(session, schemaTableName, remoteTableName).stream()
                         .map(JdbcColumnHandle::getColumnSchema)
                         .collect(toImmutableList()));
     }
@@ -1041,9 +1044,11 @@ public class DefaultJdbcMetadata
     public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table)
     {
         JdbcTableHandle handle = (JdbcTableHandle) table;
+        SchemaTableName schemaTableName = handle.getRequiredNamedRelation().getSchemaTableName();
+        RemoteTableName remoteTableName = handle.getRequiredNamedRelation().getRemoteTableName();
         return new ConnectorTableMetadata(
-                handle.getRequiredNamedRelation().getSchemaTableName(),
-                jdbcClient.getColumns(session, handle).stream()
+                schemaTableName,
+                jdbcClient.getColumns(session, schemaTableName, remoteTableName).stream()
                         .map(JdbcColumnHandle::getColumnMetadata)
                         .collect(toImmutableList()),
                 jdbcClient.getTableProperties(session, handle),
@@ -1069,7 +1074,7 @@ public class DefaultJdbcMetadata
                     .collect(toImmutableMap(columnHandle -> columnHandle.getColumnMetadata().getName(), identity()));
         }
 
-        return jdbcClient.getColumns(session, (JdbcTableHandle) tableHandle).stream()
+        return getColumns(session, jdbcClient, (JdbcTableHandle) tableHandle).stream()
                 .collect(toImmutableMap(columnHandle -> columnHandle.getColumnMetadata().getName(), identity()));
     }
 
