@@ -137,7 +137,10 @@ public class GlueMetastoreModule
         GlueClientBuilder glue = GlueClient.builder();
 
         glue.overrideConfiguration(builder -> builder
-                .executionInterceptors(ImmutableList.copyOf(executionInterceptors))
+                .executionInterceptors(ImmutableList.<ExecutionInterceptor>builder()
+                    .addAll(executionInterceptors)
+                    .add(new GlueHiveExecutionInterceptor(config.isSkipArchive()))
+                    .build())
                 .retryStrategy(retryBuilder -> retryBuilder
                         .retryOnException(throwable -> throwable instanceof ConcurrentModificationException)
                         .backoffStrategy(BackoffStrategy.exponentialDelay(
