@@ -54,7 +54,7 @@ public class RedshiftConnectorFactory
 
         Injector injector = app.initialize();
 
-        return injector.getInstance(RedshiftConnector.class);
+        return injector.getInstance(Connector.class);
     }
 
     @Override
