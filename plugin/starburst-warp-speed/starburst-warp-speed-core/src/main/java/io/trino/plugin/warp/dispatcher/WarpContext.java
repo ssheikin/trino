@@ -1,4 +1,3 @@
-
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.trino.plugin.warp.dispatcher;
 
-package io.trino.plugin.warp.gen.constants;
+import io.trino.plugin.warp.dispatcher.warmup.demoter.DemoterSync;
 
-public enum DemoteStatus
+public interface WarpContext
 {
-    DEMOTE_STATUS_NOT_COMPLETED,
-    DEMOTE_STATUS_REACHED_THRESHOLD,
-    DEMOTE_STATUS_NO_ELEMENTS_TO_DEMOTE;
+    DemoterSync getDemoterSync();
 }
