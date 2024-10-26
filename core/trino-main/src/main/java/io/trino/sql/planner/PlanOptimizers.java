@@ -112,6 +112,7 @@ import io.trino.sql.planner.iterative.rule.PruneMarkDistinctColumns;
 import io.trino.sql.planner.iterative.rule.PruneMergeSourceColumns;
 import io.trino.sql.planner.iterative.rule.PruneOffsetColumns;
 import io.trino.sql.planner.iterative.rule.PruneOrderByInAggregation;
+import io.trino.sql.planner.iterative.rule.PruneOrderByInWindowAggregation;
 import io.trino.sql.planner.iterative.rule.PruneOutputSourceColumns;
 import io.trino.sql.planner.iterative.rule.PrunePattenRecognitionColumns;
 import io.trino.sql.planner.iterative.rule.PrunePatternRecognitionSourceColumns;
@@ -471,6 +472,7 @@ public class PlanOptimizers
                                         new MergeLimitWithDistinct(),
                                         new PruneCountAggregationOverScalar(metadata),
                                         new PruneOrderByInAggregation(metadata),
+                                        new PruneOrderByInWindowAggregation(metadata),
                                         new RewriteSpatialPartitioningAggregation(plannerContext),
                                         new SimplifyCountOverConstant(plannerContext),
                                         new PreAggregateCaseAggregations(plannerContext),
