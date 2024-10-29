@@ -34,6 +34,7 @@ import io.trino.server.protocol.spooling.QueryDataEncoder;
 import io.trino.server.protocol.spooling.QueryDataEncoders;
 import io.trino.server.protocol.spooling.RawQueryDataProducer;
 import io.trino.server.protocol.spooling.SpooledQueryDataProducer;
+import io.trino.server.resultscache.ActiveResultsCacheEntry;
 import io.trino.server.resultscache.ResultsCacheManager;
 import io.trino.server.security.ResourceSecurity;
 import io.trino.spi.QueryId;
@@ -205,6 +206,16 @@ public class ExecutingStatementResource
         Optional<QueryDataEncoder.Factory> encoderFactory = session.getQueryDataEncoding()
                 .map(encoders::get);
 
+        // TODO: https://starburstdata.atlassian.net/browse/SEP-14832
+        //  add support for encoded and spooled query data
+        Optional<ActiveResultsCacheEntry> resultsCacheEntry;
+        if (encoderFactory.isEmpty()) {
+            resultsCacheEntry = resultsCacheManager.registerQuery(queryId);
+        }
+        else {
+            resultsCacheEntry = Optional.empty();
+        }
+
         query = queries.computeIfAbsent(queryId, _ -> Query.create(
                 session,
                 querySlug,
@@ -217,7 +228,7 @@ public class ExecutingStatementResource
                 exchangeManagerRegistry,
                 responseExecutor,
                 timeoutExecutor,
-                resultsCacheManager.registerQuery(queryId),
+                resultsCacheEntry,
                 blockEncodingSerde));
         return query;
     }

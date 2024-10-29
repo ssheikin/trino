@@ -204,11 +204,12 @@ public class ActiveResultsCacheEntry
                 }
 
                 log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, retainedSizeInBytes, currentSize);
-                if (queryData instanceof RawQueryData) {
-                    resultsData.get().addRecords(queryData.getData());
+                if (queryData instanceof RawQueryData rawQueryData) {
+                    resultsData.get().addRecords(rawQueryData.getIterable());
                 }
                 else {
-                    // TODO: add support for encoded and spooled query data
+                    // TODO: https://starburstdata.atlassian.net/browse/SEP-14832
+                    //  add support for encoded and spooled query data
                     log.debug("QueryId: %s, query produced unsupported data format, not caching", queryId);
                     completionCallbacks.add(setInvalidState(UNSUPPORTED_QUERY_DATA_FORMAT));
                 }
