@@ -203,7 +203,7 @@ public class IcebergPageSourceProvider
     // TODO (https://github.com/trinodb/trino/issues/16824) allow connector to return pages of arbitrary row count and handle this gracefully in engine
     private static final int MAX_RLE_PAGE_SIZE = DEFAULT_MAX_PAGE_SIZE_IN_BYTES / SIZE_OF_LONG;
 
-    private final IcebergFileSystemFactory fileSystemFactory;
+    private final IcebergFileSystemFactory doNotUseDirectlyFileSystemFactory;
     private final FileFormatDataSourceStats fileFormatDataSourceStats;
     private final OrcReaderOptions orcReaderOptions;
     private final ParquetReaderOptions parquetReaderOptions;
@@ -219,7 +219,7 @@ public class IcebergPageSourceProvider
             ParquetReaderOptions parquetReaderOptions,
             TypeManager typeManager)
     {
-        this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.doNotUseDirectlyFileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
         this.orcReaderOptions = requireNonNull(orcReaderOptions, "orcReaderOptions is null");
         this.parquetReaderOptions = requireNonNull(parquetReaderOptions, "parquetReaderOptions is null");
@@ -251,6 +251,8 @@ public class IcebergPageSourceProvider
                 session,
                 icebergColumns,
                 schema,
+                tableHandle.getSchemaName(),
+                tableHandle.getTableName(),
                 partitionSpec,
                 PartitionData.fromJson(split.getPartitionDataJson(), partitionColumnTypes),
                 split.getDeletes(),
@@ -273,6 +275,8 @@ public class IcebergPageSourceProvider
             ConnectorSession session,
             List<IcebergColumnHandle> icebergColumns,
             Schema tableSchema,
+            String schemaName,
+            String tableName,
             PartitionSpec partitionSpec,
             PartitionData partitionData,
             List<DeleteFile> deletes,
@@ -337,7 +341,7 @@ public class IcebergPageSourceProvider
             return new EmptyPageSource();
         }
 
-        TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity(), fileIoProperties);
+        TrinoFileSystem fileSystem = createFileSystem(session, schemaName, tableName, fileIoProperties);
         TrinoInputFile inputfile = isUseFileSizeFromMetadata(session)
                 ? fileSystem.newInputFile(Location.of(path), fileSize)
                 : fileSystem.newInputFile(Location.of(path));
@@ -400,6 +404,11 @@ public class IcebergPageSourceProvider
                 dataPageSource.get(),
                 projectionsAdapter,
                 deletePredicate);
+    }
+
+    protected TrinoFileSystem createFileSystem(ConnectorSession session, String schema, String table, Map<String, String> fileIoProperties)
+    {
+        return doNotUseDirectlyFileSystemFactory.create(session.getIdentity(), fileIoProperties);
     }
 
     private DeleteManager getDeleteManager(PartitionSpec partitionSpec, PartitionData partitionData)
