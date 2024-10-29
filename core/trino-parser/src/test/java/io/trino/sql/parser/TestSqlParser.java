@@ -328,7 +328,8 @@ public class TestSqlParser
     @Timeout(value = 2, unit = SECONDS)
     public void testPotentialUnboundedLookahead()
     {
-        createExpression("""
+        createExpression(
+                """
                 (
                       1 * -1 +
                       1 * -2 +
@@ -1893,7 +1894,7 @@ public class TestSqlParser
                         false,
                         new Identifier(location(1, 27), "conn", false),
                         ImmutableList.of(
-                                new Property(location(1, 82), new Identifier(location(1, 82), "a", true), new StringLiteral(location(1, 88),  "apple")),
+                                new Property(location(1, 82), new Identifier(location(1, 82), "a", true), new StringLiteral(location(1, 88), "apple")),
                                 new Property(location(1, 97), new Identifier(location(1, 97), "b", true), new LongLiteral(location(1, 103), "123"))),
                         Optional.of(new PrincipalSpecification(Type.ROLE, new Identifier(location(1, 69), "dragon", false))),
                         Optional.of("awesome")));
@@ -2173,7 +2174,8 @@ public class TestSqlParser
     @Test
     public void testCreateTableWithNotNull()
     {
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo (
                 a VARCHAR NOT NULL COMMENT 'column a',
                 b BIGINT COMMENT 'hello world',
@@ -2512,7 +2514,8 @@ public class TestSqlParser
                                 new Identifier(location(1, 20), "y", false))),
                         Optional.empty()));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2555,7 +2558,8 @@ public class TestSqlParser
                         Optional.empty(),
                         Optional.empty()));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo(x)
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2595,7 +2599,8 @@ public class TestSqlParser
                         Optional.of(ImmutableList.of(new Identifier(location(1, 18), "x", false))),
                         Optional.empty()));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo(x,y)
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2635,7 +2640,8 @@ public class TestSqlParser
                         Optional.of(ImmutableList.of(new Identifier(location(1, 18), "x", false), new Identifier(location(1, 20), "y", false))),
                         Optional.empty()));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2679,7 +2685,8 @@ public class TestSqlParser
                         Optional.empty(),
                         Optional.empty()));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo(x)
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2720,7 +2727,8 @@ public class TestSqlParser
                         Optional.of(ImmutableList.of(new Identifier(location(1, 18), "x", false))),
                         Optional.empty()));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo(x,y)
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2761,7 +2769,8 @@ public class TestSqlParser
                         Optional.of(ImmutableList.of(new Identifier(location(1, 18), "x", false), new Identifier(location(1, 20), "y", false))),
                         Optional.empty()));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo COMMENT 'test'
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2805,7 +2814,8 @@ public class TestSqlParser
                         Optional.empty(),
                         Optional.of("test")));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo(x) COMMENT 'test'
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2846,7 +2856,8 @@ public class TestSqlParser
                         Optional.of(ImmutableList.of(new Identifier(location(1, 18), "x", false))),
                         Optional.of("test")));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo(x,y) COMMENT 'test'
                 WITH ( string = 'bar', long = 42, computed = 'ban' || 'ana', a  = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2887,7 +2898,8 @@ public class TestSqlParser
                         Optional.of(ImmutableList.of(new Identifier(location(1, 18), "x", false), new Identifier(location(1, 20), "y", false))),
                         Optional.of("test")));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE TABLE foo(x,y) COMMENT 'test'
                 WITH ( "string" = 'bar', "long" = 42, computed = 'ban' || 'ana', a = ARRAY[ 'v1', 'v2' ] )
                 AS
@@ -2932,28 +2944,32 @@ public class TestSqlParser
     @Test
     public void testCreateTableAsWith()
     {
-        String queryParenthesizedWith = """
+        String queryParenthesizedWith =
+                """
                 CREATE TABLE foo
                 AS
                 ( WITH t(x) AS (VALUES 1)
                 TABLE t )
                 WITH NO DATA
                 """;
-        String queryUnparenthesizedWith = """
+        String queryUnparenthesizedWith =
+                """
                 CREATE TABLE foo
                 AS
                 WITH t(x) AS (VALUES 1)
                 TABLE t
                 WITH NO DATA
                 """;
-        String queryParenthesizedWithHasAlias = """
+        String queryParenthesizedWithHasAlias =
+                """
                 CREATE TABLE foo(a)
                 AS
                 ( WITH t(x) AS (VALUES 1)
                 TABLE t )
                 WITH NO DATA
                 """;
-        String queryUnparenthesizedWithHasAlias = """
+        String queryUnparenthesizedWithHasAlias =
+                """
                 CREATE TABLE foo(a)
                 AS
                 WITH t(x) AS (VALUES 1)
@@ -3112,18 +3128,20 @@ public class TestSqlParser
     public void testMerge()
     {
         NodeLocation location = new NodeLocation(1, 1);
-        assertStatement("""
-                        MERGE INTO inventory AS i
-                          USING changes AS c
-                          ON i.part = c.part
-                        WHEN MATCHED AND c.action = 'mod'
-                          THEN UPDATE SET
-                            qty = qty + c.qty
-                          , ts = CURRENT_TIMESTAMP
-                        WHEN MATCHED AND c.action = 'del'
-                          THEN DELETE
-                        WHEN NOT MATCHED AND c.action = 'new'
-                          THEN INSERT (part, qty) VALUES (c.part, c.qty)""",
+        assertStatement(
+                """
+                MERGE INTO inventory AS i
+                  USING changes AS c
+                  ON i.part = c.part
+                WHEN MATCHED AND c.action = 'mod'
+                  THEN UPDATE SET
+                    qty = qty + c.qty
+                  , ts = CURRENT_TIMESTAMP
+                WHEN MATCHED AND c.action = 'del'
+                  THEN DELETE
+                WHEN NOT MATCHED AND c.action = 'new'
+                  THEN INSERT (part, qty) VALUES (c.part, c.qty)
+                """,
                 new Merge(
                         location,
                         new AliasedRelation(location, table(QualifiedName.of("inventory")), new Identifier("i"), null),
@@ -3757,7 +3775,6 @@ public class TestSqlParser
                                 new Property(new Identifier("property_1"), new StringLiteral("value_1")),
                                 new Property(new Identifier("property_2"), new LongLiteral("2")))));
 
-
         assertStatement("CREATE VIEW bar.foo AS SELECT * FROM t", new CreateView(QualifiedName.of("bar", "foo"), query, false, Optional.empty(), Optional.empty(), ImmutableList.of()));
         assertStatement("CREATE VIEW \"awesome view\" AS SELECT * FROM t", new CreateView(QualifiedName.of("awesome view"), query, false, Optional.empty(), Optional.empty(), ImmutableList.of()));
         assertStatement("CREATE VIEW \"awesome schema\".\"awesome view\" AS SELECT * FROM t", new CreateView(QualifiedName.of("awesome schema", "awesome view"), query, false, Optional.empty(), Optional.empty(), ImmutableList.of()));
@@ -4365,7 +4382,7 @@ public class TestSqlParser
         assertThat(expression("x -> sin(x)"))
                 .isEqualTo(new LambdaExpression(
                         location(1, 1),
-                        ImmutableList.of(new LambdaArgumentDeclaration(location(1, 1),new Identifier(location(1, 1), "x", false))),
+                        ImmutableList.of(new LambdaArgumentDeclaration(location(1, 1), new Identifier(location(1, 1), "x", false))),
                         new FunctionCall(
                                 location(1, 6),
                                 QualifiedName.of(ImmutableList.of(new Identifier(location(1, 6), "sin", false))),
@@ -4742,7 +4759,8 @@ public class TestSqlParser
                                                 Optional.empty()))));
 
         // SELECT with WITH
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 SHOW STATS FOR (
                    WITH t AS (SELECT 1 )
                    SELECT * FROM t)
@@ -5328,7 +5346,8 @@ public class TestSqlParser
                         Optional.empty()));
 
         // OR REPLACE, COMMENT, WITH properties
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE OR REPLACE MATERIALIZED VIEW catalog.schema.matview COMMENT 'A simple materialized view'
                 WITH (partitioned_by = ARRAY ['dateint'])
                  AS SELECT * FROM catalog2.schema2.tab
@@ -5377,7 +5396,8 @@ public class TestSqlParser
                         Optional.of("A simple materialized view")));
 
         // OR REPLACE, COMMENT, WITH properties, view text containing WITH clause
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 CREATE OR REPLACE MATERIALIZED VIEW catalog.schema.matview COMMENT 'A partitioned materialized view'
                 WITH (partitioned_by = ARRAY ['dateint'])
                  AS WITH a (t, u) AS (SELECT * FROM x), b AS (SELECT * FROM a) TABLE b
@@ -5725,7 +5745,8 @@ public class TestSqlParser
     @Test
     public void testWindowFrameWithPatternRecognition()
     {
-        assertThat(expression("""
+        assertThat(expression(
+                """
                 rank() OVER (
                    PARTITION BY x
                    ORDER BY y
@@ -5817,7 +5838,8 @@ public class TestSqlParser
     @Test
     public void testMeasureOverWindow()
     {
-        assertThat(expression("""
+        assertThat(expression(
+                """
                 last_z OVER (
                   MEASURES z AS last_z
                   ROWS CURRENT ROW
@@ -5867,11 +5889,12 @@ public class TestSqlParser
     @Test
     public void testUpdate()
     {
-        assertStatement("""
-                        UPDATE foo_table
-                            SET bar = 23, baz = 3.1415E0, bletch = 'barf'
-                        WHERE (nothing = 'fun')
-                        """,
+        assertStatement(
+                """
+                UPDATE foo_table
+                    SET bar = 23, baz = 3.1415E0, bletch = 'barf'
+                WHERE (nothing = 'fun')
+                """,
                 new Update(
                         new NodeLocation(1, 1),
                         table(QualifiedName.of("foo_table")),
@@ -5885,10 +5908,11 @@ public class TestSqlParser
     @Test
     public void testWherelessUpdate()
     {
-        assertStatement("""
-                        UPDATE foo_table
-                        SET bar = 23
-                        """,
+        assertStatement(
+                """
+                UPDATE foo_table
+                SET bar = 23
+                """,
                 new Update(
                         new NodeLocation(1, 1),
                         table(QualifiedName.of("foo_table")),
@@ -6082,7 +6106,8 @@ public class TestSqlParser
                                 new LongLiteral(location(1, 39), "1"))),
                         ImmutableList.of())));
 
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 SELECT * FROM TABLE(some_ptf(
                     arg1 => TABLE(orders) AS ord(a, b, c)
                         PARTITION BY a
@@ -6212,11 +6237,12 @@ public class TestSqlParser
     public void testCopartitionInTableArgumentAlias()
     {
         // table argument 'input' is aliased. The alias "copartition" is illegal in this context.
-        assertThatThrownBy(() -> SQL_PARSER.createStatement("""
-                        SELECT *
-                        FROM TABLE(some_ptf(
-                        input => TABLE(orders) copartition(a, b, c)))
-                        """))
+        assertThatThrownBy(() -> SQL_PARSER.createStatement(
+                """
+                SELECT *
+                FROM TABLE(some_ptf(
+                input => TABLE(orders) copartition(a, b, c)))
+                """))
                 .isInstanceOf(ParsingException.class)
                 .hasMessageMatching("line 3:24: The word \"COPARTITION\" is ambiguous in this context. " +
                         "To alias an argument, precede the alias with \"AS\". " +
@@ -6224,7 +6250,8 @@ public class TestSqlParser
 
         // table argument 'input' contains an aliased relation with the alias "copartition". The alias is enclosed in the 'TABLE(...)' clause, and the argument itself is not aliased.
         // The alias "copartition" is legal in this context.
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 SELECT *
                 FROM TABLE(some_ptf(
                    input => TABLE(SELECT * FROM orders copartition(a, b, c))))
@@ -6232,7 +6259,8 @@ public class TestSqlParser
                 .isInstanceOf(Query.class);
 
         // table argument 'input' is aliased. The alias "COPARTITION" is delimited, so it can cause no ambiguity with the COPARTITION clause, and is considered legal in this context.
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 SELECT *
                 FROM TABLE(some_ptf(
                     input => TABLE(orders) "COPARTITION"(a, b, c)))
@@ -6240,7 +6268,8 @@ public class TestSqlParser
                 .isInstanceOf(Query.class);
 
         // table argument 'input' is aliased. The alias "copartition" is preceded with the keyword "AS", so it can cause no ambiguity with the COPARTITION clause, and is considered legal in this context.
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 SELECT *
                 FROM TABLE(some_ptf(
                    input => TABLE(orders) AS copartition(a, b, c)))
@@ -6249,7 +6278,8 @@ public class TestSqlParser
 
         // the COPARTITION word can be either the alias for argument 'input3', or part of the COPARTITION clause.
         // It is parsed as the argument alias, and then fails as illegal in this context.
-        assertThatThrownBy(() -> SQL_PARSER.createStatement("""
+        assertThatThrownBy(() -> SQL_PARSER.createStatement(
+                """
                 SELECT *
                 FROM TABLE(some_ptf(
                     input1 => TABLE(customers) PARTITION BY nationkey,
@@ -6266,7 +6296,8 @@ public class TestSqlParser
         // In such case, the COPARTITION word cannot be mistaken for alias.
         // Note that this transformation of the query is always available. If the table function invocation contains the COPARTITION clause,
         // at least two table arguments must have partitioning specified.
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 SELECT *
                 FROM TABLE(some_ptf(
                     input1 => TABLE(customers) PARTITION BY nationkey,
@@ -6315,7 +6346,8 @@ public class TestSqlParser
                                 ImmutableList.of()),
                         JsonExists.ErrorBehavior.FALSE));
 
-        assertThat(expression("""
+        assertThat(expression(
+                """
                 JSON_EXISTS(
                     json_column FORMAT JSON ENCODING UTF8,
                     'lax $[start_parameter TO end_parameter.ceiling()]'
@@ -6366,7 +6398,8 @@ public class TestSqlParser
                         JsonValue.EmptyOrErrorBehavior.NULL,
                         Optional.empty()));
 
-        assertThat(expression("""
+        assertThat(expression(
+                """
                 JSON_VALUE(
                     json_column FORMAT JSON ENCODING UTF8,
                     'lax $[start_parameter TO end_parameter.ceiling()]'
@@ -6424,7 +6457,8 @@ public class TestSqlParser
                         JsonQuery.EmptyOrErrorBehavior.NULL,
                         JsonQuery.EmptyOrErrorBehavior.NULL));
 
-        assertThat(expression("""
+        assertThat(expression(
+                """
                 JSON_QUERY(
                     json_column FORMAT JSON ENCODING UTF8,
                     'lax $[start_parameter TO end_parameter.ceiling()]'
@@ -6491,7 +6525,8 @@ public class TestSqlParser
                         Optional.empty(),
                         Optional.empty()));
 
-        assertThat(expression("""
+        assertThat(expression(
+                """
                 JSON_OBJECT(
                      key_column_1 VALUE value_column FORMAT JSON ENCODING UTF16,
                      KEY 'key_literal' VALUE 5,
@@ -6548,7 +6583,8 @@ public class TestSqlParser
                         Optional.empty(),
                         Optional.empty()));
 
-        assertThat(expression("""
+        assertThat(expression(
+                """
                 JSON_ARRAY(value_column FORMAT JSON ENCODING UTF16,
                     5,
                     null
@@ -6633,7 +6669,8 @@ public class TestSqlParser
     public void testJsonTableNestedColumns()
     {
         // test json_table with nested columns and PLAN clause
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 SELECT * FROM JSON_TABLE(col, 'lax $' AS customer COLUMNS(
                     NESTED PATH 'lax $.cust_status[*]' AS status COLUMNS(
                        status varchar PATH 'lax $.type',

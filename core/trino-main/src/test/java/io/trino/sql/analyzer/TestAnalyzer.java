@@ -2502,7 +2502,8 @@ public class TestAnalyzer
                 "   c(z) AS (SELECT y * 10 FROM b)" +
                 "SELECT * FROM a, b, c");
 
-        analyze("""
+        analyze(
+                """
                 WITH
                     a(x) AS (SELECT ARRAY[1, 2, 3]),
                     b AS (SELECT * FROM (VALUES 4), UNNEST ((SELECT x FROM a)))
@@ -4005,7 +4006,8 @@ public class TestAnalyzer
                 .hasErrorCode(NOT_SUPPORTED)
                 .hasMessage("line 1:33: Security mode not supported for inline functions");
 
-        assertFails("""
+        assertFails(
+                """
                 CREATE VIEW test AS
                 WITH FUNCTION abc() RETURNS int RETURN 42
                 SELECT 123 x
@@ -6393,7 +6395,8 @@ public class TestAnalyzer
                 .hasMessageContaining("line 1:61: mismatched input 'SELECT'.");
 
         // query passed as the argument is correlated
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM
                 t1
@@ -6413,7 +6416,8 @@ public class TestAnalyzer
     @Test
     public void testTableArgumentProperties()
     {
-        analyze("""
+        analyze(
+                """
                 SELECT * FROM TABLE(system.table_argument_function(
                     input => TABLE(t1)
                                       PARTITION BY a
@@ -6525,7 +6529,8 @@ public class TestAnalyzer
     {
         // TABLE(t1) is matched by fully qualified name: tpch.s1.t1. It matches the second copartition item s1.t1.
         // Aliased relation TABLE(SELECT 1, 2) t1(x, y) is matched by unqualified name. It matches the first copartition item t1.
-        analyze("""
+        analyze(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(t1) PARTITION BY (a, b),
                     input2 => TABLE(SELECT 1, 2) t1(x, y) PARTITION BY (x, y)
@@ -6535,14 +6540,16 @@ public class TestAnalyzer
         // Copartition items t1, t2 are first matched to arguments by unqualified names, and when no match is found, by fully qualified names.
         // TABLE(tpch.s1.t1) is matched by fully qualified name. It matches the first copartition item t1.
         // TABLE(s1.t2) is matched by unqualified name: tpch.s1.t2. It matches the second copartition item t2.
-        analyze("""
+        analyze(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(tpch.s1.t1) PARTITION BY (a, b),
                     input2 => TABLE(s1.t2) PARTITION BY (a, b)
                     COPARTITION (t1, t2)))
                 """);
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(t1) PARTITION BY (a, b),
                     input2 => TABLE(t2) PARTITION BY (a, b)
@@ -6552,7 +6559,8 @@ public class TestAnalyzer
                 .hasMessage("line 4:22: No table argument found for name: s1.foo");
 
         // Both table arguments are matched by fully qualified name: tpch.s1.t1
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(t1) PARTITION BY (a, b),
                     input2 => TABLE(t1) PARTITION BY (a, b)
@@ -6562,7 +6570,8 @@ public class TestAnalyzer
                 .hasMessage("line 4:18: Ambiguous reference: multiple table arguments found for name: t1");
 
         // Both table arguments are matched by unqualified name: t1
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(SELECT 1, 2) t1(a, b) PARTITION BY (a, b),
                     input2 => TABLE(SELECT 3, 4) t1(c, d) PARTITION BY (c, d)
@@ -6571,7 +6580,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_COPARTITIONING)
                 .hasMessage("line 4:18: Ambiguous reference: multiple table arguments found for name: t1");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(t1) PARTITION BY (a, b),
                     input2 => TABLE(t2) PARTITION BY (a, b)
@@ -6584,7 +6594,8 @@ public class TestAnalyzer
     @Test
     public void testCopartitionColumns()
     {
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(t1),
                     input2 => TABLE(t2) PARTITION BY (a, b)
@@ -6593,7 +6604,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_COPARTITIONING)
                 .hasMessage("line 2:15: Table tpch.s1.t1 referenced in COPARTITION clause is not partitioned");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(t1) PARTITION BY (),
                     input2 => TABLE(t2) PARTITION BY ()
@@ -6602,7 +6614,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_COPARTITIONING)
                 .hasMessage("line 2:15: No partitioning columns specified for table tpch.s1.t1 referenced in COPARTITION clause");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(t1) PARTITION BY (a, b),
                     input2 => TABLE(t2) PARTITION BY (a)
@@ -6611,7 +6624,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_COPARTITIONING)
                 .hasMessage("line 4:18: Numbers of partitioning columns in copartitioned tables do not match");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.two_table_arguments_function(
                     input1 => TABLE(SELECT 1) t1(a) PARTITION BY (a),
                     input2 => TABLE(SELECT 'x') t2(b) PARTITION BY (b)
@@ -6671,7 +6685,8 @@ public class TestAnalyzer
                 .hasMessage("line 1:21: Cannot apply sample to polymorphic table function invocation");
 
         // row pattern matching
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM TABLE(system.only_pass_through_function(TABLE(t1)))
                 MATCH_RECOGNIZE(
@@ -6687,7 +6702,8 @@ public class TestAnalyzer
                 .hasMessage("line 1:15: Cannot apply sample to polymorphic table function invocation");
 
         // aliased + row pattern matching
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM TABLE(system.two_arguments_function('a', 1)) f(x)
                 MATCH_RECOGNIZE(
@@ -6699,7 +6715,8 @@ public class TestAnalyzer
                 .hasMessage("line 2:6: Cannot apply row pattern matching to polymorphic table function invocation");
 
         // row pattern matching + sampled
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM TABLE(system.only_pass_through_function(TABLE(t1)))
                 MATCH_RECOGNIZE(
@@ -6711,7 +6728,8 @@ public class TestAnalyzer
                 .hasMessage("line 2:12: Cannot apply row pattern matching to polymorphic table function invocation");
 
         // aliased + row pattern matching + sampled
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM TABLE(system.two_arguments_function('a', 1)) f(x)
                 MATCH_RECOGNIZE(
@@ -6785,17 +6803,20 @@ public class TestAnalyzer
     public void testTableFunctionRequiredColumns()
     {
         // the function required_column_function specifies columns 0 and 1 from table argument "INPUT" as required.
-        analyze("""
+        analyze(
+                """
                 SELECT * FROM TABLE(system.required_columns_function(
                     input => TABLE(t1)))
                 """);
 
-        analyze("""
+        analyze(
+                """
                 SELECT * FROM TABLE(system.required_columns_function(
                     input => TABLE(SELECT 1, 2, 3)))
                 """);
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.required_columns_function(
                     input => TABLE(SELECT 1)))
                 """)
@@ -6803,7 +6824,8 @@ public class TestAnalyzer
                 .hasMessage("Invalid index: 1 of required column from table argument INPUT");
 
         // table s1.t5 has two columns. The second column is hidden. Table function cannot require a hidden column.
-        assertFails("""
+        assertFails(
+                """
                 SELECT * FROM TABLE(system.required_columns_function(
                     input => TABLE(s1.t5)))
                 """)
@@ -6815,7 +6837,8 @@ public class TestAnalyzer
     public void testJsonTableColumnTypes()
     {
         // ordinality column
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6825,7 +6848,8 @@ public class TestAnalyzer
                 """);
 
         // regular column
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6838,7 +6862,8 @@ public class TestAnalyzer
                 """);
 
         // formatted column
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6854,7 +6879,8 @@ public class TestAnalyzer
                 """);
 
         // nested columns
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6870,7 +6896,8 @@ public class TestAnalyzer
     public void testJsonTableColumnAndPathNameUniqueness()
     {
         // root path is named
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6880,7 +6907,8 @@ public class TestAnalyzer
                 """);
 
         // nested path is named
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6891,7 +6919,8 @@ public class TestAnalyzer
                 """);
 
         // root and nested paths are named
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6902,7 +6931,8 @@ public class TestAnalyzer
                 """);
 
         // duplicate path name
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6915,7 +6945,8 @@ public class TestAnalyzer
                 .hasMessage("line 6:35: All column and path names in JSON_TABLE invocation must be unique");
 
         // duplicate column name
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6928,7 +6959,8 @@ public class TestAnalyzer
                 .hasMessage("line 7:9: All column and path names in JSON_TABLE invocation must be unique");
 
         // column and path names are the same
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6939,7 +6971,8 @@ public class TestAnalyzer
                 .hasErrorCode(DUPLICATE_COLUMN_OR_PATH_NAME)
                 .hasMessage("line 6:9: All column and path names in JSON_TABLE invocation must be unique");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6952,7 +6985,8 @@ public class TestAnalyzer
                 .hasMessage("line 7:13: All column and path names in JSON_TABLE invocation must be unique");
 
         // duplicate name is deeply nested
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6970,7 +7004,8 @@ public class TestAnalyzer
     @Test
     public void testJsonTableColumnAndPathNameIdentifierSemantics()
     {
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6981,7 +7016,8 @@ public class TestAnalyzer
                 .hasErrorCode(DUPLICATE_COLUMN_OR_PATH_NAME)
                 .hasMessage("line 6:9: All column and path names in JSON_TABLE invocation must be unique");
 
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -6994,7 +7030,8 @@ public class TestAnalyzer
     @Test
     public void testJsonTableOutputColumns()
     {
-        analyze("""
+        analyze(
+                """
                 SELECT a, b, c, d, e
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7016,7 +7053,8 @@ public class TestAnalyzer
         // canonical name: AB
         // implicit path: lax $."AB"
         // resolved member accessor: $.AB
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7028,7 +7066,8 @@ public class TestAnalyzer
         // canonical name: Ab
         // implicit path: lax $."Ab"
         // resolved member accessor: $.Ab
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7040,7 +7079,8 @@ public class TestAnalyzer
         // canonical name: ?
         // implicit path: lax $."?"
         // resolved member accessor: $.?
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7052,7 +7092,8 @@ public class TestAnalyzer
         // canonical name: "
         // implicit path: lax $.""""
         // resolved member accessor $."
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7064,7 +7105,8 @@ public class TestAnalyzer
     @Test
     public void testJsonTableSpecificPlan()
     {
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7075,7 +7117,8 @@ public class TestAnalyzer
                 .hasErrorCode(MISSING_PATH_NAME)
                 .hasMessage("line 3:5: All JSON paths must be named when specific plan is given");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7086,7 +7129,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_PLAN)
                 .hasMessage("line 6:11: JSON_TABLE plan must either be a single path name or it must be rooted in parent-child relationship (OUTER or INNER)");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7097,7 +7141,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_PLAN)
                 .hasMessage("line 6:11: JSON_TABLE plan should contain all JSON paths available at each level of nesting. Paths not included: ROOT_PATH");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7109,7 +7154,8 @@ public class TestAnalyzer
                 .hasErrorCode(MISSING_PATH_NAME)
                 .hasMessage("line 6:21: All JSON paths must be named when specific plan is given");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7122,7 +7168,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_PLAN)
                 .hasMessage("line 8:11: JSON_TABLE plan should contain all JSON paths available at each level of nesting. Paths not included: NESTED_PATH_2");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7135,7 +7182,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_PLAN)
                 .hasMessage("line 8:11: JSON_TABLE plan includes unavailable JSON path names: ANOTHER_PATH");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7150,7 +7198,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_PLAN)
                 .hasMessage("line 10:11: JSON_TABLE plan includes unavailable JSON path names: NESTED_PATH_3"); // nested_path_3 is on another nesting level
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7163,7 +7212,8 @@ public class TestAnalyzer
                 .hasErrorCode(INVALID_PLAN)
                 .hasMessage("line 8:69: Duplicate reference to JSON path name in sibling plan: NESTED_PATH_1");
 
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7180,7 +7230,8 @@ public class TestAnalyzer
     @Test
     public void testJsonTableDefaultPlan()
     {
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7189,7 +7240,8 @@ public class TestAnalyzer
                     PLAN DEFAULT(CROSS, INNER))
                 """);
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7205,13 +7257,15 @@ public class TestAnalyzer
     @Test
     public void testJsonTableInJoin()
     {
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM t1, t2, JSON_TABLE('[1, 2, 3]', 'lax $[2]' COLUMNS(o FOR ORDINALITY))
                 """);
 
         // join condition
-        analyze("""
+        analyze(
+                """
                 SELECT *
                     FROM t1
                     LEFT JOIN
@@ -7219,7 +7273,8 @@ public class TestAnalyzer
                     ON TRUE
                 """);
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                     FROM t1
                     RIGHT JOIN
@@ -7230,7 +7285,8 @@ public class TestAnalyzer
                 .hasMessage("line 5:12: RIGHT JOIN involving JSON_TABLE is only supported with condition ON TRUE");
 
         // correlation in context item
-        analyze("""
+        analyze(
+                """
                 SELECT *
                     FROM t6
                     LEFT JOIN
@@ -7239,7 +7295,8 @@ public class TestAnalyzer
                 """);
 
         // correlation in default value
-        analyze("""
+        analyze(
+                """
                 SELECT *
                     FROM t6
                     LEFT JOIN
@@ -7248,7 +7305,8 @@ public class TestAnalyzer
                 """);
 
         // correlation in path parameter
-        analyze("""
+        analyze(
+                """
                 SELECT *
                     FROM t6
                     LEFT JOIN
@@ -7257,7 +7315,8 @@ public class TestAnalyzer
                 """);
 
         // invalid correlation in right join
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                     FROM t6
                     RIGHT JOIN
@@ -7271,7 +7330,8 @@ public class TestAnalyzer
     @Test
     public void testSubqueryInJsonTable()
     {
-        analyze("""
+        analyze(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     (SELECT '[1, 2, 3]'),
@@ -7284,7 +7344,8 @@ public class TestAnalyzer
     @Test
     public void testAggregationInJsonTable()
     {
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     CAST(sum(1) AS varchar),
@@ -7295,7 +7356,8 @@ public class TestAnalyzer
                 .hasErrorCode(EXPRESSION_NOT_SCALAR)
                 .hasMessage("line 3:5: JSON_TABLE input expression cannot contain aggregations, window functions or grouping operations: [sum(1)]");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '1',
@@ -7306,7 +7368,8 @@ public class TestAnalyzer
                 .hasErrorCode(EXPRESSION_NOT_SCALAR)
                 .hasMessage("line 4:21: JSON_TABLE path parameter cannot contain aggregations, window functions or grouping operations: [avg(2)]");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '1',
@@ -7317,7 +7380,8 @@ public class TestAnalyzer
                 .hasErrorCode(EXPRESSION_NOT_SCALAR)
                 .hasMessage("line 6:26: default expression for JSON_TABLE column cannot contain aggregations, window functions or grouping operations: [min(3)]");
 
-        assertFails("""
+        assertFails(
+                """
                 SELECT *
                 FROM JSON_TABLE(
                     '1',
@@ -7332,7 +7396,8 @@ public class TestAnalyzer
     @Test
     public void testAliasJsonTable()
     {
-        analyze("""
+        analyze(
+                """
                 SELECT t.y
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7340,7 +7405,8 @@ public class TestAnalyzer
                     COLUMNS(x BIGINT)) t(y)
                 """);
 
-        analyze("""
+        analyze(
+                """
                 SELECT t.x
                 FROM JSON_TABLE(
                     '[1, 2, 3]',
@@ -7494,7 +7560,7 @@ public class TestAnalyzer
                 Optional.of("comment"),
                 Optional.of(Identity.ofUser("user")),
                 ImmutableList.of());
-        inSetupTransaction(session -> metadata.createView(session, new QualifiedObjectName("tpch", "s1", "v4"), viewData4,ImmutableMap.of(), false));
+        inSetupTransaction(session -> metadata.createView(session, new QualifiedObjectName("tpch", "s1", "v4"), viewData4, ImmutableMap.of(), false));
 
         // recursive view referencing to itself
         ViewDefinition viewData5 = new ViewDefinition(
