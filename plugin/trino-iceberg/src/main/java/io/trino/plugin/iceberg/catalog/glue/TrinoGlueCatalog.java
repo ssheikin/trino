@@ -187,13 +187,13 @@ public class TrinoGlueCatalog
             .maximumSize(Math.max(PER_QUERY_CACHES_SIZE, IcebergMetadata.GET_METADATA_BATCH_SIZE))
             .build();
 
-    private final Cache<SchemaTableName, TableMetadata> tableMetadataCache = EvictableCacheBuilder.newBuilder()
+    protected final Cache<SchemaTableName, TableMetadata> tableMetadataCache = EvictableCacheBuilder.newBuilder()
             .maximumSize(PER_QUERY_CACHES_SIZE)
             .build();
-    private final Cache<SchemaTableName, ConnectorViewDefinition> viewCache = EvictableCacheBuilder.newBuilder()
+    protected final Cache<SchemaTableName, ConnectorViewDefinition> viewCache = EvictableCacheBuilder.newBuilder()
             .maximumSize(PER_QUERY_CACHES_SIZE)
             .build();
-    private final Cache<SchemaTableName, MaterializedViewData> materializedViewCache = EvictableCacheBuilder.newBuilder()
+    protected final Cache<SchemaTableName, MaterializedViewData> materializedViewCache = EvictableCacheBuilder.newBuilder()
             .maximumSize(PER_QUERY_CACHES_SIZE)
             .build();
 
@@ -826,7 +826,7 @@ public class TrinoGlueCatalog
         }
     }
 
-    private Optional<com.amazonaws.services.glue.model.Table> getTableAndCacheMetadata(ConnectorSession session, SchemaTableName schemaTableName)
+    protected Optional<com.amazonaws.services.glue.model.Table> getTableAndCacheMetadata(ConnectorSession session, SchemaTableName schemaTableName)
     {
         com.amazonaws.services.glue.model.Table table;
         try {
@@ -1313,7 +1313,7 @@ public class TrinoGlueCatalog
         return Optional.of(createMaterializedViewDefinition(viewName, table));
     }
 
-    private ConnectorMaterializedViewDefinition createMaterializedViewDefinition(
+    protected ConnectorMaterializedViewDefinition createMaterializedViewDefinition(
             SchemaTableName viewName,
             com.amazonaws.services.glue.model.Table table)
     {
@@ -1391,7 +1391,7 @@ public class TrinoGlueCatalog
         }
     }
 
-    private TableMetadata getMaterializedViewTableMetadata(ConnectorSession session, SchemaTableName storageTableName, String storageMetadataLocation)
+    protected TableMetadata getMaterializedViewTableMetadata(ConnectorSession session, SchemaTableName storageTableName, String storageMetadataLocation)
     {
         requireNonNull(storageTableName, "storageTableName is null");
         requireNonNull(storageMetadataLocation, "storageMetadataLocation is null");
@@ -1579,11 +1579,11 @@ public class TrinoGlueCatalog
                         .withName(table)));
     }
 
-    private record MaterializedViewData(
+    public record MaterializedViewData(
             ConnectorMaterializedViewDefinition connectorMaterializedViewDefinition,
             Optional<String> storageMetadataLocation)
     {
-        private MaterializedViewData
+        public MaterializedViewData
         {
             requireNonNull(connectorMaterializedViewDefinition, "connectorMaterializedViewDefinition is null");
             requireNonNull(storageMetadataLocation, "storageMetadataLocation is null");
