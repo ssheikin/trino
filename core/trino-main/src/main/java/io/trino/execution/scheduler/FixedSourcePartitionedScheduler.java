@@ -199,9 +199,7 @@ public class FixedSourcePartitionedScheduler
         }
 
         @Override
-        public void lockDownNodes()
-        {
-        }
+        public void lockDownNodes() {}
 
         @Override
         public List<InternalNode> allNodes()
