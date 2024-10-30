@@ -30,7 +30,6 @@ import io.trino.Session;
 import io.trino.client.ClientCapabilities;
 import io.trino.client.Column;
 import io.trino.client.FailureInfo;
-import io.trino.client.QueryData;
 import io.trino.client.QueryError;
 import io.trino.client.QueryResults;
 import io.trino.exchange.ExchangeDataSource;
@@ -458,15 +457,14 @@ class Query
             updateCount = updatedRowsCount.orElse(null);
         }
 
-        QueryData queryData = queryDataProducer.produce(externalUriInfo, session, resultRows, this::handleSerializationException);
         if (resultsCacheEntry.isPresent()) {
             resultsCacheEntry.get().appendResults(
+                    session,
                     queryInfo.inputs(),
                     queryInfo.output(),
                     queryInfo.referencedTables(),
                     resultRows.getColumns().orElse(null),
-                    resultRows,
-                    queryData);
+                    resultRows);
         }
 
         if (isStarted && (queryInfo.outputStage().isEmpty() || exchangeDataSource.isFinished())) {
@@ -536,7 +534,7 @@ class Query
                 partialCancelUri,
                 nextResultsUri,
                 resultRows.getColumns().orElse(null),
-                queryData,
+                queryDataProducer.produce(externalUriInfo, session, resultRows, this::handleSerializationException),
                 toStatementStats(queryInfo),
                 toQueryError(queryInfo, typeSerializationException),
                 mappedCopy(queryInfo.warnings(), ProtocolUtil::toClientWarning),

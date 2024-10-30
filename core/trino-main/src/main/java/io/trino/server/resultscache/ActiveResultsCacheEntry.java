@@ -21,16 +21,14 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.concurrent.MoreFutures;
 import io.airlift.log.Logger;
+import io.trino.Session;
 import io.trino.client.Column;
-import io.trino.client.QueryData;
-import io.trino.client.RawQueryData;
 import io.trino.execution.Input;
 import io.trino.server.protocol.QueryResultRows;
 import io.trino.server.resultscache.CacheEntry.Reference;
 import io.trino.spi.QueryId;
 import io.trino.spi.eventlistener.TableInfo;
 import io.trino.sql.analyzer.Output;
-import jakarta.annotation.Nullable;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -42,11 +40,11 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static io.trino.server.resultscache.JsonArrayResultsIterator.toIterableList;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CACHED;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CACHING;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.NO_COLUMNS;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.OVER_MAX_SIZE;
-import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.UNSUPPORTED_QUERY_DATA_FORMAT;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 
@@ -146,12 +144,12 @@ public class ActiveResultsCacheEntry
     }
 
     public void appendResults(
+            Session session,
             Set<Input> inputs,
             Optional<Output> output,
             List<TableInfo> referencedTables,
             List<Column> columns,
-            QueryResultRows resultRows,
-            @Nullable QueryData queryData)
+            QueryResultRows resultRows)
     {
         List<CompletionCallback> completionCallbacks = new ArrayList<>();
         try {
@@ -198,21 +196,8 @@ public class ActiveResultsCacheEntry
                     return;
                 }
 
-                if (queryData == null) {
-                    log.debug("QueryId: %s, received null data for cache entry %s, ignoring", queryId, cacheKey);
-                    return;
-                }
-
                 log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, retainedSizeInBytes, currentSize);
-                if (queryData instanceof RawQueryData rawQueryData) {
-                    resultsData.get().addRecords(rawQueryData.getIterable());
-                }
-                else {
-                    // TODO: https://starburstdata.atlassian.net/browse/SEP-14832
-                    //  add support for encoded and spooled query data
-                    log.debug("QueryId: %s, query produced unsupported data format, not caching", queryId);
-                    completionCallbacks.add(setInvalidState(UNSUPPORTED_QUERY_DATA_FORMAT));
-                }
+                resultsData.get().addRecords(toIterableList(session, resultRows, _ -> {}));
             }
         }
         finally {
