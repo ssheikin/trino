@@ -98,7 +98,7 @@ public final class SchemaDiscoverySystemTable
     public RecordCursor cursor(ConnectorTransactionHandle transactionHandle, ConnectorSession session, TupleDomain<Integer> constraint)
     {
         String uri = tryGetSingleVarcharValue(constraint, 0).orElseThrow(() -> new TrinoException(INVALID_ARGUMENTS, "Missing URI argument"));
-        validateLocationAccess(session.getIdentity(), uri);
+        validateLocationAccess(session.getIdentity(), uri, session.getQueryId());
 
         Optional<String> previousMetadataJson = tryGetSingleVarcharValue(constraint, 1);
         String schema = tryGetSingleVarcharValue(constraint, 2).orElse("");
@@ -116,7 +116,7 @@ public final class SchemaDiscoverySystemTable
                 rescanType,
                 rescanUri,
                 rescanMetadata);
-        Discovered discovered = schemaExplorer.discover(discoveryConfig, location -> validateLocationAccess(session.getIdentity(), location));
+        Discovered discovered = schemaExplorer.discover(discoveryConfig, location -> validateLocationAccess(session.getIdentity(), location, session.getQueryId()));
         GeneratedOperations operations = discovered.generatedOperations();
 
         Builder table = InMemoryRecordSet.builder(TABLE_METADATA);
