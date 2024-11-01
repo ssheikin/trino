@@ -109,8 +109,9 @@ public class IcebergModule
         configBinder(binder).bindConfig(ParquetWriterConfig.class);
 
         binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
-        binder.bind(IcebergMetadataFactory.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, Key.get(HiveMetastoreFactory.class, RawHiveMetastoreFactory.class));
+        newOptionalBinder(binder, IcebergMetadataFactoryInterface.class)
+                .setDefault().to(IcebergMetadataFactory.class).in(Scopes.SINGLETON);
 
         jsonCodecBinder(binder).bindJsonCodec(CommitTaskData.class);
 

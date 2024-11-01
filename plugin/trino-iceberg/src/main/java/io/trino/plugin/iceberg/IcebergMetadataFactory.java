@@ -28,6 +28,7 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 public class IcebergMetadataFactory
+        implements IcebergMetadataFactoryInterface
 {
     private final LocationAccessControl locationAccessControl;
     private final TypeManager typeManager;
@@ -62,6 +63,7 @@ public class IcebergMetadataFactory
         this.addFilesProcedureEnabled = config.isAddFilesProcedureEnabled();
     }
 
+    @Override
     public IcebergMetadata create(ConnectorIdentity identity)
     {
         return new IcebergMetadata(

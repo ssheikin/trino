@@ -29,17 +29,17 @@ import static java.util.Objects.requireNonNull;
 
 public class IcebergTransactionManager
 {
-    private final IcebergMetadataFactory metadataFactory;
+    private final IcebergMetadataFactoryInterface metadataFactory;
     private final ClassLoader classLoader;
     private final ConcurrentMap<ConnectorTransactionHandle, MemoizedMetadata> transactions = new ConcurrentHashMap<>();
 
     @Inject
-    public IcebergTransactionManager(IcebergMetadataFactory metadataFactory)
+    public IcebergTransactionManager(IcebergMetadataFactoryInterface metadataFactory)
     {
         this(metadataFactory, Thread.currentThread().getContextClassLoader());
     }
 
-    public IcebergTransactionManager(IcebergMetadataFactory metadataFactory, ClassLoader classLoader)
+    public IcebergTransactionManager(IcebergMetadataFactoryInterface metadataFactory, ClassLoader classLoader)
     {
         this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
         this.classLoader = requireNonNull(classLoader, "classLoader is null");

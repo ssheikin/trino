@@ -109,7 +109,7 @@ public class TestIcebergCacheIds
                         .setCatalogDirectory(tempDir.toURI().toString())
                         .setMetastoreUser("user"),
                 Tracing.noopTracer());
-        IcebergMetadataFactory icebergMetadataFactory = new IcebergMetadataFactory(
+        IcebergMetadataFactoryInterface icebergMetadataFactory = new IcebergMetadataFactory(
                 LocationAccessControl.ALLOW_ALL,
                 TESTING_TYPE_MANAGER,
                 CatalogHandle.fromId("iceberg:NORMAL:v12345"),
