@@ -829,7 +829,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
         List<ViewExpression> rowFilters = accessControl.getRowFilters(
                 userGroup3,
                 new CatalogSchemaTableName("some-catalog", "my_schema", "my_table"));
-        assertThat(rowFilters.size()).isEqualTo(1);
+        assertThat(rowFilters).hasSize(1);
         assertViewExpressionEquals(
                 rowFilters.get(0),
                 ViewExpression.builder()
@@ -1457,7 +1457,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
         assertThat(accessControl.getRowFilters(ALICE, new CatalogSchemaTableName("some-catalog", "bobschema", "bobcolumns"))).isEqualTo(ImmutableList.of());
 
         List<ViewExpression> rowFilters = accessControl.getRowFilters(CHARLIE, new CatalogSchemaTableName("some-catalog", "bobschema", "bobcolumns"));
-        assertThat(rowFilters.size()).isEqualTo(1);
+        assertThat(rowFilters).hasSize(1);
         assertViewExpressionEquals(
                 rowFilters.get(0),
                 ViewExpression.builder()
@@ -1467,7 +1467,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
                         .build());
 
         rowFilters = accessControl.getRowFilters(CHARLIE, new CatalogSchemaTableName("some-catalog", "bobschema", "bobcolumns_with_grant"));
-        assertThat(rowFilters.size()).isEqualTo(1);
+        assertThat(rowFilters).hasSize(1);
         assertViewExpressionEquals(
                 rowFilters.get(0),
                 ViewExpression.builder()
