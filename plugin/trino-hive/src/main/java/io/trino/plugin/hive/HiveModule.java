@@ -21,7 +21,6 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
-import io.airlift.event.client.EventClient;
 import io.trino.plugin.base.ConnectorSplitManagerDecorator;
 import io.trino.plugin.base.DecoratingConnectorSplitManager;
 import io.trino.plugin.base.ForDecorator;
@@ -105,8 +104,6 @@ public class HiveModule
 
         binder.bind(HiveWriterStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(HiveWriterStats.class).withGeneratedName();
-
-        newSetBinder(binder, EventClient.class).addBinding().to(HiveEventClient.class).in(Scopes.SINGLETON);
         binder.bind(HivePartitionManager.class).in(Scopes.SINGLETON);
         binder.bind(LocationService.class).to(HiveLocationService.class).in(Scopes.SINGLETON);
         Multibinder<SystemTableProvider> systemTableProviders = newSetBinder(binder, SystemTableProvider.class);
