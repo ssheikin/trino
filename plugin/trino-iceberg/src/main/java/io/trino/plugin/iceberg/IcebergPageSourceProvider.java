@@ -294,16 +294,7 @@ public class IcebergPageSourceProvider
             long dataSequenceNumber,
             Optional<NameMapping> nameMapping)
     {
-        Set<IcebergColumnHandle> deleteFilterRequiredColumns = requiredColumnsForDeletes(tableSchema, deletes);
-        String partition = partitionSpec.partitionToPath(partitionData);
         Map<Integer, Optional<String>> partitionKeys = getPartitionKeys(partitionData, partitionSpec);
-
-        List<IcebergColumnHandle> requiredColumns = new ArrayList<>(icebergColumns);
-
-        deleteFilterRequiredColumns.stream()
-                .filter(not(icebergColumns::contains))
-                .forEach(requiredColumns::add);
-
         TupleDomain<IcebergColumnHandle> effectivePredicate = getUnenforcedPredicate(
                 new SplitSpec(tableSchema, partitionSpec, partitionKeys),
                 unenforcedPredicate,
@@ -314,11 +305,12 @@ public class IcebergPageSourceProvider
             return new EmptyPageSource();
         }
 
+        // exit early when only reading partition keys from a simple split
+        String partition = partitionSpec.partitionToPath(partitionData);
         TrinoFileSystem fileSystem = createFileSystem(session, schemaName, tableName, fileIoProperties);
         TrinoInputFile inputfile = isUseFileSizeFromMetadata(session)
                 ? fileSystem.newInputFile(Location.of(path), fileSize)
                 : fileSystem.newInputFile(Location.of(path));
-
         try {
             if (effectivePredicate.isAll() &&
                     start == 0 && length == inputfile.length() &&
@@ -333,6 +325,13 @@ public class IcebergPageSourceProvider
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+
+        List<IcebergColumnHandle> requiredColumns = new ArrayList<>(icebergColumns);
+
+        Set<IcebergColumnHandle> deleteFilterRequiredColumns = requiredColumnsForDeletes(tableSchema, deletes);
+        deleteFilterRequiredColumns.stream()
+                .filter(not(icebergColumns::contains))
+                .forEach(requiredColumns::add);
 
         ReaderPageSourceWithRowPositions readerPageSourceWithRowPositions = createDataPageSource(
                 session,
