@@ -286,7 +286,7 @@ public class TestAccessControl
                 }))
                 .build()));
         queryRunner.createCatalog("mock", "mock");
-        queryRunner.installPlugin(new JdbcPlugin("base_jdbc", new TestingH2JdbcModule()));
+        queryRunner.installPlugin(new JdbcPlugin("base_jdbc", TestingH2JdbcModule::new));
         queryRunner.createCatalog("jdbc", "base_jdbc", TestingH2JdbcModule.createProperties());
         queryRunner.installPlugin(new TestingUdfFunctionsPlugin());
         for (String tableName : ImmutableList.of("orders", "nation", "region", "lineitem")) {
