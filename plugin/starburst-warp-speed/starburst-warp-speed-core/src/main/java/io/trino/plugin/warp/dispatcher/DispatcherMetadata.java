@@ -1210,12 +1210,14 @@ public class DispatcherMetadata
     public ConnectorMergeTableHandle beginMerge(
             ConnectorSession session,
             ConnectorTableHandle tableHandle,
+            Map<Integer, Collection<ColumnHandle>> updateCaseColumns,
             RetryMode retryMode)
     {
         DispatcherTableHandle dispatcherTableHandle = (DispatcherTableHandle) tableHandle;
         ConnectorMergeTableHandle proxyConnectorMergeTableHandle = proxiedConnectorMetadata.beginMerge(
                 session,
                 ((DispatcherTableHandle) tableHandle).getProxyConnectorTableHandle(),
+                updateCaseColumns,
                 retryMode);
         return new DispatcherMergeTableHandle(
                 dispatcherTableHandle,
