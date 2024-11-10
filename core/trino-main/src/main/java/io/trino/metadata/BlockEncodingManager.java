@@ -31,7 +31,6 @@ import io.trino.spi.block.DictionaryBlockEncoding;
 import io.trino.spi.block.Fixed12BlockEncoding;
 import io.trino.spi.block.Int128ArrayBlockEncoding;
 import io.trino.spi.block.IntArrayBlockEncoding;
-import io.trino.spi.block.LazyBlockEncoding;
 import io.trino.spi.block.LongArrayBlockEncoding;
 import io.trino.spi.block.MapBlockEncoding;
 import io.trino.spi.block.RowBlockEncoding;
@@ -80,7 +79,6 @@ public final class BlockEncodingManager
         addBlockEncoding(new MapBlockEncoding());
         addBlockEncoding(new RowBlockEncoding());
         addBlockEncoding(new RunLengthBlockEncoding());
-        addBlockEncoding(new LazyBlockEncoding());
 
         if (config.isExchangeVbyteBlockEncodingEnabled() && VByteNative.getLinkageError().isPresent()) {
             log.warn(VByteNative.getLinkageError().orElseThrow(), "VByte block encoding disabled because of linkage error");
