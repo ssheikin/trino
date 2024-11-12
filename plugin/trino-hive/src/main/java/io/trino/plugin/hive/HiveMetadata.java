@@ -154,7 +154,10 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -180,6 +183,7 @@ import static io.trino.metastore.type.Category.PRIMITIVE;
 import static io.trino.parquet.writer.ParquetWriter.SUPPORTED_BLOOM_FILTER_TYPES;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.extractSupportedProjectedColumns;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.replaceWithNewVariables;
+import static io.trino.plugin.base.util.ExecutorUtil.processWithAdditionalThreads;
 import static io.trino.plugin.hive.HiveAnalyzeProperties.getColumnNames;
 import static io.trino.plugin.hive.HiveAnalyzeProperties.getPartitionList;
 import static io.trino.plugin.hive.HiveApplyProjectionUtil.find;
@@ -411,6 +415,7 @@ public class HiveMetadata
     private final boolean partitionProjectionEnabled;
     private final boolean allowTableRename;
     private final long maxPartitionDropsPerQuery;
+    private final Executor metadataFetchingExecutor;
 
     public HiveMetadata(
             LocationAccessControl locationAccessControl,
@@ -437,7 +442,8 @@ public class HiveMetadata
             DirectoryLister directoryLister,
             boolean partitionProjectionEnabled,
             boolean allowTableRename,
-            long maxPartitionDropsPerQuery)
+            long maxPartitionDropsPerQuery,
+            Executor metadataFetchingExecutor)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
@@ -464,6 +470,7 @@ public class HiveMetadata
         this.partitionProjectionEnabled = partitionProjectionEnabled;
         this.allowTableRename = allowTableRename;
         this.maxPartitionDropsPerQuery = maxPartitionDropsPerQuery;
+        this.metadataFetchingExecutor = requireNonNull(metadataFetchingExecutor, "metadataFetchingExecutor is null");
     }
 
     @Override
@@ -829,37 +836,38 @@ public class HiveMetadata
                         .asList();
             }
         }
-        ImmutableSet.Builder<SchemaTableName> tableNames = ImmutableSet.builder();
-        for (String schemaName : listSchemas(session, optionalSchemaName)) {
-            for (TableInfo tableInfo : getMetastore(session).getTables(schemaName)) {
-                tableNames.add(tableInfo.tableName());
-            }
-        }
-        return tableNames.build().asList();
+        return streamTables(session, optionalSchemaName)
+                .map(TableInfo::tableName)
+                .collect(toImmutableList());
     }
 
     @Override
     public Map<SchemaTableName, RelationType> getRelationTypes(ConnectorSession session, Optional<String> optionalSchemaName)
     {
-        ImmutableMap.Builder<SchemaTableName, RelationType> result = ImmutableMap.builder();
-        boolean fetched = false;
         if (optionalSchemaName.isEmpty()) {
             Optional<List<TableInfo>> tables = getMetastore(session).getTables();
             if (tables.isPresent()) {
-                tables.get().stream()
+                return tables.get().stream()
                         .filter(entry -> !isHiveSystemSchema(entry.tableName().getSchemaName()))
-                        .forEach(table -> result.put(table.tableName(), table.extendedRelationType().toRelationType()));
-                fetched = true;
+                        .collect(toImmutableMap(TableInfo::tableName, tableInfo -> tableInfo.extendedRelationType().toRelationType(), (ignore, second) -> second));
             }
         }
-        if (!fetched) {
-            for (String schemaName : listSchemas(session, optionalSchemaName)) {
-                for (TableInfo tableInfo : getMetastore(session).getTables(schemaName)) {
-                    result.put(tableInfo.tableName(), tableInfo.extendedRelationType().toRelationType());
-                }
-            }
+        return streamTables(session, optionalSchemaName)
+                .collect(toImmutableMap(TableInfo::tableName, tableInfo -> tableInfo.extendedRelationType().toRelationType(), (ignore, second) -> second));
+    }
+
+    private Stream<TableInfo> streamTables(ConnectorSession session, Optional<String> optionalSchemaName)
+    {
+        List<Callable<List<TableInfo>>> tasks = listSchemas(session, optionalSchemaName).stream()
+                .map(schemaName -> (Callable<List<TableInfo>>) () -> getMetastore(session).getTables(schemaName))
+                .collect(toImmutableList());
+        try {
+            return processWithAdditionalThreads(tasks, metadataFetchingExecutor).stream()
+                    .flatMap(Collection::stream);
         }
-        return result.buildKeepingLast();
+        catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        }
     }
 
     private List<String> listSchemas(ConnectorSession session, Optional<String> schemaName)

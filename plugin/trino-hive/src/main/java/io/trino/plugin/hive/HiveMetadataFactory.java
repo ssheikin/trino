@@ -78,6 +78,7 @@ public class HiveMetadataFactory
     private final TransactionScopeCachingDirectoryListerFactory transactionScopeCachingDirectoryListerFactory;
     private final boolean partitionProjectionEnabled;
     private final boolean allowTableRename;
+    private final Executor metadataFetchingExecutor;
 
     @Inject
     public HiveMetadataFactory(
@@ -138,7 +139,8 @@ public class HiveMetadataFactory
                 directoryLister,
                 transactionScopeCachingDirectoryListerFactory,
                 hiveConfig.isPartitionProjectionEnabled(),
-                allowTableRename);
+                allowTableRename,
+                hiveConfig.getMetadataParallelism());
     }
 
     public HiveMetadataFactory(
@@ -175,7 +177,8 @@ public class HiveMetadataFactory
             DirectoryLister directoryLister,
             TransactionScopeCachingDirectoryListerFactory transactionScopeCachingDirectoryListerFactory,
             boolean partitionProjectionEnabled,
-            boolean allowTableRename)
+            boolean allowTableRename,
+            int metadataParallelism)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
@@ -218,6 +221,12 @@ public class HiveMetadataFactory
         this.transactionScopeCachingDirectoryListerFactory = requireNonNull(transactionScopeCachingDirectoryListerFactory, "transactionScopeCachingDirectoryListerFactory is null");
         this.partitionProjectionEnabled = partitionProjectionEnabled;
         this.allowTableRename = allowTableRename;
+        if (metadataParallelism == 1) {
+            this.metadataFetchingExecutor = directExecutor();
+        }
+        else {
+            this.metadataFetchingExecutor = new BoundedExecutor(executorService, metadataParallelism);
+        }
     }
 
     @Override
@@ -266,6 +275,7 @@ public class HiveMetadataFactory
                 directoryLister,
                 partitionProjectionEnabled,
                 allowTableRename,
-                maxPartitionDropsPerQuery);
+                maxPartitionDropsPerQuery,
+                metadataFetchingExecutor);
     }
 }
