@@ -14,6 +14,7 @@
 package io.trino.plugin.deltalake;
 
 import com.google.inject.Inject;
+import io.airlift.concurrent.BoundedExecutor;
 import io.airlift.json.JsonCodec;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.metastore.HiveMetastore;
@@ -35,7 +36,10 @@ import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.trino.plugin.hive.metastore.cache.CachingHiveMetastore.createPerTransactionCache;
 import static java.util.Objects.requireNonNull;
 
@@ -61,7 +65,7 @@ public class DeltaLakeMetadataFactory
     private final boolean deleteSchemaLocationsFallback;
     private final boolean useUniqueTableLocation;
     private final DeltaLakeTableMetadataScheduler metadataScheduler;
-
+    private final Executor metadataFetchingExecutor;
     private final boolean allowManagedTableRename;
     private final String trinoVersion;
 
@@ -83,7 +87,8 @@ public class DeltaLakeMetadataFactory
             CachingExtendedStatisticsAccess statisticsAccess,
             @AllowDeltaLakeManagedTableRename boolean allowManagedTableRename,
             NodeVersion nodeVersion,
-            DeltaLakeTableMetadataScheduler metadataScheduler)
+            DeltaLakeTableMetadataScheduler metadataScheduler,
+            ExecutorService executorService)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.hiveMetastoreFactory = requireNonNull(hiveMetastoreFactory, "hiveMetastore is null");
@@ -107,6 +112,12 @@ public class DeltaLakeMetadataFactory
         this.allowManagedTableRename = allowManagedTableRename;
         this.trinoVersion = requireNonNull(nodeVersion, "nodeVersion is null").toString();
         this.metadataScheduler = requireNonNull(metadataScheduler, "metadataScheduler is null");
+        if (deltaLakeConfig.getMetadataParallelism() == 1) {
+            this.metadataFetchingExecutor = directExecutor();
+        }
+        else {
+            this.metadataFetchingExecutor = new BoundedExecutor(executorService, deltaLakeConfig.getMetadataParallelism());
+        }
     }
 
     public DeltaLakeMetadata create(ConnectorIdentity identity)
@@ -149,7 +160,8 @@ public class DeltaLakeMetadataFactory
                 statisticsAccess,
                 metadataScheduler,
                 useUniqueTableLocation,
-                allowManagedTableRename);
+                allowManagedTableRename,
+                metadataFetchingExecutor);
     }
 
     public CachingHiveMetastore createTransactionMetastore(ConnectorIdentity identity)
