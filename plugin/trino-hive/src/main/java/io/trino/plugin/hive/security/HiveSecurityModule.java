@@ -34,6 +34,7 @@ public class HiveSecurityModule
         SQL_STANDARD,
         SYSTEM,
         RANGER,
+        DEPRECATED_RANGER,
         LAKE_FORMATION,
         SENTRY,
         STARBURST,
@@ -51,7 +52,7 @@ public class HiveSecurityModule
             case SQL_STANDARD -> new SqlStandardSecurityModule();
             case SYSTEM -> new SystemSecurityModule();
             // these are not handled by Trino:
-            case RANGER, LAKE_FORMATION, SENTRY, STARBURST -> EMPTY_MODULE;
+            case RANGER, DEPRECATED_RANGER, LAKE_FORMATION, SENTRY, STARBURST -> EMPTY_MODULE;
         });
     }
 
