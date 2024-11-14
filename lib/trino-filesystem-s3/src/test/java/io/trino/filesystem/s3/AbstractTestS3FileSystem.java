@@ -166,6 +166,7 @@ public abstract class AbstractTestS3FileSystem
                             builder.sseCustomerKey(encoded(randomEncryptionKey));
                             builder.sseCustomerKeyMD5(md5Checksum(randomEncryptionKey));
                         }
+                        configure(builder);
                     })
                     .build();
 
@@ -198,6 +199,7 @@ public abstract class AbstractTestS3FileSystem
                                 builder.sseCustomerKey(encoded(randomEncryptionKey));
                                 builder.sseCustomerKeyMD5(md5Checksum(randomEncryptionKey));
                             }
+                            configure(builder);
                         })
                         .build();
 

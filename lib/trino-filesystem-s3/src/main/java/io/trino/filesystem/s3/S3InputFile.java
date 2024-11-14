@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 
+import static io.trino.filesystem.s3.S3FileSystemConfig.S3SseType.CUSTOMER;
 import static io.trino.filesystem.s3.S3SseCUtils.encoded;
 import static io.trino.filesystem.s3.S3SseCUtils.md5Checksum;
 import static java.util.Objects.requireNonNull;
@@ -127,10 +128,17 @@ final class S3InputFile
                 .requestPayer(requestPayer)
                 .bucket(location.bucket())
                 .key(location.key())
-                .applyMutation(builder -> key.ifPresent(encryption -> {
+                .applyMutation(builder -> key.ifPresentOrElse(encryption -> {
                     builder.sseCustomerKey(encoded(encryption));
                     builder.sseCustomerAlgorithm(encryption.algorithm());
                     builder.sseCustomerKeyMD5(md5Checksum(encryption));
+                }, () -> {
+                    if (context.sseType().equals(CUSTOMER)) {
+                        S3SseCustomerKey s3SseCustomerKey = context.sseCustomerKey();
+                        builder.sseCustomerAlgorithm(s3SseCustomerKey.algorithm())
+                                .sseCustomerKey(s3SseCustomerKey.key())
+                                .sseCustomerKeyMD5(s3SseCustomerKey.md5());
+                    }
                 }))
                 .build();
 
