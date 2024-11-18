@@ -15,19 +15,15 @@
 
 package io.trino.plugin.warp.gen.constants;
 
-public enum JbufType
+public enum StorageLocHomogeneous
 {
-    JBUF_TYPE_REC,
-    JBUF_TYPE_NULL,
-    JBUF_TYPE_QUERY_NUM_OF,
-    JBUF_TYPE_CHUNKS,
-    JBUF_TYPE_CRC,
-    JBUF_TYPE_SKIPLIST,
-    JBUF_TYPE_EXT_RECS,
-    JBUF_TYPE_TEMP,
-    JBUF_TYPE_NUM_OF;
+    STORAGE_LOC_HOMOGENEOUS_NOT_USED,
+    STORAGE_LOC_HOMOGENEOUS_INVALID,
+    STORAGE_LOC_HOMOGENEOUS_ONE,
+    STORAGE_LOC_HOMOGENEOUS_ZERO,
+    STORAGE_LOC_HOMOGENEOUS_NUM_OF;
 
-    JbufType()
+    StorageLocHomogeneous()
     {
     }
 }
