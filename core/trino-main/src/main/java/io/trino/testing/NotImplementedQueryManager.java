@@ -25,10 +25,13 @@ import io.trino.execution.TaskId;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.ResultQueryInfo;
 import io.trino.server.protocol.Slug;
+import io.trino.server.resultscache.ActiveResultsCacheEntry;
+import io.trino.server.resultscache.ResultsCacheState;
 import io.trino.spi.QueryId;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class NotImplementedQueryManager
@@ -94,6 +97,13 @@ public class NotImplementedQueryManager
     }
 
     @Override
+    public void registerResultsCacheEntry(QueryId queryId, ActiveResultsCacheEntry resultsCacheEntry)
+            throws NoSuchElementException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
     public Session getQuerySession(QueryId queryId)
     {
         throw new RuntimeException("not implemented");
@@ -144,6 +154,13 @@ public class NotImplementedQueryManager
 
     @Override
     public void cancelStage(StageId stageId)
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public Optional<ResultsCacheState> getResultsCacheState(QueryId queryId)
+            throws NoSuchElementException
     {
         throw new RuntimeException("not implemented");
     }
