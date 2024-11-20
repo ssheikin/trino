@@ -14,6 +14,8 @@
 package io.trino.server;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.log.Logger;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -126,4 +129,36 @@ public class SessionPropertyDefaults
         Map<String, Map<String, String>> catalogPropertyOverrides = configurationManager.getCatalogSessionProperties(context);
         return session.withDefaultProperties(systemPropertyOverrides, catalogPropertyOverrides, accessControl);
     }
+
+    @VisibleForTesting
+    public void setConfigurationManager(SessionPropertyConfigurationManager manager)
+    {
+        delegate.set(manager);
+    }
+
+    public DefaultPropertiesOverrides getSystemPropertyOverrides(
+            String user,
+            Optional<String> source,
+            Set<String> tags,
+            Optional<String> queryType,
+            ResourceGroupId resourceGroupId)
+    {
+        SessionPropertyConfigurationManager configurationManager = delegate.get();
+        if (configurationManager == null) {
+            return new DefaultPropertiesOverrides(ImmutableMap.of(), ImmutableMap.of());
+        }
+
+        SessionConfigurationContext context = new SessionConfigurationContext(
+                user,
+                source,
+                ImmutableSet.copyOf(tags),
+                queryType,
+                resourceGroupId);
+
+        return new DefaultPropertiesOverrides(
+                configurationManager.getSystemSessionProperties(context),
+                configurationManager.getCatalogSessionProperties(context));
+    }
+
+    public record DefaultPropertiesOverrides(Map<String, String> systemPropertyOverrides, Map<String, Map<String, String>> catalogPropertyOverrides) {}
 }

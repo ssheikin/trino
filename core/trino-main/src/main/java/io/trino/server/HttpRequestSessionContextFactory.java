@@ -390,7 +390,7 @@ public class HttpRequestSessionContextFactory
         return ImmutableSet.copyOf(splitter.split(nullToEmpty(headers.getFirst(protocolHeaders.requestClientCapabilities()))));
     }
 
-    private static ResourceEstimates parseResourceEstimate(ProtocolHeaders protocolHeaders, MultivaluedMap<String, String> headers)
+    public static ResourceEstimates parseResourceEstimate(ProtocolHeaders protocolHeaders, MultivaluedMap<String, String> headers)
     {
         ResourceEstimateBuilder builder = new ResourceEstimateBuilder();
         parseProperty(headers, protocolHeaders.requestResourceEstimate()).forEach((name, value) -> {
