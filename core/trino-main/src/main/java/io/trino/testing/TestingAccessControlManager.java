@@ -48,6 +48,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -146,7 +147,7 @@ public class TestingAccessControlManager
     private Predicate<String> deniedSchemas = s -> true;
     private Predicate<SchemaTableName> deniedTables = s -> true;
     private BiPredicate<Identity, String> denyIdentityTable = IDENTITY_TABLE_TRUE;
-    private BiPredicate<ConnectorIdentity, String> deniedLocations = LOCATION_ALLOW_ALL;
+    private AtomicReference<BiPredicate<ConnectorIdentity, String>> deniedLocations = new AtomicReference<>(LOCATION_ALLOW_ALL);
 
     @Inject
     public TestingAccessControlManager(
@@ -197,14 +198,14 @@ public class TestingAccessControlManager
         deniedSchemas = s -> true;
         deniedTables = s -> true;
         denyIdentityTable = IDENTITY_TABLE_TRUE;
-        deniedLocations = LOCATION_ALLOW_ALL;
+        deniedLocations.set(LOCATION_ALLOW_ALL);
         rowFilters.clear();
         columnMasks.clear();
     }
 
     public void denyLocations(BiPredicate<ConnectorIdentity, String> deniedLocations)
     {
-        this.deniedLocations = this.deniedLocations.and(deniedLocations);
+        this.deniedLocations.updateAndGet(deniedLocations::and);
     }
 
     public void denyCatalogs(Predicate<String> deniedCatalogs)
@@ -744,7 +745,7 @@ public class TestingAccessControlManager
     @Override
     public void checkCanUseLocation(ConnectorIdentity identity, String location, String queryId)
     {
-        if (!deniedLocations.test(identity, location)) {
+        if (!deniedLocations.get().test(identity, location)) {
             throw new AccessDeniedException(format("Cannot access location %s", location));
         }
         super.checkCanUseLocation(identity, location, queryId);
