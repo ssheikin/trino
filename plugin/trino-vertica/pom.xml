@@ -9,7 +9,6 @@
     </parent>
 
     <artifactId>trino-vertica</artifactId>
-    <packaging>trino-plugin</packaging>
     <description>Trino - Vertica Connector</description>
 
     <dependencies>
