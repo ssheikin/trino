@@ -36,6 +36,7 @@ import io.trino.spi.TrinoWarning;
 import io.trino.spi.WarningCode;
 import io.trino.spi.connector.CatalogHandle.CatalogVersion;
 import io.trino.spi.eventlistener.StageGcStatistics;
+import io.trino.spi.metrics.Metrics;
 import io.trino.spi.resourcegroups.QueryType;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.security.SelectedRole;
@@ -319,6 +320,7 @@ public class TestQueryInfo
                 succinctBytes(value),
                 value,
                 value,
+                Metrics.EMPTY,
                 Duration.succinctDuration(value, NANOSECONDS),
                 Duration.succinctDuration(value, NANOSECONDS),
                 succinctBytes(value),
