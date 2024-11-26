@@ -24,6 +24,7 @@ import com.google.inject.multibindings.Multibinder;
 import io.trino.plugin.base.ConnectorSplitManagerDecorator;
 import io.trino.plugin.base.DecoratingConnectorSplitManager;
 import io.trino.plugin.base.ForDecorator;
+import io.trino.plugin.base.metrics.FileFormatDataSourceStats;
 import io.trino.plugin.hive.avro.AvroFileWriterFactory;
 import io.trino.plugin.hive.avro.AvroPageSourceFactory;
 import io.trino.plugin.hive.fs.CachingDirectoryLister;
