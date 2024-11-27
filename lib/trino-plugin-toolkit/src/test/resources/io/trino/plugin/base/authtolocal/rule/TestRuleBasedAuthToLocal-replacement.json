@@ -1,0 +1,18 @@
+{
+  "rules": [
+    {
+      "match": "USER",
+      "pattern": "(.*)@default-substitution"
+    },
+    {
+      "match": "USER",
+      "pattern": "(.*)@explicit-substitution0",
+      "substitution": "$0"
+    },
+    {
+      "match": "USER",
+      "pattern": "(.*)@explicit-substitution1",
+      "substitution": "$1"
+    }
+  ]
+}

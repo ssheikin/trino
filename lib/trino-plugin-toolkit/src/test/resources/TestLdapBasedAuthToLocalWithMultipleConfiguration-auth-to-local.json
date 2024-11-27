@@ -1,0 +1,9 @@
+{
+  "rules": [
+    {
+      "match": "USER",
+      "pattern": "charlie",
+      "substitution": "from-auth-to-local"
+    }
+  ]
+}

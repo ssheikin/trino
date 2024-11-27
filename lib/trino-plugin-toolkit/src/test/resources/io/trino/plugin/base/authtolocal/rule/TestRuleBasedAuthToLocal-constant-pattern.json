@@ -1,0 +1,9 @@
+{
+  "rules": [
+    {
+      "match": "USER",
+      "pattern": "bob",
+      "substitution": "this_is_replaced"
+    }
+  ]
+}
