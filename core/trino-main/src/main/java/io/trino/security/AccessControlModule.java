@@ -26,6 +26,7 @@ import io.trino.spi.security.GroupProvider;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.tracing.ForTracing;
 import io.trino.tracing.TracingAccessControl;
+import io.trino.tracing.TracingLocationAccessControl;
 
 import static com.google.common.reflect.Reflection.newProxy;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
@@ -43,6 +44,7 @@ public class AccessControlModule
         newOptionalBinder(binder, Key.get(String.class, DefaultLocationAccessControlName.class)).setDefault().toInstance(LocationAccessControl.DEFAULT_NAME);
         binder.bind(AccessControlManager.class).in(Scopes.SINGLETON);
         binder.bind(AccessControl.class).to(TracingAccessControl.class);
+        binder.bind(LocationAccessControl.class).to(TracingLocationAccessControl.class);
         binder.bind(GroupProviderManager.class).in(Scopes.SINGLETON);
         binder.bind(GroupProvider.class).to(GroupProviderManager.class).in(Scopes.SINGLETON);
         newExporter(binder).export(AccessControlManager.class).withGeneratedName();
@@ -62,6 +64,25 @@ public class AccessControlModule
         return ForwardingAccessControl.of(() -> {
             if (logger.isDebugEnabled()) {
                 return loggingInvocationsAccessControl;
+            }
+            return accessControlManager;
+        });
+    }
+
+    @Provides
+    @Singleton
+    @ForTracing
+    public LocationAccessControl createLocationAccessControl(AccessControlManager accessControlManager)
+    {
+        Logger logger = Logger.get(LocationAccessControl.class);
+
+        LocationAccessControl loggingInvocationsLocationAccessControl = newProxy(
+                LocationAccessControl.class,
+                new LoggingInvocationHandler(accessControlManager, logger::debug));
+
+        return ForwardingLocationAccessControl.of(() -> {
+            if (logger.isDebugEnabled()) {
+                return loggingInvocationsLocationAccessControl;
             }
             return accessControlManager;
         });
