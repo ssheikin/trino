@@ -47,6 +47,10 @@ public class HdfsAuthenticationModule
         bindAuthenticationModule(
                 config -> kerberosHdfsAuth(config) && config.isHdfsImpersonationEnabled(),
                 kerberosImpersonatingHdfsAuthenticationModule());
+
+        bindAuthenticationModule(
+                HdfsAuthenticationConfig::isHdfsImpersonationEnabled,
+                new StarburstHdfsImpersonationModule());
     }
 
     private void bindAuthenticationModule(Predicate<HdfsAuthenticationConfig> predicate, Module module)
