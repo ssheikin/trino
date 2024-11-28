@@ -98,7 +98,7 @@ public abstract class BaseElasticsearchConnectorTest
     public final void destroy()
             throws IOException
     {
-        server.stop();
+        server.close();
         server = null;
         client.close();
         client = null;
