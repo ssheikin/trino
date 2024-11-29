@@ -32,7 +32,6 @@ import io.trino.metadata.HandleResolver;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.Metadata;
 import io.trino.security.AccessControl;
-import io.trino.security.AccessControlManager;
 import io.trino.server.PluginClassLoader;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
@@ -45,6 +44,7 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.connector.metastore.Metastore;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 import io.trino.sql.planner.OptimizerConfig;
 import io.trino.transaction.TransactionManager;
@@ -82,7 +82,7 @@ public class DefaultCatalogFactory
 
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
-    private final AccessControlManager accessControlManager;
+    private final LocationAccessControl locationAccessControl;
     private final Map<String, String> serverProperties;
     private final ConcurrentMap<ConnectorName, InternalConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
     private final LocalMemoryManager localMemoryManager;
@@ -103,7 +103,7 @@ public class DefaultCatalogFactory
             TypeManager typeManager,
             Metastore metastore,
             NodeSchedulerConfig nodeSchedulerConfig,
-            AccessControlManager accessControlManager,
+            LocationAccessControl locationAccessControl,
             OptimizerConfig optimizerConfig,
             ConfigurationFactory configurationFactory,
             LocalMemoryManager localMemoryManager,
@@ -122,7 +122,7 @@ public class DefaultCatalogFactory
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
-        this.accessControlManager = requireNonNull(accessControlManager, "accessControlManager is null");
+        this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
@@ -238,7 +238,7 @@ public class DefaultCatalogFactory
                 versionEmbedder,
                 typeManager,
                 new InternalMetadataProvider(metadata, typeManager),
-                accessControlManager,
+                locationAccessControl,
                 metastore,
                 pageSorter,
                 pageIndexerFactory,
