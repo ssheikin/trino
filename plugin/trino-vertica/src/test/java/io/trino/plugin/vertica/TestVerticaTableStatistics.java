@@ -345,12 +345,12 @@ public class TestVerticaTableStatistics
         onVertica(format("SELECT ANALYZE_STATISTICS('%s.%s')", TPCH_SCHEMA, tableName));
     }
 
-    private void onVertica(@Language("SQL") String sql)
+    public void onVertica(@Language("SQL") String sql)
     {
         verticaServer.execute(sql);
     }
 
-    private Optional<TableStatistics> showStats(String tableName)
+    public Optional<TableStatistics> showStats(String tableName)
     {
         List<MaterializedRow> showStatsResult = computeActual("SHOW STATS FOR " + tableName).getMaterializedRows();
         double rowCount = (double) showStatsResult.get(showStatsResult.size() - 1).getField(4);
@@ -374,7 +374,7 @@ public class TestVerticaTableStatistics
         return Optional.of(tableStatistics.build());
     }
 
-    private ColumnHandle handle(String name)
+    public ColumnHandle handle(String name)
 
     {
         return new TestingColumnHandle(name);
@@ -388,7 +388,7 @@ public class TestVerticaTableStatistics
         return Estimate.of((Double) value);
     }
 
-    private static Consumer<ColumnStatistics> statsCloseTo(Double dataSize, double distinctValues, double nullsFraction, Double lowValue, Double highValue)
+    public static Consumer<ColumnStatistics> statsCloseTo(Double dataSize, double distinctValues, double nullsFraction, Double lowValue, Double highValue)
     {
         return stats -> {
             SoftAssertions softly = new SoftAssertions();
