@@ -44,7 +44,6 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.eventlistener.EventListenerFactory;
 import io.trino.spi.exchange.ExchangeManagerFactory;
-import io.trino.spi.protocol.SpoolingManagerFactory;
 import io.trino.spi.resourcegroups.ResourceGroupConfigurationManagerFactory;
 import io.trino.spi.security.CertificateAuthenticatorFactory;
 import io.trino.spi.security.GroupProviderFactory;
@@ -53,6 +52,7 @@ import io.trino.spi.security.LocationAccessControlFactory;
 import io.trino.spi.security.PasswordAuthenticatorFactory;
 import io.trino.spi.security.SystemAccessControlFactory;
 import io.trino.spi.session.SessionPropertyConfigurationManagerFactory;
+import io.trino.spi.spool.SpoolingManagerFactory;
 import io.trino.spi.type.ParametricType;
 import io.trino.spi.type.Type;
 
