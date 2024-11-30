@@ -693,6 +693,7 @@
                                 <exclude>**/Test*FailureRecoveryTest.java</exclude>
                                 <exclude>**/TestUnityMetastore.java</exclude>
                                 <exclude>**/TestHiveAbfsPassthrough.java</exclude>
+                                <exclude>**/TestHiveAbfsPassthroughMultiIdp.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -788,6 +789,7 @@
                         <configuration>
                             <includes>
                                 <include>**/TestHiveAbfsPassthrough.java</include>
+                                <include>**/TestHiveAbfsPassthroughMultiIdp.java</include>
                             </includes>
                         </configuration>
                     </plugin>

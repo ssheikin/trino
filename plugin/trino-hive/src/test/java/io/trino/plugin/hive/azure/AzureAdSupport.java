@@ -22,11 +22,13 @@ import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import io.trino.Session;
+import io.trino.plugin.base.security.passthrough.IdPName;
 import io.trino.spi.security.Identity;
 
 import java.net.URI;
 
 import static io.trino.filesystem.azure.AzureFileSystemConstants.OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL;
+import static io.trino.plugin.base.security.passthrough.MultipleTokensPassthrough.MULTIPLE_TOKENS_KEY_PREFIX;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.lang.String.format;
 import static java.lang.System.getenv;
@@ -34,6 +36,8 @@ import static java.util.Objects.requireNonNull;
 
 final class AzureAdSupport
 {
+    static final IdPName AZURE_AD_IDP_NAME = IdPName.of("entra");
+
     private static final String AZURE_AD_SCOPE = "https://storage.azure.com/user_impersonation";
     private static final String AZURE_TENANT = "9ac50357-7ce0-4d4f-83d3-d8a10c328c05";
     private static final String AZURE_AD_TOKEN_URL = format("https://login.microsoftonline.com/%s/oauth2/v2.0/token", AZURE_TENANT);
@@ -46,6 +50,12 @@ final class AzureAdSupport
         return createAzureUserSession(AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_SCOPE);
     }
 
+    static Session createDefaultUserSessionWithIdp()
+            throws Exception
+    {
+        return createAzureUserSession(AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_SCOPE, AZURE_AD_IDP_NAME);
+    }
+
     static Session createAzureUserSession(String clientId, String clientSecret, String scope)
             throws Exception
     {
@@ -56,6 +66,21 @@ final class AzureAdSupport
                         .withAdditionalExtraCredentials(
                                 ImmutableMap.of(
                                         OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL,
+                                        accessTokenFor(username, password, clientId, clientSecret, scope)))
+                        .build())
+                .build();
+    }
+
+    static Session createAzureUserSession(String clientId, String clientSecret, String scope, IdPName idPName)
+            throws Exception
+    {
+        String username = requireNonNull(getenv("AZURE_AD_USER"), "AZURE_AD_USER environment variable is not set");
+        String password = requireNonNull(getenv("AZURE_AD_PASSWORD"), "AZURE_AD_PASSWORD environment variable is not set");
+        return testSessionBuilder()
+                .setIdentity(Identity.forUser(username)
+                        .withAdditionalExtraCredentials(
+                                ImmutableMap.of(
+                                        MULTIPLE_TOKENS_KEY_PREFIX + idPName.toString(),
                                         accessTokenFor(username, password, clientId, clientSecret, scope)))
                         .build())
                 .build();
