@@ -22,7 +22,7 @@ import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.hdfs.HdfsModule;
 import io.trino.hdfs.authentication.HdfsAuthenticationModule;
 import io.trino.hdfs.azure.HiveAzureModule;
-import io.trino.hdfs.azure.passthrough.AzureModule;
+import io.trino.hdfs.azure.passthrough.AzureAdModule;
 import io.trino.hdfs.cos.HiveCosModule;
 import io.trino.hdfs.gcs.HiveGcsModule;
 import io.trino.hdfs.s3.HiveS3Module;
@@ -70,7 +70,7 @@ public final class HdfsFileSystemManager
         });
 
         if (azureEnabled) {
-            modules.add(new AzureModule());
+            modules.add(new AzureAdModule());
             modules.add(new HiveAzureModule());
         }
         if (gcsEnabled) {

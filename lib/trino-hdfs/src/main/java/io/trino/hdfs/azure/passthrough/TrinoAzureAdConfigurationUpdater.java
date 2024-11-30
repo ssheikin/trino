@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static io.trino.hdfs.DynamicConfigurationProvider.setCacheKey;
 import static io.trino.plugin.base.security.passthrough.TokenPassThrough.getToken;
+import static java.util.Objects.requireNonNull;
 
 public class TrinoAzureAdConfigurationUpdater
         implements DynamicConfigurationProvider
@@ -36,7 +37,8 @@ public class TrinoAzureAdConfigurationUpdater
     @Inject
     public TrinoAzureAdConfigurationUpdater(TokenPassThroughConfig config)
     {
-        this.idPName = config.getIdpName();
+        requireNonNull(config, "config is null");
+        this.idPName = requireNonNull(config.getIdpName(), "idpName is null");
     }
 
     @Override

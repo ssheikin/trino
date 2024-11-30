@@ -692,7 +692,7 @@
                                 <exclude>**/TestUnloadAbfs.java</exclude>
                                 <exclude>**/Test*FailureRecoveryTest.java</exclude>
                                 <exclude>**/TestUnityMetastore.java</exclude>
-                                <exclude>**/TestHiveAbfsPassthrough.java</exclude>
+                                <exclude>**/TestHiveAbfsPassthroughNativeFilesystem.java</exclude>
                                 <exclude>**/TestHiveAbfsPassthroughMultiIdp.java</exclude>
                             </excludes>
                         </configuration>
@@ -788,7 +788,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <includes>
-                                <include>**/TestHiveAbfsPassthrough.java</include>
+                                <include>**/TestHiveAbfsPassthroughNativeFilesystem.java</include>
                                 <include>**/TestHiveAbfsPassthroughMultiIdp.java</include>
                             </includes>
                         </configuration>

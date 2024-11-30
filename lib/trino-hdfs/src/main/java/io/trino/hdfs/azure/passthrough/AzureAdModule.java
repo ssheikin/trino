@@ -24,7 +24,7 @@ import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 
-public class AzureModule
+public class AzureAdModule
         extends AbstractConfigurationAwareModule
 {
     @Override
