@@ -535,8 +535,7 @@ public class TestKuduConnectorTest
     public void testAddColumnWithCommentSpecialCharacter(String comment)
     {
         // Override because Kudu connector doesn't support creating a new table without partition columns
-        try (TestTable table = new TestTable(
-                getQueryRunner()::execute,
+        try (TestTable table = newTrinoTable(
                 "test_add_col_",
                 "(id INT WITH (primary_key=true), a_varchar varchar) WITH (partition_by_hash_columns = ARRAY['id'], partition_by_hash_buckets = 2)")) {
             assertUpdate("ALTER TABLE " + table.getName() + " ADD COLUMN b_varchar varchar COMMENT " + varcharLiteral(comment));
@@ -569,7 +568,7 @@ public class TestKuduConnectorTest
     @Test
     public void testInsertIntoTableHavingRowUuid()
     {
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_", " AS SELECT * FROM region WITH NO DATA")) {
+        try (TestTable table = newTrinoTable("test_insert_", " AS SELECT * FROM region WITH NO DATA")) {
             assertUpdate("INSERT INTO " + table.getName() + " SELECT * FROM region", 5);
 
             assertThat(query("SELECT * FROM " + table.getName()))
@@ -582,7 +581,7 @@ public class TestKuduConnectorTest
     public void testInsertUnicode()
     {
         // TODO Remove this overriding test once kudu connector can create tables with default partitions
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_unicode_",
+        try (TestTable table = newTrinoTable("test_insert_unicode_",
                 "(test varchar(50) WITH (primary_key=true)) " +
                         "WITH (partition_by_hash_columns = ARRAY['test'], partition_by_hash_buckets = 2)")) {
             assertUpdate("INSERT INTO " + table.getName() + "(test) VALUES 'Hello', U&'hello\\6d4B\\8Bd5world\\7F16\\7801' ", 2);
@@ -590,7 +589,7 @@ public class TestKuduConnectorTest
                     .containsExactlyInAnyOrder("Hello", "hello测试world编码");
         }
 
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_unicode_",
+        try (TestTable table = newTrinoTable("test_insert_unicode_",
                 "(test varchar(50) WITH (primary_key=true)) " +
                         "WITH (partition_by_hash_columns = ARRAY['test'], partition_by_hash_buckets = 2)")) {
             assertUpdate("INSERT INTO " + table.getName() + "(test) VALUES 'aa', 'bé'", 2);
@@ -601,7 +600,7 @@ public class TestKuduConnectorTest
             assertQueryReturnsEmptyResult("SELECT test FROM " + table.getName() + " WHERE test = 'ba'");
         }
 
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_unicode_",
+        try (TestTable table = newTrinoTable("test_insert_unicode_",
                 "(test varchar(50) WITH (primary_key=true)) " +
                         "WITH (partition_by_hash_columns = ARRAY['test'], partition_by_hash_buckets = 2)")) {
             assertUpdate("INSERT INTO " + table.getName() + "(test) VALUES 'a', 'é'", 2);
@@ -618,7 +617,7 @@ public class TestKuduConnectorTest
     public void testInsertHighestUnicodeCharacter()
     {
         // TODO Remove this overriding test once kudu connector can create tables with default partitions
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_unicode_",
+        try (TestTable table = newTrinoTable("test_insert_unicode_",
                 "(test varchar(50) WITH (primary_key=true)) " +
                         "WITH (partition_by_hash_columns = ARRAY['test'], partition_by_hash_buckets = 2)")) {
             assertUpdate("INSERT INTO " + table.getName() + "(test) VALUES 'Hello', U&'hello\\6d4B\\8Bd5\\+10FFFFworld\\7F16\\7801' ", 2);
@@ -632,7 +631,7 @@ public class TestKuduConnectorTest
     public void testInsertNegativeDate()
     {
         // TODO Remove this overriding test once kudu connector can create tables with default partitions
-        try (TestTable table = new TestTable(getQueryRunner()::execute, "insert_date",
+        try (TestTable table = newTrinoTable("insert_date",
                 "(dt DATE WITH (primary_key=true)) " +
                         "WITH (partition_by_hash_columns = ARRAY['dt'], partition_by_hash_buckets = 2)")) {
             assertQueryFails(format("INSERT INTO %s VALUES (DATE '-0001-01-01')", table.getName()), errorMessageForInsertNegativeDate("-0001-01-01"));
@@ -707,7 +706,7 @@ public class TestKuduConnectorTest
     protected TestTable createTableWithOneIntegerColumn(String namePrefix)
     {
         // TODO Remove this overriding method once kudu connector can create tables with default partitions
-        return new TestTable(getQueryRunner()::execute, namePrefix,
+        return newTrinoTable(namePrefix,
                 "(col integer WITH (primary_key=true)) " +
                         "WITH (partition_by_hash_columns = ARRAY['col'], partition_by_hash_buckets = 2)");
     }
@@ -1136,7 +1135,7 @@ public class TestKuduConnectorTest
     protected void testCreateTableWithTableCommentSpecialCharacter(String comment)
     {
         // TODO Remove this overriding test once kudu connector can create tables with default partitions
-        try (TestTable table = new TestTable(getQueryRunner()::execute,
+        try (TestTable table = newTrinoTable(
                 "test_create_",
                 "(a bigint WITH (primary_key=true)) COMMENT " + varcharLiteral(comment) +
                         "WITH (partition_by_hash_columns = ARRAY['a'], partition_by_hash_buckets = 2)")) {
