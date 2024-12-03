@@ -13,7 +13,6 @@
  */
 package io.trino.execution;
 
-import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.log.Logger;
@@ -50,6 +49,7 @@ import static io.trino.spi.StandardErrorCode.ABANDONED_QUERY;
 import static io.trino.spi.StandardErrorCode.EXCEEDED_TIME_LIMIT;
 import static io.trino.spi.StandardErrorCode.SERVER_SHUTTING_DOWN;
 import static java.lang.String.format;
+import static java.util.Collections.unmodifiableCollection;
 import static java.util.Objects.requireNonNull;
 
 @ThreadSafe
@@ -154,7 +154,7 @@ public class QueryTracker<T extends TrackedQuery>
 
     public Collection<T> getAllQueries()
     {
-        return ImmutableList.copyOf(queries.values());
+        return unmodifiableCollection(queries.values());
     }
 
     public T getQuery(QueryId queryId)
