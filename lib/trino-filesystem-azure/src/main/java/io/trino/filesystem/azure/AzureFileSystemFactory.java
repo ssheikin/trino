@@ -63,7 +63,8 @@ public class AzureFileSystemFactory
                 config.getWriteBlockSize(),
                 config.getMaxWriteConcurrency(),
                 config.getMaxSingleUploadSize(),
-                config.getMaxHttpRequests());
+                config.getMaxHttpRequests(),
+                config.getApplicationId());
     }
 
     public AzureFileSystemFactory(
@@ -76,7 +77,8 @@ public class AzureFileSystemFactory
             DataSize writeBlockSize,
             int maxWriteConcurrency,
             DataSize maxSingleUploadSize,
-            int maxHttpRequests)
+            int maxHttpRequests,
+            String applicationId)
     {
         this.auth = requireNonNull(azureAuth, "azureAuth is null");
         this.useOauthPassthroughToken = useOauthPassthroughToken;
@@ -97,6 +99,7 @@ public class AzureFileSystemFactory
                 .build();
         HttpClientOptions clientOptions = new HttpClientOptions();
         clientOptions.setTracingOptions(tracingOptions);
+        clientOptions.setApplicationId(applicationId);
         httpClient = createAzureHttpClient(okHttpClient, clientOptions);
     }
 
