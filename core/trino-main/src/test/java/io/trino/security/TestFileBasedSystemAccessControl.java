@@ -24,6 +24,7 @@ import io.trino.metadata.QualifiedObjectName;
 import io.trino.metadata.TestMetadataManager;
 import io.trino.plugin.base.security.DefaultSystemAccessControl;
 import io.trino.plugin.base.security.FileBasedSystemAccessControl;
+import io.trino.plugin.base.security.TestingSystemAccessControlContext;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.CatalogSchemaName;
@@ -905,6 +906,6 @@ public class TestFileBasedSystemAccessControl
 
     private void parse(String path)
     {
-        new FileBasedSystemAccessControl.Factory().create(ImmutableMap.of(SECURITY_CONFIG_FILE, path));
+        new FileBasedSystemAccessControl.Factory().create(ImmutableMap.of(SECURITY_CONFIG_FILE, path), new TestingSystemAccessControlContext());
     }
 }

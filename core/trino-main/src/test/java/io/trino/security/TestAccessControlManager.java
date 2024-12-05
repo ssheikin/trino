@@ -424,7 +424,7 @@ public class TestAccessControlManager
             }
 
             @Override
-            public SystemAccessControl create(Map<String, String> config)
+            public SystemAccessControl create(Map<String, String> config, SystemAccessControlContext context)
             {
                 return new SystemAccessControl()
                 {
