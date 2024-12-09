@@ -39,10 +39,10 @@ final class AzureAdSupport
     static final IdPName AZURE_AD_IDP_NAME = IdPName.of("entra");
 
     private static final String AZURE_AD_SCOPE = "https://storage.azure.com/user_impersonation";
-    private static final String AZURE_TENANT = "9ac50357-7ce0-4d4f-83d3-d8a10c328c05";
+    private static final String AZURE_TENANT = requireNonNull(getenv("AZURE_SEP_CICD_TESTS_TENANT_ID"), "AZURE_SEP_CICD_TESTS_TENANT_ID environment variable is not set");
     private static final String AZURE_AD_TOKEN_URL = format("https://login.microsoftonline.com/%s/oauth2/v2.0/token", AZURE_TENANT);
-    private static final String AZURE_AD_CLIENT_ID = "0de608dd-04e3-4957-83ce-956af59547c1";
-    private static final String AZURE_AD_CLIENT_SECRET = requireNonNull(getenv("AZURE_AD_CLIENT_SECRET"), "AZURE_AD_CLIENT_SECRET environment variable is not set");
+    private static final String AZURE_AD_CLIENT_ID = requireNonNull(getenv("AZURE_SEP_CICD_TESTS_CLIENT_ID"), "AZURE_SEP_CICD_TESTS_CLIENT_ID environment variable is not set");
+    private static final String AZURE_AD_CLIENT_SECRET = requireNonNull(getenv("AZURE_SEP_CICD_TESTS_CLIENT_SECRET"), "AZURE_SEP_CICD_TESTS_CLIENT_SECRET environment variable is not set");
 
     static Session createDefaultUserSession()
             throws Exception
