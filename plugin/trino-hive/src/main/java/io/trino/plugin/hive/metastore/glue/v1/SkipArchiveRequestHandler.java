@@ -25,6 +25,7 @@ import com.amazonaws.services.glue.model.GetDatabasesRequest;
 import com.amazonaws.services.glue.model.GetPartitionsRequest;
 import com.amazonaws.services.glue.model.GetTableRequest;
 import com.amazonaws.services.glue.model.GetTablesRequest;
+import com.amazonaws.services.glue.model.GetUnfilteredTableMetadataRequest;
 import com.amazonaws.services.glue.model.UpdateTableRequest;
 
 public class SkipArchiveRequestHandler
@@ -33,6 +34,9 @@ public class SkipArchiveRequestHandler
     @Override
     public AmazonWebServiceRequest beforeExecution(AmazonWebServiceRequest request)
     {
+        if (request instanceof GetUnfilteredTableMetadataRequest) {
+            return request;
+        }
         if (request instanceof UpdateTableRequest updateTableRequest) {
             return updateTableRequest.withSkipArchive(true);
         }
