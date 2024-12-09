@@ -86,9 +86,9 @@ public record S3Context(
         credentialsProviderOverride.ifPresent(builder::credentialsProvider);
     }
 
-    record S3SseContext(S3SseType sseType, Optional<String> sseKmsKeyId, Optional<S3SseCustomerKey> sseCustomerKey)
+    public record S3SseContext(S3SseType sseType, Optional<String> sseKmsKeyId, Optional<S3SseCustomerKey> sseCustomerKey)
     {
-        S3SseContext
+        public S3SseContext
         {
             requireNonNull(sseType, "sseType is null");
             requireNonNull(sseKmsKeyId, "sseKmsKeyId is null");
