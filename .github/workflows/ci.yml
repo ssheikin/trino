@@ -694,7 +694,7 @@ jobs:
             - { modules: plugin/trino-bigquery }
             - { modules: plugin/trino-bigquery, profile: cloud-tests-2 }
             - { modules: plugin/trino-cassandra }
-            - { modules: plugin/trino-clickhouse }
+            - { modules: plugin/trino-clickhouse, runners: [ self-hosted, gha-fleet-ec2-8cpu-64gb-amd64, latest ] }
             - { modules: plugin/trino-delta-lake }
             - { modules: plugin/trino-delta-lake, profile: cloud-tests }
             - { modules: plugin/trino-delta-lake, profile: fte-tests }
