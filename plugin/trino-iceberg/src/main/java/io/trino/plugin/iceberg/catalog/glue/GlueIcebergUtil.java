@@ -177,6 +177,7 @@ public final class GlueIcebergUtil
             case UUID:
                 return "string";
             case TIMESTAMP:
+            case TIMESTAMP_NANO:
                 return "timestamp";
             case FIXED:
             case BINARY:
