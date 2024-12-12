@@ -73,7 +73,7 @@ public abstract class BaseIcebergMinioConnectorSmokeTest
                         ImmutableMap.<String, String>builder()
                                 .put("iceberg.file-format", format.name())
                                 .put("iceberg.catalog.type", "HIVE_METASTORE")
-                                .put("hive.metastore.uri", hiveMinioDataLake.getHiveHadoop().getHiveMetastoreEndpoint().toString())
+                                .put("hive.metastore.uri", hiveMinioDataLake.getHiveMetastoreEndpoint().toString())
                                 .put("hive.metastore.thrift.client.read-timeout", "1m") // read timed out sometimes happens with the default timeout
                                 .put("fs.hadoop.enabled", "false")
                                 .put("fs.native-s3.enabled", "true")
@@ -303,7 +303,7 @@ public abstract class BaseIcebergMinioConnectorSmokeTest
     {
         HiveMetastore metastore = new BridgingHiveMetastore(
                 testingThriftHiveMetastoreBuilder()
-                        .metastoreClient(hiveMinioDataLake.getHiveHadoop().getHiveMetastoreEndpoint())
+                        .metastoreClient(hiveMinioDataLake.getHiveMetastoreEndpoint())
                         .build(this::closeAfterClass));
         metastore.dropTable(schemaName, tableName, false);
         assertThat(metastore.getTable(schemaName, tableName)).isEmpty();
@@ -314,7 +314,7 @@ public abstract class BaseIcebergMinioConnectorSmokeTest
     {
         HiveMetastore metastore = new BridgingHiveMetastore(
                 testingThriftHiveMetastoreBuilder()
-                        .metastoreClient(hiveMinioDataLake.getHiveHadoop().getHiveMetastoreEndpoint())
+                        .metastoreClient(hiveMinioDataLake.getHiveMetastoreEndpoint())
                         .build(this::closeAfterClass));
         return metastore
                 .getTable(schemaName, tableName).orElseThrow()
