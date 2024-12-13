@@ -122,7 +122,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     @Override
     protected String schemaPath()
     {
-        return format("%s/%s", warehouseLocation, getSession().getSchema());
+        return format("%s/%s", warehouseLocation, getSession().getSchema().orElseThrow());
     }
 
     @Override
@@ -497,7 +497,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     public void testDropTableWithNonExistentTableLocation()
     {
         assertThatThrownBy(super::testDropTableWithNonExistentTableLocation)
-                .hasMessageContaining("Access Denied");
+                .hasStackTraceContaining("Access Denied");
     }
 
     @Test
@@ -554,5 +554,13 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     {
         assertThatThrownBy(super::testCatalogSetProperties)
                 .hasMessageContaining("Access Denied");
+    }
+
+    @Test
+    @Override
+    public void testIcebergTablesFunction()
+    {
+        assertThatThrownBy(super::testIcebergTablesFunction)
+                .hasStackTraceContaining("Access Denied");
     }
 }
