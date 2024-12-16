@@ -116,13 +116,11 @@ public abstract class BaseTestHiveAbfsPassthrough
 
         assertQuerySucceeds(sqlSelect);
         assertQueryFails(nonAuthorizedUserSession(), sqlSelect, ".*[Ff]ailed to list directory.*");
-        assertQueryFails(noTokenUserSession(), sqlSelect, noTokenUserErrorMessage());
+        assertQueryFails(noTokenUserSession(), sqlSelect, "Token pass-through authentication requires a valid token, but none has been found.*");
     }
 
     protected abstract Session nonAuthorizedUserSession()
             throws Exception;
-
-    protected abstract String noTokenUserErrorMessage();
 
     private Session noTokenUserSession()
     {

@@ -690,6 +690,7 @@
                                 <exclude>**/TestUnityMetastore.java</exclude>
                                 <exclude>**/TestHiveAbfsPassthroughNativeFilesystem.java</exclude>
                                 <exclude>**/TestHiveAbfsPassthroughMultiIdp.java</exclude>
+                                <include>**/TestHiveAbfsPassthroughMultiIdpNativeFilesystem.java</include>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -787,6 +788,7 @@
                             <includes>
                                 <include>**/TestHiveAbfsPassthroughNativeFilesystem.java</include>
                                 <include>**/TestHiveAbfsPassthroughMultiIdp.java</include>
+                                <include>**/TestHiveAbfsPassthroughMultiIdpNativeFilesystem.java</include>
                             </includes>
                         </configuration>
                     </plugin>

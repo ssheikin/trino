@@ -28,8 +28,11 @@ import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.alluxio.AlluxioFileSystemCacheModule;
 import io.trino.filesystem.alluxio.AlluxioFileSystemFactory;
 import io.trino.filesystem.alluxio.AlluxioFileSystemModule;
+import io.trino.filesystem.azure.AzureFileSystemConfig;
 import io.trino.filesystem.azure.AzureFileSystemFactory;
+import io.trino.filesystem.azure.AzureFileSystemFactoryWithMultiIdp;
 import io.trino.filesystem.azure.AzureFileSystemModule;
+import io.trino.filesystem.azure.ForMultiIdp;
 import io.trino.filesystem.cache.CacheFileSystemFactory;
 import io.trino.filesystem.cache.CacheKeyProvider;
 import io.trino.filesystem.cache.CachingHostAddressProvider;
@@ -44,6 +47,7 @@ import io.trino.filesystem.s3.FileSystemS3;
 import io.trino.filesystem.s3.S3FileSystemModule;
 import io.trino.filesystem.switching.SwitchingFileSystemFactory;
 import io.trino.filesystem.tracing.TracingFileSystemFactory;
+import io.trino.plugin.base.security.passthrough.TokenPassThroughConfig;
 import io.trino.spi.NodeManager;
 
 import java.util.Map;
@@ -54,6 +58,7 @@ import java.util.function.Function;
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static io.airlift.configuration.ConfigBinder.configBinder;
 import static java.util.Objects.requireNonNull;
 
 public class FileSystemModule
@@ -102,8 +107,16 @@ public class FileSystemModule
 
         if (config.isNativeAzureEnabled()) {
             install(new AzureFileSystemModule());
-            factories.addBinding("abfs").to(AzureFileSystemFactory.class);
-            factories.addBinding("abfss").to(AzureFileSystemFactory.class);
+            if (buildConfigObject(AzureFileSystemConfig.class).isUseOauthPassthroughToken()) {
+                configBinder(binder).bindConfig(TokenPassThroughConfig.class, "hive");
+                binder.bind(TrinoFileSystemFactory.class).annotatedWith(ForMultiIdp.class).to(AzureFileSystemFactory.class).in(Scopes.SINGLETON);
+                factories.addBinding("abfs").to(AzureFileSystemFactoryWithMultiIdp.class);
+                factories.addBinding("abfss").to(AzureFileSystemFactoryWithMultiIdp.class);
+            }
+            else {
+                factories.addBinding("abfs").to(AzureFileSystemFactory.class);
+                factories.addBinding("abfss").to(AzureFileSystemFactory.class);
+            }
             factories.addBinding("wasb").to(AzureFileSystemFactory.class);
             factories.addBinding("wasbs").to(AzureFileSystemFactory.class);
         }

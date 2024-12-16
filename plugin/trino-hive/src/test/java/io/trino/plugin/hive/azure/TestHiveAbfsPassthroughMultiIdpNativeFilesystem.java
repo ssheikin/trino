@@ -20,7 +20,7 @@ import io.trino.testing.QueryRunner;
 
 import static io.trino.plugin.hive.azure.AzureAdSupport.AZURE_AD_IDP_NAME;
 
-public class TestHiveAbfsPassthroughMultiIdp
+public class TestHiveAbfsPassthroughMultiIdpNativeFilesystem
         extends BaseTestHiveAbfsPassthrough
 {
     @Override
@@ -32,10 +32,11 @@ public class TestHiveAbfsPassthroughMultiIdp
                 .setHiveProperties(ImmutableMap.<String, String>builder()
                         .put("hive.metastore", "thrift")
                         .put("hive.metastore.uri", hiveHadoop.getHiveMetastoreEndpoint().toString())
-                        .put("hive.azure.abfs.oauth2.passthrough", "true")
                         .put("hive.idp-name", AZURE_AD_IDP_NAME.toString())
-                        .put("fs.hadoop.enabled", "true")
                         .put("hive.security", "allow-all")
+                        .put("fs.hadoop.enabled", "false")
+                        .put("fs.native-azure.enabled", "true")
+                        .put("azure.use-oauth-passthrough-token", "true")
                         .buildOrThrow())
                 .build();
     }
