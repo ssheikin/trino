@@ -23,6 +23,7 @@ import io.trino.plugin.base.classloader.ForClassLoaderSafe;
 import io.trino.plugin.base.mapping.IdentifierMappingModule;
 import io.trino.plugin.kudu.procedures.RangePartitionProcedures;
 import io.trino.plugin.kudu.properties.AnalyzePropertiesProvider;
+import io.trino.plugin.kudu.properties.KuduColumnProperties;
 import io.trino.plugin.kudu.properties.KuduTableProperties;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
@@ -55,6 +56,7 @@ public class KuduModule
         binder.bind(KuduConnector.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, ConnectorMetadata.class).setDefault().to(KuduMetadata.class);
         binder.bind(KuduTableProperties.class).in(Scopes.SINGLETON);
+        binder.bind(KuduColumnProperties.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorSplitManager.class).to(KuduSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorPageSourceProvider.class).to(KuduPageSourceProvider.class)
                 .in(Scopes.SINGLETON);

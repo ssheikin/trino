@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.trino.plugin.kudu.properties.AnalyzePropertiesProvider;
+import io.trino.plugin.kudu.properties.KuduColumnProperties;
 import io.trino.plugin.kudu.properties.KuduTableProperties;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -47,6 +48,7 @@ public class KuduConnector
     private final ConnectorSplitManager splitManager;
     private final ConnectorPageSourceProvider pageSourceProvider;
     private final KuduTableProperties tableProperties;
+    private final KuduColumnProperties columnProperties;
     private final List<PropertyMetadata<?>> analyzeProperties;
     private final ConnectorPageSinkProvider pageSinkProvider;
     private final Set<Procedure> procedures;
@@ -60,6 +62,7 @@ public class KuduConnector
             ConnectorMetadata metadata,
             ConnectorSplitManager splitManager,
             KuduTableProperties tableProperties,
+            KuduColumnProperties columnProperties,
             Set<AnalyzePropertiesProvider> analyzePropertiesProviders,
             ConnectorPageSourceProvider pageSourceProvider,
             ConnectorPageSinkProvider pageSinkProvider,
@@ -73,6 +76,7 @@ public class KuduConnector
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
         this.tableProperties = requireNonNull(tableProperties, "tableProperties is null");
+        this.columnProperties = requireNonNull(columnProperties, "columnProperties is null");
         this.analyzeProperties = analyzePropertiesProviders.stream()
                 .map(AnalyzePropertiesProvider::getAnalyzeProperties)
                 .flatMap(List::stream)
@@ -130,7 +134,7 @@ public class KuduConnector
     @Override
     public List<PropertyMetadata<?>> getColumnProperties()
     {
-        return tableProperties.getColumnProperties();
+        return columnProperties.getColumnProperties();
     }
 
     @Override
