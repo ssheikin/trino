@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.plugin.hive.metastore.glue.TestingGlueHiveMetastore.createTestingGlueHiveMetastore;
+import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 import static io.trino.testing.TestingNames.randomNameSuffix;
-import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -36,7 +36,7 @@ public class TestDeltaS3AndGlueMetastoreTest
 {
     public TestDeltaS3AndGlueMetastoreTest()
     {
-        super("partitioned_by", "location", requireNonNull(System.getenv("S3_BUCKET"), "Environment variable not set: S3_BUCKET"));
+        super("partitioned_by", "location", requireEnv("S3_BUCKET"));
     }
 
     @Override
