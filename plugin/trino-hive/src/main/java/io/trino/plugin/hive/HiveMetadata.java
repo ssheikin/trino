@@ -1022,10 +1022,15 @@ public class HiveMetadata
     {
         if (cascade) {
             // List all objects first because such operations after adding/dropping/altering tables/views in a transaction is disallowed
+            List<SchemaTableName> materializedViews = listMaterializedViews(session, Optional.of(schemaName));
             List<SchemaTableName> views = listViews(session, Optional.of(schemaName));
             List<SchemaTableName> tables = listTables(session, Optional.of(schemaName)).stream()
                     .filter(table -> !views.contains(table))
                     .collect(toImmutableList());
+
+            for (SchemaTableName materializedView : materializedViews) {
+                dropMaterializedView(session, materializedView);
+            }
 
             for (SchemaTableName viewName : views) {
                 dropView(session, viewName);
