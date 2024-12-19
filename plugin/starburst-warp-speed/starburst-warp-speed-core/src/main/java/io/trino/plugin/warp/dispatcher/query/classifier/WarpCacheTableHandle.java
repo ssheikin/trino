@@ -13,9 +13,9 @@
  */
 package io.trino.plugin.warp.dispatcher.query.classifier;
 
-public enum ClassificationType
+import io.trino.spi.connector.ConnectorTableHandle;
+
+public class WarpCacheTableHandle
+        implements ConnectorTableHandle
 {
-    WARMING,
-    CHOOSING_ALTERNATIVE,
-    QUERY
 }
