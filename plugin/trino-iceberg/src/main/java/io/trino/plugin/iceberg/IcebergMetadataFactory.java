@@ -44,7 +44,7 @@ public class IcebergMetadataFactory
     private final Optional<HiveMetastoreFactory> metastoreFactory;
     private final boolean addFilesProcedureEnabled;
     private final Predicate<String> allowedExtraProperties;
-    private final ExecutorService executor;
+    private final ExecutorService icebergScanExecutor;
 
     @Inject
     public IcebergMetadataFactory(
@@ -56,7 +56,7 @@ public class IcebergMetadataFactory
             IcebergFileSystemFactory fileSystemFactory,
             TableStatisticsWriter tableStatisticsWriter,
             @RawHiveMetastoreFactory Optional<HiveMetastoreFactory> metastoreFactory,
-            @ForIcebergScanPlanning ExecutorService executor,
+            @ForIcebergScanPlanning ExecutorService icebergScanExecutor,
             IcebergConfig config)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
@@ -67,7 +67,7 @@ public class IcebergMetadataFactory
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.tableStatisticsWriter = requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
         this.metastoreFactory = requireNonNull(metastoreFactory, "metastoreFactory is null");
-        this.executor = requireNonNull(executor, "executor is null");
+        this.icebergScanExecutor = requireNonNull(icebergScanExecutor, "icebergScanExecutor is null");
         this.addFilesProcedureEnabled = config.isAddFilesProcedureEnabled();
         if (config.getAllowedExtraProperties().equals(ImmutableList.of("*"))) {
             this.allowedExtraProperties = _ -> true;
@@ -91,6 +91,6 @@ public class IcebergMetadataFactory
                 metastoreFactory,
                 addFilesProcedureEnabled,
                 allowedExtraProperties,
-                executor);
+                icebergScanExecutor);
     }
 }
