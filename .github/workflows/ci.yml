@@ -1224,7 +1224,6 @@ jobs:
             - suite-7-non-generic
             - suite-hive-transactional
             - suite-azure
-            - suite-delta-lake-databricks91
             - suite-delta-lake-databricks104
             - suite-delta-lake-databricks113
             - suite-delta-lake-databricks122
@@ -1265,9 +1264,6 @@ jobs:
               ignore exclusion if: >-
                 ${{ env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || secrets.GCP_CREDENTIALS_KEY != '' }}
 
-            - suite: suite-delta-lake-databricks91
-              ignore exclusion if: >-
-                ${{ env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || secrets.DATABRICKS_TOKEN != '' }}
             - suite: suite-delta-lake-databricks104
               ignore exclusion if: >-
                 ${{ env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || secrets.DATABRICKS_TOKEN != '' }}
@@ -1367,7 +1363,6 @@ jobs:
           TRINO_AWS_ACCESS_KEY_ID: ""
           TRINO_AWS_SECRET_ACCESS_KEY: ""
           DATABRICKS_AWS_REGION: ""
-          DATABRICKS_91_JDBC_URL: ""
           DATABRICKS_104_JDBC_URL: ""
           DATABRICKS_113_JDBC_URL: ""
           DATABRICKS_122_JDBC_URL: ""
@@ -1459,7 +1454,6 @@ jobs:
           TRINO_AWS_ACCESS_KEY_ID: ${{ vars.GALAXY_TRINO_DATABRICKS_AWS_ACCESS_KEY_ID }}
           TRINO_AWS_SECRET_ACCESS_KEY: ${{ secrets.GALAXY_TRINO_DATABRICKS_AWS_SECRET_ACCESS_KEY }}
           DATABRICKS_AWS_REGION: us-east-1
-          DATABRICKS_91_JDBC_URL: ${{ vars.DATABRICKS_91_JDBC_URL }}
           DATABRICKS_104_JDBC_URL: ${{ vars.DATABRICKS_104_JDBC_URL }}
           DATABRICKS_113_JDBC_URL: ${{ vars.DATABRICKS_113_JDBC_URL }}
           DATABRICKS_122_JDBC_URL: ${{ vars.DATABRICKS_122_JDBC_URL }}
