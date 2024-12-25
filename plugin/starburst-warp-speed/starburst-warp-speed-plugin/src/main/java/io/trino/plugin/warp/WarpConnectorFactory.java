@@ -60,7 +60,7 @@ public class WarpConnectorFactory
         this.dispatcherConnectorFactory = requireNonNull(dispatcherConnectorFactory);
         this.licenseVerifier = requireNonNull(licenseVerifier, "licenseManager is null");
         this.demoterSync = requireNonNull(demoterSync, "demoterSync is null");
-        this.extraModules = !extraModules.isEmpty() ? extraModules : List.of(WarpModule.class);
+        this.extraModules = !extraModules.isEmpty() ? extraModules : List.of(WarpExtensionHandlerModule.class);
     }
 
     @Override
