@@ -13,37 +13,23 @@
  */
 package io.trino.plugin.warp.storage.memory;
 
-import io.airlift.units.DataSize;
 import io.trino.plugin.warp.log.ShapingLogger;
 
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 
-public class GcArena
+public class PinnedGcArena
         extends ArenaBase
 {
-    static final long MAX_ALLOCATED_BYTES = DataSize.of(800, DataSize.Unit.MEGABYTE).toBytes();
-
-    private Function<Void, Void> limitFunc;
-
-    public GcArena(Function<Void, Void> limitFunc,
-            AtomicLong numAllocatedBytes,
+    public PinnedGcArena(AtomicLong numAllocatedBytes,
             ShapingLogger shapingLogger)
     {
         super(numAllocatedBytes, shapingLogger);
         this.arena = Arena.ofAuto();
-        this.limitFunc = limitFunc;
     }
 
-    @Override
-    public MemorySegment allocate(long numBytes, long alignment)
+    public void close()
     {
-        MemorySegment result = super.allocate(numBytes, alignment);
-        if (globalNumAlllocatedBytes.get() > MAX_ALLOCATED_BYTES) {
-            limitFunc.apply(null);
-        }
-        return result;
+        globalNumAlllocatedBytes.addAndGet(-1 * numAllocatedBytes);
     }
 }
