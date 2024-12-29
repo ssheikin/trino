@@ -26,6 +26,7 @@ Ignite          <connector/ignite>
 JMX             <connector/jmx>
 Kafka           <connector/kafka>
 Kudu            <connector/kudu>
+Lakehouse       <connector/lakehouse>
 Loki            <connector/loki>
 MariaDB         <connector/mariadb>
 Memory          <connector/memory>
