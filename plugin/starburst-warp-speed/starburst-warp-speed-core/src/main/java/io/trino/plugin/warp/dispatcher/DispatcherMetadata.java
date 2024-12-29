@@ -1446,7 +1446,7 @@ public class DispatcherMetadata
     {
         Set<String> columnsNotFitForDictionary = dispatcherStatisticsProvider.getColumnsNotFitForDictionary(schemaTableName);
 
-        if (!columnsNotFitForDictionary.isEmpty()) {
+        if (columnsNotFitForDictionary != null) {
             return columnsNotFitForDictionary;
         }
 
