@@ -17,7 +17,6 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.Session;
 import io.trino.plugin.hive.HiveQueryRunner;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.Test;
 
 public class TestHiveAbfsPassthroughNativeFilesystem
         extends BaseTestHiveAbfsPassthrough
@@ -37,24 +36,6 @@ public class TestHiveAbfsPassthroughNativeFilesystem
                         .put("hive.security", "allow-all")
                         .buildOrThrow())
                 .build();
-    }
-
-    @Test
-    @Override
-    public void testQuery()
-    {
-        // Temporarily disabled due to a bug that existed in SEP and got uncovered
-        // after moving multi-token IDP for Azure native FS to SEP-Trino.
-        // The functionally tested here never worked in SEP.
-    }
-
-    @Test
-    @Override
-    public void testUsersSwitching()
-    {
-        // Temporarily disabled due to a bug that existed in SEP and got uncovered
-        // after moving multi-token IDP for Azure native FS to SEP-Trino.
-        // The functionally tested here never worked in SEP.
     }
 
     @Override

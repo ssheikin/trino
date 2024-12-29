@@ -47,7 +47,7 @@ public class AzureFileSystemFactoryWithMultiIdp
         Map<String, String> extraCredentials = ImmutableMap.<String, String>builder()
                 .putAll(identity.getExtraCredentials())
                 .put(OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL, getToken(identity, idpName))
-                .buildOrThrow();
+                .buildKeepingLast();
 
         return delegate.create(ConnectorIdentity
                 .forUser(identity.getUser())
