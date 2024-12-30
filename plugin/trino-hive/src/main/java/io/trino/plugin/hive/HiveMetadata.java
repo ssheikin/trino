@@ -1025,7 +1025,7 @@ public class HiveMetadata
             List<SchemaTableName> materializedViews = listMaterializedViews(session, Optional.of(schemaName));
             List<SchemaTableName> views = listViews(session, Optional.of(schemaName));
             List<SchemaTableName> tables = listTables(session, Optional.of(schemaName)).stream()
-                    .filter(table -> !views.contains(table))
+                    .filter(table -> !views.contains(table) && !materializedViews.contains(table))
                     .collect(toImmutableList());
 
             for (SchemaTableName materializedView : materializedViews) {
