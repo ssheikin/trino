@@ -440,7 +440,8 @@ public class WarpDispatcherPageSourceFactory
                 globalConfig,
                 storageCollectorService,
                 lazyCollectorService,
-                matchService);
+                matchService,
+                workerMemoryManager);
 
         DispatcherPageSourceStats pageSourceStats = (DispatcherPageSourceStats) customStatsContext.getStat(DispatcherPageSourceStats.createKey());
         List<Type> warpWithoutPrefilledAndProxiedCollectTypes = Stream.concat(
