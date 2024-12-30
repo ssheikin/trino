@@ -19,7 +19,6 @@ import io.opentelemetry.api.trace.Tracer;
 import io.trino.Session;
 import io.trino.event.SplitMonitor;
 import io.trino.execution.buffer.OutputBuffer;
-import io.trino.execution.executor.ExecutionPriorityManager;
 import io.trino.execution.executor.TaskExecutor;
 import io.trino.memory.QueryContext;
 import io.trino.operator.TaskContext;
@@ -39,7 +38,6 @@ public class SqlTaskExecutionFactory
 
     private final TaskExecutor taskExecutor;
 
-    private final ExecutionPriorityManager executionPriorityManager;
     private final LocalExecutionPlanner planner;
     private final SplitMonitor splitMonitor;
     private final Tracer tracer;
@@ -56,7 +54,6 @@ public class SqlTaskExecutionFactory
     {
         this.taskNotificationExecutor = requireNonNull(taskNotificationExecutor, "taskNotificationExecutor is null");
         this.taskExecutor = requireNonNull(taskExecutor, "taskExecutor is null");
-        this.executionPriorityManager = new ExecutionPriorityManager(config);
         this.planner = requireNonNull(planner, "planner is null");
         this.splitMonitor = requireNonNull(splitMonitor, "splitMonitor is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -102,7 +99,6 @@ public class SqlTaskExecutionFactory
                 taskContext,
                 taskSpan,
                 outputBuffer,
-                executionPriorityManager,
                 localExecutionPlan,
                 taskExecutor,
                 splitMonitor,
