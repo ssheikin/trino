@@ -16,7 +16,6 @@ package io.trino.execution.executor.scheduler;
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
-import io.trino.execution.executor.ExecutionPriority;
 
 import java.util.Set;
 import java.util.concurrent.locks.Condition;
@@ -32,11 +31,11 @@ final class BlockingSchedulingQueue<G, T>
     @GuardedBy("lock")
     private final SchedulingQueue<G, T> queue = new SchedulingQueue<>();
 
-    public void startGroup(G group, ExecutionPriority priority)
+    public void startGroup(G group)
     {
         lock.lock();
         try {
-            queue.startGroup(group, priority);
+            queue.startGroup(group);
         }
         finally {
             lock.unlock();

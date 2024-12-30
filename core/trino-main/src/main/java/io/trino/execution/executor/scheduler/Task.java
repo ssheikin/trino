@@ -14,21 +14,16 @@
 package io.trino.execution.executor.scheduler;
 
 import io.trino.annotation.NotThreadSafe;
-import io.trino.execution.executor.ExecutionPriority;
-
-import static java.util.Objects.requireNonNull;
 
 @NotThreadSafe
 final class Task
 {
-    private final ExecutionPriority priority;
     private State state;
     private long weight;
     private long uncommittedWeight;
 
-    public Task(ExecutionPriority priority, long initialWeight)
+    public Task(long initialWeight)
     {
-        this.priority = requireNonNull(priority, "priority is null");
         weight = initialWeight;
     }
 
@@ -50,7 +45,7 @@ final class Task
 
     public long weight()
     {
-        return priority.toTaskWeight(weight + uncommittedWeight);
+        return weight + uncommittedWeight;
     }
 
     public void setUncommittedWeight(long weight)

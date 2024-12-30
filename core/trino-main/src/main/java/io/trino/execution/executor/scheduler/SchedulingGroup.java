@@ -15,7 +15,6 @@ package io.trino.execution.executor.scheduler;
 
 import com.google.common.collect.ImmutableSet;
 import io.trino.annotation.NotThreadSafe;
-import io.trino.execution.executor.ExecutionPriority;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,23 +25,19 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.execution.executor.scheduler.State.BLOCKED;
 import static io.trino.execution.executor.scheduler.State.RUNNABLE;
 import static io.trino.execution.executor.scheduler.State.RUNNING;
-import static java.util.Objects.requireNonNull;
 
 @NotThreadSafe
 final class SchedulingGroup<T>
 {
     private State state;
     private long weight;
-
-    private final ExecutionPriority priority;
     private final Map<T, Task> tasks = new HashMap<>();
     private final PriorityQueue<T> runnableQueue = new PriorityQueue<>();
     private final Set<T> blocked = new HashSet<>();
     private final PriorityQueue<T> baselineWeights = new PriorityQueue<>();
 
-    public SchedulingGroup(ExecutionPriority priority)
+    public SchedulingGroup()
     {
-        this.priority = requireNonNull(priority, "priority is null");
         this.state = BLOCKED;
     }
 
@@ -53,7 +48,7 @@ final class SchedulingGroup<T>
         if (task == null) {
             // New tasks get assigned the baseline weight so that they don't monopolize the queue
             // while they catch up
-            task = new Task(priority, baselineWeight());
+            task = new Task(baselineWeight());
             tasks.put(handle, task);
         }
         else if (task.state() == BLOCKED) {
@@ -146,11 +141,6 @@ final class SchedulingGroup<T>
     }
 
     public long weight()
-    {
-        return priority.toTaskWeight(weight);
-    }
-
-    public long baseWeight()
     {
         return weight;
     }
