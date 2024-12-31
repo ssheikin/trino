@@ -43,7 +43,6 @@ import io.trino.plugin.base.projection.ApplyProjectionUtil;
 import io.trino.plugin.base.projection.ApplyProjectionUtil.ProjectedColumnRepresentation;
 import io.trino.plugin.hive.HiveStorageFormat;
 import io.trino.plugin.hive.HiveWrittenPartitions;
-import io.trino.plugin.hive.metastore.HiveMetastoreFactory;
 import io.trino.plugin.iceberg.aggregation.DataSketchStateSerializer;
 import io.trino.plugin.iceberg.aggregation.IcebergThetaSketchForStats;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
