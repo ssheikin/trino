@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.TypeLiteral;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.configuration.ConfigPropertyMetadata;
@@ -32,7 +31,6 @@ import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorCacheMetadata;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSinkProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSourceProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorSplitManager;
-import io.trino.plugin.base.classloader.ClassLoaderSafeEventListener;
 import io.trino.plugin.base.classloader.ClassLoaderSafeNodePartitioningProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeSystemTable;
 import io.trino.plugin.base.config.ConfigUtils;
@@ -141,10 +139,6 @@ public class DeltaLakeConnectorFactory
                     //   .map(accessControl -> new SystemTableAwareAccessControl(accessControl, systemTableProviders))
                     .map(accessControl -> new ClassLoaderSafeConnectorAccessControl(accessControl, classLoader));
 
-            Set<EventListener> eventListeners = injector.getInstance(Key.get(new TypeLiteral<Set<EventListener>>() {})).stream()
-                    .map(listener -> new ClassLoaderSafeEventListener(listener, classLoader))
-                    .collect(toImmutableSet());
-
             Set<Procedure> procedures = injector.getInstance(new Key<>() {});
             Set<TableProcedureMetadata> tableProcedures = injector.getInstance(new Key<>() {});
 
@@ -169,7 +163,6 @@ public class DeltaLakeConnectorFactory
                     deltaLakeTableProperties.getTableProperties(),
                     deltaLakeAnalyzeProperties.getAnalyzeProperties(),
                     deltaAccessControl,
-                    eventListeners,
                     transactionManager,
                     connectorTableFunctions,
                     functionProvider);

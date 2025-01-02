@@ -18,7 +18,6 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
-import com.google.inject.TypeLiteral;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.configuration.ConfigPropertyMetadata;
@@ -35,7 +34,6 @@ import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorCacheMetadata;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSinkProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSourceProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorSplitManager;
-import io.trino.plugin.base.classloader.ClassLoaderSafeEventListener;
 import io.trino.plugin.base.classloader.ClassLoaderSafeNodePartitioningProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeSystemTable;
 import io.trino.plugin.base.config.ConfigUtils;
@@ -146,9 +144,6 @@ public class HiveConnectorFactory
             HiveMaterializedViewPropertiesProvider hiveMaterializedViewPropertiesProvider = injector.getInstance(HiveMaterializedViewPropertiesProvider.class);
             Set<Procedure> procedures = injector.getInstance(new Key<>() {});
             Set<TableProcedureMetadata> tableProcedures = injector.getInstance(new Key<>() {});
-            Set<EventListener> eventListeners = injector.getInstance(Key.get(new TypeLiteral<Set<EventListener>>() {})).stream()
-                    .map(listener -> new ClassLoaderSafeEventListener(listener, classLoader))
-                    .collect(toImmutableSet());
             Set<SystemTableProvider> systemTableProviders = injector.getInstance(new Key<>() {});
             Optional<ConnectorAccessControl> hiveAccessControl = injector.getInstance(new Key<Optional<ConnectorAccessControl>>() {})
                     .map(accessControl -> new SystemTableAwareAccessControl(accessControl, systemTableProviders))
@@ -166,7 +161,6 @@ public class HiveConnectorFactory
                     systemTables.stream().map(systemTable -> new ClassLoaderSafeSystemTable(systemTable, classLoader)).collect(toImmutableSet()),
                     procedures,
                     tableProcedures,
-                    eventListeners,
                     sessionPropertiesProviders,
                     HiveSchemaProperties.SCHEMA_PROPERTIES,
                     hiveTableProperties.getTableProperties(),
