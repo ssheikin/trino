@@ -26,12 +26,12 @@ import io.trino.hdfs.HdfsConfig;
 import io.trino.hdfs.HdfsConfiguration;
 import io.trino.hdfs.HdfsEnvironment;
 import io.trino.hdfs.authentication.NoHdfsAuthentication;
+import io.trino.metastore.HiveMetastoreFactory;
 import io.trino.plugin.base.TypeDeserializer;
 import io.trino.plugin.hive.fs.CachingDirectoryLister;
 import io.trino.plugin.hive.fs.TransactionScopeCachingDirectoryListerFactory;
 import io.trino.plugin.hive.metastore.HiveCacheTableId;
 import io.trino.plugin.hive.metastore.HiveMetastoreConfig;
-import io.trino.plugin.hive.metastore.HiveMetastoreFactory;
 import io.trino.plugin.hive.metastore.UnimplementedHiveMetastore;
 import io.trino.plugin.hive.security.SqlStandardAccessControlMetadata;
 import io.trino.plugin.hive.util.HiveBlockEncodingSerde;
@@ -109,7 +109,6 @@ public class TestHiveCacheIds
                 new HiveLocationService(new HdfsFileSystemFactory(hdfsEnvironment, HDFS_FILE_SYSTEM_STATS), config),
                 JsonCodec.jsonCodec(PartitionUpdate.class),
                 new NodeVersion("test_version"),
-                new NoneHiveRedirectionsProvider(),
                 ImmutableSet.of(
                         new PartitionsSystemTableProvider(hivePartitionManager, TESTING_TYPE_MANAGER),
                         new PropertiesSystemTableProvider()),
