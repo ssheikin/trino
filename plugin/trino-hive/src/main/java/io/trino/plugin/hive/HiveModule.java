@@ -126,7 +126,7 @@ public class HiveModule
         newSetBinder(binder, ConnectorSplitManagerDecorator.class);
         binder.bind(ConnectorSplitManager.class).to(DecoratingConnectorSplitManager.class).in(Scopes.SINGLETON);
 
-        newOptionalBinder(binder, ConnectorPageSourceProvider.class).setDefault().to(HivePageSourceProvider.class).in(Scopes.SINGLETON);
+        binder.bind(ConnectorPageSourceProvider.class).to(HivePageSourceProvider.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorPageSinkProvider.class).to(HivePageSinkProvider.class).in(Scopes.SINGLETON);
         binder.bind(ConnectorNodePartitioningProvider.class).to(HiveNodePartitioningProvider.class).in(Scopes.SINGLETON);
 
