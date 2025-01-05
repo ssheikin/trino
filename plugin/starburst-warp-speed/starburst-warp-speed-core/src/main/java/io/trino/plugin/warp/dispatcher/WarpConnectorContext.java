@@ -23,7 +23,11 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.connector.metastore.Metastore;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
+
+import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
@@ -103,5 +107,30 @@ public class WarpConnectorContext
     public DemoterSync getDemoterSync()
     {
         return demoterSync;
+    }
+
+    @Override
+    public Metastore getMetastore()
+    {
+        return connectorContext.getMetastore();
+    }
+
+    @Override
+    public Map<String, String> getServerProperties()
+    {
+        return connectorContext.getServerProperties();
+    }
+
+    @SuppressWarnings("removal")
+    @Override
+    public ClassLoader duplicatePluginClassLoader()
+    {
+        return connectorContext.duplicatePluginClassLoader();
+    }
+
+    @Override
+    public LocationAccessControl getLocationAccessControl()
+    {
+        return connectorContext.getLocationAccessControl();
     }
 }

@@ -36,7 +36,11 @@ public class WarpCacheMgrConnectorContextTest
                         ConnectorContext.class.getMethod("getMetadataProvider"),
                         ConnectorContext.class.getMethod("getTypeManager"),
                         ConnectorContext.class.getMethod("getPageIndexerFactory"),
-                        ConnectorContext.class.getMethod("getPageSorter")));
+                        ConnectorContext.class.getMethod("getPageSorter"),
+                        ConnectorContext.class.getMethod("getMetastore"),
+                        ConnectorContext.class.getMethod("getServerProperties"),
+                        ConnectorContext.class.getMethod("duplicatePluginClassLoader"),
+                        ConnectorContext.class.getMethod("getLocationAccessControl")));
 
         InterfaceTestUtils.assertAllMethodsOverridden(
                 WarpContext.class,
