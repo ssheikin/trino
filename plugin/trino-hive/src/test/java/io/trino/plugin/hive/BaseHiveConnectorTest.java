@@ -309,6 +309,51 @@ public abstract class BaseHiveConnectorTest
     }
 
     @Test
+    void testCreateDropDynamicCatalog()
+    {
+        String catalog = "new_catalog_" + randomNameSuffix();
+        String createCatalogSql = "CREATE CATALOG %s USING hive".formatted(catalog);
+        assertUpdate(createCatalogSql);
+        assertCatalogs(availableCatalogs(Optional.of(catalog)));
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs(availableCatalogs(Optional.empty()));
+        // re-add the same catalog
+        assertUpdate(createCatalogSql);
+        assertCatalogs(availableCatalogs(Optional.of(catalog)));
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs(availableCatalogs(Optional.empty()));
+    }
+
+    @Test
+    public void testCreateMultipleCatalogs()
+    {
+        String firstCatalog = "catalog_" + randomNameSuffix();
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        String createCatalogSql = """
+                CREATE CATALOG %1$s USING hive
+                WITH (
+                   "hive.allow-register-partition-procedure" = '%2$s'
+                )""";
+        try {
+            assertUpdate(createCatalogSql.formatted(firstCatalog, "true"));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
+                    .isEqualTo(createCatalogSql.formatted(firstCatalog, "true"));
+            assertQuerySucceeds("SHOW SCHEMAS FROM " + firstCatalog);
+
+            assertUpdate(createCatalogSql.formatted(secondCatalog, "false"));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createCatalogSql.formatted(secondCatalog, "false"));
+            assertQuerySucceeds("SHOW SCHEMAS FROM " + secondCatalog);
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
+            assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
+    }
+
+    @Test
     @Override
     public void testDelete()
     {
@@ -9710,5 +9755,19 @@ public abstract class BaseHiveConnectorTest
         return Session.builder(session)
                 .setSystemProperty(COLUMNAR_FILTER_EVALUATION_ENABLED, Boolean.toString(columnarFilterEvaluationEnabled))
                 .build();
+    }
+
+    private static String[] availableCatalogs(Optional<String> catalog)
+    {
+        ImmutableList.Builder<String> catalogs = ImmutableList.builder();
+        catalogs.add("system")
+                .add("hive")
+                .add("memory")
+                .add("hive_bucketed")
+                .add("hive_timestamp_nanos")
+                .add("mock_dynamic_listing")
+                .add("tpch");
+        catalog.ifPresent(catalogs::add);
+        return catalogs.build().toArray(new String[0]);
     }
 }
