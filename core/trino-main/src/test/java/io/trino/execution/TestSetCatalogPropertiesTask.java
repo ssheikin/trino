@@ -79,17 +79,17 @@ public class TestSetCatalogPropertiesTask
     {
         testSetProperties(
                 ImmutableList.of(
-                        new Property(new Identifier("property1"), new StringLiteral("value1"))),
+                        new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE"))),
                 """
-                           property1 = 'value1'
+                           "tpch.double-type-mapping" = 'DOUBLE'
                         """,
                 ImmutableList.of(
-                        new Property(new Identifier("property0"), new StringLiteral("value0")),
-                        new Property(new Identifier("property2"), new StringLiteral("value2"))),
+                        new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
+                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("true"))),
                 """
-                           property0 = 'value0',
-                           property1 = 'value1',
-                           property2 = 'value2'
+                           "tpch.column-naming" = 'STANDARD',
+                           "tpch.double-type-mapping" = 'DOUBLE',
+                           "tpch.produce-pages" = 'true'
                         """);
     }
 
@@ -116,18 +116,18 @@ public class TestSetCatalogPropertiesTask
     {
         testSetProperties(
                 ImmutableList.of(
-                        new Property(new Identifier("property0"), new StringLiteral("value0")),
-                        new Property(new Identifier("property1"), new StringLiteral("value1"))),
+                        new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
+                        new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE"))),
                 """
-                           property0 = 'value0',
-                           property1 = 'value1'
+                           "tpch.column-naming" = 'STANDARD',
+                           "tpch.double-type-mapping" = 'DOUBLE'
                         """,
                 ImmutableList.of(
-                        new Property(new Identifier("property0"), new StringLiteral("value000")),
-                        new Property(new Identifier("property1"), new StringLiteral("value111"))),
+                        new Property(new Identifier("tpch.column-naming"), new StringLiteral("SIMPLIFIED")),
+                        new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DECIMAL"))),
                 """
-                           property0 = 'value000',
-                           property1 = 'value111'
+                           "tpch.column-naming" = 'SIMPLIFIED',
+                           "tpch.double-type-mapping" = 'DECIMAL'
                         """);
     }
 
@@ -136,19 +136,19 @@ public class TestSetCatalogPropertiesTask
     {
         testSetProperties(
                 ImmutableList.of(
-                        new Property(new Identifier("property0"), new StringLiteral("value0")),
-                        new Property(new Identifier("property1"), new StringLiteral("value1")),
-                        new Property(new Identifier("property2"), new StringLiteral("value2"))),
+                        new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
+                        new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE")),
+                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("true"))),
                 """
-                           property0 = 'value0',
-                           property1 = 'value1',
-                           property2 = 'value2'
+                           "tpch.column-naming" = 'STANDARD',
+                           "tpch.double-type-mapping" = 'DOUBLE',
+                           "tpch.produce-pages" = 'true'
                         """,
                 ImmutableList.of(
-                        new Property(new Identifier("property2")),
-                        new Property(new Identifier("property0"))),
+                        new Property(new Identifier("tpch.produce-pages")),
+                        new Property(new Identifier("tpch.column-naming"))),
                 """
-                           property1 = 'value1'
+                           "tpch.double-type-mapping" = 'DOUBLE'
                         """);
     }
 
@@ -157,26 +157,34 @@ public class TestSetCatalogPropertiesTask
     {
         testSetProperties(
                 ImmutableList.of(
-                        new Property(new Identifier("property1-to-remove"), new StringLiteral("value-to-remove")),
-                        new Property(new Identifier("property2"), new StringLiteral("value not changed")),
-                        new Property(new Identifier("property3-to-update"), new StringLiteral("value-old"))),
+                        // to remove:
+                        new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE")),
+                        // unchanged:
+                        new Property(new Identifier("tpch.max-rows-per-page"), new StringLiteral("128")),
+                        // to update:
+                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("true"))),
                 """
-                           "property1-to-remove" = 'value-to-remove',
-                           property2 = 'value not changed',
-                           "property3-to-update" = 'value-old'
+                           "tpch.double-type-mapping" = 'DOUBLE',
+                           "tpch.max-rows-per-page" = '128',
+                           "tpch.produce-pages" = 'true'
                         """,
                 ImmutableList.of(
-                        new Property(new Identifier("property0-added"), new StringLiteral("value-added")),
-                        new Property(new Identifier("property1-to-remove")),
-                        new Property(new Identifier("property3-to-update"), new StringLiteral("value-updated")),
-                        new Property(new Identifier("property4-added"), new StringLiteral("foo")),
-                        new Property(new Identifier("property5-added"), new StringLiteral("bar"))),
+                        // added:
+                        new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
+                        // to remove:
+                        new Property(new Identifier("tpch.double-type-mapping")),
+                        // added:
+                        new Property(new Identifier("tpch.partitioning-enabled"), new StringLiteral("true")),
+                        // to update:
+                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("false")),
+                        // added:
+                        new Property(new Identifier("tpch.splits-per-node"), new StringLiteral("16"))),
                 """
-                           "property0-added" = 'value-added',
-                           property2 = 'value not changed',
-                           "property3-to-update" = 'value-updated',
-                           "property4-added" = 'foo',
-                           "property5-added" = 'bar'
+                           "tpch.column-naming" = 'STANDARD',
+                           "tpch.max-rows-per-page" = '128',
+                           "tpch.partitioning-enabled" = 'true',
+                           "tpch.produce-pages" = 'false',
+                           "tpch.splits-per-node" = '16'
                         """);
     }
 
