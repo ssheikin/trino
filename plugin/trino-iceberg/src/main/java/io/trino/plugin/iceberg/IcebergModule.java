@@ -94,7 +94,7 @@ public class IcebergModule
         binder.bind(Key.get(boolean.class, TranslateHiveViews.class)).toInstance(false);
 
         configBinder(binder).bindConfig(IcebergConfig.class);
-        configBinder(binder).bindConfig(GalaxyIcebergConfig.class);
+        configBinder(binder).bindConfig(IcebergScheduledMvRefreshConfig.class);
         configBinder(binder).bindConfig(SortingFileWriterConfig.class, "iceberg");
 
         newSetBinder(binder, SystemTable.class);
