@@ -15,12 +15,18 @@ import io.trino.testing.MaterializedResult;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.SqlExecutor;
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.testing.MaterializedResult.resultBuilder;
+import static io.trino.testing.TestingNames.randomNameSuffix;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,13 +34,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class TestDynamoDbConnectorTest
         extends BaseJdbcConnectorTest
 {
+    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
+                CREATE CATALOG %s USING dynamodb
+                WITH (
+                   "dynamodb.aws-access-key" = 'accesskey',
+                   "dynamodb.aws-region" = 'us-east-2',
+                   "dynamodb.aws-secret-key" = 'secretkey',
+                   "dynamodb.endpoint-url" = '%s',
+                   "dynamodb.schema-directory" = '%s'
+                )""";
     private TestingDynamoDbServer server;
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        server = closeAfterClass(new TestingDynamoDbServer());
+        this.server = closeAfterClass(new TestingDynamoDbServer());
         return DynamoDbQueryRunner.builder(server.getEndpointUrl(), server.getSchemaDirectory())
                 .setFirstColumnAsPrimaryKeyEnabled(true)
                 .enablePredicatePushdown()
@@ -107,6 +122,60 @@ public class TestDynamoDbConnectorTest
                 .row("shippriority", "integer", "", "shippriority")
                 .row("comment", "varchar(79)", "", "comment")
                 .build();
+    }
+
+    @Test
+    void testCreateDropDynamicCatalog()
+    {
+        String catalog = "new_catalog_" + randomNameSuffix();
+        @Language("SQL")
+        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath());
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "dynamodb", "tpch", "mock_dynamic_listing", "jmx", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "dynamodb", "mock_dynamic_listing", "tpch", "jmx");
+        // re-add the same catalog
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "dynamodb", "tpch", "mock_dynamic_listing", "jmx", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "dynamodb", "tpch", "mock_dynamic_listing", "jmx");
+    }
+
+    @Test
+    void testCreateDropMultipleCatalogs()
+    {
+        String firstCatalog = "catalog1_" + randomNameSuffix();
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        try {
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, "amazondynamodb"));
+
+            String secondSchemaDir = server.getSchemaDirectory().getAbsolutePath() + "/second/";
+            createDir(secondSchemaDir);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, server.getEndpointUrl(), secondSchemaDir));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, server.getEndpointUrl(), secondSchemaDir));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, "amazondynamodb"));
+        }
+        finally {
+            assertUpdate("DROP CATALOG " + firstCatalog);
+            assertUpdate("DROP CATALOG " + secondCatalog);
+        }
+    }
+
+    private static void createDir(String absoluteDirPath)
+    {
+        Path path = Paths.get(absoluteDirPath);
+        try {
+            Files.createDirectories(path);
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Cannot create %s directory.".formatted(absoluteDirPath), e);
+        }
     }
 
     @Test
