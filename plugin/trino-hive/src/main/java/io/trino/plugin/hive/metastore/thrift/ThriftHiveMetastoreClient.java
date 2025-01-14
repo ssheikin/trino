@@ -192,13 +192,12 @@ public class ThriftHiveMetastoreClient
             if (databaseName.isPresent()) {
                 String catalogDatabaseName = prependCatalogToDbName(catalogName, databaseName.get());
                 Map<String, TableMeta> tables = new HashMap<>();
-                String name = databaseName.get();
                 client.getTables(catalogDatabaseName, ".*").forEach(tableName -> tables.put(tableName, new TableMeta(databaseName.get(), tableName, RelationType.TABLE.toString())));
                 client.getTablesByType(catalogDatabaseName, ".*", VIRTUAL_VIEW.name()).forEach(tableName -> {
                     TableMeta tableMeta = new TableMeta(databaseName.get(), tableName, VIRTUAL_VIEW.name());
                     // This makes all views look like a Trino view, so that they are not filtered out during SHOW VIEWS
                     tableMeta.setComments(PRESTO_VIEW_COMMENT);
-                    tables.put(name, tableMeta);
+                    tables.put(tableName, tableMeta);
                 });
                 return ImmutableList.copyOf(tables.values());
             }
