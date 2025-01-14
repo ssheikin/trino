@@ -1622,6 +1622,7 @@ jobs:
             - suite-delta-lake-databricks154
             - suite-delta-lake-databricks-unity
             - suite-hive-databricks-unity
+            - suite-hive4
             - suite-ranger
             - suite-gcs
             - suite-clients
