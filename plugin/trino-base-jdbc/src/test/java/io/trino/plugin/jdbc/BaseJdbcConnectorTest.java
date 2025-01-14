@@ -135,6 +135,13 @@ public abstract class BaseJdbcConnectorTest
 
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed(getClass().getName()));
 
+    protected static final String CREATE_CATALOG_SQL_TEMPLATE = """
+                CREATE CATALOG %s USING %s
+                WITH (
+                   "connection-password" = '%s',
+                   "connection-url" = '%s',
+                   "connection-user" = '%s'
+                )""";
     protected abstract SqlExecutor onRemoteDatabase();
 
     @AfterAll
