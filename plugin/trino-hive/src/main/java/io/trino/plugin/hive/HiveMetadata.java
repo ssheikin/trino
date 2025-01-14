@@ -825,18 +825,6 @@ public class HiveMetadata
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> optionalSchemaName)
     {
-        if (optionalSchemaName.isEmpty()) {
-            Optional<List<TableInfo>> allTables = getMetastore(session).getTables();
-            if (allTables.isPresent()) {
-                return ImmutableSet.<SchemaTableName>builder()
-                        .addAll(allTables.get().stream()
-                                .map(TableInfo::tableName)
-                                .filter(table -> !isHiveSystemSchema(table.getSchemaName()))
-                                .collect(toImmutableList()))
-                        .build()
-                        .asList();
-            }
-        }
         return streamTables(session, optionalSchemaName)
                 .map(TableInfo::tableName)
                 .collect(toImmutableList());
@@ -845,14 +833,6 @@ public class HiveMetadata
     @Override
     public Map<SchemaTableName, RelationType> getRelationTypes(ConnectorSession session, Optional<String> optionalSchemaName)
     {
-        if (optionalSchemaName.isEmpty()) {
-            Optional<List<TableInfo>> tables = getMetastore(session).getTables();
-            if (tables.isPresent()) {
-                return tables.get().stream()
-                        .filter(entry -> !isHiveSystemSchema(entry.tableName().getSchemaName()))
-                        .collect(toImmutableMap(TableInfo::tableName, tableInfo -> tableInfo.extendedRelationType().toRelationType(), (ignore, second) -> second));
-            }
-        }
         return streamTables(session, optionalSchemaName)
                 .collect(toImmutableMap(TableInfo::tableName, tableInfo -> tableInfo.extendedRelationType().toRelationType(), (ignore, second) -> second));
     }
@@ -2872,16 +2852,6 @@ public class HiveMetadata
     @Override
     public List<SchemaTableName> listViews(ConnectorSession session, Optional<String> optionalSchemaName)
     {
-        if (optionalSchemaName.isEmpty()) {
-            Optional<List<TableInfo>> allTables = getMetastore(session).getTables();
-            if (allTables.isPresent()) {
-                return allTables.get().stream()
-                        .filter(tableInfo -> tableInfo.extendedRelationType().toRelationType() == RelationType.VIEW)
-                        .map(TableInfo::tableName)
-                        .filter(view -> !isHiveSystemSchema(view.getSchemaName()))
-                        .collect(toImmutableList());
-            }
-        }
         return listSchemas(session, optionalSchemaName).stream()
                 .map(getMetastore(session)::getTables)
                 .flatMap(List::stream)

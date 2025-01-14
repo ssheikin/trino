@@ -297,13 +297,6 @@ public class TestHiveMetadataListing
         }
 
         @Override
-        public Optional<List<TableInfo>> getAllTables()
-        {
-            // databaseName is not used by getTables
-            return Optional.of(getTables(null));
-        }
-
-        @Override
         public void createDatabase(Database database)
         {
             throw new UnsupportedOperationException();

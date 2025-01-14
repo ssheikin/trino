@@ -1031,12 +1031,6 @@ public class GlueHiveMetastore
                 .forEach(batch -> updatePartitionStatisticsBatch(table, mode, batch.stream().collect(toImmutableMap(Entry::getKey, Entry::getValue))));
     }
 
-    @Override
-    public Optional<List<TableInfo>> getAllTables()
-    {
-        return Optional.empty();
-    }
-
     private void updatePartitionStatisticsBatch(Table table, StatisticsUpdateMode mode, Map<String, PartitionStatistics> partitionUpdates)
     {
         // Missing partitions are ignored

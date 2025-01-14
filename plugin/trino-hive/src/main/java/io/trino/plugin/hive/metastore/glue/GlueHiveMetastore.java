@@ -289,12 +289,6 @@ public class GlueHiveMetastore
     }
 
     @Override
-    public Optional<List<TableInfo>> getAllTables()
-    {
-        return Optional.empty();
-    }
-
-    @Override
     public void createDatabase(Database database)
     {
         if (database.getLocation().isEmpty() && defaultDir.isPresent()) {
