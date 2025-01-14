@@ -28,6 +28,7 @@ import io.trino.spi.resourcegroups.ResourceGroupId;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -54,6 +55,7 @@ public class TrimmedBasicQueryInfo
     private final Optional<ErrorCode> errorCode;
     private final Optional<QueryType> queryType;
     private final RetryPolicy retryPolicy;
+    private final Optional<Set<String>> clientTags;
 
     @JsonCreator
     public TrimmedBasicQueryInfo(
@@ -73,7 +75,8 @@ public class TrimmedBasicQueryInfo
             @JsonProperty("errorType") Optional<ErrorType> errorType,
             @JsonProperty("errorCode") Optional<ErrorCode> errorCode,
             @JsonProperty("queryType") Optional<QueryType> queryType,
-            @JsonProperty("retryPolicy") RetryPolicy retryPolicy)
+            @JsonProperty("retryPolicy") RetryPolicy retryPolicy,
+            @JsonProperty("clientTags") Optional<Set<String>> clientTags)
     {
         this.queryId = requireNonNull(queryId, "queryId is null");
         this.sessionUser = requireNonNull(sessionUser, "sessionUser is null");
@@ -92,6 +95,7 @@ public class TrimmedBasicQueryInfo
         this.errorCode = requireNonNull(errorCode, "errorCode is null");
         this.queryType = requireNonNull(queryType, "queryType is null");
         this.retryPolicy = requireNonNull(retryPolicy, "retryPolicy is null");
+        this.clientTags = requireNonNull(clientTags, "clientTags is null");
     }
 
     public TrimmedBasicQueryInfo(BasicQueryInfo queryInfo)
@@ -119,6 +123,7 @@ public class TrimmedBasicQueryInfo
         this.queryStats = requireNonNull(queryInfo.getQueryStats(), "queryStats is null");
         this.queryType = requireNonNull(queryInfo.getQueryType(), "queryType is null");
         this.retryPolicy = requireNonNull(queryInfo.getRetryPolicy(), "retryPolicy is null");
+        this.clientTags = Optional.ofNullable(queryInfo.getSession().getClientTags());
     }
 
     @JsonProperty
@@ -221,6 +226,12 @@ public class TrimmedBasicQueryInfo
     public RetryPolicy getRetryPolicy()
     {
         return retryPolicy;
+    }
+
+    @JsonProperty
+    public Optional<Set<String>> getClientTags()
+    {
+        return clientTags;
     }
 
     @Override
