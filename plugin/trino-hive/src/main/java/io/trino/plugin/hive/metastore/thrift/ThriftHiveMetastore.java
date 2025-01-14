@@ -253,7 +253,7 @@ public final class ThriftHiveMetastore
                     .stopOnIllegalExceptions()
                     .run("getTables", () -> {
                         try (ThriftMetastoreClient client = createMetastoreClient()) {
-                            return client.getTableMeta(Optional.ofNullable(databaseName));
+                            return client.getTableMeta(databaseName);
                         }
                     });
         }

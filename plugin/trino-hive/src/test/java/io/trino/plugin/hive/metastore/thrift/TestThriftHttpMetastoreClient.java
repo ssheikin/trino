@@ -110,7 +110,7 @@ public class TestThriftHttpMetastoreClient
                     metastoreUri, Optional.empty());
             assertThat(client.getAllDatabases()).containsExactly("testDbName");
             assertThat(client.getDatabase("testDbName")).isEqualTo(new Database("testDbName", "testOwner", "testLocation", Map.of("key", "value")));
-            assertThat(client.getTableMeta(Optional.of("testDbName")))
+            assertThat(client.getTableMeta("testDbName"))
                     .extracting(TableMeta::getTableName)
                     .containsExactlyInAnyOrder("testTable1", "testTable2", "testTable3", "testTable4");
             // negative case

@@ -184,40 +184,30 @@ public class ThriftHiveMetastoreClient
     }
 
     @Override
-    public List<TableMeta> getTableMeta(Optional<String> databaseName)
+    public List<TableMeta> getTableMeta(String databaseName)
             throws TException
     {
         // TODO: remove this once Unity adds support for getTableMeta
         if (!metastoreSupportsTableMeta) {
-            if (databaseName.isPresent()) {
-                String catalogDatabaseName = prependCatalogToDbName(catalogName, databaseName.get());
-                Map<String, TableMeta> tables = new HashMap<>();
-                client.getTables(catalogDatabaseName, ".*").forEach(tableName -> tables.put(tableName, new TableMeta(databaseName.get(), tableName, RelationType.TABLE.toString())));
-                client.getTablesByType(catalogDatabaseName, ".*", VIRTUAL_VIEW.name()).forEach(tableName -> {
-                    TableMeta tableMeta = new TableMeta(databaseName.get(), tableName, VIRTUAL_VIEW.name());
-                    // This makes all views look like a Trino view, so that they are not filtered out during SHOW VIEWS
-                    tableMeta.setComments(PRESTO_VIEW_COMMENT);
-                    tables.put(tableName, tableMeta);
-                });
-                return ImmutableList.copyOf(tables.values());
-            }
-            ImmutableList.Builder<TableMeta> builder = ImmutableList.builder();
-            for (String database : getAllDatabases()) {
-                builder.addAll(getTableMeta(Optional.of(database)));
-            }
-            return builder.build();
+            String catalogDatabaseName = prependCatalogToDbName(catalogName, databaseName);
+            Map<String, TableMeta> tables = new HashMap<>();
+            client.getTables(catalogDatabaseName, ".*").forEach(name -> tables.put(name, new TableMeta(databaseName, name, RelationType.TABLE.toString())));
+            client.getTablesByType(catalogDatabaseName, ".*", VIRTUAL_VIEW.name()).forEach(name -> {
+                TableMeta tableMeta = new TableMeta(databaseName, name, VIRTUAL_VIEW.name());
+                // This makes all views look like a Trino view, so that they are not filtered out during SHOW VIEWS
+                tableMeta.setComments(PRESTO_VIEW_COMMENT);
+                tables.put(name, tableMeta);
+            });
+            return ImmutableList.copyOf(tables.values());
         }
 
-        if (databaseName.isPresent()) {
-            String name = databaseName.get();
-            if (name.indexOf('*') >= 0 || name.indexOf('|') >= 0) {
-                // in this case we replace any pipes with a glob and then filter the output
-                return client.getTableMeta(prependCatalogToDbName(catalogName, name.replace('|', '*')), "*", ImmutableList.of()).stream()
-                        .filter(tableMeta -> tableMeta.getDbName().equals(name))
-                        .collect(toImmutableList());
-            }
+        if (databaseName.indexOf('*') >= 0 || databaseName.indexOf('|') >= 0) {
+            // in this case we replace any pipes with a glob and then filter the output
+            return client.getTableMeta(prependCatalogToDbName(catalogName, databaseName.replace('|', '*')), "*", ImmutableList.of()).stream()
+                    .filter(tableMeta -> tableMeta.getDbName().equals(databaseName))
+                    .collect(toImmutableList());
         }
-        return client.getTableMeta(prependCatalogToDbName(catalogName, databaseName.orElse("*")), "*", ImmutableList.of());
+        return client.getTableMeta(prependCatalogToDbName(catalogName, databaseName), "*", ImmutableList.of());
     }
 
     @Override
