@@ -82,7 +82,6 @@ import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.security.RoleGrant;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -160,7 +159,6 @@ public final class ThriftHiveMetastore
     private final boolean deleteFilesOnDrop;
     private final boolean assumeCanonicalPartitionKeys;
     private final boolean useSparkTableStatisticsFallback;
-    private final boolean batchMetadataFetchEnabled;
     private final ThriftMetastoreStats stats;
     private final ExecutorService writeStatisticsExecutor;
 
@@ -177,7 +175,6 @@ public final class ThriftHiveMetastore
             boolean deleteFilesOnDrop,
             boolean assumeCanonicalPartitionKeys,
             boolean useSparkTableStatisticsFallback,
-            boolean batchMetadataFetchEnabled,
             ThriftMetastoreStats stats,
             ExecutorService writeStatisticsExecutor)
     {
@@ -193,7 +190,6 @@ public final class ThriftHiveMetastore
         this.deleteFilesOnDrop = deleteFilesOnDrop;
         this.assumeCanonicalPartitionKeys = assumeCanonicalPartitionKeys;
         this.useSparkTableStatisticsFallback = useSparkTableStatisticsFallback;
-        this.batchMetadataFetchEnabled = batchMetadataFetchEnabled;
         this.stats = requireNonNull(stats, "stats is null");
         this.writeStatisticsExecutor = requireNonNull(writeStatisticsExecutor, "writeStatisticsExecutor is null");
     }
@@ -242,33 +238,6 @@ public final class ThriftHiveMetastore
         }
         catch (TException e) {
             throw new TrinoException(HIVE_METASTORE_ERROR, e);
-        }
-        catch (Exception e) {
-            throw propagate(e);
-        }
-    }
-
-    @Override
-    public Optional<List<TableMeta>> getAllTables()
-    {
-        if (!batchMetadataFetchEnabled) {
-            return Optional.empty();
-        }
-
-        try {
-            return retry()
-                    .stopOn(NoSuchObjectException.class)
-                    .stopOnIllegalExceptions()
-                    .run("getAllTables", () -> {
-                        try (ThriftMetastoreClient client = createMetastoreClient()) {
-                            return Optional.of(client.getTableMeta(Optional.empty()));
-                        }
-                    });
-        }
-        catch (TTransportException e) {
-            log.warn(e, "Failed to get all tables");
-            // fallback in case of HMS error
-            return Optional.empty();
         }
         catch (Exception e) {
             throw propagate(e);
