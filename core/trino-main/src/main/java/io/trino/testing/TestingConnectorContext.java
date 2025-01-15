@@ -24,9 +24,11 @@ import io.trino.operator.GroupByHashPageIndexerFactory;
 import io.trino.operator.PagesIndex;
 import io.trino.operator.PagesIndexPageSorter;
 import io.trino.spi.NodeManager;
+import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
@@ -103,6 +105,12 @@ public final class TestingConnectorContext
     public PageSorter getPageSorter()
     {
         return pageSorter;
+    }
+
+    @Override
+    public WorkScheduler getWorkScheduler()
+    {
+        return new NoopWorkScheduler();
     }
 
     @Override

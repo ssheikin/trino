@@ -16,6 +16,8 @@ package io.trino.connector;
 import com.google.inject.Binder;
 import com.google.inject.Scopes;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
+import io.trino.spi.NoopWorkScheduler;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
 
@@ -28,6 +30,7 @@ public class CatalogManagerModule
     protected void setup(Binder binder)
     {
         newOptionalBinder(binder, Metastore.class).setDefault().to(UnimplementedMetastore.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, WorkScheduler.class).setDefault().toInstance(new NoopWorkScheduler());
         binder.bind(DefaultCatalogFactory.class).in(Scopes.SINGLETON);
         binder.bind(LazyCatalogFactory.class).in(Scopes.SINGLETON);
         binder.bind(CatalogFactory.class).to(LazyCatalogFactory.class).in(Scopes.SINGLETON);

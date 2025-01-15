@@ -19,6 +19,7 @@ import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
@@ -74,6 +75,11 @@ public interface ConnectorContext
     }
 
     default PageSorter getPageSorter()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default WorkScheduler getWorkScheduler()
     {
         throw new UnsupportedOperationException();
     }

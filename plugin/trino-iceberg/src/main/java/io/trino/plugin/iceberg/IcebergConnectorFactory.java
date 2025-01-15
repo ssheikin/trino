@@ -34,6 +34,7 @@ import io.trino.plugin.iceberg.catalog.IcebergCatalogModule;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.CatalogHandle;
@@ -133,6 +134,7 @@ public class IcebergConnectorFactory
                     binder.bind(CatalogHandle.class).toInstance(context.getCatalogHandle());
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                     binder.bind(PageSorter.class).toInstance(context.getPageSorter());
+                    binder.bind(WorkScheduler.class).toInstance(context.getWorkScheduler());
                     binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
                 },
                 module);

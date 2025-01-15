@@ -30,6 +30,7 @@ import io.trino.plugin.iceberg.catalog.file.FileMetastoreTableOperationsProvider
 import io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalogFactory;
 import io.trino.plugin.iceberg.catalog.rest.DefaultIcebergFileSystemFactory;
 import io.trino.plugin.iceberg.delete.DeleteFile;
+import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.SplitWeight;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.TestingBlockJsonSerde;

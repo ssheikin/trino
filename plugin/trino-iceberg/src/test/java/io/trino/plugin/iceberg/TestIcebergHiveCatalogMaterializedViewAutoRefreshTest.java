@@ -14,6 +14,7 @@
 package io.trino.plugin.iceberg;
 
 import io.trino.Session;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.sql.tree.ExplainType;
@@ -27,6 +28,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -70,8 +72,8 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
             throws Exception
     {
         return IcebergQueryRunner.builder()
-                .setWorkScheduler(workScheduler)
                 .setIcebergProperties(icebergCatalogProperties)
+                .setAdditionalModule(binder -> newOptionalBinder(binder, WorkScheduler.class).setBinding().toInstance(workScheduler))
                 .build();
     }
 

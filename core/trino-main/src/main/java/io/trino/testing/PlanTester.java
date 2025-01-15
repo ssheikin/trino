@@ -146,6 +146,7 @@ import io.trino.server.security.HeaderAuthenticatorConfig;
 import io.trino.server.security.HeaderAuthenticatorManager;
 import io.trino.server.security.PasswordAuthenticatorConfig;
 import io.trino.server.security.PasswordAuthenticatorManager;
+import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.Plugin;
@@ -427,6 +428,7 @@ public class PlanTester
                 handleResolver,
                 nodeManager,
                 pageSorter,
+                new NoopWorkScheduler(),
                 pageIndexerFactory,
                 nodeInfo,
                 testingVersionEmbedder(),

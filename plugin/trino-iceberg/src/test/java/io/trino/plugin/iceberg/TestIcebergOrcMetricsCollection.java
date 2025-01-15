@@ -24,6 +24,7 @@ import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.plugin.iceberg.catalog.file.FileMetastoreTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog;
 import io.trino.plugin.tpch.TpchPlugin;
+import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TestingTypeManager;

@@ -37,6 +37,7 @@ import io.trino.server.PluginClassLoader;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogProperties;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.CatalogHandle;
@@ -74,6 +75,7 @@ public class DefaultCatalogFactory
 
     private final InternalNodeManager nodeManager;
     private final PageSorter pageSorter;
+    private final WorkScheduler workScheduler;
     private final PageIndexerFactory pageIndexerFactory;
     private final NodeInfo nodeInfo;
     private final VersionEmbedder versionEmbedder;
@@ -97,6 +99,7 @@ public class DefaultCatalogFactory
             HandleResolver handleResolver,
             InternalNodeManager nodeManager,
             PageSorter pageSorter,
+            WorkScheduler workScheduler,
             PageIndexerFactory pageIndexerFactory,
             NodeInfo nodeInfo,
             VersionEmbedder versionEmbedder,
@@ -116,6 +119,7 @@ public class DefaultCatalogFactory
         this.handleResolver = requireNonNull(handleResolver, "handleResolver is null");
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
+        this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
         this.nodeInfo = requireNonNull(nodeInfo, "nodeInfo is null");
         this.versionEmbedder = requireNonNull(versionEmbedder, "versionEmbedder is null");
@@ -275,6 +279,7 @@ public class DefaultCatalogFactory
                 locationAccessControl,
                 metastore,
                 pageSorter,
+                workScheduler,
                 pageIndexerFactory,
                 serverProperties,
                 duplicatePluginClassLoaderFactory);

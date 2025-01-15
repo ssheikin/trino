@@ -15,6 +15,7 @@ package io.trino.plugin.iceberg;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.ConnectorFactory;
 
 import java.nio.file.Path;

@@ -21,6 +21,7 @@ import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.local.LocalFileSystemFactory;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;

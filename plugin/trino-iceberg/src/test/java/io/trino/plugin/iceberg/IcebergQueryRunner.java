@@ -30,6 +30,7 @@ import io.trino.plugin.iceberg.containers.UnityCatalogContainer;
 import io.trino.plugin.tpcds.TpcdsPlugin;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.server.testing.TestingTrinoServer;
+import io.trino.spi.WorkScheduler;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.containers.Minio;

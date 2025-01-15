@@ -166,8 +166,6 @@ public class IcebergModule
         newOptionalBinder(binder, FunctionProvider.class).setDefault().to(IcebergFunctionProvider.class).in(Scopes.SINGLETON);
         binder.bind(TableChangesFunctionProcessorProviderFactory.class).in(Scopes.SINGLETON);
 
-        newOptionalBinder(binder, WorkScheduler.class).setDefault().toInstance(new NoopWorkScheduler());
-
         newOptionalBinder(binder, IcebergFileSystemFactory.class).setDefault().to(DefaultIcebergFileSystemFactory.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, CacheKeyProvider.class).setBinding().to(IcebergCacheKeyProvider.class).in(Scopes.SINGLETON);
 

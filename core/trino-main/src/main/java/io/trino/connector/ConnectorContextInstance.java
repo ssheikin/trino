@@ -20,6 +20,7 @@ import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
@@ -44,6 +45,7 @@ public class ConnectorContextInstance
     private final TypeManager typeManager;
     private final MetadataProvider metadataProvider;
     private final PageSorter pageSorter;
+    private final WorkScheduler workScheduler;
     private final PageIndexerFactory pageIndexerFactory;
     private final Supplier<ClassLoader> duplicatePluginClassLoaderFactory;
     private final AtomicBoolean pluginClassLoaderDuplicated = new AtomicBoolean();
@@ -63,6 +65,7 @@ public class ConnectorContextInstance
             LocationAccessControl locationAccessControl,
             Metastore metastore,
             PageSorter pageSorter,
+            WorkScheduler workScheduler,
             PageIndexerFactory pageIndexerFactory,
             Map<String, String> serverProperties,
             Supplier<ClassLoader> duplicatePluginClassLoaderFactory)
@@ -76,6 +79,7 @@ public class ConnectorContextInstance
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
+        this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
         this.duplicatePluginClassLoaderFactory = requireNonNull(duplicatePluginClassLoaderFactory, "duplicatePluginClassLoaderFactory is null");
         this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
@@ -128,6 +132,12 @@ public class ConnectorContextInstance
     public PageSorter getPageSorter()
     {
         return pageSorter;
+    }
+
+    @Override
+    public WorkScheduler getWorkScheduler()
+    {
+        return workScheduler;
     }
 
     @Override
