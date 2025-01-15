@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.io.ByteStreams.toByteArray;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigurationAwareModule.combine;
 import static io.airlift.testing.Closeables.closeAllSuppress;
@@ -219,7 +218,7 @@ public final class KafkaQueryRunner
             throws IOException
     {
         String fileName = format("/%s/%s.json", table.getSchemaName(), table.getTableName());
-        KafkaTopicDescription tableTemplate = topicDescriptionJsonCodec.fromJson(toByteArray(KafkaQueryRunner.class.getResourceAsStream(fileName)));
+        KafkaTopicDescription tableTemplate = topicDescriptionJsonCodec.fromJson(KafkaQueryRunner.class.getResourceAsStream(fileName).readAllBytes());
 
         Optional<KafkaTopicFieldGroup> key = tableTemplate.key()
                 .map(keyTemplate -> new KafkaTopicFieldGroup(
