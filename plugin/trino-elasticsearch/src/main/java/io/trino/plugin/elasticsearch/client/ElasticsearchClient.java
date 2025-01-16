@@ -60,6 +60,7 @@ import javax.net.ssl.SSLContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -632,7 +633,7 @@ public class ElasticsearchClient
             }
 
             try {
-                return COUNT_RESPONSE_CODEC.fromJson(EntityUtils.toByteArray(response.getEntity()))
+                return COUNT_RESPONSE_CODEC.fromJson(response.getEntity().getContent())
                         .getCount();
             }
             catch (IOException e) {
@@ -697,15 +698,12 @@ public class ElasticsearchClient
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
         }
 
-        String body;
-        try {
-            body = EntityUtils.toString(response.getEntity());
+        try (InputStream stream = response.getEntity().getContent()) {
+            return handler.process(stream);
         }
         catch (IOException e) {
             throw new TrinoException(ELASTICSEARCH_INVALID_RESPONSE, e);
         }
-
-        return handler.process(body);
     }
 
     private static TrinoException propagate(ResponseException exception)
@@ -755,6 +753,6 @@ public class ElasticsearchClient
 
     private interface ResponseHandler<T>
     {
-        T process(String body);
+        T process(InputStream stream);
     }
 }

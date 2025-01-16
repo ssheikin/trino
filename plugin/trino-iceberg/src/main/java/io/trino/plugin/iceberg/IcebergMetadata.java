@@ -1414,7 +1414,8 @@ public class IcebergMetadata
             Collection<ComputedStatistics> computedStatistics)
     {
         List<CommitTaskData> commitTasks = fragments.stream()
-                .map(slice -> commitTaskCodec.fromJson(slice.getBytes()))
+                .map(Slice::getInput)
+                .map(commitTaskCodec::fromJson)
                 .collect(toImmutableList());
 
         if (commitTasks.isEmpty()) {
@@ -1909,7 +1910,8 @@ public class IcebergMetadata
         Set<DeleteFile> fullyAppliedDeleteFiles = scannedDeleteFilesBuilder.build();
 
         List<CommitTaskData> commitTasks = fragments.stream()
-                .map(slice -> commitTaskCodec.fromJson(slice.getBytes()))
+                .map(Slice::getInput)
+                .map(commitTaskCodec::fromJson)
                 .collect(toImmutableList());
 
         Type[] partitionColumnTypes = icebergTable.spec().fields().stream()
@@ -2976,7 +2978,8 @@ public class IcebergMetadata
         Table icebergTable = transaction.table();
 
         List<CommitTaskData> commitTasks = fragments.stream()
-                .map(slice -> commitTaskCodec.fromJson(slice.getBytes()))
+                .map(Slice::getInput)
+                .map(commitTaskCodec::fromJson)
                 .collect(toImmutableList());
 
         if (commitTasks.isEmpty()) {
@@ -3564,7 +3567,8 @@ public class IcebergMetadata
         }
 
         List<CommitTaskData> commitTasks = fragments.stream()
-                .map(slice -> commitTaskCodec.fromJson(slice.getBytes()))
+                .map(Slice::getInput)
+                .map(commitTaskCodec::fromJson)
                 .collect(toImmutableList());
 
         Type[] partitionColumnTypes = icebergTable.spec().fields().stream()
