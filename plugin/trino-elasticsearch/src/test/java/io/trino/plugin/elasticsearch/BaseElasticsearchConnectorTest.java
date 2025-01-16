@@ -22,6 +22,7 @@ import io.trino.sql.planner.plan.LimitNode;
 import io.trino.testing.AbstractTestQueries;
 import io.trino.testing.BaseConnectorTest;
 import io.trino.testing.MaterializedResult;
+import io.trino.testing.QueryFailedException;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import org.elasticsearch.client.Request;
@@ -225,6 +226,87 @@ public abstract class BaseElasticsearchConnectorTest
         finally {
             assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
             assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
+    }
+
+    @Test
+    void testRenameCatalog()
+            throws URISyntaxException
+    {
+        String catalog = "catalog_rename_" + randomNameSuffix();
+        try {
+            String oldCatalog = "catalog_rename_" + randomNameSuffix();
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(
+                            oldCatalog,
+                            PASSWORD,
+                            USER,
+                            TPCH_SCHEMA,
+                            server.getAddress().getHost(),
+                            server.getAddress().getPort(),
+                            new File(getResource("truststore.jks").toURI()).getPath()));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(oldCatalog, TPCH_SCHEMA));
+
+            assertUpdate("ALTER CATALOG %s RENAME TO %s".formatted(oldCatalog, catalog));
+            assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
+                    .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(
+                                    catalog,
+                                    PASSWORD,
+                                    USER,
+                                    TPCH_SCHEMA,
+                                    server.getAddress().getHost(),
+                                    server.getAddress().getPort(),
+                                    new File(getResource("truststore.jks").toURI()).getPath()));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + catalog);
+        }
+    }
+
+    @Test
+    void testCatalogSetProperties()
+            throws URISyntaxException
+    {
+        String catalog = "catalog_set_props_" + randomNameSuffix();
+        try {
+            @Language("SQL")
+            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(
+                            catalog,
+                            "INVALID",
+                            USER,
+                            TPCH_SCHEMA,
+                            server.getAddress().getHost(),
+                            server.getAddress().getPort(),
+                            new File(getResource("truststore.jks").toURI()).getPath());
+            assertUpdate(catalogWithIncorrectPassword);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+            assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA)))
+                    .isInstanceOf(QueryFailedException.class)
+                    .hasMessageContaining("unable to authenticate user [%s] for REST request".formatted(USER));
+
+            assertUpdate("""
+                ALTER CATALOG %s SET PROPERTIES
+                  "elasticsearch.auth.password" = '%s'
+                """.formatted(catalog, PASSWORD));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(
+                                    catalog,
+                                    PASSWORD,
+                                    USER,
+                                    TPCH_SCHEMA,
+                                    server.getAddress().getHost(),
+                                    server.getAddress().getPort(),
+                                    new File(getResource("truststore.jks").toURI()).getPath()));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + catalog);
         }
     }
 
