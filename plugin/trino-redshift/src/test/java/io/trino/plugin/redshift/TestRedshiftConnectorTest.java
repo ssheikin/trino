@@ -33,6 +33,7 @@ import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.SqlExecutor;
 import io.trino.testing.sql.TestTable;
+import org.intellij.lang.annotations.Language;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
@@ -75,6 +76,7 @@ import static org.junit.jupiter.api.Assumptions.abort;
 public class TestRedshiftConnectorTest
         extends BaseJdbcConnectorTest
 {
+    private static final String CONNECTOR_NAME = "redshift";
     private static final String LOG_CANCELLATION_EVENT = "cancelled on user's request";
 
     private final RemoteDatabaseEventMonitor remoteDatabaseEventMonitor = new RemoteDatabaseEventMonitor();
@@ -118,6 +120,57 @@ public class TestRedshiftConnectorTest
                  SUPPORTS_SET_COLUMN_TYPE -> false;
             default -> super.hasBehavior(connectorBehavior);
         };
+    }
+
+    @Test
+    void testCreateDropDynamicCatalog()
+    {
+        String catalog = "new_catalog_" + randomNameSuffix();
+        @Language("SQL")
+        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, JDBC_PASSWORD, JDBC_URL, JDBC_USER);
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "redshift", "tpch", "mock_dynamic_listing", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "redshift", "tpch", "mock_dynamic_listing");
+        // re-add the same catalog
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "redshift", "tpch", "mock_dynamic_listing", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "redshift", "tpch", "mock_dynamic_listing");
+    }
+
+    @Test
+    void testCreateDropMultipleCatalogs()
+    {
+        String firstCatalog = "catalog1_" + randomNameSuffix();
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        try {
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, JDBC_PASSWORD, JDBC_URL, JDBC_USER);
+            assertUpdate(createFirstCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue()).isEqualTo(createFirstCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
+
+            @Language("SQL")
+            String createSecondCatalogSql = """
+                CREATE CATALOG %s USING %s
+                WITH (
+                   "connection-password" = '%s',
+                   "connection-url" = '%s',
+                   "connection-user" = '%s',
+                   "jdbc-types-mapped-to-varchar" = 'true'
+                )""".formatted(secondCatalog, CONNECTOR_NAME, JDBC_PASSWORD, JDBC_URL, JDBC_USER);
+            assertUpdate(createSecondCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createSecondCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
+            assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
     }
 
     @Test
