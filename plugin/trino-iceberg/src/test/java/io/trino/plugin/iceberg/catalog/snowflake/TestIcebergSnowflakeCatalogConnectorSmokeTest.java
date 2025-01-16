@@ -802,14 +802,6 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
         }
     }
 
-    @Test
-    @Override
-    public void testIcebergTablesFunction()
-    {
-        assertThatThrownBy(super::testIcebergTablesFunction)
-                .hasMessageContaining("schemaPath is not supported for Iceberg snowflake catalog");
-    }
-
     @Override
     protected boolean isFileSorted(Location path, String sortColumnName)
     {
