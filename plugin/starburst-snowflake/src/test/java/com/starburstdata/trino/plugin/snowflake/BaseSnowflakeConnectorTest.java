@@ -22,6 +22,7 @@ import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.TestingSession;
 import io.trino.testing.sql.SqlExecutor;
 import io.trino.testing.sql.TestTable;
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -60,6 +61,8 @@ public abstract class BaseSnowflakeConnectorTest
     protected final Closer closer = Closer.create();
     protected final TestDatabase testDatabase = closer.register(SnowflakeServer.createTestDatabase());
     protected final SqlExecutor snowflakeExecutor = (sql) -> SnowflakeServer.safeExecuteOnDatabase(testDatabase.getName(), sql);
+
+    protected abstract SnowflakeConnectorFlavour connectorFlavour();
 
     @Override
     protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
@@ -1040,6 +1043,71 @@ public abstract class BaseSnowflakeConnectorTest
             assertQuery("SELECT * FROM " + tableName + " WHERE x = char 'test        '", "VALUES 'test'");
             assertQueryReturnsEmptyResult("SELECT * FROM " + tableName + " WHERE x = char ' test'");
         }
+    }
+
+    @Test
+    void testCreateDropDynamicCatalog()
+    {
+        String catalog = "new_catalog_" + randomNameSuffix();
+        @Language("SQL")
+        String createCatalogSql = generateCreateCatalogSql(catalog);
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "snowflake", "tpch", "mock_dynamic_listing", "jmx", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "snowflake", "mock_dynamic_listing", "tpch", "jmx");
+        // re-add the same catalog
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "snowflake", "tpch", "mock_dynamic_listing", "jmx", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "snowflake", "tpch", "mock_dynamic_listing", "jmx");
+    }
+
+    @Test
+    void testCreateDropMultipleCatalogs()
+    {
+        String firstCatalog = "catalog1_" + randomNameSuffix();
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        try {
+            assertUpdate(generateCreateCatalogSql(firstCatalog));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
+                    .isEqualTo(generateCreateCatalogSql(firstCatalog));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
+
+            String secondConnectionUrl = SnowflakeServer.JDBC_URL + "?role=TEST_ROLE";
+            assertUpdate(generateCreateCatalogSql(secondCatalog, secondConnectionUrl));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(generateCreateCatalogSql(secondCatalog, secondConnectionUrl));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
+            assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
+    }
+
+    private String generateCreateCatalogSql(String catalogName)
+    {
+        return generateCreateCatalogSql(catalogName, SnowflakeServer.JDBC_URL);
+    }
+
+    private String generateCreateCatalogSql(String catalogName, String connectionUrl)
+    {
+        return """
+                CREATE CATALOG %s USING %s
+                WITH (
+                   "connection-password" = '%s',
+                   "connection-url" = '%s',
+                   "connection-user" = '%s',
+                   "snowflake.database" = '%s'
+                )""".formatted(
+                catalogName,
+                connectorFlavour().getName(),
+                SnowflakeServer.PASSWORD,
+                connectionUrl,
+                SnowflakeServer.USER,
+                testDatabase.getName());
     }
 
     private static String jsonExtractPushdownTestTableDefinition()

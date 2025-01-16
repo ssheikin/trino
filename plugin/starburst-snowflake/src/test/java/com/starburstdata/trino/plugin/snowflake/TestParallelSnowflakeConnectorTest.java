@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.starburstdata.trino.plugin.snowflake.SnowflakeConnectorFlavour.PARALLEL;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.TEST_SCHEMA;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.impersonationDisabled;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.parallelBuilder;
@@ -36,6 +37,12 @@ public class TestParallelSnowflakeConnectorTest
                 .withConnectorProperties(Map.of("metadata.cache-ttl", "5m"))
                 .withTpchTables(REQUIRED_TPCH_TABLES)
                 .build();
+    }
+
+    @Override
+    protected SnowflakeConnectorFlavour connectorFlavour()
+    {
+        return PARALLEL;
     }
 
     @Override
