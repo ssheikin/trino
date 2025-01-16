@@ -248,7 +248,6 @@
         <dep.tempto.version>202</dep.tempto.version>
         <dep.wire.version>4.9.11</dep.wire.version>
         <dep.zookeeper.version>3.9.3</dep.zookeeper.version>
-        <extraJavaVectorArgs>--add-modules=jdk.incubator.vector</extraJavaVectorArgs>
         <!--
         Instructs Provisio to write runtime dependencies in the format groupId_artifactId-version.jar.
         This is important to avoid overwriting dependencies with the same name and version but different groupId.
