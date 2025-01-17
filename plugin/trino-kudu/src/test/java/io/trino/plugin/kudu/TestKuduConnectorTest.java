@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.kudu;
 
+import com.google.common.net.HostAndPort;
 import io.airlift.log.Logger;
 import io.trino.sql.planner.plan.LimitNode;
 import io.trino.testing.BaseConnectorTest;
@@ -20,6 +21,7 @@ import io.trino.testing.MaterializedResult;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.TestTable;
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -42,15 +44,24 @@ public class TestKuduConnectorTest
         extends BaseConnectorTest
 {
     private static final Logger log = Logger.get(TestKuduConnectorTest.class);
+    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
+            CREATE CATALOG %s USING kudu
+            WITH (
+               "kudu.client.master-addresses" = '%s'
+            )""";
+    private static final String DEFAULT = "default";
     protected static final String NATION_COLUMNS = "(nationkey bigint, name varchar(25), regionkey bigint, comment varchar(152))";
     protected static final String ORDER_COLUMNS = "(orderkey bigint, custkey bigint, orderstatus varchar(1), totalprice double, orderdate date, orderpriority varchar(15), clerk varchar(15), shippriority integer, comment varchar(79))";
     public static final String REGION_COLUMNS = "(regionkey bigint, name varchar(25), comment varchar(152))";
+    private HostAndPort masterAddress;
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        return KuduQueryRunnerFactory.builder(closeAfterClass(new TestingKuduServer()))
+        TestingKuduServer kuduServer = closeAfterClass(new TestingKuduServer());
+        this.masterAddress = kuduServer.getMasterAddress();
+        return KuduQueryRunnerFactory.builder(kuduServer)
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();
     }
@@ -1004,9 +1015,58 @@ public class TestKuduConnectorTest
 
         assertUpdate("CREATE TABLE " + tableName + " (a bigint WITH (primary_key=true)) COMMENT 'test comment' " +
                 "WITH (partition_by_hash_columns = ARRAY['a'], partition_by_hash_buckets = 2)");
-        assertThat(getTableComment("kudu", "default", tableName)).isEqualTo("test comment");
+        assertThat(getTableComment("kudu", DEFAULT, tableName)).isEqualTo("test comment");
 
         assertUpdate("DROP TABLE " + tableName);
+    }
+
+    @Test
+    void testCreateDropDynamicCatalog()
+    {
+        String catalog = "new_catalog_" + randomNameSuffix();
+        @Language("SQL")
+        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, masterAddress);
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing");
+        // re-add the same catalog
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing");
+    }
+
+    @Test
+    void testCreateDropMultipleCatalogs()
+    {
+        String firstCatalog = "catalog1_" + randomNameSuffix();
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        try {
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, masterAddress);
+            assertUpdate(createFirstCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue()).isEqualTo(createFirstCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, DEFAULT));
+
+            @Language("SQL")
+            String createSecondCatalogSql = """
+                    CREATE CATALOG %s USING kudu
+                    WITH (
+                       "kudu.client.disable-statistics" = 'true',
+                       "kudu.client.master-addresses" = '%s'
+                    )""".formatted(secondCatalog, masterAddress);
+            assertUpdate(createSecondCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createSecondCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, DEFAULT));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
+            assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
     }
 
     @Override
@@ -1017,7 +1077,7 @@ public class TestKuduConnectorTest
                 "test_create_",
                 "(a bigint WITH (primary_key=true)) COMMENT " + varcharLiteral(comment) +
                         "WITH (partition_by_hash_columns = ARRAY['a'], partition_by_hash_buckets = 2)")) {
-            assertThat(getTableComment("kudu", "default", table.getName())).isEqualTo(comment);
+            assertThat(getTableComment("kudu", DEFAULT, table.getName())).isEqualTo(comment);
         }
     }
 
