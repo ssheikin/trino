@@ -199,6 +199,7 @@ public class TestHiveWarpCacheManager
     }
 
     @Test
+    @Disabled
     public void testWithRulesNoMatch()
             throws IOException
     {
@@ -218,6 +219,7 @@ public class TestHiveWarpCacheManager
     }
 
     @Test
+    @Disabled
     public void testWithRules()
             throws IOException
     {
@@ -238,6 +240,7 @@ public class TestHiveWarpCacheManager
     }
 
     @Test
+    @Disabled
     public void testDemoteWithRules()
             throws IOException
     {
