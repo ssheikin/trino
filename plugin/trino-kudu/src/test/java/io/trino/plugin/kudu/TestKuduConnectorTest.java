@@ -18,6 +18,7 @@ import io.airlift.log.Logger;
 import io.trino.sql.planner.plan.LimitNode;
 import io.trino.testing.BaseConnectorTest;
 import io.trino.testing.MaterializedResult;
+import io.trino.testing.QueryFailedException;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.TestTable;
@@ -1066,6 +1067,54 @@ public class TestKuduConnectorTest
         finally {
             assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
             assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
+    }
+
+    @Test
+    void testRenameCatalog()
+    {
+        String catalog = "catalog_rename_" + randomNameSuffix();
+        try {
+            String oldCatalog = "catalog_rename_" + randomNameSuffix();
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(oldCatalog, masterAddress));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(oldCatalog, DEFAULT));
+
+            assertUpdate("ALTER CATALOG %s RENAME TO %s".formatted(oldCatalog, catalog));
+            assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
+                    .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, masterAddress));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, DEFAULT));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + catalog);
+        }
+    }
+
+    @Test
+    void testCatalogSetProperties()
+    {
+        String catalog = "catalog_set_props_" + randomNameSuffix();
+        try {
+            @Language("SQL")
+            String catalogWithIncorrectAddress = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "invalid:1234");
+            assertUpdate(catalogWithIncorrectAddress);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(catalogWithIncorrectAddress);
+            assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, DEFAULT)))
+                    .isInstanceOf(QueryFailedException.class)
+                    .hasMessageContaining("Couldn't find a valid master");
+
+            assertUpdate("""
+                    ALTER CATALOG %s SET PROPERTIES
+                      "kudu.client.master-addresses" = '%s'
+                    """.formatted(catalog, masterAddress));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, masterAddress));
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, DEFAULT));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + catalog);
         }
     }
 
