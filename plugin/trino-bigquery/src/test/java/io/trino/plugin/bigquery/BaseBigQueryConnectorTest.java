@@ -52,6 +52,7 @@ import java.util.function.Function;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableMultiset.toImmutableMultiset;
 import static com.google.common.collect.MoreCollectors.onlyElement;
+import static io.trino.plugin.bigquery.BigQueryQueryRunner.BIGQUERY_CREDENTIALS_KEY;
 import static io.trino.plugin.bigquery.BigQueryQueryRunner.BigQuerySqlExecutor;
 import static io.trino.plugin.bigquery.BigQueryQueryRunner.TEST_SCHEMA;
 import static io.trino.spi.connector.ConnectorMetadata.MODIFYING_ROWS_MESSAGE;
@@ -81,6 +82,12 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 public abstract class BaseBigQueryConnectorTest
         extends BaseConnectorTest
 {
+    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
+            CREATE CATALOG %s USING bigquery
+            WITH (
+               "bigquery.credentials-key" = '%s'
+            )""";
+
     protected BigQuerySqlExecutor bigQuerySqlExecutor;
     private String gcpStorageBucket;
     private String bigQueryConnectionId;
@@ -1511,6 +1518,55 @@ public abstract class BaseBigQueryConnectorTest
     public void testSelectInformationSchemaColumns()
     {
         // TODO https://github.com/trinodb/trino/issues/20178 Enable this test after fixing the timeout issue
+    }
+
+    @Test
+    void testCreateDropDynamicCatalog()
+    {
+        String catalog = "new_catalog_" + randomNameSuffix();
+        @Language("SQL")
+        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, BIGQUERY_CREDENTIALS_KEY);
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "bigquery", "tpch", "mock_dynamic_listing", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "bigquery", "tpch", "mock_dynamic_listing");
+        // re-add the same catalog
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "bigquery", "tpch", "mock_dynamic_listing", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "bigquery", "tpch", "mock_dynamic_listing");
+    }
+
+    @Test
+    void testCreateDropMultipleCatalogs()
+    {
+        String firstCatalog = "catalog1_" + randomNameSuffix();
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        try {
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, BIGQUERY_CREDENTIALS_KEY);
+            assertUpdate(createFirstCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue()).isEqualTo(createFirstCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
+
+            @Language("SQL")
+            String createSecondCatalogSql = """
+                    CREATE CATALOG %s USING bigquery
+                    WITH (
+                       "bigquery.credentials-key" = '%s',
+                       "bigquery.projection-pushdown-enabled" = 'true'
+                    )""".formatted(secondCatalog, BIGQUERY_CREDENTIALS_KEY);
+            assertUpdate(createSecondCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createSecondCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
+            assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
     }
 
     @Override
