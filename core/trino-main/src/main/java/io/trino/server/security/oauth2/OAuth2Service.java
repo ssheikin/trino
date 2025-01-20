@@ -41,7 +41,6 @@ import static com.google.common.hash.Hashing.sha256;
 import static io.jsonwebtoken.security.Keys.hmacShaKeyFor;
 import static io.trino.server.security.jwt.JwtUtil.newJwtBuilder;
 import static io.trino.server.security.jwt.JwtUtil.newJwtParserBuilder;
-import static io.trino.server.security.oauth2.OAuth2CallbackResource.CALLBACK_ENDPOINT;
 import static io.trino.server.security.oauth2.TokenPairSerializer.TokenPair.fromOAuth2Response;
 import static io.trino.server.ui.FormWebUiAuthenticationFilter.UI_LOCATION;
 import static io.trino.web.ui.WebUiResources.readWebUiResource;
@@ -170,7 +169,7 @@ public class OAuth2Service
         // Note: the Web UI may be disabled, so REST requests can not redirect to a success or error page inside of the Web UI
         try {
             // fetch access token
-            OAuth2Client.Response oauth2Response = client.getOAuth2Response(code, externalUriInfo.absolutePath(CALLBACK_ENDPOINT), nonce);
+            OAuth2Client.Response oauth2Response = client.getOAuth2Response(code, externalUriInfo.absolutePath(externalUriInfo.fullRequestUri().getPath()), nonce);
 
             Instant cookieExpirationTime = tokenExpiration
                     .map(expiration -> Instant.now().plus(expiration))
