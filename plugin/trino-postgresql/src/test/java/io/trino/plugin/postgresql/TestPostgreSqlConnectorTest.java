@@ -204,12 +204,11 @@ public class TestPostgreSqlConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(firstCatalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser());
-            assertUpdate(createFirstCatalogSql);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(firstCatalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(createFirstCatalogSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(firstCatalog, CONNECTOR_NAME, "***", postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
@@ -220,10 +219,10 @@ public class TestPostgreSqlConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = '%s',
                    "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser());
-            assertUpdate(createSecondCatalogSql);
+                )""";
+            assertUpdate(createSecondCatalogSql.formatted(secondCatalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(createSecondCatalogSql);
+                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, CONNECTOR_NAME, "***", postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));
         }
         finally {
@@ -248,7 +247,7 @@ public class TestPostgreSqlConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog)).hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
+                            .formatted(catalog, CONNECTOR_NAME, "***", postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {
@@ -261,11 +260,11 @@ public class TestPostgreSqlConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(catalog, CONNECTOR_NAME, "INVALID", postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser());
-            assertUpdate(catalogWithIncorrectPassword);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(catalog, CONNECTOR_NAME, "INVALID", postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(catalog, CONNECTOR_NAME, "***", postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA), "FATAL: password authentication failed for user \"test\"");
 
             assertUpdate("""
@@ -274,7 +273,7 @@ public class TestPostgreSqlConnectorTest
                 """.formatted(catalog, postgreSqlServer.getPassword()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
+                            .formatted(catalog, CONNECTOR_NAME, "***", postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {

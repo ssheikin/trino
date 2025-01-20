@@ -175,12 +175,11 @@ public class TestSingleStoreConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(firstCatalog, CONNECTOR_NAME, singleStoreServer.getPassword(), singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername());
-            assertUpdate(createFirstCatalogSql);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(firstCatalog, CONNECTOR_NAME, singleStoreServer.getPassword(), singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(createFirstCatalogSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(firstCatalog, CONNECTOR_NAME, "***", singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
@@ -191,10 +190,15 @@ public class TestSingleStoreConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = '%s',
                    "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, singleStoreServer.getPassword(), singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername());
-            assertUpdate(createSecondCatalogSql);
+                )""";
+            assertUpdate(createSecondCatalogSql.formatted(
+                    secondCatalog,
+                    CONNECTOR_NAME,
+                    singleStoreServer.getPassword(),
+                    singleStoreServer.getJdbcUrl(),
+                    singleStoreServer.getUsername()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(createSecondCatalogSql);
+                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, CONNECTOR_NAME, "***", singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));
         }
         finally {
@@ -219,7 +223,7 @@ public class TestSingleStoreConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog)).hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, CONNECTOR_NAME, singleStoreServer.getPassword(), singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
+                            .formatted(catalog, CONNECTOR_NAME, "***", singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {
@@ -232,11 +236,11 @@ public class TestSingleStoreConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(catalog, CONNECTOR_NAME, "INVALID", singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername());
-            assertUpdate(catalogWithIncorrectPassword);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(catalog, CONNECTOR_NAME, "INVALID", singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(catalog, CONNECTOR_NAME, "***", singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
             assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA)))
                     .isInstanceOf(QueryFailedException.class)
                     .hasMessageMatching(".*Access denied for user 'root'@'.*' \\(using password: YES\\)");
@@ -247,7 +251,7 @@ public class TestSingleStoreConnectorTest
                 """.formatted(catalog, singleStoreServer.getPassword()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, CONNECTOR_NAME, singleStoreServer.getPassword(), singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
+                            .formatted(catalog, CONNECTOR_NAME, "***", singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {

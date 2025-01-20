@@ -58,6 +58,7 @@ public final class ElasticsearchQueryRunner
 
     public static final String USER = "elastic_user";
     public static final String PASSWORD = "123456";
+    public static final String TRUSTSTORE_PASSWORD = "123456";
     static final String TPCH_SCHEMA = "tpch";
 
     public static Builder builder(ElasticsearchServer server)
@@ -76,7 +77,7 @@ public final class ElasticsearchQueryRunner
                             .put("elasticsearch.request-timeout", "2m")
                             .put("elasticsearch.tls.enabled", "true")
                             .put("elasticsearch.tls.truststore-path", new File(getResource("truststore.jks").toURI()).getPath())
-                            .put("elasticsearch.tls.truststore-password", "123456")
+                            .put("elasticsearch.tls.truststore-password", TRUSTSTORE_PASSWORD)
                             .put("elasticsearch.tls.verify-hostnames", "false")
                             .put("elasticsearch.security", "PASSWORD")
                             .put("elasticsearch.auth.user", USER)

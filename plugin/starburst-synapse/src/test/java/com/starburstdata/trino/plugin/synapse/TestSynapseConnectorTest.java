@@ -133,11 +133,9 @@ public class TestSynapseConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, PASSWORD, JDBC_URL, USERNAME);
-            assertUpdate(createFirstCatalogSql);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, PASSWORD, JDBC_URL, USERNAME));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(createFirstCatalogSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, "***", JDBC_URL, USERNAME));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
 
             @Language("SQL")
@@ -148,9 +146,10 @@ public class TestSynapseConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = '%s',
                    "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, PASSWORD, JDBC_URL, USERNAME);
-            assertUpdate(createSecondCatalogSql);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue()).isEqualTo(createSecondCatalogSql);
+                )""";
+            assertUpdate(createSecondCatalogSql.formatted(secondCatalog, CONNECTOR_NAME, PASSWORD, JDBC_URL, USERNAME));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, CONNECTOR_NAME, "***", JDBC_URL, USERNAME));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));
         }
         finally {
@@ -172,7 +171,7 @@ public class TestSynapseConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, PASSWORD, JDBC_URL, USERNAME));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", JDBC_URL, USERNAME));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {
@@ -185,10 +184,9 @@ public class TestSynapseConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", JDBC_URL, USERNAME);
-            assertUpdate(catalogWithIncorrectPassword);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", JDBC_URL, USERNAME));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", JDBC_URL, USERNAME));
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA), "Login failed for user '%s'. ClientConnectionId:.*".formatted(USERNAME));
 
             assertUpdate("""
@@ -196,7 +194,7 @@ public class TestSynapseConnectorTest
                   "connection-password" = '%s'
                 """.formatted(catalog, PASSWORD));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, PASSWORD, JDBC_URL, USERNAME));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", JDBC_URL, USERNAME));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {

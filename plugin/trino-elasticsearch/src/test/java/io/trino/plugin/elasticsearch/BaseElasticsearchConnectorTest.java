@@ -44,6 +44,7 @@ import java.util.Optional;
 import static com.google.common.io.Resources.getResource;
 import static io.trino.plugin.elasticsearch.ElasticsearchQueryRunner.PASSWORD;
 import static io.trino.plugin.elasticsearch.ElasticsearchQueryRunner.TPCH_SCHEMA;
+import static io.trino.plugin.elasticsearch.ElasticsearchQueryRunner.TRUSTSTORE_PASSWORD;
 import static io.trino.plugin.elasticsearch.ElasticsearchQueryRunner.USER;
 import static io.trino.spi.type.DoubleType.DOUBLE;
 import static io.trino.spi.type.VarcharType.VARCHAR;
@@ -70,7 +71,7 @@ public abstract class BaseElasticsearchConnectorTest
                    "elasticsearch.port" = '%s',
                    "elasticsearch.security" = 'PASSWORD',
                    "elasticsearch.tls.enabled" = 'true',
-                   "elasticsearch.tls.truststore-password" = '123456',
+                   "elasticsearch.tls.truststore-password" = '%s',
                    "elasticsearch.tls.truststore-path" = '%s',
                    "elasticsearch.tls.verify-hostnames" = 'false'
                 )""";
@@ -160,6 +161,7 @@ public abstract class BaseElasticsearchConnectorTest
                         TPCH_SCHEMA,
                         server.getAddress().getHost(),
                         server.getAddress().getPort(),
+                        TRUSTSTORE_PASSWORD,
                         new File(getResource("truststore.jks").toURI()).getPath());
         assertUpdate(createCatalogSql);
         assertCatalogs(availableCatalogs(Optional.of(catalog)));
@@ -193,8 +195,7 @@ public abstract class BaseElasticsearchConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
                     .formatted(
                             firstCatalog,
                             PASSWORD,
@@ -202,10 +203,19 @@ public abstract class BaseElasticsearchConnectorTest
                             TPCH_SCHEMA,
                             server.getAddress().getHost(),
                             server.getAddress().getPort(),
-                            new File(getResource("truststore.jks").toURI()).getPath());
-            assertUpdate(createFirstCatalogSql);
+                            TRUSTSTORE_PASSWORD,
+                            new File(getResource("truststore.jks").toURI()).getPath()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(createFirstCatalogSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(
+                                    firstCatalog,
+                                    "***",
+                                    USER,
+                                    TPCH_SCHEMA,
+                                    server.getAddress().getHost(),
+                                    server.getAddress().getPort(),
+                                    "***",
+                                    new File(getResource("truststore.jks").toURI()).getPath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
@@ -221,19 +231,29 @@ public abstract class BaseElasticsearchConnectorTest
                    "elasticsearch.scroll-timeout" = '1m',
                    "elasticsearch.security" = 'PASSWORD',
                    "elasticsearch.tls.enabled" = 'true',
-                   "elasticsearch.tls.truststore-password" = '123456',
+                   "elasticsearch.tls.truststore-password" = '%s',
                    "elasticsearch.tls.truststore-path" = '%s',
                    "elasticsearch.tls.verify-hostnames" = 'false'
-                )""".formatted(
-                        secondCatalog,
+                )""";
+            assertUpdate(createSecondCatalogSql.formatted(
+                    secondCatalog,
                     PASSWORD,
                     USER,
                     TPCH_SCHEMA,
                     server.getAddress().getHost(),
                     server.getAddress().getPort(),
-                    new File(getResource("truststore.jks").toURI()).getPath());
-            assertUpdate(createSecondCatalogSql);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue()).isEqualTo(createSecondCatalogSql);
+                    TRUSTSTORE_PASSWORD,
+                    new File(getResource("truststore.jks").toURI()).getPath()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createSecondCatalogSql.formatted(
+                            secondCatalog,
+                            "***",
+                            USER,
+                            TPCH_SCHEMA,
+                            server.getAddress().getHost(),
+                            server.getAddress().getPort(),
+                            "***",
+                            new File(getResource("truststore.jks").toURI()).getPath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));
         }
         finally {
@@ -257,6 +277,7 @@ public abstract class BaseElasticsearchConnectorTest
                             TPCH_SCHEMA,
                             server.getAddress().getHost(),
                             server.getAddress().getPort(),
+                            TRUSTSTORE_PASSWORD,
                             new File(getResource("truststore.jks").toURI()).getPath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(oldCatalog, TPCH_SCHEMA));
 
@@ -267,11 +288,12 @@ public abstract class BaseElasticsearchConnectorTest
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
                             .formatted(
                                     catalog,
-                                    PASSWORD,
+                                    "***",
                                     USER,
                                     TPCH_SCHEMA,
                                     server.getAddress().getHost(),
                                     server.getAddress().getPort(),
+                                    "***",
                                     new File(getResource("truststore.jks").toURI()).getPath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
@@ -286,8 +308,7 @@ public abstract class BaseElasticsearchConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
                     .formatted(
                             catalog,
                             "INVALID",
@@ -295,9 +316,19 @@ public abstract class BaseElasticsearchConnectorTest
                             TPCH_SCHEMA,
                             server.getAddress().getHost(),
                             server.getAddress().getPort(),
-                            new File(getResource("truststore.jks").toURI()).getPath());
-            assertUpdate(catalogWithIncorrectPassword);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+                            TRUSTSTORE_PASSWORD,
+                            new File(getResource("truststore.jks").toURI()).getPath()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(
+                                    catalog,
+                                    "***",
+                                    USER,
+                                    TPCH_SCHEMA,
+                                    server.getAddress().getHost(),
+                                    server.getAddress().getPort(),
+                                    "***",
+                                    new File(getResource("truststore.jks").toURI()).getPath()));
             assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA)))
                     .isInstanceOf(QueryFailedException.class)
                     .hasMessageContaining("unable to authenticate user [%s] for REST request".formatted(USER));
@@ -310,11 +341,12 @@ public abstract class BaseElasticsearchConnectorTest
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
                             .formatted(
                                     catalog,
-                                    PASSWORD,
+                                    "***",
                                     USER,
                                     TPCH_SCHEMA,
                                     server.getAddress().getHost(),
                                     server.getAddress().getPort(),
+                                    "***",
                                     new File(getResource("truststore.jks").toURI()).getPath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }

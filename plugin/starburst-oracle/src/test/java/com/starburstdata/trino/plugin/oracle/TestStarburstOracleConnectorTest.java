@@ -461,17 +461,15 @@ public class TestStarburstOracleConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            String firstCreateSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, PASSWORD, oracleServer.get().getJdbcUrl(), USER);
-            assertUpdate(firstCreateSql);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, PASSWORD, oracleServer.get().getJdbcUrl(), USER));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(firstCreateSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, "***", oracleServer.get().getJdbcUrl(), USER));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, USER));
 
             String secondConnectionUrl = oracleServer.get().getJdbcUrl() + "?service_tag=bogus";
-            String secondCreateSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, CONNECTOR_NAME, PASSWORD, secondConnectionUrl, USER);
-            assertUpdate(secondCreateSql);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, CONNECTOR_NAME, PASSWORD, secondConnectionUrl, USER));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(secondCreateSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, CONNECTOR_NAME, "***", secondConnectionUrl, USER));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, USER));
         }
         finally {
@@ -493,7 +491,7 @@ public class TestStarburstOracleConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, PASSWORD, oracleServer.get().getJdbcUrl(), USER));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", oracleServer.get().getJdbcUrl(), USER));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, USER));
         }
         finally {
@@ -506,10 +504,9 @@ public class TestStarburstOracleConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", oracleServer.get().getJdbcUrl(), USER);
-            assertUpdate(catalogWithIncorrectPassword);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", oracleServer.get().getJdbcUrl(), USER));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", oracleServer.get().getJdbcUrl(), USER));
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, USER), ".* Unable to start the Universal Connection Pool");
 
             assertUpdate("""
@@ -517,7 +514,7 @@ public class TestStarburstOracleConnectorTest
                       "connection-password" = '%s'
                     """.formatted(catalog, PASSWORD));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, PASSWORD, oracleServer.get().getJdbcUrl(), USER));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", oracleServer.get().getJdbcUrl(), USER));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, USER));
         }
         finally {

@@ -116,12 +116,11 @@ public class TestVerticaConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(firstCatalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername());
-            assertUpdate(createFirstCatalogSql);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(firstCatalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(createFirstCatalogSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(firstCatalog, CONNECTOR_NAME, "***", verticaServer.getJdbcUrl(), verticaServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
@@ -132,9 +131,12 @@ public class TestVerticaConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = '%s',
                    "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername());
-            assertUpdate(createSecondCatalogSql);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue()).isEqualTo(createSecondCatalogSql);
+                )""";
+            assertUpdate(createSecondCatalogSql
+                    .formatted(secondCatalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createSecondCatalogSql
+                            .formatted(secondCatalog, CONNECTOR_NAME, "***", verticaServer.getJdbcUrl(), verticaServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));
         }
         finally {
@@ -157,7 +159,7 @@ public class TestVerticaConnectorTest
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername()));
+                            .formatted(catalog, CONNECTOR_NAME, "***", verticaServer.getJdbcUrl(), verticaServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {
@@ -170,11 +172,11 @@ public class TestVerticaConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(catalog, CONNECTOR_NAME, "INVALID", verticaServer.getJdbcUrl(), verticaServer.getUsername());
-            assertUpdate(catalogWithIncorrectPassword);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(catalog, CONNECTOR_NAME, "INVALID", verticaServer.getJdbcUrl(), verticaServer.getUsername()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo( CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(catalog, CONNECTOR_NAME, "***", verticaServer.getJdbcUrl(), verticaServer.getUsername()));
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA), "\\[Vertica]\\[VJDBC]\\(3781\\) FATAL: Invalid username or password");
 
             assertUpdate("""
@@ -183,7 +185,7 @@ public class TestVerticaConnectorTest
                 """.formatted(catalog, verticaServer.getPassword()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername()));
+                            .formatted(catalog, CONNECTOR_NAME, "***", verticaServer.getJdbcUrl(), verticaServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {

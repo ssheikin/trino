@@ -448,6 +448,33 @@ final class TestRedactSensitiveStatements
                 """.formatted(catalog, connectionUrl), queryEvents);
     }
 
+    @Test
+    void testShowCreateCatalog()
+    {
+        String catalog = "catalog_" + randomNameSuffix();
+        String connectionUrl = createH2ConnectionUrl();
+        assertUpdate(
+                """
+                CREATE CATALOG %s USING jdbc
+                WITH (
+                   "connection-url" = '%s',
+                   "connection-user" = 'bob',
+                   "connection-password" = '1234'
+                )
+                """.formatted(catalog, connectionUrl));
+
+        assertThat(computeScalar("SHOW CREATE CATALOG %s".formatted(catalog)))
+                .isEqualTo(
+                        """
+                        CREATE CATALOG %s USING jdbc
+                        WITH (
+                           "connection-password" = '***',
+                           "connection-url" = '%s',
+                           "connection-user" = 'bob'
+                        )\
+                        """.formatted(catalog, connectionUrl));
+    }
+
     private static void assertRedactedQuery(String expectedQuery, QueryEvents queryEvents)
     {
         QueryCreatedEvent queryCreatedEvent = queryEvents.getQueryCreatedEvent();

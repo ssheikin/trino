@@ -100,12 +100,11 @@ public class TestSqlServerConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(firstCatalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername());
-            assertUpdate(createFirstCatalogSql);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(firstCatalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(createFirstCatalogSql);
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
+                            .formatted(firstCatalog, CONNECTOR_NAME, "***", sqlServer.getJdbcUrl(), sqlServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
 
             @Language("SQL")
@@ -116,9 +115,10 @@ public class TestSqlServerConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = '%s',
                    "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername());
-            assertUpdate(createSecondCatalogSql);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue()).isEqualTo(createSecondCatalogSql);
+                )""";
+            assertUpdate(createSecondCatalogSql.formatted(secondCatalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, CONNECTOR_NAME, "***", sqlServer.getJdbcUrl(), sqlServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));
         }
         finally {
@@ -140,7 +140,7 @@ public class TestSqlServerConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", sqlServer.getJdbcUrl(), sqlServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {
@@ -153,10 +153,9 @@ public class TestSqlServerConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            @Language("SQL")
-            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", sqlServer.getJdbcUrl(), sqlServer.getUsername());
-            assertUpdate(catalogWithIncorrectPassword);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", sqlServer.getJdbcUrl(), sqlServer.getUsername()));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", sqlServer.getJdbcUrl(), sqlServer.getUsername()));
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA), "Login failed for user '%s'. ClientConnectionId:.*".formatted(sqlServer.getUsername()));
 
             assertUpdate("""
@@ -164,7 +163,7 @@ public class TestSqlServerConnectorTest
                   "connection-password" = '%s'
                 """.formatted(catalog, sqlServer.getPassword()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", sqlServer.getJdbcUrl(), sqlServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {

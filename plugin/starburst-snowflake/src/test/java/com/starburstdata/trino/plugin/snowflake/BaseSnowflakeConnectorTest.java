@@ -1050,7 +1050,7 @@ public abstract class BaseSnowflakeConnectorTest
     {
         String catalog = "new_catalog_" + randomNameSuffix();
         @Language("SQL")
-        String createCatalogSql = generateCreateCatalogSql(catalog);
+        String createCatalogSql = generateCreateCatalogSql(catalog, SnowflakeServer.PASSWORD);
         assertUpdate(createCatalogSql);
         assertCatalogs("system", "snowflake", "tpch", "mock_dynamic_listing", "jmx", catalog);
 
@@ -1070,15 +1070,15 @@ public abstract class BaseSnowflakeConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(generateCreateCatalogSql(firstCatalog));
+            assertUpdate(generateCreateCatalogSql(firstCatalog, SnowflakeServer.PASSWORD));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(generateCreateCatalogSql(firstCatalog));
+                    .isEqualTo(generateCreateCatalogSql(firstCatalog, "***"));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
 
             String secondConnectionUrl = SnowflakeServer.JDBC_URL + "?role=TEST_ROLE";
-            assertUpdate(generateCreateCatalogSql(secondCatalog, secondConnectionUrl));
+            assertUpdate(generateCreateCatalogSql(secondCatalog, secondConnectionUrl, SnowflakeServer.PASSWORD));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(generateCreateCatalogSql(secondCatalog, secondConnectionUrl));
+                    .isEqualTo(generateCreateCatalogSql(secondCatalog, secondConnectionUrl, "***"));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));
         }
         finally {
@@ -1093,14 +1093,14 @@ public abstract class BaseSnowflakeConnectorTest
         String catalog = "catalog_rename_" + randomNameSuffix();
         try {
             String oldCatalog = "catalog_rename_" + randomNameSuffix();
-            assertUpdate(generateCreateCatalogSql(oldCatalog));
+            assertUpdate(generateCreateCatalogSql(oldCatalog, SnowflakeServer.PASSWORD));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(oldCatalog, TEST_SCHEMA));
 
             assertUpdate("ALTER CATALOG %s RENAME TO %s".formatted(oldCatalog, catalog));
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(generateCreateCatalogSql(catalog));
+                    .isEqualTo(generateCreateCatalogSql(catalog, "***"));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {
@@ -1113,18 +1113,17 @@ public abstract class BaseSnowflakeConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            String createCatalogSql = generateCreateCatalogSql(catalog, "jdbc:snowflake://invalid_connection_url");
-            assertUpdate(createCatalogSql);
+            assertUpdate(generateCreateCatalogSql(catalog, "jdbc:snowflake://invalid_connection_url", SnowflakeServer.PASSWORD));
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA), "Connection string is invalid\\. Unable to parse\\.");
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(createCatalogSql);
+                    .isEqualTo(generateCreateCatalogSql(catalog, "jdbc:snowflake://invalid_connection_url", "***"));
 
             assertUpdate("""
                     ALTER CATALOG %s SET PROPERTIES
                       "connection-url" = '%s'
                     """.formatted(catalog, SnowflakeServer.JDBC_URL));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(generateCreateCatalogSql(catalog));
+                    .isEqualTo(generateCreateCatalogSql(catalog, "***"));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {
@@ -1132,12 +1131,12 @@ public abstract class BaseSnowflakeConnectorTest
         }
     }
 
-    private String generateCreateCatalogSql(String catalogName)
+    private String generateCreateCatalogSql(String catalogName, String password)
     {
-        return generateCreateCatalogSql(catalogName, SnowflakeServer.JDBC_URL);
+        return generateCreateCatalogSql(catalogName, SnowflakeServer.JDBC_URL, password);
     }
 
-    private String generateCreateCatalogSql(String catalogName, String connectionUrl)
+    private String generateCreateCatalogSql(String catalogName, String connectionUrl, String password)
     {
         return """
                 CREATE CATALOG %s USING %s
@@ -1149,7 +1148,7 @@ public abstract class BaseSnowflakeConnectorTest
                 )""".formatted(
                 catalogName,
                 connectorFlavour().getName(),
-                SnowflakeServer.PASSWORD,
+                password,
                 connectionUrl,
                 SnowflakeServer.USER,
                 testDatabase.getName());
