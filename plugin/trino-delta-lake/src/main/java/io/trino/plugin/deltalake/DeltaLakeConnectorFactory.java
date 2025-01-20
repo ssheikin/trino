@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.deltalake;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -175,7 +176,8 @@ public class DeltaLakeConnectorFactory
         }
     }
 
-    private static Bootstrap createBootstrap(
+    @VisibleForTesting
+    public static Bootstrap createBootstrap(
             String catalogName,
             Map<String, String> config,
             ConnectorContext context,

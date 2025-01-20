@@ -14,11 +14,15 @@
 package io.trino.plugin.deltalake;
 
 import com.google.inject.Module;
+import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.local.LocalFileSystemFactory;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.deltalake.transactionlog.writer.LocalTransactionLogSynchronizer;
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogSynchronizer;
 import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
+import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
@@ -27,9 +31,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.trino.plugin.deltalake.DeltaLakeConnectorFactory.createBootstrap;
 import static io.trino.plugin.deltalake.DeltaLakeConnectorFactory.createConnector;
 import static java.util.Objects.requireNonNull;
 
@@ -71,22 +77,40 @@ public class TestingDeltaLakePlugin
             @Override
             public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
             {
-                localFileSystemRootPath.toFile().mkdirs();
                 return createConnector(
                         catalogName,
                         config,
                         context,
                         metastoreModule,
                         fileSystemFactory,
-                        binder -> {
-                            binder.install(new TestingDeltaLakeExtensionsModule());
-                            LocalFileSystemFactory localFileSystemFactory = new LocalFileSystemFactory(localFileSystemRootPath);
-                            newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
-                                    .addBinding("local").toInstance(localFileSystemFactory);
-                            newMapBinder(binder, String.class, TransactionLogSynchronizer.class)
-                                    .addBinding("local").toInstance(new LocalTransactionLogSynchronizer(localFileSystemFactory));
-                            configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, defaults -> defaults.setCatalogDirectory("local:///"));
-                        });
+                        createAdditionalModule());
+            }
+
+            @Override
+            public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+            {
+                ClassLoader classLoader = DeltaLakeConnectorFactory.class.getClassLoader();
+                try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
+                    Bootstrap app = createBootstrap(catalogName, config, context, metastoreModule, fileSystemFactory, createAdditionalModule(), true);
+
+                    Set<ConfigPropertyMetadata> usedProperties = app.configure();
+
+                    return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+                }
+            }
+
+            private Module createAdditionalModule()
+            {
+                localFileSystemRootPath.toFile().mkdirs();
+                return binder -> {
+                    binder.install(new TestingDeltaLakeExtensionsModule());
+                    LocalFileSystemFactory localFileSystemFactory = new LocalFileSystemFactory(localFileSystemRootPath);
+                    newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
+                            .addBinding("local").toInstance(localFileSystemFactory);
+                    newMapBinder(binder, String.class, TransactionLogSynchronizer.class)
+                            .addBinding("local").toInstance(new LocalTransactionLogSynchronizer(localFileSystemFactory));
+                    configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, defaults -> defaults.setCatalogDirectory("local:///"));
+                };
             }
         });
     }
