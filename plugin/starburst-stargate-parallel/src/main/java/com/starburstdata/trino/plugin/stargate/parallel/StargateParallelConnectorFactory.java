@@ -15,6 +15,8 @@ import com.starburstdata.trino.plugin.stargate.EnableWrites;
 import com.starburstdata.trino.plugin.stargate.StargateMetadataFactory;
 import com.starburstdata.trino.plugin.stargate.StargateModule;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.jdbc.ExtraCredentialsBasedIdentityCacheMappingModule;
 import io.trino.plugin.jdbc.JdbcConnector;
 import io.trino.plugin.jdbc.JdbcMetadataFactory;
@@ -28,6 +30,7 @@ import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
@@ -57,6 +60,28 @@ public class StargateParallelConnectorFactory
         requireNonNull(requiredConfig, "requiredConfig is null");
         checkStrictSpiVersionMatch(context, this);
 
+        Bootstrap app = createBootstrap(catalogName, requiredConfig, context);
+
+        Injector injector = app.initialize();
+
+        return injector.getInstance(JdbcConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
                 binder -> binder.bind(NodeManager.class).toInstance(context.getNodeManager()),
@@ -69,11 +94,8 @@ public class StargateParallelConnectorFactory
                 new StargateModule(),
                 new StargateParallelModule());
 
-        Injector injector = app
+        return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(requiredConfig)
-                .initialize();
-
-        return injector.getInstance(JdbcConnector.class);
+                .setRequiredConfigurationProperties(config);
     }
 }
