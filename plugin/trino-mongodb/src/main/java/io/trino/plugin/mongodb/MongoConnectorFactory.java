@@ -15,14 +15,17 @@ package io.trino.plugin.mongodb;
 
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -52,16 +55,36 @@ public class MongoConnectorFactory
         requireNonNull(config, "config is null");
         checkStrictSpiVersionMatch(context, this);
 
+        Bootstrap app = createBootstrap(config, context);
+
+        Injector injector = app.initialize();
+
+        return injector.getInstance(MongoConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 new JsonModule(),
                 new MongoClientModule(),
                 binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
                 binder -> binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry()));
 
-        Injector injector = app.doNotInitializeLogging()
-                .setRequiredConfigurationProperties(config)
-                .initialize();
-
-        return injector.getInstance(MongoConnector.class);
+        return app
+                .doNotInitializeLogging()
+                .setRequiredConfigurationProperties(config);
     }
 }
