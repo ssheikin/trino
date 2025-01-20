@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.hive;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -181,7 +182,8 @@ public class HiveConnectorFactory
         }
     }
 
-    private static Bootstrap createBootstrap(
+    @VisibleForTesting
+    public static Bootstrap createBootstrap(
             String catalogName,
             Map<String, String> config,
             ConnectorContext context,
