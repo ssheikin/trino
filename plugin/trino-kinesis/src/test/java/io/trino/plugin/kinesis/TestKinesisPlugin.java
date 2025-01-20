@@ -15,12 +15,16 @@ package io.trino.plugin.kinesis;
 
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.kinesis.util.TestUtils;
+import io.trino.spi.Plugin;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.testing.TestingConnectorContext;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.spi.transaction.IsolationLevel.READ_COMMITTED;
@@ -62,5 +66,21 @@ public class TestKinesisPlugin
         assertThat(handle).isInstanceOf(KinesisTransactionHandle.class);
 
         c.shutdown();
+    }
+
+    @Test
+    void testGetSecuritySensitivePropertyNames()
+    {
+        Plugin plugin = new KinesisPlugin();
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
+        Map<String, String> config = ImmutableMap.of(
+                "non-existent-property", "value",
+                "bootstrap.quiet", "true",
+                "kinesis.secret-key", "secret",
+                "kinesis.batch-size", "10");
+
+        Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new TestingConnectorContext());
+
+        assertThat(sensitiveProperties).containsExactlyInAnyOrder("non-existent-property", "kinesis.secret-key");
     }
 }

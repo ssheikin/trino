@@ -17,14 +17,17 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.trino.plugin.base.TypeDeserializerModule;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.SchemaTableName;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Throwables.throwIfUnchecked;
@@ -48,20 +51,9 @@ public class TestingKinesisConnectorFactory
         requireNonNull(config, "config is null");
 
         try {
-            Bootstrap app = new Bootstrap(
-                    new JsonModule(),
-                    new TypeDeserializerModule(context.getTypeManager()),
-                    new KinesisModule(),
-                    binder -> {
-                        binder.bind(NodeManager.class).toInstance(context.getNodeManager());
-                        binder.bind(KinesisClientProvider.class).toInstance(kinesisClientProvider);
-                        binder.bind(new TypeLiteral<Supplier<Map<SchemaTableName, KinesisStreamDescription>>>() {}).to(KinesisTableDescriptionSupplier.class).in(Scopes.SINGLETON);
-                    });
+            Bootstrap app = createBootstrap(config, context);
 
-            Injector injector = app
-                    .doNotInitializeLogging()
-                    .setRequiredConfigurationProperties(config)
-                    .initialize();
+            Injector injector = app.initialize();
 
             KinesisConnector connector = injector.getInstance(KinesisConnector.class);
             return connector;
@@ -70,5 +62,35 @@ public class TestingKinesisConnectorFactory
             throwIfUnchecked(e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = new Bootstrap(
+                new JsonModule(),
+                new TypeDeserializerModule(context.getTypeManager()),
+                new KinesisModule(),
+                binder -> {
+                    binder.bind(NodeManager.class).toInstance(context.getNodeManager());
+                    binder.bind(KinesisClientProvider.class).toInstance(kinesisClientProvider);
+                    binder.bind(new TypeLiteral<Supplier<Map<SchemaTableName, KinesisStreamDescription>>>() {}).to(KinesisTableDescriptionSupplier.class).in(Scopes.SINGLETON);
+                });
+
+        return app
+                .doNotInitializeLogging()
+                .setRequiredConfigurationProperties(config);
     }
 }
