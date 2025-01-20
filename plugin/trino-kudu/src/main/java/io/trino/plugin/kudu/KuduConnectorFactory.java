@@ -15,13 +15,16 @@ package io.trino.plugin.kudu;
 
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 
 import java.util.Map;
+import java.util.Set;
 
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
 import static java.util.Objects.requireNonNull;
@@ -43,17 +46,36 @@ public class KuduConnectorFactory
         requireNonNull(config, "config is null");
         checkStrictSpiVersionMatch(context, this);
 
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Injector injector = app.initialize();
+
+        return injector.getInstance(KuduConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 new JsonModule(),
                 new KuduModule(context.getTypeManager()),
                 binder -> binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName)),
                 binder -> binder.bind(ClassLoader.class).toInstance(KuduConnectorFactory.class.getClassLoader()));
 
-        Injector injector = app
+        return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(config)
-                .initialize();
-
-        return injector.getInstance(KuduConnector.class);
+                .setRequiredConfigurationProperties(config);
     }
 }

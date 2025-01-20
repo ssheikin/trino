@@ -19,7 +19,11 @@ import io.trino.spi.connector.ConnectorFactory;
 import io.trino.testing.TestingConnectorContext;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+import java.util.Set;
+
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestKuduPlugin
 {
@@ -34,5 +38,20 @@ public class TestKuduPlugin
                         "kudu.client.master-addresses", "localhost:7051",
                         "bootstrap.quiet", "true"),
                 new TestingConnectorContext()).shutdown();
+    }
+
+    @Test
+    void testGetSecuritySensitivePropertyNames()
+    {
+        Plugin plugin = new KuduPlugin();
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
+        Map<String, String> config = ImmutableMap.of(
+                "non-existent-property", "value",
+                "bootstrap.quiet", "true",
+                "kudu.client.master-addresses", "localhost:7051");
+
+        Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new TestingConnectorContext());
+
+        assertThat(sensitiveProperties).containsExactlyInAnyOrder("non-existent-property");
     }
 }
