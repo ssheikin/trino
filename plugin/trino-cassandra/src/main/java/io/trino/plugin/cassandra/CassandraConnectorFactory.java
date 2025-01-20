@@ -15,8 +15,10 @@ package io.trino.plugin.cassandra;
 
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -24,6 +26,7 @@ import io.trino.spi.connector.ConnectorFactory;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
+import java.util.Set;
 
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
 import static java.util.Objects.requireNonNull;
@@ -43,6 +46,28 @@ public class CassandraConnectorFactory
         requireNonNull(config, "config is null");
         checkStrictSpiVersionMatch(context, this);
 
+        Bootstrap app = createBootstrap(config, context);
+
+        Injector injector = app.initialize();
+
+        return injector.getInstance(CassandraConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 binder -> binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry()),
                 new MBeanModule(),
@@ -50,10 +75,8 @@ public class CassandraConnectorFactory
                 new CassandraClientModule(context.getTypeManager()),
                 new MBeanServerModule());
 
-        Injector injector = app.doNotInitializeLogging()
-                .setRequiredConfigurationProperties(config)
-                .initialize();
-
-        return injector.getInstance(CassandraConnector.class);
+        return app
+                .doNotInitializeLogging()
+                .setRequiredConfigurationProperties(config);
     }
 }
