@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.tpch;
 
+import com.google.common.collect.ImmutableSet;
 import io.trino.spi.NodeManager;
 import io.trino.spi.cache.ConnectorCacheMetadata;
 import io.trino.spi.connector.Connector;
@@ -29,6 +30,7 @@ import io.trino.spi.transaction.IsolationLevel;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
@@ -143,6 +145,13 @@ public class TpchConnectorFactory
                 return new TpchNodePartitioningProvider(nodeManager, splitsPerNode);
             }
         };
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        // This connector doesn't have any security-sensitive properties, and unknown properties are not classified as such.
+        return ImmutableSet.of();
     }
 
     private int getSplitsPerNode(Map<String, String> properties)
