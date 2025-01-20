@@ -16,6 +16,7 @@ package io.trino.plugin.jdbc;
 import com.google.common.base.Joiner;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -106,7 +107,7 @@ public class DefaultQueryBuilder
             sql += " WHERE " + Joiner.on(" AND ").join(clauses);
         }
 
-        sql += getGroupBy(client, groupingSets);
+        sql += getGroupBy(client, groupingSets, columnExpressions);
 
         return new PreparedQuery(sql, accumulator.build());
     }
@@ -516,6 +517,11 @@ public class DefaultQueryBuilder
 
     protected String getGroupBy(JdbcClient client, Optional<List<List<JdbcColumnHandle>>> groupingSets)
     {
+        return getGroupBy(client, groupingSets, ImmutableMap.of());
+    }
+
+    protected String getGroupBy(JdbcClient client, Optional<List<List<JdbcColumnHandle>>> groupingSets, Map<String, ParameterizedExpression> columnExpressions)
+    {
         if (groupingSets.isEmpty()) {
             return "";
         }
@@ -528,17 +534,21 @@ public class DefaultQueryBuilder
                 return "";
             }
             return " GROUP BY " + groupingSet.stream()
-                    .map(JdbcColumnHandle::getColumnName)
-                    .map(client::quoted)
+                    .map(jdbcColumnHandle -> formatGroupingExpression(client, jdbcColumnHandle, columnExpressions))
                     .collect(joining(", "));
         }
         return " GROUP BY GROUPING SETS " +
                 groupingSets.get().stream()
                         .map(groupingSet -> groupingSet.stream()
-                                .map(JdbcColumnHandle::getColumnName)
-                                .map(client::quoted)
+                                .map(jdbcColumnHandle -> formatGroupingExpression(client, jdbcColumnHandle, columnExpressions))
                                 .collect(joining(", ", "(", ")")))
                         .collect(joining(", ", "(", ")"));
+    }
+
+    // This is an extension point the code in SEP will override to use columnExpressions
+    protected String formatGroupingExpression(JdbcClient client, JdbcColumnHandle jdbcColumnHandle, Map<String, ParameterizedExpression> columnExpressions)
+    {
+        return client.quoted(jdbcColumnHandle.getColumnName());
     }
 
     private static WriteFunction getWriteFunction(JdbcClient client, ConnectorSession session, Connection connection, JdbcTypeHandle jdbcType, Type type)
