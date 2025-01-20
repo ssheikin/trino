@@ -13,7 +13,13 @@
  */
 package io.trino.plugin.warp.dispatcher;
 
-public interface WarpContext
+import io.trino.plugin.warp.config.NativeConfig;
+import io.trino.plugin.warp.config.SharedConfig;
+import io.trino.plugin.warp.dispatcher.warmup.demoter.DemoterSync;
+
+public record WarpPluginSharedInstances(
+        SharedConfig sharedConfig,
+        NativeConfig nativeConfig,
+        DemoterSync demoterSync)
 {
-    WarpPluginSharedInstances getWarpPluginSharedInstances();
 }

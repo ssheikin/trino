@@ -15,7 +15,6 @@ package io.trino.plugin.warp.dispatcher;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
-import io.trino.plugin.warp.dispatcher.warmup.demoter.DemoterSync;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
@@ -36,12 +35,12 @@ public class WarpConnectorContext
         implements ConnectorContext, WarpContext
 {
     private final ConnectorContext connectorContext;
-    private final DemoterSync demoterSync;
+    private final WarpPluginSharedInstances sharedInstances;
 
-    public WarpConnectorContext(ConnectorContext connectorContext, DemoterSync demoterSync)
+    public WarpConnectorContext(ConnectorContext connectorContext, WarpPluginSharedInstances sharedInstances)
     {
         this.connectorContext = requireNonNull(connectorContext);
-        this.demoterSync = requireNonNull(demoterSync);
+        this.sharedInstances = requireNonNull(sharedInstances);
     }
 
     @Override
@@ -111,9 +110,9 @@ public class WarpConnectorContext
     }
 
     @Override
-    public DemoterSync getDemoterSync()
+    public WarpPluginSharedInstances getWarpPluginSharedInstances()
     {
-        return demoterSync;
+        return sharedInstances;
     }
 
     @Override
