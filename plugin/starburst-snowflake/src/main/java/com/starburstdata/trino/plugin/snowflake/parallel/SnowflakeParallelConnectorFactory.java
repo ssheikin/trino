@@ -11,6 +11,8 @@ package com.starburstdata.trino.plugin.snowflake.parallel;
 
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.jdbc.JdbcModule;
 import io.trino.spi.NodeManager;
 import io.trino.spi.VersionEmbedder;
@@ -21,6 +23,7 @@ import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
+import java.util.Set;
 
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
 import static java.util.Objects.requireNonNull;
@@ -47,6 +50,28 @@ public class SnowflakeParallelConnectorFactory
         requireNonNull(requiredConfig, "requiredConfig is null");
         checkStrictSpiVersionMatch(context, this);
 
+        Bootstrap app = createBootstrap(catalogName, requiredConfig, context);
+
+        Injector injector = app.initialize();
+
+        return injector.getInstance(SnowflakeParallelConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
                 binder -> binder.bind(NodeManager.class).toInstance(context.getNodeManager()),
@@ -56,11 +81,8 @@ public class SnowflakeParallelConnectorFactory
                 new SnowflakeJdbcOverrideModule(),
                 new SnowflakeParallelModule());
 
-        Injector injector = app
+        return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(requiredConfig)
-                .initialize();
-
-        return injector.getInstance(SnowflakeParallelConnector.class);
+                .setRequiredConfigurationProperties(config);
     }
 }

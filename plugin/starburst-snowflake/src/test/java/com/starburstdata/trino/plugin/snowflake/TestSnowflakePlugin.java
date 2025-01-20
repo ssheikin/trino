@@ -17,6 +17,8 @@ import io.trino.testing.TestingConnectorContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -67,6 +69,27 @@ public class TestSnowflakePlugin
                                     "snowflake.proxy.port", "9000"),
                             new TestingConnectorContext())
                     .shutdown();
+        }
+    }
+
+    @Test
+    void testGetSecuritySensitivePropertyNames()
+    {
+        Plugin plugin = new TestingSnowflakePlugin();
+        List<ConnectorFactory> connectorFactories = ImmutableList.copyOf(plugin.getConnectorFactories());
+        assertThat(connectorFactories.size()).isEqualTo(2);
+
+        Map<String, String> config = ImmutableMap.of(
+                "non-existent-property", "value",
+                "bootstrap.quiet", "true",
+                "snowflake.proxy.enabled", "true",
+                "snowflake.proxy.password", "password",
+                "snowflake.proxy.username", "user");
+
+        for (ConnectorFactory factory : connectorFactories) {
+            Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new TestingConnectorContext());
+
+            assertThat(sensitiveProperties).containsExactlyInAnyOrder("non-existent-property", "snowflake.proxy.password");
         }
     }
 }
