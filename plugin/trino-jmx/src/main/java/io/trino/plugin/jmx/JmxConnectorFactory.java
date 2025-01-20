@@ -16,6 +16,8 @@ package io.trino.plugin.jmx;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.Connector;
@@ -23,6 +25,7 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 
 import java.util.Map;
+import java.util.Set;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
@@ -41,6 +44,28 @@ public class JmxConnectorFactory
     {
         checkStrictSpiVersionMatch(context, this);
 
+        Bootstrap app = createBootstrap(config, context);
+
+        Injector injector = app.initialize();
+
+        return injector.getInstance(JmxConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 new MBeanServerModule(),
                 binder -> {
@@ -54,11 +79,8 @@ public class JmxConnectorFactory
                     binder.bind(JmxRecordSetProvider.class).in(Scopes.SINGLETON);
                 });
 
-        Injector injector = app
+        return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(config)
-                .initialize();
-
-        return injector.getInstance(JmxConnector.class);
+                .setRequiredConfigurationProperties(config);
     }
 }
