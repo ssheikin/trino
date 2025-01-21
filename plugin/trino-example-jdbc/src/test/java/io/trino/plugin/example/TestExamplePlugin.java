@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.druid;
+package io.trino.plugin.example;
 
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.Plugin;
@@ -25,29 +25,16 @@ import java.util.Set;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestDruidJdbcPlugin
+final class TestExamplePlugin
 {
-    @Test
-    public void testCreateConnector()
-    {
-        Plugin plugin = new DruidJdbcPlugin();
-        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
-        factory.create(
-                "test",
-                ImmutableMap.of(
-                        "connection-url", "jdbc:druid:test",
-                        "bootstrap.quiet", "true"),
-                new TestingConnectorContext()).shutdown();
-    }
-
     @Test
     void testGetSecuritySensitivePropertyNames()
     {
-        Plugin plugin = new DruidJdbcPlugin();
+        Plugin plugin = new ExamplePlugin();
         ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
         Map<String, String> config = ImmutableMap.of(
                 "non-existent-property", "value",
-                "connection-url", "jdbc:druid:test",
+                "connection-url", "jdbc:h2:mem:test",
                 "credential-provider.type", "inline",
                 "connection-user", "user",
                 "connection-password", "password");

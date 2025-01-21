@@ -17,8 +17,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestDynamoDbPlugin
 {
@@ -39,5 +42,25 @@ public class TestDynamoDbPlugin
                         .buildOrThrow(),
                 new TestingConnectorContext())
                 .shutdown();
+    }
+
+    @Test
+    void testGetSecuritySensitivePropertyNames()
+    {
+        Plugin plugin = new TestingDynamoDbPlugin(false);
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
+        Map<String, String> config = ImmutableMap.of(
+                "non-existent-property", "value",
+                "credential-provider.type", "inline",
+                "connection-user", "user",
+                "connection-password", "password",
+                "dynamodb.aws-access-key", "accesskey",
+                "dynamodb.aws-secret-key", "secretkey",
+                "dynamodb.aws-region", "us-east-2");
+
+        Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new TestingConnectorContext());
+
+        assertThat(sensitiveProperties)
+                .containsExactlyInAnyOrder("non-existent-property", "connection-password", "dynamodb.aws-access-key", "dynamodb.aws-secret-key");
     }
 }
