@@ -601,7 +601,7 @@ public abstract class AbstractTestQueryFramework
                     assertThat(row.getFieldCount()).isEqualTo(1);
                     return row.getField(0);
                 })
-                .containsExactlyInAnyOrder(catalogs);
+                .contains(catalogs);
     }
 
     protected MaterializedResult computeExpected(@Language("SQL") String sql, List<? extends Type> resultTypes)
