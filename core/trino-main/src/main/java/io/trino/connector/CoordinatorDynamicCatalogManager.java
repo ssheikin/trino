@@ -348,8 +348,8 @@ public class CoordinatorDynamicCatalogManager
         CatalogConnector catalog = allCatalogs.computeIfAbsent(
                 catalogProperties.catalogHandle(),
                 handle -> catalogFactory.createCatalog(catalogProperties));
-        activeCatalogs.put(catalogName, catalog.getCatalog());
         catalogStore.addOrReplaceCatalog(catalogProperties);
+        activeCatalogs.put(catalogName, catalog.getCatalog());
         return catalog;
     }
 
