@@ -117,7 +117,8 @@ public class HudiConnectorFactory
         }
     }
 
-    private static Bootstrap createBootstrap(
+    @VisibleForTesting
+    public static Bootstrap createBootstrap(
             String catalogName,
             Map<String, String> config,
             ConnectorContext context,
