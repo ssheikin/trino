@@ -14,6 +14,8 @@
 package io.trino.plugin.warp.log;
 
 import io.airlift.log.Logger;
+import io.trino.plugin.warp.config.SharedConfig;
+import io.trino.spi.catalog.CatalogName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +30,8 @@ import static org.mockito.Mockito.when;
 
 public class ShapingLoggerTest
 {
+    private final String catalogName = "c";
+    private final ShapingLoggerFactory shapingLoggerFactory = new ShapingLoggerFactory(new CatalogName(catalogName), new SharedConfig());
     private Logger logger;
 
     @BeforeEach
@@ -39,7 +43,7 @@ public class ShapingLoggerTest
     @Test
     public void testSimple()
     {
-        ShapingLogger shapingLogger = ShapingLogger.getInstance(logger, 2, Duration.ZERO);
+        ShapingLogger shapingLogger = shapingLoggerFactory.getInstance(logger, 2, Duration.ZERO, 1);
 
         shapingLogger.info("%s", "test");
         verify(logger, never()).info(eq("test"));
@@ -47,7 +51,9 @@ public class ShapingLoggerTest
         when(logger.isInfoEnabled()).thenReturn(true);
         shapingLogger.info("%s", "test");
         shapingLogger.info("%s", "test");
-        verify(logger, times(1)).info(eq("%s"), eq("test"));
-        verify(logger, times(1)).info(eq("%s - skipped 1 times"));
+        verify(logger, times(1))
+                .info(eq("catalog[%s]: %s".formatted(catalogName, "test")));
+        verify(logger, times(1))
+                .info(eq("catalog[%s]: %s - skipped 1 times"));
     }
 }
