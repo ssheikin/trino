@@ -203,6 +203,7 @@ public class TestDeltaLakeMetadata
                     binder.bind(LocationAccessControl.class).toInstance(LocationAccessControl.ALLOW_ALL);
                 },
                 // connector modules
+                new DeltaLakeSecurityModule(),
                 new DeltaLakeMetastoreModule(),
                 new DeltaLakeModule(),
                 // test setup
