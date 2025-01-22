@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.singlestore;
 
+import com.google.common.collect.ImmutableList;
 import io.trino.plugin.jdbc.BaseJdbcConnectorTest;
 import io.trino.sql.planner.plan.AggregationNode;
 import io.trino.sql.planner.plan.FilterNode;
@@ -145,16 +146,27 @@ public class TestSingleStoreConnectorTest
         String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE
                 .formatted(catalog, CONNECTOR_NAME, singleStoreServer.getPassword(), singleStoreServer.getJdbcUrl(), singleStoreServer.getUsername());
         assertUpdate(createCatalogSql);
-        assertCatalogs("system", "singlestore", "tpch", "mock_dynamic_listing", catalog);
+        assertCatalogs(availableCatalogs(Optional.of(catalog)));
 
         assertUpdate("DROP CATALOG " + catalog);
-        assertCatalogs("system", "singlestore", "tpch", "mock_dynamic_listing");
+        assertCatalogs(availableCatalogs(Optional.empty()));
         // re-add the same catalog
         assertUpdate(createCatalogSql);
-        assertCatalogs("system", "singlestore", "tpch", "mock_dynamic_listing", catalog);
+        assertCatalogs(availableCatalogs(Optional.of(catalog)));
 
         assertUpdate("DROP CATALOG " + catalog);
-        assertCatalogs("system", "singlestore", "tpch", "mock_dynamic_listing");
+        assertCatalogs(availableCatalogs(Optional.empty()));
+    }
+
+    protected String[] availableCatalogs(Optional<String> catalog)
+    {
+        ImmutableList.Builder<String> catalogs = ImmutableList.builder();
+        catalogs.add("system")
+                .add("singlestore")
+                .add("tpch")
+                .add("mock_dynamic_listing");
+        catalog.ifPresent(catalogs::add);
+        return catalogs.build().toArray(new String[0]);
     }
 
     @Test

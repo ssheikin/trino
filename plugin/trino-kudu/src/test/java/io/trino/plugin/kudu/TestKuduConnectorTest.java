@@ -54,7 +54,7 @@ public class TestKuduConnectorTest
     protected static final String NATION_COLUMNS = "(nationkey bigint, name varchar(25), regionkey bigint, comment varchar(152))";
     protected static final String ORDER_COLUMNS = "(orderkey bigint, custkey bigint, orderstatus varchar(1), totalprice double, orderdate date, orderpriority varchar(15), clerk varchar(15), shippriority integer, comment varchar(79))";
     public static final String REGION_COLUMNS = "(regionkey bigint, name varchar(25), comment varchar(152))";
-    private HostAndPort masterAddress;
+    protected HostAndPort masterAddress;
 
     @Override
     protected QueryRunner createQueryRunner()
