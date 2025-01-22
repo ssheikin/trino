@@ -422,6 +422,7 @@ public class HiveMetadata
     private final HiveMaterializedViewMetadata hiveMaterializedViewMetadata;
     private final AccessControlMetadata accessControlMetadata;
     private final DirectoryLister directoryLister;
+    private final boolean usingSystemSecurity;
     private final boolean partitionProjectionEnabled;
     private final boolean allowTableRename;
     private final long maxPartitionDropsPerQuery;
@@ -450,6 +451,7 @@ public class HiveMetadata
             HiveMaterializedViewMetadata hiveMaterializedViewMetadata,
             AccessControlMetadata accessControlMetadata,
             DirectoryLister directoryLister,
+            boolean usingSystemSecurity,
             boolean partitionProjectionEnabled,
             boolean allowTableRename,
             long maxPartitionDropsPerQuery,
@@ -477,6 +479,7 @@ public class HiveMetadata
         this.hiveMaterializedViewMetadata = requireNonNull(hiveMaterializedViewMetadata, "hiveMaterializedViewMetadata is null");
         this.accessControlMetadata = requireNonNull(accessControlMetadata, "accessControlMetadata is null");
         this.directoryLister = requireNonNull(directoryLister, "directoryLister is null");
+        this.usingSystemSecurity = usingSystemSecurity;
         this.partitionProjectionEnabled = partitionProjectionEnabled;
         this.allowTableRename = allowTableRename;
         this.maxPartitionDropsPerQuery = maxPartitionDropsPerQuery;
@@ -999,8 +1002,8 @@ public class HiveMetadata
         Database database = Database.builder()
                 .setDatabaseName(schemaName)
                 .setLocation(location)
-                .setOwnerType(accessControlMetadata.isUsingSystemSecurity() ? Optional.empty() : Optional.of(owner.getType()))
-                .setOwnerName(accessControlMetadata.isUsingSystemSecurity() ? Optional.empty() : Optional.of(owner.getName()))
+                .setOwnerType(usingSystemSecurity ? Optional.empty() : Optional.of(owner.getType()))
+                .setOwnerName(usingSystemSecurity ? Optional.empty() : Optional.of(owner.getName()))
                 .setParameters(ImmutableMap.of(TRINO_QUERY_ID_NAME, session.getQueryId()))
                 .build();
 
@@ -1131,8 +1134,8 @@ public class HiveMetadata
                 targetPath,
                 external,
                 trinoVersion,
-                accessControlMetadata.isUsingSystemSecurity());
-        PrincipalPrivileges principalPrivileges = accessControlMetadata.isUsingSystemSecurity() ? NO_PRIVILEGES : buildInitialPrivilegeSet(session.getUser());
+                usingSystemSecurity);
+        PrincipalPrivileges principalPrivileges = usingSystemSecurity ? NO_PRIVILEGES : buildInitialPrivilegeSet(session.getUser());
         HiveBasicStatistics basicStatistics = (!external && table.getPartitionColumns().isEmpty()) ? createZeroStatistics() : createEmptyStatistics();
         getMetastore(session).createTable(
                 session,
@@ -1638,7 +1641,7 @@ public class HiveMetadata
         Table.Builder viewBuilder = Table.builder(view)
                 .setViewOriginalText(Optional.of(encodeViewData(newViewDefinition)));
 
-        PrincipalPrivileges principalPrivileges = accessControlMetadata.isUsingSystemSecurity() ? NO_PRIVILEGES : buildInitialPrivilegeSet(session.getUser());
+        PrincipalPrivileges principalPrivileges = usingSystemSecurity ? NO_PRIVILEGES : buildInitialPrivilegeSet(session.getUser());
 
         getMetastore(session).replaceTable(viewName.getSchemaName(), viewName.getTableName(), viewBuilder.build(), principalPrivileges);
     }
@@ -1886,8 +1889,8 @@ public class HiveMetadata
                 Optional.of(writeInfo.targetPath()),
                 handle.isExternal(),
                 trinoVersion,
-                accessControlMetadata.isUsingSystemSecurity());
-        PrincipalPrivileges principalPrivileges = accessControlMetadata.isUsingSystemSecurity() ? NO_PRIVILEGES : buildInitialPrivilegeSet(handle.getTableOwner());
+                usingSystemSecurity);
+        PrincipalPrivileges principalPrivileges = usingSystemSecurity ? NO_PRIVILEGES : buildInitialPrivilegeSet(handle.getTableOwner());
 
         partitionUpdates = PartitionUpdate.mergePartitionUpdates(partitionUpdates);
 
@@ -2762,7 +2765,7 @@ public class HiveMetadata
             Map<String, Object> viewProperties,
             boolean replace)
     {
-        if (accessControlMetadata.isUsingSystemSecurity()) {
+        if (usingSystemSecurity) {
             definition = definition.withoutOwner();
         }
 
@@ -2796,7 +2799,7 @@ public class HiveMetadata
         Table.Builder tableBuilder = Table.builder()
                 .setDatabaseName(viewName.getSchemaName())
                 .setTableName(viewName.getTableName())
-                .setOwner(accessControlMetadata.isUsingSystemSecurity() ? Optional.empty() : Optional.ofNullable(session.getUser()))
+                .setOwner(usingSystemSecurity ? Optional.empty() : Optional.ofNullable(session.getUser()))
                 .setTableType(VIRTUAL_VIEW.name())
                 .setDataColumns(ImmutableList.of(dummyColumn))
                 .setPartitionColumns(ImmutableList.of())
@@ -2808,7 +2811,7 @@ public class HiveMetadata
                 .setStorageFormat(VIEW_STORAGE_FORMAT)
                 .setLocation("");
         Table table = tableBuilder.build();
-        PrincipalPrivileges principalPrivileges = accessControlMetadata.isUsingSystemSecurity() ? NO_PRIVILEGES : buildInitialPrivilegeSet(session.getUser());
+        PrincipalPrivileges principalPrivileges = usingSystemSecurity ? NO_PRIVILEGES : buildInitialPrivilegeSet(session.getUser());
 
         Optional<Table> existing = getMetastore(session).getTable(viewName.getSchemaName(), viewName.getTableName());
         if (existing.isPresent()) {
