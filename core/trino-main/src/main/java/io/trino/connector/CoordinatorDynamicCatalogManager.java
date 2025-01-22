@@ -184,6 +184,12 @@ public class CoordinatorDynamicCatalogManager
     }
 
     @Override
+    public CatalogProperties createCatalogProperties(CatalogName catalogName, ConnectorName connectorName, Map<String, String> properties)
+    {
+        return catalogStore.createCatalogProperties(catalogName, connectorName, properties);
+    }
+
+    @Override
     public void ensureCatalogsLoaded(Session session, List<CatalogProperties> catalogs)
     {
         List<CatalogProperties> missingCatalogs = catalogs.stream()
@@ -273,7 +279,7 @@ public class CoordinatorDynamicCatalogManager
                 return;
             }
 
-            CatalogProperties catalogProperties = catalogStore.createCatalogProperties(catalogName, connectorName, properties);
+            CatalogProperties catalogProperties = createCatalogProperties(catalogName, connectorName, properties);
 
             // get or create catalog for the handle
             CatalogConnector catalog = allCatalogs.computeIfAbsent(

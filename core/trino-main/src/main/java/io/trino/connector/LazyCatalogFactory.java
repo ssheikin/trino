@@ -19,6 +19,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -51,6 +52,12 @@ public class LazyCatalogFactory
     public CatalogConnector createCatalog(CatalogHandle catalogHandle, ConnectorName connectorName, Connector connector)
     {
         return getDelegate().createCatalog(catalogHandle, connectorName, connector);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(CatalogProperties catalogProperties)
+    {
+        return getDelegate().getSecuritySensitivePropertyNames(catalogProperties);
     }
 
     private CatalogFactory getDelegate()

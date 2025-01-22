@@ -13,6 +13,7 @@
  */
 package io.trino.connector;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
@@ -51,6 +52,7 @@ import io.trino.transaction.TransactionManager;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -176,6 +178,29 @@ public class DefaultCatalogFactory
         return createCatalog(catalogHandle, connectorName, connector, () -> {}, Optional.empty());
     }
 
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(CatalogProperties catalogProperties)
+    {
+        InternalConnectorFactory factory = connectorFactories.get(catalogProperties.connectorName());
+        if (factory == null) {
+            // If someone tries to use a non-existent connector, we assume they
+            // misspelled the name and, for safety, we redact all the properties.
+            return ImmutableSet.copyOf(catalogProperties.properties().keySet());
+        }
+
+        Supplier<ClassLoader> duplicatePluginClassLoaderFactory = () -> {
+            throw new UnsupportedOperationException("ClassLoader duplication is not supported");
+        };
+        ConnectorFactory connectorFactory = factory.getConnectorFactory();
+        ConnectorContext context = createConnectorContext(catalogProperties.catalogHandle(), duplicatePluginClassLoaderFactory);
+        String catalogName = catalogProperties.catalogHandle().getCatalogName().toString();
+        Map<String, String> config = secretsResolver.getResolvedConfiguration(catalogProperties.properties());
+
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
+            return connectorFactory.getSecuritySensitivePropertyNames(catalogName, config, context);
+        }
+    }
+
     private CatalogConnector createCatalog(CatalogHandle catalogHandle, ConnectorName connectorName, Connector connector, Runnable destroy, Optional<CatalogProperties> catalogProperties)
     {
         Tracer tracer = createTracer(catalogHandle);
@@ -230,7 +255,16 @@ public class DefaultCatalogFactory
             Supplier<ClassLoader> duplicatePluginClassLoaderFactory,
             Map<String, String> properties)
     {
-        ConnectorContext context = new ConnectorContextInstance(
+        ConnectorContext context = createConnectorContext(catalogHandle, duplicatePluginClassLoaderFactory);
+
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
+            return connectorFactory.create(catalogName, secretsResolver.getResolvedConfiguration(properties), context);
+        }
+    }
+
+    private ConnectorContext createConnectorContext(CatalogHandle catalogHandle, Supplier<ClassLoader> duplicatePluginClassLoaderFactory)
+    {
+        return new ConnectorContextInstance(
                 catalogHandle,
                 openTelemetry,
                 createTracer(catalogHandle),
@@ -244,10 +278,6 @@ public class DefaultCatalogFactory
                 pageIndexerFactory,
                 serverProperties,
                 duplicatePluginClassLoaderFactory);
-
-        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
-            return connectorFactory.create(catalogName, secretsResolver.getResolvedConfiguration(properties), context);
-        }
     }
 
     private Tracer createTracer(CatalogHandle catalogHandle)

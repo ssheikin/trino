@@ -20,6 +20,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 
+import java.util.Set;
 import java.util.function.Function;
 
 @ThreadSafe
@@ -30,4 +31,6 @@ public interface CatalogFactory
     CatalogConnector createCatalog(CatalogProperties catalogProperties);
 
     CatalogConnector createCatalog(CatalogHandle catalogHandle, ConnectorName connectorName, Connector connector);
+
+    Set<String> getSecuritySensitivePropertyNames(CatalogProperties catalogProperties);
 }
