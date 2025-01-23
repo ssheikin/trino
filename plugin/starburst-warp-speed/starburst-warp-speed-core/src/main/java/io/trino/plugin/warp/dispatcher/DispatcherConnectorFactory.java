@@ -16,7 +16,6 @@ package io.trino.plugin.warp.dispatcher;
 import com.google.inject.Module;
 import io.trino.plugin.warp.di.InitializationModule;
 import io.trino.spi.connector.Connector;
-import io.trino.spi.connector.ConnectorContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -31,26 +30,23 @@ import static com.google.common.base.Throwables.throwIfUnchecked;
 public class DispatcherConnectorFactory
 {
     public static final String DISPATCHER_CONNECTOR_NAME = "warp_speed";
-    private final Module storageEngineModule;
     private final Module proxyModule;
 
-    public DispatcherConnectorFactory(Module storageEngineModule, Module proxyModule)
+    public DispatcherConnectorFactory(Module proxyModule)
     {
-        this.storageEngineModule = storageEngineModule;
         this.proxyModule = proxyModule;
     }
 
     public Connector create(
             String catalogName,
             Map<String, String> config,
-            ConnectorContext context,
+            WarpConnectorContext context,
             Optional<List<Class<? extends InitializationModule>>> optionalModules,
             Map<String, String> proxiedConnectorInitializerMap)
     {
         try {
             ClassLoader classLoader = this.getClass().getClassLoader();
             // use the class instance from InternalDispatcherConnectorFactory's classloader
-            Class<?> moduleClass = classLoader.loadClass(Module.class.getName());
             Class<?> optionalClass = classLoader.loadClass(Optional.class.getName());
 
             Optional<List<Object>> optionalModuleInstances =
@@ -74,7 +70,6 @@ public class DispatcherConnectorFactory
                             Map.class,
                             Optional.class,
                             Map.class,
-                            moduleClass,
                             optionalClass,
                             WarpConnectorContext.class)
                     .invoke(null,
@@ -82,7 +77,6 @@ public class DispatcherConnectorFactory
                             config,
                             optionalModuleInstances,
                             createProxiedConnectorInitializers(proxiedConnectorInitializerMap, classLoader),
-                            storageEngineModule,
                             Optional.ofNullable(proxyModule),
                             context);
         }
@@ -99,7 +93,7 @@ public class DispatcherConnectorFactory
     public Set<String> getSecuritySensitivePropertyNames(
             String catalogName,
             Map<String, String> config,
-            ConnectorContext context,
+            WarpConnectorContext context,
             Optional<List<Class<? extends InitializationModule>>> optionalModules,
             Map<String, String> proxiedConnectorInitializerMap)
     {
