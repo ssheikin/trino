@@ -1046,7 +1046,7 @@ public abstract class BaseSnowflakeConnectorTest
     }
 
     @Test
-    void testCreateDropDynamicCatalog()
+    public void testCreateDropDynamicCatalog()
     {
         String catalog = "new_catalog_" + randomNameSuffix();
         @Language("SQL")
@@ -1065,7 +1065,7 @@ public abstract class BaseSnowflakeConnectorTest
     }
 
     @Test
-    void testCreateDropMultipleCatalogs()
+    public void testCreateDropMultipleCatalogs()
     {
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
@@ -1088,7 +1088,7 @@ public abstract class BaseSnowflakeConnectorTest
     }
 
     @Test
-    void testRenameCatalog()
+    public void testRenameCatalog()
     {
         String catalog = "catalog_rename_" + randomNameSuffix();
         try {
@@ -1109,7 +1109,7 @@ public abstract class BaseSnowflakeConnectorTest
     }
 
     @Test
-    void testCatalogSetProperties()
+    public void testCatalogSetProperties()
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
