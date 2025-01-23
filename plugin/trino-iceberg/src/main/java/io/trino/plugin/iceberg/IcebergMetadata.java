@@ -3136,7 +3136,7 @@ public class IcebergMetadata
 
         DeleteFiles deleteFiles = icebergTable.newDelete()
                 .deleteFromRowFilter(toIcebergExpression(handle.getEnforcedPredicate()));
-        commit(deleteFiles, session);
+        commitUpdate(deleteFiles, session, "delete");
 
         Map<String, String> summary = icebergTable.currentSnapshot().summary();
         String deletedRowsStr = summary.get(DELETED_RECORDS_PROP);
@@ -3157,7 +3157,7 @@ public class IcebergMetadata
         Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
         DeleteFiles deleteFiles = icebergTable.newDelete()
                 .deleteFromRowFilter(alwaysTrue());
-        commit(deleteFiles, session);
+        commitUpdate(deleteFiles, session, "truncate");
     }
 
     public void rollback()
