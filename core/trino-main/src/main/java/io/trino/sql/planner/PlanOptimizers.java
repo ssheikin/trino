@@ -259,7 +259,6 @@ import io.trino.sql.planner.optimizations.BeginTableWrite;
 import io.trino.sql.planner.optimizations.CheckSubqueryNodesAreRewritten;
 import io.trino.sql.planner.optimizations.DeterminePartitionCount;
 import io.trino.sql.planner.optimizations.DeterminePreferredDynamicFilterTimeout;
-import io.trino.sql.planner.optimizations.HashGenerationOptimizer;
 import io.trino.sql.planner.optimizations.IndexJoinOptimizer;
 import io.trino.sql.planner.optimizations.LimitPushDown;
 import io.trino.sql.planner.optimizations.MetadataQueryOptimizer;
@@ -1035,9 +1034,6 @@ public class PlanOptimizers
                         new AddIntermediateAggregations(),
                         new RemoveRedundantIdentityProjections())));
         // DO NOT add optimizers that change the plan shape (computations) after this point
-
-        // Precomputed hashes - this assumes that partitioning will not change
-        builder.add(new HashGenerationOptimizer(metadata));
 
         builder.add(new IterativeOptimizer(
                 plannerContext,
