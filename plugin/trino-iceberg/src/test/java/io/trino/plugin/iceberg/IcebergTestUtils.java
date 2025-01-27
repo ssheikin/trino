@@ -190,4 +190,10 @@ public final class IcebergTestUtils
                 directExecutor());
         return (BaseTable) loadIcebergTable(catalog, tableOperationsProvider, SESSION, new SchemaTableName(schemaName, tableName));
     }
+
+    public static String getQualifiedSchemaName(Optional<String> catalogName, String schemaName)
+    {
+        String catalogPrefix = catalogName.map(catalog -> catalog + ".").orElse("");
+        return catalogPrefix + schemaName;
+    }
 }
