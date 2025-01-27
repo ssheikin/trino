@@ -53,6 +53,8 @@ import static java.util.Objects.requireNonNull;
 
 public final class StargateParallelQueryRunner
 {
+    static final String MEMORY_TPCH_SCHEMA = "tiny";
+
     private StargateParallelQueryRunner() {}
 
     public static DistributedQueryRunner createRemoteStarburstQueryRunner(LocalStackContainer localstack, Optional<SystemAccessControl> systemAccessControl)
@@ -112,7 +114,7 @@ public final class StargateParallelQueryRunner
             queryRunner.execute("CREATE SCHEMA memory.tiny");
             Session tpchSetupSession = testSessionBuilder()
                     .setCatalog("memory")
-                    .setSchema("tiny")
+                    .setSchema(MEMORY_TPCH_SCHEMA)
                     .build();
             copyTpchTables(queryRunner, "tpch", TINY_SCHEMA_NAME, tpchSetupSession, requiredTablesInMemoryConnector);
         }

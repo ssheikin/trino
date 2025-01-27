@@ -14,12 +14,15 @@ import com.starburstdata.trino.plugin.stargate.BaseStargateConnectorTest;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.TestTable;
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import java.util.List;
 import java.util.Optional;
 
+import static com.starburstdata.trino.plugin.stargate.StargateQueryRunner.stargateConnectionUrl;
+import static com.starburstdata.trino.plugin.stargate.parallel.StargateParallelQueryRunner.MEMORY_TPCH_SCHEMA;
 import static com.starburstdata.trino.plugin.stargate.parallel.StargateParallelQueryRunner.createRemoteStarburstQueryRunnerWithMemory;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +32,13 @@ import static org.junit.jupiter.api.Assumptions.abort;
 public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
         extends BaseStargateConnectorTest
 {
+    private static final String REMOTE_CATALOG_NAME = "memory";
+    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
+                CREATE CATALOG %s USING stargate_parallel
+                WITH (
+                   "connection-url" = '%s',
+                   "connection-user" = 'p2p'
+                )""";
     private LocalStackContainer localstack;
 
     @Override
@@ -38,6 +48,7 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
         localstack = closeAfterClass(new LocalStackContainer("s3-latest"));
         localstack.start();
         remoteStarburst = closeAfterClass(createRemoteStarburstQueryRunnerWithMemory(REQUIRED_TPCH_TABLES, localstack, Optional.empty()));
+
         return StargateParallelQueryRunner.builder(remoteStarburst, "memory")
                 .withEncoding("json") // faster because no decompression
                 .enableWrites()
@@ -81,6 +92,55 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
 
             default:
                 return super.hasBehavior(connectorBehavior);
+        }
+    }
+
+    @Test
+    void testCreateDropDynamicCatalog()
+    {
+        String catalog = "new_catalog_" + randomNameSuffix();
+        @Language("SQL")
+        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME));
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "tpch", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "tpch");
+        // re-add the same catalog
+        assertUpdate(createCatalogSql);
+        assertCatalogs("system", "tpch", catalog);
+
+        assertUpdate("DROP CATALOG " + catalog);
+        assertCatalogs("system", "tpch");
+    }
+
+    @Test
+    void testCreateDropMultipleCatalogs()
+    {
+        String firstCatalog = "catalog1_" + randomNameSuffix();
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        try {
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME));
+            assertUpdate(createFirstCatalogSql);
+            assertThat(computeScalar("SHOW CREATE CATALOG " + firstCatalog)).isEqualTo(createFirstCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, MEMORY_TPCH_SCHEMA));
+
+            @Language("SQL")
+            String createSecondCatalogSql = """
+                CREATE CATALOG %s USING stargate_parallel
+                WITH (
+                   "connection-url" = '%s',
+                   "connection-user" = 'p2p',
+                   "jdbc-types-mapped-to-varchar" = 'ARRAY'
+                )""".formatted(secondCatalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME));
+            assertUpdate(createSecondCatalogSql);
+            assertThat(computeScalar("SHOW CREATE CATALOG " + secondCatalog)).isEqualTo(createSecondCatalogSql);
+            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, MEMORY_TPCH_SCHEMA));
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
+            assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
         }
     }
 
