@@ -23,6 +23,7 @@ import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.tpch.TpchTable;
 import org.apache.iceberg.FileFormat;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -45,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 @TestInstance(PER_CLASS)
+@Disabled("Temporary disabled due to lack of payment for the Snowflake account")
 public class TestIcebergSnowflakeCatalogConnectorSmokeTest
         extends BaseIcebergConnectorSmokeTest
 {
