@@ -115,7 +115,7 @@ public abstract class BaseIcebergConnectorSmokeTest
     protected void testCreateDropDynamicCatalog()
     {
         String catalog = "new_catalog_" + randomNameSuffix();
-        String createCatalogSql = "CREATE CATALOG %s USING iceberg".formatted(catalog);
+        String createCatalogSql = getCreateCatalogSqlTemplate().formatted(catalog, FileFormat.PARQUET);
         assertUpdate(createCatalogSql);
         assertCatalogs(availableCatalogs(Optional.of(catalog)));
 
@@ -144,20 +144,17 @@ public abstract class BaseIcebergConnectorSmokeTest
     {
         String firstCatalog = "catalog_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
-        String createCatalogSql = """
-                CREATE CATALOG %1$s USING iceberg
-                WITH (
-                   "iceberg.table-statistics-enabled" = '%2$s'
-                )""";
+        String createCatalogSqlTemplate = getCreateCatalogSqlTemplate();
+        String showCreateCatalogSqlTemplate = getCreateCatalogSqlTemplateSecretsRedacted();
         try {
-            assertUpdate(createCatalogSql.formatted(firstCatalog, "true"));
+            assertUpdate(createCatalogSqlTemplate.formatted(firstCatalog, FileFormat.PARQUET));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(createCatalogSql.formatted(firstCatalog, "true"));
+                    .isEqualTo(showCreateCatalogSqlTemplate.formatted(firstCatalog, FileFormat.PARQUET));
             assertQuerySucceeds("SHOW SCHEMAS FROM " + firstCatalog);
 
-            assertUpdate(createCatalogSql.formatted(secondCatalog, "false"));
+            assertUpdate(createCatalogSqlTemplate.formatted(secondCatalog, FileFormat.ORC));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(createCatalogSql.formatted(secondCatalog, "false"));
+                    .isEqualTo(showCreateCatalogSqlTemplate.formatted(secondCatalog, FileFormat.ORC));
             assertQuerySucceeds("SHOW SCHEMAS FROM " + secondCatalog);
         }
         finally {
@@ -170,12 +167,9 @@ public abstract class BaseIcebergConnectorSmokeTest
     public void testRenameCatalog()
     {
         String oldCatalog = "catalog_rename_" + randomNameSuffix();
-        String createCatalogSql = """
-                CREATE CATALOG %1$s USING iceberg
-                WITH (
-                   "iceberg.table-statistics-enabled" = 'true'
-                )""";
-        assertUpdate(createCatalogSql.formatted(oldCatalog));
+        String createCatalogSqlTemplate = getCreateCatalogSqlTemplate();
+        String showCreateCatalogSqlTemplate = getCreateCatalogSqlTemplateSecretsRedacted();
+        assertUpdate(createCatalogSqlTemplate.formatted(oldCatalog, format));
 
         String catalog = "catalog_rename_" + randomNameSuffix();
         assertUpdate("""
@@ -185,7 +179,7 @@ public abstract class BaseIcebergConnectorSmokeTest
         assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                 .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
         assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                .isEqualTo(createCatalogSql.formatted(catalog));
+                .isEqualTo(showCreateCatalogSqlTemplate.formatted(catalog, format));
         assertQuerySucceeds("SHOW SCHEMAS FROM " + catalog);
 
         assertUpdate("DROP CATALOG " + catalog);
@@ -195,15 +189,12 @@ public abstract class BaseIcebergConnectorSmokeTest
     public void testCatalogSetProperties()
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
-        String createCatalogSql = """
-                CREATE CATALOG %1$s USING iceberg
-                WITH (
-                   "iceberg.file-format" = '%2$s'
-                )""";
+        String createCatalogSqlTemplate = getCreateCatalogSqlTemplate();
+        String showCreateCatalogSqlTemplate = getCreateCatalogSqlTemplateSecretsRedacted();
         try {
-            assertUpdate(createCatalogSql.formatted(catalog, "PARQUET"));
+            assertUpdate(createCatalogSqlTemplate.formatted(catalog, format));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(createCatalogSql.formatted(catalog, "PARQUET"));
+                    .isEqualTo(showCreateCatalogSqlTemplate.formatted(catalog, format));
 
             assertThatThrownBy(() -> assertUpdate("""
                     ALTER CATALOG %s SET PROPERTIES
@@ -215,7 +206,7 @@ public abstract class BaseIcebergConnectorSmokeTest
                    "iceberg.file-format" = '%2$s'
                 """
                     .formatted(catalog, "ORC"));
-            assertUpdate("CREATE SCHEMA %s.test_dynamic".formatted(catalog));
+            assertUpdate(createSchemaSql(Optional.of(catalog), "test_dynamic"));
             assertUpdate("CREATE TABLE %s.test_dynamic.test_table as SELECT * FROM tpch.tiny.region".formatted(catalog), 5);
             assertThat((String) computeScalar("SHOW CREATE TABLE %s.test_dynamic.test_table".formatted(catalog))).contains("format = 'ORC'");
         }
@@ -223,6 +214,19 @@ public abstract class BaseIcebergConnectorSmokeTest
             assertUpdate("DROP SCHEMA IF EXISTS %s.test_dynamic CASCADE".formatted(catalog));
             assertUpdate("DROP CATALOG IF EXISTS " + catalog);
         }
+    }
+
+    protected String getCreateCatalogSqlTemplate(){
+        return  """
+                CREATE CATALOG %1$s USING iceberg
+                WITH (
+                   "iceberg.file-format" = '%2$s'
+                )""";
+    }
+
+    protected String getCreateCatalogSqlTemplateSecretsRedacted()
+    {
+        return getCreateCatalogSqlTemplate();
     }
 
     @Test

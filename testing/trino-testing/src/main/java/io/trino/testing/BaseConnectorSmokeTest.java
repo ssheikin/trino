@@ -22,6 +22,7 @@ import io.trino.tpch.TpchTable;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static io.trino.spi.connector.ConnectorMetadata.MODIFYING_ROWS_MESSAGE;
@@ -71,6 +72,11 @@ public abstract class BaseConnectorSmokeTest
     protected String createSchemaSql(String schemaName)
     {
         return "CREATE SCHEMA " + schemaName;
+    }
+
+    protected String createSchemaSql(Optional<String> catalogName, String schemaName)
+    {
+        return createSchemaSql(catalogName.orElseThrow() + "." + schemaName);
     }
 
     /**
