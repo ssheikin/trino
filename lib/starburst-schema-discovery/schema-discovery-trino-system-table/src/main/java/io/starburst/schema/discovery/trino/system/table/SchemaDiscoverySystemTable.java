@@ -21,6 +21,7 @@ import io.starburst.schema.discovery.formats.csv.CsvOptions;
 import io.starburst.schema.discovery.infer.OptionDescription;
 import io.starburst.schema.discovery.internal.Column;
 import io.starburst.schema.discovery.models.DiscoveredColumns;
+import io.starburst.schema.discovery.models.DiscoveredIdentifier;
 import io.starburst.schema.discovery.models.DiscoveredTable;
 import io.starburst.schema.discovery.models.GeneratedOperations;
 import io.starburst.schema.discovery.models.TableFormat;
@@ -111,7 +112,7 @@ public final class SchemaDiscoverySystemTable
         DiscoveryConfig discoveryConfig = new DiscoveryConfig(
                 uri,
                 options,
-                new GenerateOptions(schema.isBlank() ? "discovered" : schema, maxBucketQuantity, true, Optional.empty()),
+                new GenerateOptions(DiscoveredIdentifier.of(schema.isBlank() ? "discovered" : schema), maxBucketQuantity, true, Optional.empty()),
                 previousMetadataJson,
                 rescanType,
                 rescanUri,
