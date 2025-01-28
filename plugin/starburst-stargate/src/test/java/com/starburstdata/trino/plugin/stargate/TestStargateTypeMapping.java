@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -65,13 +64,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestStargateTypeMapping
         extends AbstractTestQueryFramework
 {
-    private static final LocalDate EPOCH_DAY = LocalDate.ofEpochDay(0);
-
     private DistributedQueryRunner starburstEnterprise;
     private TrinoSqlExecutor remoteExecutor;
 
     private final ZoneId jvmZone = ZoneId.systemDefault();
-    private final LocalDateTime timeGapInJvmZone1 = LocalDateTime.of(1970, 1, 1, 0, 13, 42);
+    private final LocalDateTime timeGapInJvmZone1 = LocalDateTime.of(1932, 4, 1, 0, 13, 42);
     private final LocalDateTime timeGapInJvmZone2 = LocalDateTime.of(2018, 4, 1, 2, 13, 55, 123_000_000);
     private final LocalDateTime timeDoubledInJvmZone = LocalDateTime.of(2018, 10, 28, 1, 33, 17, 456_000_000);
 
@@ -80,7 +77,7 @@ public class TestStargateTypeMapping
     private final LocalDateTime timeGapInVilnius = LocalDateTime.of(2018, 3, 25, 3, 17, 17);
     private final LocalDateTime timeDoubledInVilnius = LocalDateTime.of(2018, 10, 28, 3, 33, 33, 333_000_000);
 
-    // minutes offset change since 1970-01-01, no DST
+    // minutes offset change since 1932-04-01, no DST
     private final ZoneId kathmandu = ZoneId.of("Asia/Kathmandu");
     private final LocalDateTime timeGapInKathmandu = LocalDateTime.of(1986, 1, 1, 0, 13, 7);
 
@@ -272,7 +269,7 @@ public class TestStargateTypeMapping
     {
         ZoneId jvmZone = ZoneId.systemDefault();
         checkState(jvmZone.getId().equals("America/Bahia_Banderas"), "This test assumes certain JVM time zone");
-        LocalDate dateOfLocalTimeChangeForwardAtMidnightInJvmZone = LocalDate.of(1970, 1, 1);
+        LocalDate dateOfLocalTimeChangeForwardAtMidnightInJvmZone = LocalDate.of(1932, 4, 1);
         checkIsGap(jvmZone, dateOfLocalTimeChangeForwardAtMidnightInJvmZone.atStartOfDay());
 
         ZoneId someZone = ZoneId.of("Europe/Vilnius");
@@ -326,9 +323,6 @@ public class TestStargateTypeMapping
         Session session = Session.builder(getQueryRunner().getDefaultSession())
                 .setTimeZoneKey(TimeZoneKey.getTimeZoneKey(sessionZone.getId()))
                 .build();
-
-        LocalTime timeGapInJvmZone = LocalTime.of(0, 12, 34);
-        checkIsGap(jvmZone, timeGapInJvmZone.atDate(EPOCH_DAY));
 
         SqlDataTypeTest.create()
                 .addRoundTrip("time(9)", "TIME '23:59:59.000000000'", createTimeType(9), "TIME '23:59:59.000000000'")
@@ -398,9 +392,6 @@ public class TestStargateTypeMapping
         Session session = Session.builder(getQueryRunner().getDefaultSession())
                 .setTimeZoneKey(TimeZoneKey.getTimeZoneKey(sessionZone.getId()))
                 .build();
-
-        LocalTime timeGapInJvmZone = LocalTime.of(0, 12, 34);
-        checkIsGap(jvmZone, timeGapInJvmZone.atDate(EPOCH_DAY));
 
         SqlDataTypeTest.create()
                 .addRoundTrip("time(0) with time zone", "TIME '01:12:34+00:00'", createTimeWithTimeZoneType(0), "TIME '01:12:34+00:00'")
