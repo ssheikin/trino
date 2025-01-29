@@ -565,7 +565,7 @@ public class TrinoJdbcCatalog
     @Override
     public void updateMaterializedViewRefreshSchedule(ConnectorSession session, SchemaTableName viewName, Optional<RefreshSchedule> schedule)
     {
-        throw new TrinoException(NOT_SUPPORTED, "updateMaterializedViewColumnComment is not supported for Iceberg JDBC catalogs");
+        throw new TrinoException(NOT_SUPPORTED, "updateMaterializedViewRefreshSchedule is not supported for Iceberg JDBC catalogs");
     }
 
     @Override
