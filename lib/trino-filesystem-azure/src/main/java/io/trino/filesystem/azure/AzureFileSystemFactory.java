@@ -96,7 +96,6 @@ public class AzureFileSystemFactory
         HttpClientOptions clientOptions = new HttpClientOptions();
         clientOptions.setTracingOptions(tracingOptions);
         clientOptions.setApplicationId(applicationId);
-        clientOptions.setMaximumConnectionPoolSize(maxHttpRequests);
         httpClient = createAzureHttpClient(connectionProvider, eventLoopGroup, clientOptions);
     }
 
@@ -137,10 +136,6 @@ public class AzureFileSystemFactory
 
     public static HttpClient createAzureHttpClient(ConnectionProvider connectionProvider, EventLoopGroup eventLoopGroup, HttpClientOptions clientOptions)
     {
-        Integer poolSize = clientOptions.getMaximumConnectionPoolSize();
-        int maximumConnectionPoolSize = (poolSize != null && poolSize > 0) ? poolSize : 5;
-        clientOptions.setMaximumConnectionPoolSize(maximumConnectionPoolSize);
-
         return new NettyAsyncHttpClientBuilder()
                 .proxy(clientOptions.getProxyOptions())
                 .configuration(clientOptions.getConfiguration())
