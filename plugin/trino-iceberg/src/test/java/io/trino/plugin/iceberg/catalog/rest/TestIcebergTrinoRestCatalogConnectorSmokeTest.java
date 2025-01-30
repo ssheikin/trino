@@ -59,6 +59,7 @@ public class TestIcebergTrinoRestCatalogConnectorSmokeTest
     private File warehouseLocation;
 
     private JdbcCatalog backend;
+    private String testCatalogUri;
 
     public TestIcebergTrinoRestCatalogConnectorSmokeTest()
     {
@@ -93,18 +94,42 @@ public class TestIcebergTrinoRestCatalogConnectorSmokeTest
         testServer.start();
         closeAfterClass(testServer::stop);
 
+        testCatalogUri = testServer.getBaseUrl().toString();
         return IcebergQueryRunner.builder()
                 .setBaseDataDir(Optional.of(warehouseLocation.toPath()))
                 .setIcebergProperties(
                         ImmutableMap.<String, String>builder()
                                 .put("iceberg.file-format", format.name())
                                 .put("iceberg.catalog.type", "rest")
-                                .put("iceberg.rest-catalog.uri", testServer.getBaseUrl().toString())
+                                .put("iceberg.rest-catalog.uri", testCatalogUri)
                                 .put("iceberg.register-table-procedure.enabled", "true")
                                 .put("iceberg.writer-sort-buffer-size", "1MB")
                                 .buildOrThrow())
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplate()
+    {
+        return """
+                CREATE CATALOG %s USING iceberg
+                WITH (
+                   "fs.hadoop.enabled" = 'true',
+                   "iceberg.catalog.type" = 'rest',
+                   "iceberg.file-format" = '%s',
+                   "iceberg.rest-catalog.uri" = '%s'
+                )""".formatted(
+                "%1$s", // Catalog name
+                "%2$s", // File format
+                testCatalogUri
+        );
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplateSecretsRedacted()
+    {
+        return getCreateCatalogSqlTemplate();
     }
 
     @AfterAll

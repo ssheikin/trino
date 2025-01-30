@@ -39,6 +39,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
         extends BaseIcebergConnectorSmokeTest
 {
     private final File warehouseLocation;
+    private String restCatalogUri;
 
     public TestIcebergUnityRestCatalogConnectorSmokeTest()
     {
@@ -64,12 +65,13 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
         closeAfterClass(() -> deleteRecursively(warehouseLocation.toPath(), ALLOW_INSECURE));
         UnityCatalogContainer unityCatalog = closeAfterClass(new UnityCatalogContainer("unity", "tpch"));
 
+        restCatalogUri = unityCatalog.uri() + "/iceberg";
         DistributedQueryRunner queryRunner = IcebergQueryRunner.builder()
                 .setBaseDataDir(Optional.of(warehouseLocation.toPath()))
                 .addIcebergProperty("iceberg.file-format", format.name())
                 .addIcebergProperty("iceberg.security", "read_only")
                 .addIcebergProperty("iceberg.catalog.type", "rest")
-                .addIcebergProperty("iceberg.rest-catalog.uri", unityCatalog.uri() + "/iceberg")
+                .addIcebergProperty("iceberg.rest-catalog.uri", restCatalogUri)
                 .addIcebergProperty("iceberg.rest-catalog.warehouse", "unity")
                 .addIcebergProperty("iceberg.register-table-procedure.enabled", "true")
                 .disableSchemaInitializer()
@@ -78,6 +80,31 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
         unityCatalog.copyTpchTables(REQUIRED_TPCH_TABLES);
 
         return queryRunner;
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplate()
+    {
+        return """
+                CREATE CATALOG %s USING iceberg
+                WITH (
+                   "fs.hadoop.enabled" = 'true',
+                   "iceberg.catalog.type" = 'rest',
+                   "iceberg.file-format" = '%s',
+                   "iceberg.rest-catalog.uri" = '%s',
+                   "iceberg.rest-catalog.warehouse" = 'unity',
+                   "iceberg.security" = 'read_only'
+                )""".formatted(
+                "%1$s", // Catalog name
+                "%2$s", // File format
+                restCatalogUri
+        );
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplateSecretsRedacted()
+    {
+        return getCreateCatalogSqlTemplate();
     }
 
     @Override
@@ -518,6 +545,14 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     public void testTruncateTable()
     {
         assertThatThrownBy(super::testTruncateTable)
+                .hasMessageContaining("Access Denied");
+    }
+
+    @Test
+    @Override
+    public void testCatalogSetProperties()
+    {
+        assertThatThrownBy(super::testCatalogSetProperties)
                 .hasMessageContaining("Access Denied");
     }
 }

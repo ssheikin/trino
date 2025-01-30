@@ -66,6 +66,7 @@ public class TestIcebergNessieCatalogConnectorSmokeTest
 {
     private Path tempDir;
     private NessieCatalog catalog;
+    private String restApiUri;
 
     public TestIcebergNessieCatalogConnectorSmokeTest()
     {
@@ -88,9 +89,10 @@ public class TestIcebergNessieCatalogConnectorSmokeTest
 
         tempDir = Files.createTempDirectory("test_trino_nessie_catalog");
 
+        restApiUri = nessieContainer.getRestApiUri();
         catalog = (NessieCatalog) buildIcebergCatalog("tpch", ImmutableMap.<String, String>builder()
                         .put(CATALOG_IMPL, NessieCatalog.class.getName())
-                        .put(URI, nessieContainer.getRestApiUri())
+                        .put(URI, restApiUri)
                         .put(WAREHOUSE_LOCATION, tempDir.toString())
                         .buildOrThrow(),
                 new Configuration(false));
@@ -111,6 +113,31 @@ public class TestIcebergNessieCatalogConnectorSmokeTest
                                         .build())
                                 .build())
                 .build();
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplate()
+    {
+        return """
+                CREATE CATALOG %s USING iceberg
+                WITH (
+                   "fs.hadoop.enabled" = 'true',
+                   "iceberg.catalog.type" = 'nessie',
+                   "iceberg.file-format" = '%s',
+                   "iceberg.nessie-catalog.default-warehouse-dir" = '%s',
+                   "iceberg.nessie-catalog.uri" = '%s'
+                )""".formatted(
+                "%1$s", // Catalog name
+                "%2$s", // File format
+                tempDir.toString(),
+                restApiUri
+        );
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplateSecretsRedacted()
+    {
+        return getCreateCatalogSqlTemplate();
     }
 
     @Override

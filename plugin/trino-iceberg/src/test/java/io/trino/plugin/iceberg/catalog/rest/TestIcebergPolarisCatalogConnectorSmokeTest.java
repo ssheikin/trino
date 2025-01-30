@@ -55,6 +55,7 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
 {
     private TestingPolarisCatalog polarisCatalog;
     private File warehouseLocation;
+    private String catalogUri;
 
     public TestIcebergPolarisCatalogConnectorSmokeTest()
     {
@@ -78,6 +79,7 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
         warehouseLocation = Files.newTemporaryFolder();
         polarisCatalog = closeAfterClass(new TestingPolarisCatalog(warehouseLocation.getPath()));
 
+        catalogUri = polarisCatalog.restUri() + "/api/catalog";
         return IcebergQueryRunner.builder()
                 .setBaseDataDir(Optional.of(warehouseLocation.toPath()))
                 .addIcebergProperty("iceberg.file-format", format.name())
@@ -85,13 +87,47 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
                 .addIcebergProperty("iceberg.writer-sort-buffer-size", "1MB")
                 .addIcebergProperty("iceberg.catalog.type", "rest")
                 .addIcebergProperty("iceberg.rest-catalog.nested-namespace-enabled", "true")
-                .addIcebergProperty("iceberg.rest-catalog.uri", polarisCatalog.restUri() + "/api/catalog")
+                .addIcebergProperty("iceberg.rest-catalog.uri", catalogUri)
                 .addIcebergProperty("iceberg.rest-catalog.warehouse", TestingPolarisCatalog.WAREHOUSE)
                 .addIcebergProperty("iceberg.rest-catalog.security", "OAUTH2")
                 .addIcebergProperty("iceberg.rest-catalog.oauth2.credential", polarisCatalog.oauth2Credentials())
                 .addIcebergProperty("iceberg.rest-catalog.oauth2.scope", "PRINCIPAL_ROLE:ALL")
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplate()
+    {
+        return getCreateCatalogSqlTemplate(polarisCatalog.oauth2Credentials());
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplateSecretsRedacted()
+    {
+        return getCreateCatalogSqlTemplate("***");
+    }
+
+    private String getCreateCatalogSqlTemplate(String credential)
+    {
+        return """
+                CREATE CATALOG %s USING iceberg
+                WITH (
+                   "fs.hadoop.enabled" = 'true',
+                   "iceberg.catalog.type" = 'rest',
+                   "iceberg.file-format" = '%s',
+                   "iceberg.rest-catalog.oauth2.credential" = '%s',
+                   "iceberg.rest-catalog.oauth2.scope" = 'PRINCIPAL_ROLE:ALL',
+                   "iceberg.rest-catalog.security" = 'OAUTH2',
+                   "iceberg.rest-catalog.uri" = '%s',
+                   "iceberg.rest-catalog.warehouse" = '%s'
+                )""".formatted(
+                "%1$s", // Catalog name
+                "%2$s", // File format
+                credential,
+                catalogUri,
+                TestingPolarisCatalog.WAREHOUSE
+        );
     }
 
     @Override

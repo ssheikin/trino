@@ -63,6 +63,7 @@ public class TestIcebergJdbcCatalogConnectorSmokeTest
 {
     private JdbcCatalog jdbcCatalog;
     private File warehouseLocation;
+    private TestingIcebergJdbcServer server;
 
     public TestIcebergJdbcCatalogConnectorSmokeTest()
     {
@@ -86,7 +87,7 @@ public class TestIcebergJdbcCatalogConnectorSmokeTest
     {
         warehouseLocation = Files.createTempDirectory("test_iceberg_jdbc_catalog_smoke_test").toFile();
         closeAfterClass(() -> deleteRecursively(warehouseLocation.toPath(), ALLOW_INSECURE));
-        TestingIcebergJdbcServer server = closeAfterClass(new TestingIcebergJdbcServer());
+        server = closeAfterClass(new TestingIcebergJdbcServer());
         jdbcCatalog = (JdbcCatalog) buildIcebergCatalog("tpch", ImmutableMap.<String, String>builder()
                         .put(CATALOG_IMPL, JdbcCatalog.class.getName())
                         .put(URI, server.getJdbcUrl())
@@ -113,6 +114,42 @@ public class TestIcebergJdbcCatalogConnectorSmokeTest
                                 .buildOrThrow())
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplate()
+    {
+        return getCreateCatalogSqlTemplate(server.getJdbcUrl(), PASSWORD);
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplateSecretsRedacted()
+    {
+        return getCreateCatalogSqlTemplate("***", "***");
+    }
+
+    private String getCreateCatalogSqlTemplate(String url, String password)
+    {
+        return """
+                CREATE CATALOG %s USING iceberg
+                WITH (
+                   "fs.hadoop.enabled" = 'true',
+                   "iceberg.catalog.type" = 'jdbc',
+                   "iceberg.file-format" = '%s',
+                   "iceberg.jdbc-catalog.catalog-name" = 'test_catalog',
+                   "iceberg.jdbc-catalog.connection-password" = '%s',
+                   "iceberg.jdbc-catalog.connection-url" = '%s',
+                   "iceberg.jdbc-catalog.connection-user" = '%s',
+                   "iceberg.jdbc-catalog.default-warehouse-dir" = '%s',
+                   "iceberg.jdbc-catalog.driver-class" = 'org.postgresql.Driver'
+                )""".formatted(
+                "%1$s", // Catalog name
+                "%2$s", // File format
+                password,
+                url,
+                USER,
+                warehouseLocation.getAbsolutePath()
+        );
     }
 
     @AfterAll

@@ -22,6 +22,7 @@ import io.trino.testing.QueryFailedException;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.tpch.TpchTable;
+import org.apache.iceberg.FileFormat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -35,6 +36,7 @@ import static io.trino.plugin.iceberg.catalog.snowflake.TestingSnowflakeServer.S
 import static io.trino.plugin.iceberg.catalog.snowflake.TestingSnowflakeServer.SNOWFLAKE_USER;
 import static io.trino.plugin.iceberg.catalog.snowflake.TestingSnowflakeServer.TableType.ICEBERG;
 import static io.trino.plugin.iceberg.catalog.snowflake.TestingSnowflakeServer.TableType.NATIVE;
+import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.testing.TestingProperties.requiredNonEmptySystemProperty;
 import static java.util.Locale.ENGLISH;
 import static org.apache.iceberg.FileFormat.PARQUET;
@@ -119,6 +121,51 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
                                 .withSchemaName(SNOWFLAKE_TEST_SCHEMA.toLowerCase(ENGLISH))
                                 .build())
                 .build();
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplate()
+    {
+        return getCreateCatalogSqlTemplate(S3_SECRET_KEY, SNOWFLAKE_PASSWORD, "SNAPPY");
+    }
+
+    @Override
+    protected String getCreateCatalogSqlTemplateSecretsRedacted()
+    {
+        return getCreateCatalogSqlTemplate("***", "***", "SNAPPY");
+    }
+
+    private String getCreateCatalogSqlTemplate(String s3SecretKey, String snowflakePassword, String compressionCodec)
+    {
+        return """
+                CREATE CATALOG %s USING iceberg
+                WITH (
+                   "fs.hadoop.enabled" = 'true',
+                   "fs.native-s3.enabled" = 'true',
+                   "iceberg.catalog.type" = 'snowflake',
+                   "iceberg.compression-codec" = '%s',
+                   "iceberg.file-format" = '%s',
+                   "iceberg.snowflake-catalog.account-uri" = '%s',
+                   "iceberg.snowflake-catalog.database" = '%s',
+                   "iceberg.snowflake-catalog.password" = '%s',
+                   "iceberg.snowflake-catalog.role" = '%s',
+                   "iceberg.snowflake-catalog.user" = '%s',
+                   "s3.aws-access-key" = '%s',
+                   "s3.aws-secret-key" = '%s',
+                   "s3.region" = '%s'
+                )""".formatted(
+                "%1$s", // Catalog name
+                compressionCodec,
+                "%2$s", // File format
+                SNOWFLAKE_JDBC_URI,
+                SNOWFLAKE_TEST_DATABASE,
+                snowflakePassword,
+                SNOWFLAKE_ROLE,
+                SNOWFLAKE_USER,
+                S3_ACCESS_KEY,
+                s3SecretKey,
+                S3_REGION
+        );
     }
 
     @Override
@@ -682,6 +729,77 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
         assertThatThrownBy(() -> assertQuery("SELECT count(*) FROM " + snowflakeNativeTableName))
                 .hasCauseInstanceOf(QueryFailedException.class)
                 .hasRootCauseMessage("SQL compilation error:\ninvalid parameter 'table ? is not a Snowflake iceberg table'");
+    }
+
+    // Snowflake only supports Iceberg tables that use the Parquet file format.
+    // Base test uses iceberg.file-format (PARQUET and ORC) for checking setting correctness. This test uses iceberg.compression-codec instead
+    @Override
+    @Test
+    public void testCreateMultipleCatalogs()
+    {
+        String firstCatalog = "catalog_" + randomNameSuffix();
+        String firstCreateCatalogSql = getCreateCatalogSqlTemplate(S3_SECRET_KEY, SNOWFLAKE_PASSWORD, "SNAPPY")
+                .formatted(firstCatalog, FileFormat.PARQUET);
+        String firstShowCreateCatalogSql = getCreateCatalogSqlTemplate("***", "***", "SNAPPY")
+                .formatted(firstCatalog, FileFormat.PARQUET);
+        String secondCatalog = "catalog2_" + randomNameSuffix();
+        String secondCreateCatalogSql = getCreateCatalogSqlTemplate(S3_SECRET_KEY, SNOWFLAKE_PASSWORD, "SNAPPY")
+                .formatted(secondCatalog, FileFormat.PARQUET);
+        String secondShowCreateCatalogSql = getCreateCatalogSqlTemplate("***", "***", "SNAPPY")
+                .formatted(secondCatalog, FileFormat.PARQUET);
+        try {
+            assertUpdate(firstCreateCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
+                    .isEqualTo(firstShowCreateCatalogSql);
+            assertQuerySucceeds("SHOW SCHEMAS FROM " + firstCatalog);
+
+            assertUpdate(secondCreateCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
+                    .isEqualTo(secondShowCreateCatalogSql);
+            assertQuerySucceeds("SHOW SCHEMAS FROM " + secondCatalog);
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + firstCatalog);
+            assertUpdate("DROP CATALOG IF EXISTS " + secondCatalog);
+        }
+    }
+
+    // Snowflake only supports Iceberg tables that use the Parquet file format.
+    // Base test uses iceberg.file-format (PARQUET and ORC) for checking setting correctness. This test uses iceberg.snowflake-catalog.password instead
+    @Override
+    @Test
+    public void testCatalogSetProperties()
+    {
+        String catalog = "catalog_set_props_" + randomNameSuffix();
+        String createCatalogSqlTemplate = getCreateCatalogSqlTemplate();
+        String showCreateCatalogSqlTemplate = getCreateCatalogSqlTemplateSecretsRedacted();
+        try {
+            assertUpdate(createCatalogSqlTemplate.formatted(catalog, format));
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
+                    .isEqualTo(showCreateCatalogSqlTemplate.formatted(catalog, format));
+
+            assertThatThrownBy(() -> assertUpdate("""
+                    ALTER CATALOG %s SET PROPERTIES
+                       "iceberg.file-format" = 'ORC'
+                    """
+                    .formatted(catalog))).hasMessageContaining("Snowflake only supports Iceberg tables that use the Parquet file format");
+            assertUpdate("""
+                ALTER CATALOG %1$s SET PROPERTIES
+                   "iceberg.snowflake-catalog.password" = 'invalid'
+                """
+                    .formatted(catalog));
+            assertThatThrownBy(() -> computeActual("SHOW SCHEMAS FROM " + catalog))
+                    .hasMessageContaining("Failed to connect");
+            assertUpdate("""
+                ALTER CATALOG %1$s SET PROPERTIES
+                   "iceberg.snowflake-catalog.password" = '%2$s'
+                """
+                    .formatted(catalog, SNOWFLAKE_PASSWORD));
+            assertQuerySucceeds("SHOW SCHEMAS FROM " + catalog);
+        }
+        finally {
+            assertUpdate("DROP CATALOG IF EXISTS " + catalog);
+        }
     }
 
     @Override
