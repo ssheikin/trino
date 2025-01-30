@@ -11,12 +11,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.warp.dispatcher.warmup;
+package io.trino.plugin.warp.dispatcher.warmup.events;
 
-import io.trino.plugin.warp.expression.TransformFunction;
-import io.trino.plugin.warp.gen.constants.WarmUpType;
-
-import java.io.Serializable;
-
-public record WarmupProperties(WarmUpType warmUpType, double priority, int ttl, TransformFunction transformFunction)
-        implements Serializable {}
+public record WarmupDemoterConfigChangedEvent() {}
