@@ -31,6 +31,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -327,6 +328,9 @@ public class TestStargateParallelTypeMapping
                 .setTimeZoneKey(TimeZoneKey.getTimeZoneKey(sessionZone.getId()))
                 .build();
 
+        LocalTime timeGapInJvmZone = LocalTime.of(0, 12, 34);
+        checkIsGap(jvmZone, timeGapInJvmZone.atDate(timeGapInJvmZone1.toLocalDate()));
+
         SqlDataTypeTest.create()
                 .addRoundTrip("time(9)", "TIME '23:59:59.000000000'", createTimeType(9), "TIME '23:59:59.000000000'")
                 .addRoundTrip("time(9)", "TIME '23:59:59.123456789'", createTimeType(9), "TIME '23:59:59.123456789'")
@@ -395,6 +399,9 @@ public class TestStargateParallelTypeMapping
         Session session = Session.builder(getQueryRunner().getDefaultSession())
                 .setTimeZoneKey(TimeZoneKey.getTimeZoneKey(sessionZone.getId()))
                 .build();
+
+        LocalTime timeGapInJvmZone = LocalTime.of(0, 12, 34);
+        checkIsGap(jvmZone, timeGapInJvmZone.atDate(timeGapInJvmZone1.toLocalDate()));
 
         SqlDataTypeTest.create()
                 .addRoundTrip("time(0) with time zone", "TIME '01:12:34+00:00'", createTimeWithTimeZoneType(0), "TIME '01:12:34+00:00'")

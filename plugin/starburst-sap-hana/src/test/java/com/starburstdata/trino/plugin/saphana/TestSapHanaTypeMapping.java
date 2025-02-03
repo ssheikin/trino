@@ -571,6 +571,9 @@ public class TestSapHanaTypeMapping
                 .setTimeZoneKey(TimeZoneKey.getTimeZoneKey(sessionZone.getId()))
                 .build();
 
+        LocalTime timeGapInJvmZone = LocalTime.of(0, 12, 34, 567_000_000);
+        checkIsGap(jvmZone, timeGapInJvmZone.atDate(timeGapInJvmZone1.toLocalDate()));
+
         // SAP HANA's TIME does not support second fraction
         SqlDataTypeTest.create()
                 .addRoundTrip("time", "TIME '01:12:34.000000000'", createTimeType(0), "TIME '01:12:34'")
@@ -597,6 +600,9 @@ public class TestSapHanaTypeMapping
         Session session = Session.builder(getQueryRunner().getDefaultSession())
                 .setTimeZoneKey(TimeZoneKey.getTimeZoneKey(sessionZone.getId()))
                 .build();
+
+        LocalTime timeGapInJvmZone = LocalTime.of(0, 12, 34);
+        checkIsGap(jvmZone, timeGapInJvmZone.atDate(timeGapInJvmZone1.toLocalDate()));
 
         // TODO: Need to check round up behavior
         SqlDataTypeTest.create()
