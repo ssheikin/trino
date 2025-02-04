@@ -22,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Throwables.throwIfUnchecked;
@@ -80,16 +81,7 @@ public class DispatcherConnectorFactory
                             catalogName,
                             config,
                             optionalModuleInstances,
-                            proxiedConnectorInitializerMap.entrySet()
-                                    .stream()
-                                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-                                        try {
-                                            return classLoader.loadClass(entry.getValue()).getDeclaredConstructor().newInstance();
-                                        }
-                                        catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    })),
+                            createProxiedConnectorInitializers(proxiedConnectorInitializerMap, classLoader),
                             storageEngineModule,
                             Optional.ofNullable(proxyModule),
                             context);
@@ -102,5 +94,54 @@ public class DispatcherConnectorFactory
         catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Set<String> getSecuritySensitivePropertyNames(
+            String catalogName,
+            Map<String, String> config,
+            ConnectorContext context,
+            Optional<List<Class<? extends InitializationModule>>> optionalModules,
+            Map<String, String> proxiedConnectorInitializerMap)
+    {
+        try {
+            ClassLoader classLoader = this.getClass().getClassLoader();
+            Class<?> optionalClass = classLoader.loadClass(Optional.class.getName());
+
+            return (Set<String>) classLoader.loadClass(InternalDispatcherConnectorFactory.class.getName())
+                    .getMethod("getSecuritySensitivePropertyNames",
+                            String.class,
+                            Map.class,
+                            Map.class,
+                            optionalClass,
+                            WarpConnectorContext.class)
+                    .invoke(null,
+                            catalogName,
+                            config,
+                            createProxiedConnectorInitializers(proxiedConnectorInitializerMap, classLoader),
+                            Optional.ofNullable(proxyModule),
+                            context);
+        }
+        catch (InvocationTargetException e) {
+            Throwable targetException = e.getTargetException();
+            throwIfUnchecked(targetException);
+            throw new RuntimeException(targetException);
+        }
+        catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Map<String, ?> createProxiedConnectorInitializers(Map<String, String> proxiedConnectorInitializerMap, ClassLoader classLoader)
+    {
+        return proxiedConnectorInitializerMap.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                    try {
+                        return classLoader.loadClass(entry.getValue()).getDeclaredConstructor().newInstance();
+                    }
+                    catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
     }
 }

@@ -34,12 +34,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
 public class WarpConnectorFactory
         implements ConnectorFactory
 {
+    private static final Map<String, String> PROXIED_CONNECTOR_INITIALIZERS = Map.of(
+            ProxiedConnectorConfig.DELTA_LAKE_CONNECTOR_NAME, DeltaLakeProxiedConnectorInitializer.class.getName(),
+            ProxiedConnectorConfig.HIVE_CONNECTOR_NAME, HiveProxiedConnectorInitializer.class.getName(),
+            ProxiedConnectorConfig.ICEBERG_CONNECTOR_NAME, IcebergProxiedConnectorInitializer.class.getName());
+
     private final DispatcherConnectorFactory dispatcherConnectorFactory;
     private final LicenseVerifier licenseVerifier;
     private final DemoterSync demoterSync;
@@ -54,7 +60,7 @@ public class WarpConnectorFactory
         this.dispatcherConnectorFactory = requireNonNull(dispatcherConnectorFactory);
         this.licenseVerifier = requireNonNull(licenseVerifier, "licenseManager is null");
         this.demoterSync = requireNonNull(demoterSync, "demoterSync is null");
-        this.extraModules = requireNonNull(extraModules, "extraModules is null");
+        this.extraModules = !extraModules.isEmpty() ? extraModules : List.of(WarpModule.class);
     }
 
     @Override
@@ -70,6 +76,29 @@ public class WarpConnectorFactory
 
         WarpConnectorContext warpConnectorContext = new WarpConnectorContext(context, demoterSync);
 
+        return new StarburstWarpConnector(dispatcherConnectorFactory.create(
+                catalogName,
+                buildConfig(config, warpConnectorContext),
+                warpConnectorContext,
+                Optional.of(extraModules),
+                PROXIED_CONNECTOR_INITIALIZERS));
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        WarpConnectorContext warpConnectorContext = new WarpConnectorContext(context, demoterSync);
+
+        return dispatcherConnectorFactory.getSecuritySensitivePropertyNames(
+                catalogName,
+                buildConfig(config, warpConnectorContext),
+                warpConnectorContext,
+                Optional.of(extraModules),
+                PROXIED_CONNECTOR_INITIALIZERS);
+    }
+
+    private static Map<String, String> buildConfig(Map<String, String> config, WarpConnectorContext warpConnectorContext)
+    {
         Map<String, String> configMap = new HashMap<>(config);
 
         ConfigurationFactory configFactory = new ConfigurationFactory(config);
@@ -86,16 +115,6 @@ public class WarpConnectorFactory
             }
         }
 
-        List<Class<? extends InitializationModule>> extraModules = !this.extraModules.isEmpty() ?
-                this.extraModules :
-                List.of(WarpModule.class);
-        return new StarburstWarpConnector(dispatcherConnectorFactory.create(
-                catalogName,
-                configMap,
-                warpConnectorContext,
-                Optional.of(extraModules),
-                Map.of(ProxiedConnectorConfig.DELTA_LAKE_CONNECTOR_NAME, DeltaLakeProxiedConnectorInitializer.class.getName(),
-                        ProxiedConnectorConfig.HIVE_CONNECTOR_NAME, HiveProxiedConnectorInitializer.class.getName(),
-                        ProxiedConnectorConfig.ICEBERG_CONNECTOR_NAME, IcebergProxiedConnectorInitializer.class.getName())));
+        return configMap;
     }
 }
