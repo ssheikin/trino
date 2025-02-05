@@ -85,6 +85,17 @@ public class PluginClassLoader
                 spiResources);
     }
 
+    public PluginClassLoader duplicate()
+    {
+        return new PluginClassLoader(
+                pluginName,
+                Optional.empty(),
+                ImmutableList.copyOf(getURLs()),
+                spiClassLoader,
+                spiPackages,
+                spiResources);
+    }
+
     public PluginClassLoader withUrl(URL url)
     {
         List<URL> urls = ImmutableList.<URL>builder().add(getURLs()).add(url).build();

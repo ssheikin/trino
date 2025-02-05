@@ -34,6 +34,7 @@ import io.trino.plugin.base.security.FileBasedSystemAccessControl;
 import io.trino.plugin.base.security.ForwardingSystemAccessControl;
 import io.trino.plugin.base.security.ReadOnlySystemAccessControl;
 import io.trino.plugin.base.util.AutoCloseableCloser;
+import io.trino.server.PluginClassLoader;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
 import io.trino.spi.classloader.ThreadContextClassLoader;
@@ -240,8 +241,11 @@ public class AccessControlManager
         checkState(factory != null, "Access control '%s' is not registered: %s", name, configFile);
 
         SystemAccessControl systemAccessControl;
-        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(factory.getClass().getClassLoader())) {
-            systemAccessControl = factory.create(ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)), createSystemAccessControlContext(name));
+        ClassLoader classLoader = factory.getClass().getClassLoader();
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
+            systemAccessControl = factory.create(
+                    ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)),
+                    createSystemAccessControlContext(name, classLoader));
         }
 
         log.info("-- Loaded system access control %s --", name);
@@ -258,8 +262,11 @@ public class AccessControlManager
         checkState(factory != null, "Access control '%s' is not registered", name);
 
         SystemAccessControl systemAccessControl;
-        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(factory.getClass().getClassLoader())) {
-            systemAccessControl = factory.create(ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)), createSystemAccessControlContext(name));
+        ClassLoader classLoader = factory.getClass().getClassLoader();
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
+            systemAccessControl = factory.create(
+                    ImmutableMap.copyOf(secretsResolver.getResolvedConfiguration(properties)),
+                    createSystemAccessControlContext(name, classLoader));
         }
 
         systemAccessControl.getEventListeners()
@@ -267,7 +274,7 @@ public class AccessControlManager
         setSystemAccessControls(ImmutableList.of(systemAccessControl));
     }
 
-    private SystemAccessControlContext createSystemAccessControlContext(String systemAccessControlName)
+    private SystemAccessControlContext createSystemAccessControlContext(String systemAccessControlName, ClassLoader classLoader)
     {
         return new SystemAccessControlContext()
         {
@@ -290,6 +297,18 @@ public class AccessControlManager
             public Tracer getTracer()
             {
                 return tracer;
+            }
+
+            @Override
+            public ClassLoader duplicatePluginClassLoader()
+            {
+                // this can be called with ApplicationClassloader as well which should not be passed with the context
+                if (classLoader instanceof PluginClassLoader pluginClassLoader) {
+                    return pluginClassLoader.duplicate();
+                }
+                else {
+                    throw new UnsupportedOperationException();
+                }
             }
         };
     }

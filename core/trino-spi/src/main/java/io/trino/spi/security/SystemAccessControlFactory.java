@@ -31,5 +31,10 @@ public interface SystemAccessControlFactory
         OpenTelemetry getOpenTelemetry();
 
         Tracer getTracer();
+
+        default ClassLoader duplicatePluginClassLoader()
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 }
