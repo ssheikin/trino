@@ -361,6 +361,14 @@ public class DispatchManager
                 .count();
     }
 
+    @Managed
+    public long getFullyBlockedQueries()
+    {
+        return queryTracker.getAllQueries().stream()
+                .filter(query -> query.getState() == RUNNING && query.getBasicQueryInfo().getQueryStats().isFullyBlocked())
+                .count();
+    }
+
     public boolean isQueryRegistered(QueryId queryId)
     {
         return queryTracker.hasQuery(queryId);
