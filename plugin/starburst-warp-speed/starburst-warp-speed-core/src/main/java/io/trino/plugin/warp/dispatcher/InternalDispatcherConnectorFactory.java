@@ -43,6 +43,7 @@ import org.weakref.jmx.guice.MBeanModule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -162,7 +163,7 @@ public class InternalDispatcherConnectorFactory
             Map<String, ProxiedConnectorInitializer> proxiedConnectorInitializerMap)
     {
         if (proxiedConnectorInitializerMap.get(proxiedConnector) == null) {
-            throw new RuntimeException(String.format("proxied connector initializer %s is not available", proxiedConnector));
+            throw new RuntimeException(String.format(Locale.US, "proxied connector initializer %s is not available", proxiedConnector));
         }
         return proxiedConnectorInitializerMap.get(proxiedConnector);
     }
