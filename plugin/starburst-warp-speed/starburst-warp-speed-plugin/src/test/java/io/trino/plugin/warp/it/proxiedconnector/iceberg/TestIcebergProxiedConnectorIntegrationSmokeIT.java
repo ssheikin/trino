@@ -97,9 +97,9 @@ public class TestIcebergProxiedConnectorIntegrationSmokeIT
         String expectedShowTemplate = """
                     CREATE CATALOG %s USING warp_speed
                     WITH (
-                       "hive.metastore.uri" = '***',
-                       "iceberg.table-statistics-enabled" = '***',
-                       "warp-speed.proxied-connector" = '***'
+                       "hive.metastore.uri" = 'thrift://localhost:9083',
+                       "iceberg.table-statistics-enabled" = '%2$s',
+                       "warp-speed.proxied-connector" = 'iceberg'
                     )""";
 
         String createCatalogSql = """
@@ -112,10 +112,10 @@ public class TestIcebergProxiedConnectorIntegrationSmokeIT
         try {
             assertUpdate(createCatalogSql.formatted(firstCatalog, "true"));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(expectedShowTemplate.formatted(firstCatalog));
+                    .isEqualTo(expectedShowTemplate.formatted(firstCatalog, "true"));
             assertUpdate(createCatalogSql.formatted(secondCatalog, "false"));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .contains(secondCatalog);
+                    .isEqualTo(expectedShowTemplate.formatted(secondCatalog, "false"));
             assertUpdate("""
                 ALTER CATALOG %s RENAME TO %s
                 """
