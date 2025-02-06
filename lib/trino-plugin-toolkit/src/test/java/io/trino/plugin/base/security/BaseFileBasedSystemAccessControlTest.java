@@ -34,10 +34,14 @@ import io.trino.spi.security.TrinoPrincipal;
 import io.trino.spi.security.ViewExpression;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
-import java.io.File;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +50,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.io.Files.copy;
 import static io.trino.spi.security.PrincipalType.ROLE;
 import static io.trino.spi.security.PrincipalType.USER;
 import static io.trino.spi.security.Privilege.UPDATE;
@@ -54,10 +57,10 @@ import static io.trino.spi.testing.InterfaceTestUtils.assertAllMethodsOverridden
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static java.lang.String.format;
 import static java.lang.Thread.sleep;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.util.Files.newTemporaryFile;
 
 public abstract class BaseFileBasedSystemAccessControlTest
 {
@@ -132,7 +135,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
     private static final String SET_CATALOG_SESSION_PROPERTY_ACCESS_DENIED_MESSAGE = "Cannot set catalog session property .*";
     private static final String EXECUTE_PROCEDURE_ACCESS_DENIED_MESSAGE = "Cannot execute procedure .*";
 
-    protected abstract SystemAccessControl newFileBasedSystemAccessControl(File configFile, Map<String, String> properties);
+    protected abstract SystemAccessControl newFileBasedSystemAccessControl(Path configFile, Map<String, String> properties);
 
     @Test
     public void testEverythingImplemented()
@@ -141,12 +144,11 @@ public abstract class BaseFileBasedSystemAccessControlTest
     }
 
     @Test
-    public void testRefreshing()
+    public void testRefreshing(@TempDir Path tempDir)
             throws Exception
     {
-        File configFile = newTemporaryFile();
-        configFile.deleteOnExit();
-        copy(new File(getResourcePath("file-based-system-catalog.json")), configFile);
+        Path configFile = tempDir.resolve("file-based-system-catalog.json");
+        Files.copy(getResourcePath("file-based-system-catalog.json"), configFile, REPLACE_EXISTING);
 
         SystemAccessControl accessControl = newFileBasedSystemAccessControl(configFile, ImmutableMap.of(
                 "security.refresh-period", "1ms"));
@@ -156,7 +158,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
         accessControl.checkCanCreateView(alice, aliceView);
         accessControl.checkCanCreateView(alice, aliceView);
 
-        copy(new File(getResourcePath("file-based-system-security-config-file-with-unknown-rules.json")), configFile);
+        Files.copy(getResourcePath("file-based-system-security-config-file-with-unknown-rules.json"), configFile, REPLACE_EXISTING);
         sleep(2);
 
         assertThatThrownBy(() -> accessControl.checkCanCreateView(alice, aliceView))
@@ -166,7 +168,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
         assertThatThrownBy(() -> accessControl.checkCanCreateView(alice, aliceView))
                 .hasMessageContaining("Failed to convert JSON tree node");
 
-        copy(new File(getResourcePath("file-based-system-catalog.json")), configFile);
+        Files.copy(getResourcePath("file-based-system-catalog.json"), configFile, REPLACE_EXISTING);
         sleep(2);
 
         accessControl.checkCanCreateView(alice, aliceView);
@@ -174,6 +176,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testEmptyFile()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("empty.json");
 
@@ -233,6 +236,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaRulesForCheckCanCreateSchema()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-schema.json");
 
@@ -255,6 +259,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaRulesForCheckCanDropSchema()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-schema.json");
 
@@ -276,6 +281,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaRulesForCheckCanRenameSchema()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-schema.json");
 
@@ -298,6 +304,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaRulesForCheckCanShowCreateSchema()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-schema.json");
 
@@ -319,6 +326,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testGrantSchemaPrivilege()
+            throws Exception
     {
         for (Privilege privilege : Privilege.values()) {
             testGrantSchemaPrivilege(privilege, false);
@@ -327,6 +335,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
     }
 
     private void testGrantSchemaPrivilege(Privilege privilege, boolean grantOption)
+            throws URISyntaxException
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-schema.json");
         TrinoPrincipal grantee = new TrinoPrincipal(USER, "alice");
@@ -357,6 +366,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testDenySchemaPrivilege()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-schema.json");
         TrinoPrincipal grantee = new TrinoPrincipal(USER, "alice");
@@ -387,6 +397,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testRevokeSchemaPrivilege()
+            throws Exception
     {
         for (Privilege privilege : Privilege.values()) {
             testRevokeSchemaPrivilege(privilege, false);
@@ -395,6 +406,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
     }
 
     private void testRevokeSchemaPrivilege(Privilege privilege, boolean grantOption)
+            throws URISyntaxException
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-schema.json");
         TrinoPrincipal grantee = new TrinoPrincipal(USER, "alice");
@@ -425,6 +437,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanSelectFromColumns()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -461,6 +474,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanCreateViewWithSelectFromColumns()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -490,6 +504,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanShowColumns()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -499,6 +514,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanShowColumnsWithNoAccess()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-no-access.json");
         assertAccessDenied(() -> accessControl.checkCanShowColumns(BOB, new CatalogSchemaTableName("some-catalog", "bobschema", "bobtable")), SHOW_COLUMNS_ACCESS_DENIED_MESSAGE);
@@ -507,6 +523,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testFunctionRulesForCheckExecuteAndGrantExecuteFunctionWithNoAccess()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-no-access.json");
         assertThat(accessControl.canExecuteFunction(ALICE, new CatalogSchemaRoutineName("alice-catalog", "schema", "some_function"))).isFalse();
@@ -515,6 +532,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForFilterColumns()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -534,6 +552,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableFilter()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table-filter.json");
         Set<SchemaTableName> tables = ImmutableSet.<SchemaTableName>builder()
@@ -565,6 +584,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableFilterNoAccess()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-no-access.json");
 
@@ -579,6 +599,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForFilterColumnsWithNoAccess()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-no-access.json");
         assertThat(accessControl.filterColumns(BOB, new CatalogSchemaTableName("some-catalog", "bobschema", "bobtable"), ImmutableSet.of("a"))).isEqualTo(ImmutableSet.of());
@@ -586,6 +607,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanInsertIntoTable()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
         assertTableRulesForCheckCanInsertIntoTable(accessControl);
@@ -601,6 +623,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanDropTable()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -610,6 +633,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanDropMaterializedView()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -619,6 +643,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanCreateMaterializedView()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -628,6 +653,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanRefreshMaterializedView()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -637,6 +663,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanSetMaterializedViewProperties()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -664,6 +691,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanDeleteFromTable()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -673,6 +701,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanTruncateTable()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -682,6 +711,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanGrantTablePrivilege()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -691,6 +721,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanDenyTablePrivilege()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -700,6 +731,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanRevokeTablePrivilege()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -709,6 +741,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanShowCreateTable()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -718,6 +751,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testCatalogRulesForCheckCanShowCreateCatalog()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
@@ -727,6 +761,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testCatalogRulesForCheckCanCreateCatalog()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
@@ -736,6 +771,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testCatalogRulesForCheckCanDropCatalog()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
@@ -745,6 +781,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testCatalogRulesForCheckCanRenameCatalog()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
@@ -755,6 +792,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testCatalogRulesForCheckCanSetPropertiesCatalog()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
@@ -764,6 +802,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanAddColumn()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -773,6 +812,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanDropColumn()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -782,6 +822,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanRenameColumn()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -791,6 +832,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForMixedGroupUsers()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table-mixed-groups.json");
 
@@ -841,6 +883,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanSetTableComment()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -850,6 +893,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanRenameTable()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -861,6 +905,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanSetTableProperties()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -871,6 +916,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testCanSetUserOperations()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-catalog_principal.json");
 
@@ -901,6 +947,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testQuery()
+            throws Exception
     {
         SystemAccessControl accessControlManager = newFileBasedSystemAccessControl("query.json");
 
@@ -964,6 +1011,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testQueryNotSet()
+            throws Exception
     {
         SystemAccessControl accessControlManager = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
@@ -976,7 +1024,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
     @Test
     public void testQueryDocsExample()
     {
-        File rulesFile = new File("../../docs/src/main/sphinx/security/query-access.json");
+        Path rulesFile = Paths.get("../../docs/src/main/sphinx/security/query-access.json");
         SystemAccessControl accessControlManager = newFileBasedSystemAccessControl(rulesFile, ImmutableMap.of());
 
         accessControlManager.checkCanExecuteQuery(admin, queryId);
@@ -1026,6 +1074,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSystemInformation()
+            throws Exception
     {
         SystemAccessControl accessControlManager = newFileBasedSystemAccessControl("system-information.json");
 
@@ -1050,6 +1099,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSystemInformationNotSet()
+            throws Exception
     {
         SystemAccessControl accessControlManager = newFileBasedSystemAccessControl("file-based-system-catalog.json");
 
@@ -1064,7 +1114,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
     @Test
     public void testSystemInformationDocsExample()
     {
-        File rulesFile = new File("../../docs/src/main/sphinx/security/system-information-access.json");
+        Path rulesFile = Paths.get("../../docs/src/main/sphinx/security/system-information-access.json");
         SystemAccessControl accessControlManager = newFileBasedSystemAccessControl(rulesFile, ImmutableMap.of());
 
         accessControlManager.checkCanReadSystemInformation(admin);
@@ -1085,6 +1135,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSessionPropertyRules()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-session-property.json");
 
@@ -1121,7 +1172,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
     @Test
     public void testSessionPropertyDocsExample()
     {
-        File rulesFile = new File("../../docs/src/main/sphinx/security/session-property-access.json");
+        Path rulesFile = Paths.get("../../docs/src/main/sphinx/security/session-property-access.json");
         SystemAccessControl accessControl = newFileBasedSystemAccessControl(rulesFile, ImmutableMap.of());
         Identity bannedUser = Identity.ofUser("banned_user");
         SystemSecurityContext bannedUserContext = new SystemSecurityContext(Identity.ofUser("banned_user"), queryId, queryStart);
@@ -1145,6 +1196,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testFilterCatalogs()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
         Set<String> allCatalogs = ImmutableSet.of(
@@ -1169,6 +1221,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaRulesForCheckCanShowSchemas()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
 
@@ -1219,6 +1272,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testFilterSchemas()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
 
@@ -1275,6 +1329,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaRulesForCheckCanShowTables()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
 
@@ -1324,6 +1379,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaRulesForCheckCanShowFunctions()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
 
@@ -1373,6 +1429,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testGetColumnMask()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -1410,6 +1467,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testGetColumnMasks()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
         ImmutableList<ColumnSchema> columns = Stream.of("private", "restricted", "masked", "masked_with_user")
@@ -1451,6 +1509,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testGetRowFilter()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-table.json");
 
@@ -1499,6 +1558,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testProcedureRulesForCheckCanExecute()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
 
@@ -1521,6 +1581,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testFunctionRulesForCheckCanExecute()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
         assertThat(accessControl.canExecuteFunction(BOB, new CatalogSchemaRoutineName("specific-catalog", "system", "some_function"))).isTrue();
@@ -1540,6 +1601,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testFunctionRulesForCheckCanCreateView()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-visibility.json");
         assertThat(accessControl.canCreateViewWithExecuteFunction(ALICE, new CatalogSchemaRoutineName("ptf-catalog", "ptf_schema", "some_table_function"))).isTrue();
@@ -1555,6 +1617,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testSchemaAuthorization()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("authorization.json");
 
@@ -1622,6 +1685,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableAuthorization()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("authorization.json");
 
@@ -1685,6 +1749,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testViewAuthorization()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("authorization.json");
 
@@ -1748,6 +1813,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testFunctionsFilter()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-access-function-filter.json");
         Set<SchemaFunctionName> functions = ImmutableSet.<SchemaFunctionName>builder()
@@ -1779,6 +1845,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testFunctionsFilterNoAccess()
+            throws Exception
     {
         SystemAccessControl accessControl = newFileBasedSystemAccessControl("file-based-system-no-access.json");
 
@@ -1794,7 +1861,7 @@ public abstract class BaseFileBasedSystemAccessControlTest
     @Test
     public void testAuthorizationDocsExample()
     {
-        File rulesFile = new File("../../docs/src/main/sphinx/security/authorization.json");
+        Path rulesFile = Paths.get("../../docs/src/main/sphinx/security/authorization.json");
         SystemAccessControl accessControlManager = newFileBasedSystemAccessControl(rulesFile, ImmutableMap.of());
         CatalogSchemaName schema = new CatalogSchemaName("catalog", "schema");
         CatalogSchemaTableName tableOrView = new CatalogSchemaTableName("catalog", "schema", "table_or_view");
@@ -1833,15 +1900,17 @@ public abstract class BaseFileBasedSystemAccessControlTest
 
     @Test
     public void testTableRulesForCheckCanInsertIntoTableWithJsonPointer()
+            throws Exception
     {
-        File configFile = new File(getResourcePath("file-based-system-access-table-with-json-pointer.json"));
+        Path configFile = getResourcePath("file-based-system-access-table-with-json-pointer.json");
         SystemAccessControl accessControl = newFileBasedSystemAccessControl(configFile, ImmutableMap.of("security.json-pointer", "/data"));
         assertTableRulesForCheckCanInsertIntoTable(accessControl);
     }
 
     protected SystemAccessControl newFileBasedSystemAccessControl(String rulesName)
+            throws URISyntaxException
     {
-        File configFile = new File(getResourcePath(rulesName));
+        Path configFile = getResourcePath(rulesName);
         return newFileBasedSystemAccessControl(configFile, ImmutableMap.of());
     }
 
@@ -1850,9 +1919,10 @@ public abstract class BaseFileBasedSystemAccessControlTest
         return new FileBasedSystemAccessControl.Factory().create(config, new TestingSystemAccessControlContext());
     }
 
-    protected String getResourcePath(String resourceName)
+    protected Path getResourcePath(String resourceName)
+            throws URISyntaxException
     {
-        return requireNonNull(this.getClass().getClassLoader().getResource(resourceName), "Resource does not exist: " + resourceName).getPath();
+        return Paths.get(requireNonNull(this.getClass().getClassLoader().getResource(resourceName), "Resource does not exist: " + resourceName).toURI());
     }
 
     private static void assertAccessDenied(ThrowingCallable callable, String expectedMessage)
