@@ -69,6 +69,7 @@ import io.trino.transaction.TransactionId;
 import io.trino.util.Ciphers;
 import jakarta.ws.rs.NotFoundException;
 
+import java.io.EOFException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Throwables.getCausalChain;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.immediateVoidFuture;
@@ -658,6 +660,11 @@ class Query
 
     private synchronized void handleSerializationException(Throwable exception)
     {
+        if (clientDisconnected(exception)) {
+            // Allow client to retry nextURI call
+            return;
+        }
+
         // failQuery can throw exception if query has already finished.
         try {
             queryManager.failQuery(queryId, exception);
@@ -669,6 +676,12 @@ class Query
         if (typeSerializationException.isEmpty()) {
             typeSerializationException = Optional.of(exception);
         }
+    }
+
+    private static boolean clientDisconnected(Throwable exception)
+    {
+        return getCausalChain(exception).stream()
+                .anyMatch(EOFException.class::isInstance);
     }
 
     private synchronized void setQueryOutputInfo(QueryExecution.QueryOutputInfo outputInfo)
