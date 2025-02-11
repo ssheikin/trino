@@ -15,7 +15,10 @@ package io.trino.spi;
 
 import io.trino.spi.connector.ConnectorSession;
 
+import java.time.ZoneId;
 import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 public interface WorkScheduler
 {
@@ -24,13 +27,22 @@ public interface WorkScheduler
             String catalogName,
             String schemaName,
             String materializedViewName,
-            String jobCron);
+            RefreshSchedule schedule);
 
-    Optional<String> getJobSchedule(ConnectorSession session, String jobId);
+    Optional<RefreshSchedule> getJobSchedule(ConnectorSession session, String jobId);
 
     void deleteJobSchedule(ConnectorSession session, String jobId);
 
-    boolean updateJobSchedule(ConnectorSession session, String jobId, String jobCron);
+    boolean updateJobSchedule(ConnectorSession session, String jobId, RefreshSchedule schedule);
 
     boolean updateMaterializedViewName(ConnectorSession session, String jobId, String materializedViewName);
+
+    record RefreshSchedule(String cronExpression, Optional<ZoneId> timeZone)
+    {
+        public RefreshSchedule
+        {
+            requireNonNull(cronExpression, "cronExpression is null");
+            requireNonNull(timeZone, "timeZone is null");
+        }
+    }
 }

@@ -27,6 +27,7 @@ import io.trino.plugin.iceberg.fileio.ForwardingFileIo;
 import io.trino.plugin.iceberg.fileio.ForwardingOutputFile;
 import io.trino.spi.TrinoException;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.ColumnMetadata;
@@ -221,11 +222,11 @@ public abstract class AbstractTrinoCatalog
     protected Optional<String> createOrUpdateMaterializedViewRefreshJob(ConnectorSession session, SchemaTableName viewName, Map<String, Object> materializedViewProperties, Optional<Map<String, String>> existingTableParameters)
     {
         Optional<String> refreshJobId = existingTableParameters.flatMap(params -> Optional.ofNullable(params.get(REFRESH_JOB_ID_PROPERTY)));
-        Optional<String> refreshSchedule = getRefreshSchedule(materializedViewProperties);
+        Optional<RefreshSchedule> refreshSchedule = getRefreshSchedule(materializedViewProperties);
         return createOrUpdateMaterializedViewRefreshJob(session, viewName, refreshJobId, refreshSchedule);
     }
 
-    protected Optional<String> createOrUpdateMaterializedViewRefreshJob(ConnectorSession session, SchemaTableName viewName, Optional<String> existingJobId, Optional<String> newSchedule)
+    protected Optional<String> createOrUpdateMaterializedViewRefreshJob(ConnectorSession session, SchemaTableName viewName, Optional<String> existingJobId, Optional<RefreshSchedule> newSchedule)
     {
         if (newSchedule.isPresent()) {
             // updateJobSchedule may return false if the job was deleted in the UI

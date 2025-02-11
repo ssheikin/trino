@@ -16,6 +16,7 @@ package io.trino.plugin.iceberg.catalog;
 import io.trino.metastore.TableInfo;
 import io.trino.plugin.iceberg.ColumnIdentity;
 import io.trino.plugin.iceberg.UnknownTableTypeException;
+import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorMaterializedViewDefinition;
@@ -183,7 +184,7 @@ public interface TrinoCatalog
 
     void updateMaterializedViewColumnComment(ConnectorSession session, SchemaTableName schemaViewName, String columnName, Optional<String> comment);
 
-    void updateMaterializedViewRefreshSchedule(ConnectorSession session, SchemaTableName viewName, Optional<String> schedule);
+    void updateMaterializedViewRefreshSchedule(ConnectorSession session, SchemaTableName viewName, Optional<RefreshSchedule> schedule);
 
     void dropMaterializedView(ConnectorSession session, SchemaTableName viewName);
 

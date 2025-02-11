@@ -15,6 +15,7 @@ package io.trino.plugin.iceberg;
 
 import io.trino.Session;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.sql.tree.ExplainType;
@@ -26,7 +27,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
+import java.time.ZoneId;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.trino.testing.TestingNames.randomNameSuffix;
@@ -162,7 +165,8 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
 
         assertThat(computeActual("SHOW CREATE MATERIALIZED VIEW " + materializedView).getOnlyValue().toString())
                 .contains("refresh_schedule = '1 1 * * *'")
-                .contains("storage_schema = '" + schemaName + "'");
+                .contains("storage_schema = '" + schemaName + "'")
+                .doesNotContain("refresh_schedule_timezone");
 
         workScheduler.deleteJobSchedule(getSession().toConnectorSession(), workScheduler.getRequiredJobScheduleId(materializedView));
         assertUpdate("ALTER MATERIALIZED VIEW " + materializedView + " SET PROPERTIES refresh_schedule = '2 2 * * *'");
@@ -178,6 +182,55 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
     }
 
     @Test
+    public void testScheduledRefreshTimezone()
+    {
+        CatalogSchemaTableName materializedView = new CatalogSchemaTableName(
+                TEST_CATALOG,
+                new SchemaTableName(schemaName, "test_scheduled_refresh_timezone" + randomNameSuffix()));
+
+        assertUpdate("CREATE MATERIALIZED VIEW " + materializedView + " WITH (refresh_schedule = '0 0 * * *', refresh_schedule_timezone = 'America/Los_Angeles')" +
+                " AS SELECT * FROM tpch.tiny.nation");
+        String scheduleId = workScheduler.getRequiredJobScheduleId(materializedView);
+        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId))
+                .contains(new RefreshSchedule("0 0 * * *", Optional.of(ZoneId.of("America/Los_Angeles"))));
+        assertUpdate("ALTER MATERIALIZED VIEW " + materializedView + " SET PROPERTIES refresh_schedule = '1 1 * * *'");
+
+        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId))
+                .contains(new RefreshSchedule("1 1 * * *", Optional.of(ZoneId.of("America/Los_Angeles"))));
+
+        assertThat(computeActual("SHOW CREATE MATERIALIZED VIEW " + materializedView).getOnlyValue().toString())
+                .contains("refresh_schedule = '1 1 * * *'")
+                .contains("refresh_schedule_timezone = 'America/Los_Angeles'");
+
+        assertUpdate("ALTER MATERIALIZED VIEW " + materializedView + " SET PROPERTIES refresh_schedule_timezone = 'America/New_York'");
+
+        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId))
+                .contains(new RefreshSchedule("1 1 * * *", Optional.of(ZoneId.of("America/New_York"))));
+
+        assertThat(computeActual("SHOW CREATE MATERIALIZED VIEW " + materializedView).getOnlyValue().toString())
+                .contains("refresh_schedule = '1 1 * * *'")
+                .contains("refresh_schedule_timezone = 'America/New_York'");
+
+        assertUpdate("ALTER MATERIALIZED VIEW " + materializedView + " SET PROPERTIES refresh_schedule_timezone = DEFAULT");
+
+        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId))
+                .contains(new RefreshSchedule("1 1 * * *", Optional.empty()));
+        assertThat(computeActual("SHOW CREATE MATERIALIZED VIEW " + materializedView).getOnlyValue().toString())
+                .contains("refresh_schedule = '1 1 * * *'")
+                .doesNotContain("refresh_schedule_timezone");
+
+        assertUpdate("ALTER MATERIALIZED VIEW " + materializedView + " SET PROPERTIES refresh_schedule_timezone = 'America/New_York'");
+        assertUpdate("ALTER MATERIALIZED VIEW " + materializedView + " SET PROPERTIES refresh_schedule = DEFAULT");
+
+        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId)).isEmpty();
+        assertThat(computeActual("SHOW CREATE MATERIALIZED VIEW " + materializedView).getOnlyValue().toString())
+                .doesNotContain("refresh_schedule")
+                .doesNotContain("refresh_schedule_timezone");
+
+        assertUpdate("DROP MATERIALIZED VIEW " + materializedView);
+    }
+
+    @Test
     public void testCreateOrReplaceWithNewSchedule()
     {
         CatalogSchemaTableName materializedView = new CatalogSchemaTableName(
@@ -189,14 +242,16 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
                 "AS SELECT * FROM tpch.tiny.nation");
 
         String scheduleId = workScheduler.getRequiredJobScheduleId(materializedView);
-        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId)).contains("0 0 * * *");
+        Optional<RefreshSchedule> jobSchedule = workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId);
+        assertThat(jobSchedule.get().cronExpression()).contains("0 0 * * *");
+        assertThat(jobSchedule.get().timeZone()).isEmpty();
 
         assertUpdate("CREATE OR REPLACE MATERIALIZED VIEW " + materializedView + " " +
                 "WITH (refresh_schedule = '1 1 * * *') " +
                 "AS SELECT * FROM tpch.tiny.nation");
 
         assertThat(workScheduler.getRequiredJobScheduleId(materializedView)).isEqualTo(scheduleId);
-        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId)).contains("1 1 * * *");
+        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId).map(RefreshSchedule::cronExpression)).contains("1 1 * * *");
 
         workScheduler.runScheduledRefreshesForJobId(workScheduler.getRequiredJobScheduleId(materializedView));
 
@@ -205,7 +260,7 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
                 "AS SELECT * FROM tpch.tiny.nation");
 
         assertThat(workScheduler.getRequiredJobScheduleId(materializedView)).isEqualTo(scheduleId);
-        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId)).contains("2 2 * * *");
+        assertThat(workScheduler.getJobSchedule(getSession().toConnectorSession(), scheduleId).map(RefreshSchedule::cronExpression)).contains("2 2 * * *");
         assertUpdate("DROP MATERIALIZED VIEW " + materializedView);
     }
 

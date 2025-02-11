@@ -39,17 +39,17 @@ public class TestingWorkScheduler
     }
 
     @Override
-    public synchronized String createMaterializedViewRefreshJob(ConnectorSession session, String catalogName, String schemaName, String materializedViewName, String jobCron)
+    public synchronized String createMaterializedViewRefreshJob(ConnectorSession session, String catalogName, String schemaName, String materializedViewName, RefreshSchedule schedule)
     {
         String id = UUID.randomUUID().toString();
-        jobs.put(id, new MaterializedViewRefresh(new CatalogSchemaTableName(catalogName, schemaName, materializedViewName), jobCron));
+        jobs.put(id, new MaterializedViewRefresh(new CatalogSchemaTableName(catalogName, schemaName, materializedViewName), schedule));
         return id;
     }
 
     @Override
-    public synchronized Optional<String> getJobSchedule(ConnectorSession session, String jobId)
+    public synchronized Optional<RefreshSchedule> getJobSchedule(ConnectorSession session, String jobId)
     {
-        return Optional.ofNullable(jobs.get(jobId)).map(MaterializedViewRefresh::jobCron);
+        return Optional.ofNullable(jobs.get(jobId)).map(MaterializedViewRefresh::schedule);
     }
 
     @Override
@@ -59,9 +59,9 @@ public class TestingWorkScheduler
     }
 
     @Override
-    public synchronized boolean updateJobSchedule(ConnectorSession session, String jobId, String jobCron)
+    public synchronized boolean updateJobSchedule(ConnectorSession session, String jobId, RefreshSchedule schedule)
     {
-        return jobs.computeIfPresent(jobId, (key, existing) -> existing.withCronJob(jobCron)) != null;
+        return jobs.computeIfPresent(jobId, (key, existing) -> existing.withSchedule(schedule)) != null;
     }
 
     @Override
@@ -93,22 +93,22 @@ public class TestingWorkScheduler
         return queryRunner.get().execute("REFRESH MATERIALIZED VIEW " + job.table());
     }
 
-    private record MaterializedViewRefresh(CatalogSchemaTableName table, String jobCron)
+    private record MaterializedViewRefresh(CatalogSchemaTableName table, RefreshSchedule schedule)
     {
         private MaterializedViewRefresh
         {
             requireNonNull(table, "table is null");
-            requireNonNull(jobCron, "jobCron is null");
+            requireNonNull(schedule, "schedule is null");
         }
 
-        public MaterializedViewRefresh withCronJob(String jobCron)
+        public MaterializedViewRefresh withSchedule(RefreshSchedule schedule)
         {
-            return new MaterializedViewRefresh(table, jobCron);
+            return new MaterializedViewRefresh(table, schedule);
         }
 
         public MaterializedViewRefresh withMaterializedViewName(String materializedViewName)
         {
-            return new MaterializedViewRefresh(new CatalogSchemaTableName(table.getCatalogName(), table.getSchemaTableName().getSchemaName(), materializedViewName), jobCron);
+            return new MaterializedViewRefresh(new CatalogSchemaTableName(table.getCatalogName(), table.getSchemaTableName().getSchemaName(), materializedViewName), schedule);
         }
     }
 }

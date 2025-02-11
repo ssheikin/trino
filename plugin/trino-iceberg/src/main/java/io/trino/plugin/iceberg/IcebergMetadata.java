@@ -60,6 +60,7 @@ import io.trino.plugin.iceberg.util.DataFileWithDeleteFiles;
 import io.trino.spi.ErrorCode;
 import io.trino.spi.RefreshType;
 import io.trino.spi.TrinoException;
+import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.block.Block;
 import io.trino.spi.connector.Assignment;
 import io.trino.spi.connector.BeginTableExecuteResult;
@@ -184,6 +185,7 @@ import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -254,6 +256,7 @@ import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_MISSING_METADATA;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_UNSUPPORTED_VIEW_DIALECT;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE;
+import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE_TIMEZONE;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
@@ -355,6 +358,7 @@ import static java.lang.Math.floorDiv;
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static org.apache.iceberg.ReachableFileUtil.metadataFileLocations;
@@ -392,7 +396,7 @@ public class IcebergMetadata
             .add(PARTITIONING_PROPERTY)
             .add(SORTED_BY_PROPERTY)
             .build();
-    public static final Set<String> UPDATABLE_MATERIALIZED_VIEW_PROPERTIES = ImmutableSet.of(REFRESH_SCHEDULE);
+    public static final Set<String> UPDATABLE_MATERIALIZED_VIEW_PROPERTIES = ImmutableSet.of(REFRESH_SCHEDULE, REFRESH_SCHEDULE_TIMEZONE);
 
     public static final String NUMBER_OF_DISTINCT_VALUES_NAME = "NUMBER_OF_DISTINCT_VALUES";
     private static final FunctionName NUMBER_OF_DISTINCT_VALUES_FUNCTION = new FunctionName(IcebergThetaSketchForStats.NAME);
@@ -3574,8 +3578,12 @@ public class IcebergMetadata
         if (!unsupportedProperties.isEmpty()) {
             throw new TrinoException(NOT_SUPPORTED, "The following properties cannot be updated: " + String.join(", ", unsupportedProperties));
         }
-
-        catalog.updateMaterializedViewRefreshSchedule(session, viewName, properties.get(REFRESH_SCHEDULE).map(String.class::cast));
+        Map<String, Object> currentProperties = catalog.getMaterializedViewProperties(session, viewName, catalog.getMaterializedView(session, viewName).orElseThrow());
+        Optional<Object> targetSchedule = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE), () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE)));
+        Optional<Object> targetTimeZone = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE_TIMEZONE),
+                () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE_TIMEZONE)));
+        catalog.updateMaterializedViewRefreshSchedule(session, viewName, targetSchedule
+                .map(schedule -> new RefreshSchedule((String) schedule, targetTimeZone.map(String.class::cast).map(ZoneId::of))));
     }
 
     @Override

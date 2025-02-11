@@ -40,6 +40,7 @@ import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIo;
 import io.trino.spi.TrinoException;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.ColumnMetadata;
@@ -105,6 +106,7 @@ import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewDefinition.encodeMaterializedViewData;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewDefinition.fromConnectorMaterializedViewDefinition;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE;
+import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE_TIMEZONE;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.STORAGE_SCHEMA;
 import static io.trino.plugin.iceberg.IcebergSchemaProperties.LOCATION_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergUtil.getIcebergTableWithMetadata;
@@ -691,7 +693,7 @@ public class TrinoHiveCatalog
     }
 
     @Override
-    public void updateMaterializedViewRefreshSchedule(ConnectorSession session, SchemaTableName viewName, Optional<String> schedule)
+    public void updateMaterializedViewRefreshSchedule(ConnectorSession session, SchemaTableName viewName, Optional<RefreshSchedule> schedule)
     {
         io.trino.metastore.Table existing = metastore.getTable(viewName.getSchemaName(), viewName.getTableName())
                 .orElseThrow(() -> new ViewNotFoundException(viewName));
@@ -816,7 +818,10 @@ public class TrinoHiveCatalog
                 .orElseThrow();
         if (scheduledMaterializedViewRefreshEnabled) {
             Optional<String> jobId = Optional.ofNullable(materializedView.getParameters().get(REFRESH_JOB_ID_PROPERTY));
-            jobId.flatMap(id -> workScheduler.getJobSchedule(session, id)).ifPresent(cronSchedule -> properties.put(REFRESH_SCHEDULE, cronSchedule));
+            jobId.flatMap(id -> workScheduler.getJobSchedule(session, id)).ifPresent(cronSchedule -> {
+                properties.put(REFRESH_SCHEDULE, cronSchedule.cronExpression());
+                cronSchedule.timeZone().ifPresent(timeZone -> properties.put(REFRESH_SCHEDULE_TIMEZONE, timeZone.getId()));
+            });
         }
         return properties.buildOrThrow();
     }

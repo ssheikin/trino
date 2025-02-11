@@ -15,8 +15,10 @@ package io.trino.plugin.iceberg;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.session.PropertyMetadata;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +28,7 @@ import static io.trino.spi.session.PropertyMetadata.stringProperty;
 public class IcebergMaterializedViewProperties
 {
     public static final String REFRESH_SCHEDULE = "refresh_schedule";
+    public static final String REFRESH_SCHEDULE_TIMEZONE = "refresh_schedule_timezone";
     public static final String STORAGE_SCHEMA = "storage_schema";
 
     private final List<PropertyMetadata<?>> materializedViewProperties;
@@ -47,6 +50,11 @@ public class IcebergMaterializedViewProperties
                     "Cron schedule to use for refreshing the materialized view",
                     null,
                     false));
+            materializedViewProperties.add(stringProperty(
+                    REFRESH_SCHEDULE_TIMEZONE,
+                    "Time zone for the cron schedule used for refreshing the materialized view",
+                    null,
+                    false));
         }
         this.materializedViewProperties = materializedViewProperties.build();
     }
@@ -56,9 +64,13 @@ public class IcebergMaterializedViewProperties
         return materializedViewProperties;
     }
 
-    public static Optional<String> getRefreshSchedule(Map<String, Object> materializedViewProperties)
+    public static Optional<RefreshSchedule> getRefreshSchedule(Map<String, Object> materializedViewProperties)
     {
-        return Optional.ofNullable((String) materializedViewProperties.get(REFRESH_SCHEDULE));
+        return Optional.ofNullable((String) materializedViewProperties.get(REFRESH_SCHEDULE))
+                .map(schedule -> new RefreshSchedule(
+                        schedule,
+                        Optional.ofNullable(((String) materializedViewProperties.get(REFRESH_SCHEDULE_TIMEZONE)))
+                                .map(ZoneId::of)));
     }
 
     public static Optional<String> getStorageSchema(Map<String, Object> materializedViewProperties)

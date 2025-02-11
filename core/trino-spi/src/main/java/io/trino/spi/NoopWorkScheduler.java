@@ -26,13 +26,13 @@ public class NoopWorkScheduler
             String catalogName,
             String schemaName,
             String materializedViewName,
-            String jobCron)
+            RefreshSchedule schedule)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Optional<String> getJobSchedule(ConnectorSession session, String jobId)
+    public Optional<RefreshSchedule> getJobSchedule(ConnectorSession session, String jobId)
     {
         // Metadata server may call this method to get materialized view definition
         return Optional.empty();
@@ -45,7 +45,7 @@ public class NoopWorkScheduler
     }
 
     @Override
-    public boolean updateJobSchedule(ConnectorSession session, String jobId, String jobCron)
+    public boolean updateJobSchedule(ConnectorSession session, String jobId, RefreshSchedule schedule)
     {
         throw new UnsupportedOperationException();
     }
