@@ -53,6 +53,7 @@ import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SessionCatalog;
 import org.apache.iceberg.catalog.SessionCatalog.SessionContext;
@@ -84,7 +85,6 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.cache.CacheUtils.uncheckedCacheGet;
 import static io.trino.filesystem.Locations.appendPath;
@@ -387,16 +387,19 @@ public class TrinoRestCatalog
             Schema schema,
             PartitionSpec partitionSpec,
             SortOrder sortOrder,
-            String location,
+            Optional<String> location,
             Map<String, String> properties)
     {
         try {
-            return restSessionCatalog.buildTable(convert(session), toRemoteTable(session, schemaTableName, true), schema)
+            Catalog.TableBuilder tableBuilder = restSessionCatalog.buildTable(convert(session), toRemoteTable(session, schemaTableName, true), schema)
                     .withPartitionSpec(partitionSpec)
                     .withSortOrder(sortOrder)
-                    .withLocation(location)
-                    .withProperties(properties)
-                    .createTransaction();
+                    .withProperties(properties);
+            if (location.isEmpty()) {
+                // TODO Replace with createTransaction once S3 Tables supports stage-create option
+                return tableBuilder.create().newTransaction();
+            }
+            return tableBuilder.withLocation(location.get()).createTransaction();
         }
         catch (RESTException e) {
             throw new TrinoException(ICEBERG_CATALOG_ERROR, "Failed to create transaction", e);
@@ -566,7 +569,11 @@ public class TrinoRestCatalog
 
         Map<String, Object> properties = loadNamespaceMetadata(session, schemaTableName.getSchemaName());
         String databaseLocation = (String) properties.get(IcebergSchemaProperties.LOCATION_PROPERTY);
-        checkArgument(databaseLocation != null, "location must be set for %s", schemaTableName.getSchemaName());
+        if (databaseLocation == null) {
+            // Iceberg REST catalog doesn't require location property.
+            // S3 Tables doesn't return the property.
+            return null;
+        }
 
         return appendPath(databaseLocation, tableName);
     }
