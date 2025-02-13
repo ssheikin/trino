@@ -74,11 +74,13 @@ import io.trino.sql.planner.PartitioningHandle;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.sql.planner.SplitSourceFactory;
 import io.trino.sql.planner.SubPlan;
+import io.trino.sql.planner.optimizations.PlanNodeSearcher;
 import io.trino.sql.planner.plan.PlanFragmentId;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.planner.plan.RemoteSourceNode;
 import io.trino.sql.planner.plan.TableScanNode;
+import io.trino.sql.planner.plan.TableWriterNode;
 import io.trino.tracing.TrinoAttributes;
 
 import java.net.URI;
@@ -120,6 +122,8 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.MoreFutures.tryGetFutureValue;
 import static io.airlift.concurrent.MoreFutures.whenAnyComplete;
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
+import static io.trino.SystemSessionProperties.getMaxHashPartitionCount;
+import static io.trino.SystemSessionProperties.getMaxWriterTaskCount;
 import static io.trino.SystemSessionProperties.getQueryRetryAttempts;
 import static io.trino.SystemSessionProperties.getRetryDelayScaleFactor;
 import static io.trino.SystemSessionProperties.getRetryInitialDelay;
@@ -909,6 +913,7 @@ public class PipelinedQueryScheduler
                             partitioning.partitionCount));
 
             Map<PlanFragmentId, Optional<int[]>> bucketToPartitionMap = createBucketToPartitionMap(
+                    queryStateMachine.getSession(),
                     coordinatorStagesScheduler.getBucketToPartitionForStagesConsumedByCoordinator(),
                     stageManager,
                     partitioningCache);
@@ -993,6 +998,7 @@ public class PipelinedQueryScheduler
         }
 
         private static Map<PlanFragmentId, Optional<int[]>> createBucketToPartitionMap(
+                Session session,
                 Map<PlanFragmentId, Optional<int[]>> bucketToPartitionForStagesConsumedByCoordinator,
                 StageManager stageManager,
                 Function<PartitioningKey, NodePartitionMap> partitioningCache)
@@ -1006,7 +1012,7 @@ public class PipelinedQueryScheduler
                         partitioningCache,
                         fragment.getRoot(),
                         fragment.getRemoteSourceNodes(),
-                        fragment.getPartitionCount());
+                        getFragmentMaxPartitionCount(session, fragment));
                 for (SqlStage childStage : stageManager.getChildren(stage.getStageId())) {
                     result.put(childStage.getFragment().getId(), bucketToPartition);
                 }
@@ -1019,7 +1025,7 @@ public class PipelinedQueryScheduler
                 Function<PartitioningKey, NodePartitionMap> partitioningCache,
                 PlanNode fragmentRoot,
                 List<RemoteSourceNode> remoteSourceNodes,
-                Optional<Integer> partitionCount)
+                int partitionCount)
         {
             if (partitioningHandle.equals(SOURCE_DISTRIBUTION) || partitioningHandle.equals(SCALED_WRITER_ROUND_ROBIN_DISTRIBUTION)) {
                 return Optional.of(new int[1]);
@@ -1090,7 +1096,7 @@ public class PipelinedQueryScheduler
             Span stageSpan = stageExecution.getStageSpan();
             PlanFragment fragment = stageExecution.getFragment();
             PartitioningHandle partitioningHandle = fragment.getPartitioning();
-            Optional<Integer> partitionCount = fragment.getPartitionCount();
+            int partitionCount = getFragmentMaxPartitionCount(session, fragment);
             Map<PlanNodeId, SplitSource> splitSources = splitSourceFactory.createSplitSources(session, stageSpan, fragment, splitAdmissionControllerProvider);
             Map<PlanNodeId, Optional<QualifiedObjectName>> planNodesToTableNames = planNodeIdToTableName(splitSources.keySet(), fragment.getRoot())
                     .entrySet()
@@ -1176,7 +1182,6 @@ public class PipelinedQueryScheduler
                         .collect(toImmutableList());
                 Supplier<Collection<TaskStatus>> writerTasksProvider = stageExecution::getTaskStatuses;
 
-                checkState(partitionCount.isPresent(), "Partition count cannot be empty when scale writers is used");
                 ScaledWriterScheduler scheduler = new ScaledWriterScheduler(
                         stageExecution,
                         sourceTasksProvider,
@@ -1184,7 +1189,7 @@ public class PipelinedQueryScheduler
                         nodeScheduler.createNodeSelector(session, Optional.empty()),
                         executor,
                         getWriterScalingMinDataProcessed(session),
-                        partitionCount.get());
+                        partitionCount);
 
                 whenAllStages(childStageExecutions, StageExecution.State::isDone)
                         .addListener(scheduler::finish, directExecutor());
@@ -1210,7 +1215,7 @@ public class PipelinedQueryScheduler
             List<InternalNode> stageNodeList;
             if (fragment.getRemoteSourceNodes().stream().allMatch(node -> node.getExchangeType() == REPLICATE)) {
                 // no remote source
-                bucketNodeMap = nodePartitioningManager.getBucketNodeMap(session, partitioningHandle);
+                bucketNodeMap = nodePartitioningManager.getBucketNodeMap(session, partitioningHandle, partitionCount);
                 stageNodeList = new ArrayList<>(nodeScheduler.createNodeSelector(session, catalogHandle).allNodes());
                 Collections.shuffle(stageNodeList);
             }
@@ -1233,6 +1238,13 @@ public class PipelinedQueryScheduler
                     tableExecuteContextManager,
                     planNodesToTableNames,
                     scheduledSplitsPerTableTracker);
+        }
+
+        private static int getFragmentMaxPartitionCount(Session session, PlanFragment fragment)
+        {
+            return fragment.getPartitionCount().orElseGet(() -> PlanNodeSearcher.searchFrom(fragment.getRoot())
+                    .whereIsInstanceOfAny(TableWriterNode.class)
+                    .matches() ? getMaxWriterTaskCount(session) : getMaxHashPartitionCount(session));
         }
 
         private static void closeSplitSources(Collection<SplitSource> splitSources)
@@ -1649,12 +1661,12 @@ public class PipelinedQueryScheduler
         }
     }
 
-    private record PartitioningKey(PartitioningHandle handle, Optional<Integer> partitionCount)
+    private record PartitioningKey(PartitioningHandle handle, int partitionCount)
     {
-        public PartitioningKey(PartitioningHandle handle, Optional<Integer> partitionCount)
+        public PartitioningKey(PartitioningHandle handle, int partitionCount)
         {
             this.handle = requireNonNull(handle, "handle cannot be null");
-            this.partitionCount = requireNonNull(partitionCount, "partitionCount cannot be null");
+            this.partitionCount = partitionCount;
         }
     }
 }
