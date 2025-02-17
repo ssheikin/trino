@@ -13,15 +13,16 @@
  */
 package io.trino.plugin.elasticsearch.client;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.google.inject.Inject;
 import io.trino.plugin.elasticsearch.AwsSecurityConfig;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 
 import java.util.Optional;
 
@@ -50,23 +51,28 @@ public class AwsSecurityRestClientConfigurator
         clientBuilder.addInterceptorLast(new AwsRequestSigner(region, getAwsCredentialsProvider()));
     }
 
-    private AWSCredentialsProvider getAwsCredentialsProvider()
+    private AwsCredentialsProvider getAwsCredentialsProvider()
     {
-        AWSCredentialsProvider credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance();
+        AwsCredentialsProvider credentialsProvider = DefaultCredentialsProvider.create();
 
         if (accessKey.isPresent() && secretKey.isPresent()) {
-            credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+            credentialsProvider = StaticCredentialsProvider.create(AwsBasicCredentials.create(
                     accessKey.get(),
                     secretKey.get()));
         }
 
         if (iamRole.isPresent()) {
-            STSAssumeRoleSessionCredentialsProvider.Builder credentialsProviderBuilder = new STSAssumeRoleSessionCredentialsProvider.Builder(iamRole.get(), "trino-session")
-                    .withStsClient(AWSSecurityTokenServiceClientBuilder.standard()
-                            .withRegion(region)
-                            .withCredentials(credentialsProvider)
-                            .build());
-            externalId.ifPresent(credentialsProviderBuilder::withExternalId);
+            StsAssumeRoleCredentialsProvider.Builder credentialsProviderBuilder = StsAssumeRoleCredentialsProvider.builder()
+                    .stsClient(StsClient.builder()
+                            .region(Region.of(region))
+                            .credentialsProvider(credentialsProvider)
+                            .build())
+                    .refreshRequest(request -> {
+                        request
+                                .roleArn(iamRole.get())
+                                .roleSessionName("trino-session");
+                        externalId.ifPresent(request::externalId);
+                    });
             credentialsProvider = credentialsProviderBuilder.build();
         }
 
