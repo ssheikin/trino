@@ -28,7 +28,6 @@ import io.trino.connector.system.StaticSystemTablesProvider;
 import io.trino.connector.system.SystemConnector;
 import io.trino.connector.system.SystemTablesProvider;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
-import io.trino.memory.LocalMemoryManager;
 import io.trino.metadata.HandleResolver;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.Metadata;
@@ -89,7 +88,6 @@ public class DefaultCatalogFactory
     private final LocationAccessControl locationAccessControl;
     private final Map<String, String> serverProperties;
     private final ConcurrentMap<ConnectorName, InternalConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
-    private final LocalMemoryManager localMemoryManager;
     private final SecretsResolver secretsResolver;
 
     @Inject
@@ -111,7 +109,6 @@ public class DefaultCatalogFactory
             LocationAccessControl locationAccessControl,
             OptimizerConfig optimizerConfig,
             ConfigurationFactory configurationFactory,
-            LocalMemoryManager localMemoryManager,
             SecretsResolver secretsResolver)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
@@ -130,7 +127,6 @@ public class DefaultCatalogFactory
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
-        this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
         this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
     }
@@ -250,7 +246,6 @@ public class DefaultCatalogFactory
                 catalogConnector,
                 informationSchemaConnector,
                 systemConnector,
-                localMemoryManager,
                 catalogProperties);
     }
 

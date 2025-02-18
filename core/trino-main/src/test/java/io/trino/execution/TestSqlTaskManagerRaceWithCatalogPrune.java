@@ -133,7 +133,6 @@ public class TestSqlTaskManagerRaceWithCatalogPrune
                     noOpConnectorService,
                     noOpConnectorService,
                     noOpConnectorService,
-                    new LocalMemoryManager(new NodeMemoryConfig()),
                     Optional.of(catalogProperties));
         }
 
