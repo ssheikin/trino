@@ -456,8 +456,8 @@ class Query
 
         if ((queryInfo.updateType() != null) && (updateCount == null)) {
             // grab the update count for non-queries
-            Optional<Long> updatedRowsCount = resultRows.getUpdateCount();
-            updateCount = updatedRowsCount.orElse(null);
+            OptionalLong updatedRowsCount = resultRows.getUpdateCount();
+            updateCount = updatedRowsCount.isPresent() ? updatedRowsCount.getAsLong() : null;
         }
 
         if (resultsCacheEntry.isPresent()) {
