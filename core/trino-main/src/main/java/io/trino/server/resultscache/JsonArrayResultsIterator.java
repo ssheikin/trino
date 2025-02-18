@@ -225,7 +225,7 @@ public class JsonArrayResultsIterator
             return emptyList();
         }
 
-        List<OutputColumn> columnAndTypes = rows.getOutputColumns().orElseThrow();
+        List<OutputColumn> columnAndTypes = rows.getOutputColumns();
         return new JsonArrayResultsIterator(
                 session,
                 rows.getPages(),
