@@ -188,7 +188,7 @@ class Query
     private Optional<Throwable> typeSerializationException = Optional.empty();
 
     @GuardedBy("this")
-    private Long updateCount;
+    private OptionalLong updateCount = OptionalLong.empty();
 
     private final Optional<ActiveResultsCacheEntry> resultsCacheEntry;
 
@@ -455,10 +455,9 @@ class Query
             resultRows = empty();
         }
 
-        if ((queryInfo.updateType() != null) && (updateCount == null)) {
+        if ((queryInfo.updateType() != null) && updateCount.isEmpty()) {
             // grab the update count for non-queries
-            OptionalLong updatedRowsCount = resultRows.getUpdateCount();
-            updateCount = updatedRowsCount.isPresent() ? updatedRowsCount.getAsLong() : null;
+            updateCount = resultRows.getUpdateCount();
         }
 
         if (resultsCacheEntry.isPresent()) {
