@@ -171,6 +171,11 @@ public class SchemaDiscoveryController
         return DiscoveredTablesDiffGenerator.generateDiff(rootPath, previousTables, currentTables);
     }
 
+    public IdentifierConstraint getIdentifierConstraint()
+    {
+        return identifierConstraint;
+    }
+
     private static URI normalizeUri(URI uri)
     {
         // use raw string for comparisons and replacements, as .toString() returns encoded URI while .getPath() returns raw value

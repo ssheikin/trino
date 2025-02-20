@@ -15,6 +15,7 @@ import io.starburst.schema.discovery.formats.orc.OrcDataSourceFactory;
 import io.starburst.schema.discovery.formats.parquet.ParquetDataSourceFactory;
 import io.starburst.schema.discovery.generation.Dialect;
 import io.starburst.schema.discovery.io.DiscoveryTrinoFileSystem;
+import io.starburst.schema.discovery.models.IdentifierConstraint;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.spi.connector.ConnectorSession;
 
@@ -29,6 +30,7 @@ public class SchemaDiscoveryControllerFactory
     private final TrinoFileSystemFactory trinoFileSystemFactory;
     private final OrcDataSourceFactory orcDataSourceFactory;
     private final ParquetDataSourceFactory parquetDataSourceFactory;
+    private final IdentifierConstraint identifierConstraint;
 
     @Inject
     public SchemaDiscoveryControllerFactory(
@@ -36,12 +38,14 @@ public class SchemaDiscoveryControllerFactory
             @ForSchemaDiscovery ExecutorService executorService,
             TrinoFileSystemFactory trinoFileSystemFactory,
             OrcDataSourceFactory orcDataSourceFactory,
-            ParquetDataSourceFactory parquetDataSourceFactory)
+            ParquetDataSourceFactory parquetDataSourceFactory,
+            IdentifierConstraint identifierConstraint)
     {
         this.executor = new BoundedExecutor(requireNonNull(executorService, "executorService is null"), config.getSchemaDiscoveryConcurrency());
         this.trinoFileSystemFactory = requireNonNull(trinoFileSystemFactory, "trinoFileSystemFactory is null");
         this.orcDataSourceFactory = requireNonNull(orcDataSourceFactory, "orcDataSourceFactory is null");
         this.parquetDataSourceFactory = requireNonNull(parquetDataSourceFactory, "parquetDataSourceFactory is null");
+        this.identifierConstraint = requireNonNull(identifierConstraint, "identifierConstraint is null");
     }
 
     public SchemaDiscoveryController createSchemaDiscoveryController(ConnectorSession session)
@@ -51,6 +55,12 @@ public class SchemaDiscoveryControllerFactory
                 parquetDataSourceFactory,
                 orcDataSourceFactory,
                 Dialect.TRINO,
+                identifierConstraint,
                 executor);
+    }
+
+    public IdentifierConstraint getIdentifierConstraint()
+    {
+        return identifierConstraint;
     }
 }
