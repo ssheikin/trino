@@ -66,6 +66,7 @@ public class HiveConnector
     private final List<PropertyMetadata<?>> viewProperties;
     private final List<PropertyMetadata<?>> columnProperties;
     private final List<PropertyMetadata<?>> analyzeProperties;
+    private final List<PropertyMetadata<?>> materializedViewProperties;
 
     private final Optional<ConnectorAccessControl> accessControl;
     private final ClassLoader classLoader;
@@ -93,6 +94,7 @@ public class HiveConnector
             List<PropertyMetadata<?>> viewProperties,
             List<PropertyMetadata<?>> columnProperties,
             List<PropertyMetadata<?>> analyzeProperties,
+            List<PropertyMetadata<?>> materializedViewProperties,
             Optional<ConnectorAccessControl> accessControl,
             Set<ConnectorTableFunction> connectorTableFunctions,
             FunctionProvider functionProvider,
@@ -118,6 +120,7 @@ public class HiveConnector
         this.viewProperties = ImmutableList.copyOf(requireNonNull(viewProperties, "viewProperties is null"));
         this.columnProperties = ImmutableList.copyOf(requireNonNull(columnProperties, "columnProperties is null"));
         this.analyzeProperties = ImmutableList.copyOf(requireNonNull(analyzeProperties, "analyzeProperties is null"));
+        this.materializedViewProperties = requireNonNull(materializedViewProperties, "materializedViewProperties is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
         this.connectorTableFunctions = ImmutableSet.copyOf(requireNonNull(connectorTableFunctions, "connectorTableFunctions is null"));
         this.functionProvider = requireNonNull(functionProvider, "functionProvider is null");
@@ -209,6 +212,12 @@ public class HiveConnector
     public List<PropertyMetadata<?>> getColumnProperties()
     {
         return this.columnProperties;
+    }
+
+    @Override
+    public List<PropertyMetadata<?>> getMaterializedViewProperties()
+    {
+        return materializedViewProperties;
     }
 
     @Override
