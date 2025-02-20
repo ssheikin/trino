@@ -45,12 +45,12 @@ public class DeltaLakeSecurityModule
     {
         install(switch (buildConfigObject(DeltaLakeSecurityConfig.class).getSecuritySystem()) {
             case ALLOW_ALL -> combine(new AllowAllSecurityModule(), usingSystemSecurity(false));
-            case READ_ONLY -> combine(new ReadOnlySecurityModule(), usingSystemSecurity(false));
+            case READ_ONLY, UNITY -> combine(new ReadOnlySecurityModule(), usingSystemSecurity(false));
             case FILE -> combine(new FileBasedAccessControlModule(), usingSystemSecurity(false));
             // do not bind a ConnectorAccessControl so the engine will use system security with system roles
             case SYSTEM -> usingSystemSecurity(true);
             // these are not handled by Trino:
-            case RANGER, DEPRECATED_RANGER, SQL_STANDARD, STARBURST, UNITY -> usingSystemSecurity(false);
+            case RANGER, DEPRECATED_RANGER, SQL_STANDARD, STARBURST -> usingSystemSecurity(false);
         });
     }
 
