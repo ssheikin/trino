@@ -45,7 +45,7 @@ standaloneFunctionSpecification
     ;
 
 statement
-    : rootQuery                                                        #statementDefault
+    : rootQueryWithSession                                             #statementDefault
     | USE schema=identifier                                            #use
     | USE catalog=identifier '.' schema=identifier                     #use
     | CREATE CATALOG (IF NOT EXISTS)? catalog=identifier
@@ -205,9 +205,13 @@ statement
     ;
 
 rootQuery
-    : (WITH SESSION sessionProperty (',' sessionProperty)*)?
-      (WITH functionSpecification (',' functionSpecification)*)?
+    : (WITH functionSpecification (',' functionSpecification)*)?
       query
+    ;
+
+rootQueryWithSession
+    : (WITH SESSION sessionProperty (',' sessionProperty)*)?
+      rootQuery
     ;
 
 sessionProperty
