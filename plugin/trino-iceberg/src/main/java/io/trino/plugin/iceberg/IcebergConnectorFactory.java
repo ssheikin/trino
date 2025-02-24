@@ -122,6 +122,7 @@ public class IcebergConnectorFactory
                 new IcebergSecurityModule(),
                 icebergCatalogModule.orElse(new IcebergCatalogModule()),
                 new MBeanServerModule(),
+                new IcebergAiModule(),
                 new IcebergFileSystemModule(catalogName, context, quietBootstrap),
                 binder -> {
                     binder.bind(ClassLoader.class).toInstance(IcebergConnectorFactory.class.getClassLoader());

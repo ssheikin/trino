@@ -11,17 +11,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.procedure;
+package com.starburstdata.trino.plugin.ai.embedding;
 
-public enum IcebergTableProcedureId
+import io.airlift.slice.Slice;
+import io.trino.spi.function.table.ConnectorTableFunctionHandle;
+
+import static java.util.Objects.requireNonNull;
+
+public record GenerateEmbeddingsFunctionHandle(Slice modelId)
+        implements ConnectorTableFunctionHandle
 {
-    OPTIMIZE,
-    OPTIMIZE_MANIFESTS,
-    DROP_EXTENDED_STATS,
-    ROLLBACK_TO_SNAPSHOT,
-    EXPIRE_SNAPSHOTS,
-    REMOVE_ORPHAN_FILES,
-    ADD_FILES,
-    ADD_FILES_FROM_TABLE,
-    GENERATE_EMBEDDINGS,
+    public GenerateEmbeddingsFunctionHandle
+    {
+        requireNonNull(modelId, "modelId is null");
+    }
 }

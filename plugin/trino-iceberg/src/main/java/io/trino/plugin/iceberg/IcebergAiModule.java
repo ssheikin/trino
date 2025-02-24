@@ -11,23 +11,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.starburstdata.trino.plugin.ai;
+package io.trino.plugin.iceberg;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Binder;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.starburstdata.trino.plugin.ai.embedding.GenerateEmbeddingsTableFunction;
+import com.google.inject.multibindings.OptionalBinder;
+import com.starburstdata.trino.plugin.ai.AiClientModule;
+import com.starburstdata.trino.plugin.ai.ClientProvider;
+import com.starburstdata.trino.plugin.ai.DisabledClientProvider;
+import com.starburstdata.trino.plugin.ai.ModelClientProvider;
+import com.starburstdata.trino.plugin.ai.ModelConnectionSpec;
+import com.starburstdata.trino.plugin.ai.ModelConnectionSpecs;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.trino.spi.TrinoException;
-import io.trino.spi.connector.Connector;
-import io.trino.spi.connector.ConnectorMetadata;
-import io.trino.spi.connector.SystemTable;
-import io.trino.spi.function.FunctionMetadata;
-import io.trino.spi.function.FunctionProvider;
-import io.trino.spi.function.table.ConnectorTableFunction;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,45 +36,38 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static com.google.common.base.Throwables.getCausalChain;
-import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static com.starburstdata.trino.plugin.ai.AiErrorCode.AI_ERROR;
+import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.base.util.JsonUtils.parseJson;
 
-public class AiModule
+public class IcebergAiModule
         extends AbstractConfigurationAwareModule
 {
     @Override
     protected void setup(Binder binder)
     {
-        configBinder(binder).bindConfig(AiConfig.class);
-        binder.bind(AiConnector.class).in(Scopes.SINGLETON);
-        binder.bind(AiMetadata.class).in(Scopes.SINGLETON);
-        binder.bind(AiFunctions.class).in(Scopes.SINGLETON);
+        configBinder(binder).bindConfig(IcebergAiConfig.class);
+        OptionalBinder<ClientProvider> clientProviderBinder = newOptionalBinder(binder, ClientProvider.class);
+        clientProviderBinder.setDefault().to(DisabledClientProvider.class).in(Scopes.SINGLETON);
 
-        binder.bind(Connector.class).to(AiConnector.class).in(Scopes.SINGLETON);
-        binder.bind(ConnectorMetadata.class).to(AiMetadata.class).in(Scopes.SINGLETON);
-        binder.bind(FunctionProvider.class).to(AiFunctions.class).in(Scopes.SINGLETON);
-
-        install(new AiClientModule());
-        binder.bind(ClientProvider.class).to(ModelClientProvider.class).in(Scopes.SINGLETON);
-
-        var systemTableBinder = newSetBinder(binder, SystemTable.class);
-        systemTableBinder.addBinding().to(LanguageModelSystemTable.class).in(Scopes.SINGLETON);
-        systemTableBinder.addBinding().to(EmbeddingModelSystemTable.class).in(Scopes.SINGLETON);
-
-        newSetBinder(binder, ConnectorTableFunction.class).addBinding().to(GenerateEmbeddingsTableFunction.class).in(Scopes.SINGLETON);
+        install(conditionalModule(
+                IcebergAiConfig.class,
+                config -> config.getModelConnectionSpecsFile() != null,
+                conditionalBinder -> {
+                    conditionalBinder.install(new AiClientModule());
+                    clientProviderBinder.setBinding().to(ModelClientProvider.class).in(Scopes.SINGLETON);
+                }));
     }
 
     @Provides
-    public static List<FunctionMetadata> getFunctionMetadata(AiFunctions functions)
+    public static List<ModelConnectionSpec> getModelConnectionSpecs(IcebergAiConfig config, SecretsResolver secretsResolver)
     {
-        return functions.getFunctions();
-    }
+        if (config.getModelConnectionSpecsFile() == null) {
+            return List.of();
+        }
 
-    @Provides
-    public static List<ModelConnectionSpec> getModelConnectionSpecs(AiConfig config, SecretsResolver secretsResolver)
-    {
         try {
             String json = Files.readString(Path.of(config.getModelConnectionSpecsFile()));
             String resolvedJson = secretsResolver.getResolvedConfiguration(ImmutableMap.of("json", json)).get("json");

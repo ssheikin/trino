@@ -11,17 +11,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.procedure;
+package com.starburstdata.trino.plugin.ai;
 
-public enum IcebergTableProcedureId
+import io.airlift.slice.Slice;
+
+public class DisabledClientProvider
+        implements ClientProvider
 {
-    OPTIMIZE,
-    OPTIMIZE_MANIFESTS,
-    DROP_EXTENDED_STATS,
-    ROLLBACK_TO_SNAPSHOT,
-    EXPIRE_SNAPSHOTS,
-    REMOVE_ORPHAN_FILES,
-    ADD_FILES,
-    ADD_FILES_FROM_TABLE,
-    GENERATE_EMBEDDINGS,
+    @Override
+    public LanguageModelClient languageModelClient(Slice modelId)
+    {
+        throw new UnsupportedOperationException("AI features are not available.");
+    }
+
+    @Override
+    public EmbeddingModelClient embeddingModelClient(Slice modelId)
+    {
+        throw new UnsupportedOperationException("AI features are not available.");
+    }
 }
