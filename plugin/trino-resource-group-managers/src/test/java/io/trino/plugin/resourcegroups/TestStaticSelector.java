@@ -56,6 +56,25 @@ public class TestStaticSelector
     }
 
     @Test
+    public void testUserRegexCustomGroup()
+    {
+        ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo_userA_A");
+        StaticSelector selector = new StaticSelector(
+                Optional.of(Pattern.compile("user(?<suffix>.*)")),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                new ResourceGroupIdTemplate("global.foo_${USER}_${suffix}"));
+        assertThat(selector.match(newSelectionCriteria("userA", null, ImmutableSet.of(), EMPTY_RESOURCE_ESTIMATES, ""))).hasValueSatisfying(context -> {
+            assertThat(context.getResourceGroupId()).isEqualTo(resourceGroupId);
+            assertThat(context.getContext().getVariableNames()).containsExactlyInAnyOrder("suffix", "USER");
+        });
+    }
+
+    @Test
     public void testSourceRegex()
     {
         ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo");
@@ -89,6 +108,24 @@ public class TestStaticSelector
         assertThat(selector.match(newSelectionCriteria("userA", "source", ImmutableSet.of("tag1"), EMPTY_RESOURCE_ESTIMATES, "select * from part"))).isEqualTo(Optional.empty());
         assertThat(selector.match(newSelectionCriteria("user", "source", ImmutableSet.of(), EMPTY_RESOURCE_ESTIMATES, "select partkey from part")).map(SelectionContext::getResourceGroupId)).isEqualTo(Optional.of(resourceGroupId));
         assertThat(selector.match(newSelectionCriteria("user", "source", ImmutableSet.of("tag1"), EMPTY_RESOURCE_ESTIMATES, "select name, partkey, brand from part")).map(SelectionContext::getResourceGroupId)).isEqualTo(Optional.of(resourceGroupId));
+    }
+
+    @Test
+    public void testSourceRegexEmptyMatch()
+    {
+        ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo");
+        StaticSelector selector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(Pattern.compile("$^")),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                new ResourceGroupIdTemplate("global.foo"));
+        assertThat(selector.match(newSelectionCriteria("user", null, ImmutableSet.of(), EMPTY_RESOURCE_ESTIMATES, "")).map(SelectionContext::getResourceGroupId)).isEqualTo(Optional.of(resourceGroupId));
+        assertThat(selector.match(newSelectionCriteria("user", "", ImmutableSet.of(), EMPTY_RESOURCE_ESTIMATES, "")).map(SelectionContext::getResourceGroupId)).isEqualTo(Optional.of(resourceGroupId));
+        assertThat(selector.match(newSelectionCriteria("user", "source", ImmutableSet.of(""), EMPTY_RESOURCE_ESTIMATES, ""))).isEqualTo(Optional.empty());
     }
 
     @Test
