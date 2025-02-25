@@ -49,6 +49,8 @@ public class TestStaticSelector
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 new ResourceGroupIdTemplate("global.foo"));
         assertThat(selector.match(newSelectionCriteria("userA", null, ImmutableSet.of("tag1"), EMPTY_RESOURCE_ESTIMATES, "")).map(SelectionContext::getResourceGroupId)).isEqualTo(Optional.of(resourceGroupId));
         assertThat(selector.match(newSelectionCriteria("userB", "source", ImmutableSet.of(), EMPTY_RESOURCE_ESTIMATES, "")).map(SelectionContext::getResourceGroupId)).isEqualTo(Optional.of(resourceGroupId));
@@ -67,6 +69,8 @@ public class TestStaticSelector
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 new ResourceGroupIdTemplate("global.foo_${USER}_${suffix}"));
         assertThat(selector.match(newSelectionCriteria("userA", null, ImmutableSet.of(), EMPTY_RESOURCE_ESTIMATES, ""))).hasValueSatisfying(context -> {
             assertThat(context.getResourceGroupId()).isEqualTo(resourceGroupId);
@@ -75,10 +79,94 @@ public class TestStaticSelector
     }
 
     @Test
+    public void testOriginalUserRegex()
+    {
+        ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo");
+        StaticSelector selector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(Pattern.compile("originalUser.*")),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                new ResourceGroupIdTemplate("global.foo"));
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "originalUserA", null, "")).map(SelectionContext::getResourceGroupId)).hasValue(resourceGroupId);
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "originalUserB", null, "")).map(SelectionContext::getResourceGroupId)).hasValue(resourceGroupId);
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "A.originalUser", null, ""))).isEmpty();
+    }
+
+    @Test
+    public void testOriginalUserRegexCustomGroup()
+    {
+        ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo_originalUserA_A");
+        StaticSelector selector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(Pattern.compile("(?<original>originalUser(?<suffix>.*))")),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                new ResourceGroupIdTemplate("global.foo_${original}_${suffix}"));
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "originalUserA", null, ""))).hasValueSatisfying(context -> {
+            assertThat(context.getResourceGroupId()).isEqualTo(resourceGroupId);
+            assertThat(context.getContext().getVariableNames()).containsExactlyInAnyOrder("suffix", "original");
+        });
+    }
+
+    @Test
+    public void testAuthenticatedUserRegex()
+    {
+        ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo");
+        StaticSelector selector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(Pattern.compile("authenticatedUser.*")),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                new ResourceGroupIdTemplate("global.foo"));
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "userA", "authenticatedUserA", "")).map(SelectionContext::getResourceGroupId)).hasValue(resourceGroupId);
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "userA", "authenticatedUserB", "")).map(SelectionContext::getResourceGroupId)).hasValue(resourceGroupId);
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "userA", "A.authenticatedUser", ""))).isEmpty();
+    }
+
+    @Test
+    public void testAuthenticatedUserRegexCustomGroup()
+    {
+        ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo_authenticatedUser_A");
+        StaticSelector selector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(Pattern.compile("(?<auth>authenticatedUser)(?<suffix>.*)")),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                new ResourceGroupIdTemplate("global.foo_${auth}_${suffix}"));
+        assertThat(selector.match(newSelectionCriteriaUsers("userA", "userA", "authenticatedUserA", ""))).hasValueSatisfying(context -> {
+            assertThat(context.getResourceGroupId()).isEqualTo(resourceGroupId);
+            assertThat(context.getContext().getVariableNames()).containsExactlyInAnyOrder("suffix", "auth");
+        });
+    }
+
+    @Test
     public void testSourceRegex()
     {
         ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo");
         StaticSelector selector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.of(Pattern.compile(".*source.*")),
@@ -100,6 +188,8 @@ public class TestStaticSelector
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.of(Pattern.compile("(?i).*partkey.*from part.*")),
                 Optional.empty(),
                 Optional.empty(),
@@ -115,6 +205,8 @@ public class TestStaticSelector
     {
         ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo");
         StaticSelector selector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.of(Pattern.compile("$^")),
@@ -137,6 +229,8 @@ public class TestStaticSelector
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.of(ImmutableList.of("tag1", "tag2")),
                 Optional.empty(),
                 Optional.empty(),
@@ -153,6 +247,8 @@ public class TestStaticSelector
         ResourceGroupId resourceGroupId = new ResourceGroupId(new ResourceGroupId("global"), "foo");
 
         StaticSelector smallQuerySelector = new StaticSelector(
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
@@ -211,6 +307,8 @@ public class TestStaticSelector
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.of(new SelectorResourceEstimate(
                         Optional.empty(),
                         Optional.empty(),
@@ -259,6 +357,11 @@ public class TestStaticSelector
 
     private SelectionCriteria newSelectionCriteria(String user, String source, Set<String> tags, ResourceEstimates resourceEstimates, String queryText)
     {
-        return new SelectionCriteria(true, user, ImmutableSet.of(), Optional.ofNullable(source), tags, resourceEstimates, Optional.empty(), queryText);
+        return new SelectionCriteria(true, user, ImmutableSet.of(), user, Optional.empty(), Optional.ofNullable(source), tags, resourceEstimates, Optional.empty(), queryText);
+    }
+
+    private SelectionCriteria newSelectionCriteriaUsers(String user, String originalUser, String authenticatedUser, String queryText)
+    {
+        return new SelectionCriteria(true, user, ImmutableSet.of(), originalUser, Optional.ofNullable(authenticatedUser), Optional.empty(), Set.of(), EMPTY_RESOURCE_ESTIMATES, Optional.empty(), queryText);
     }
 }

@@ -35,6 +35,8 @@ public class SelectorRecord
     private final long priority;
     private final Optional<Pattern> userRegex;
     private final Optional<Pattern> userGroupRegex;
+    private final Optional<Pattern> originalUserRegex;
+    private final Optional<Pattern> authenticatedUserRegex;
     private final Optional<Pattern> sourceRegex;
     private final Optional<Pattern> queryTextRegex;
     private final Optional<String> queryType;
@@ -46,6 +48,8 @@ public class SelectorRecord
             long priority,
             Optional<Pattern> userRegex,
             Optional<Pattern> userGroupRegex,
+            Optional<Pattern> originalUserRegex,
+            Optional<Pattern> authenticatedUserRegex,
             Optional<Pattern> sourceRegex,
             Optional<Pattern> queryTextRegex,
             Optional<String> queryType,
@@ -56,6 +60,8 @@ public class SelectorRecord
         this.priority = priority;
         this.userRegex = requireNonNull(userRegex, "userRegex is null");
         this.userGroupRegex = requireNonNull(userGroupRegex, "userGroupRegex is null");
+        this.originalUserRegex = requireNonNull(originalUserRegex, "originalUserRegex is null");
+        this.authenticatedUserRegex = requireNonNull(authenticatedUserRegex, "authenticatedUserRegex is null");
         this.sourceRegex = requireNonNull(sourceRegex, "sourceRegex is null");
         this.queryTextRegex = requireNonNull(queryTextRegex, "queryTextRegex is null");
         this.queryType = requireNonNull(queryType, "queryType is null");
@@ -81,6 +87,16 @@ public class SelectorRecord
     public Optional<Pattern> getUserGroupRegex()
     {
         return userGroupRegex;
+    }
+
+    public Optional<Pattern> getOriginalUserRegex()
+    {
+        return originalUserRegex;
+    }
+
+    public Optional<Pattern> getAuthenticatedUserRegex()
+    {
+        return authenticatedUserRegex;
     }
 
     public Optional<Pattern> getSourceRegex()
@@ -123,6 +139,8 @@ public class SelectorRecord
                     resultSet.getLong("priority"),
                     Optional.ofNullable(resultSet.getString("user_regex")).map(Pattern::compile),
                     Optional.ofNullable(resultSet.getString("user_group_regex")).map(Pattern::compile),
+                    Optional.ofNullable(resultSet.getString("original_user_regex")).map(Pattern::compile),
+                    Optional.ofNullable(resultSet.getString("authenticated_user_regex")).map(Pattern::compile),
                     Optional.ofNullable(resultSet.getString("source_regex")).map(Pattern::compile),
                     Optional.ofNullable(resultSet.getString("query_text_regex")).map(Pattern::compile),
                     Optional.ofNullable(resultSet.getString("query_type")),
