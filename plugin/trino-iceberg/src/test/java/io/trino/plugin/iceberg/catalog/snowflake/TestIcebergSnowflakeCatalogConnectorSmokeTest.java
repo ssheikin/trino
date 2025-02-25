@@ -789,6 +789,14 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
         }
     }
 
+    @Test
+    @Override
+    public void testIcebergTablesSystemTable()
+    {
+        assertThat(query("SELECT * FROM iceberg.system.iceberg_tables WHERE table_schema = '%s'".formatted(SNOWFLAKE_TEST_SCHEMA.toLowerCase(ENGLISH))))
+                .matches("SELECT table_schema, table_name FROM iceberg.information_schema.tables WHERE table_schema='%s'".formatted(SNOWFLAKE_TEST_SCHEMA.toLowerCase(ENGLISH)));
+    }
+
     @Override
     protected boolean isFileSorted(Location path, String sortColumnName)
     {

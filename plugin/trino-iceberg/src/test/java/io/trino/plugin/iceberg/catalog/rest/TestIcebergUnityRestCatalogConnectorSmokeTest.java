@@ -39,6 +39,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
 {
     private final Path warehouseLocation;
     private String restCatalogUri;
+    private UnityCatalogContainer unityCatalog;
 
     public TestIcebergUnityRestCatalogConnectorSmokeTest()
             throws IOException
@@ -63,7 +64,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
             throws Exception
     {
         closeAfterClass(() -> deleteRecursively(warehouseLocation, ALLOW_INSECURE));
-        UnityCatalogContainer unityCatalog = closeAfterClass(new UnityCatalogContainer("unity", "tpch"));
+        unityCatalog = closeAfterClass(new UnityCatalogContainer("unity", "tpch"));
 
         restCatalogUri = unityCatalog.uri() + "/iceberg";
         DistributedQueryRunner queryRunner = IcebergQueryRunner.builder()
@@ -99,6 +100,24 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
         );
     }
 
+    protected void createSchema(String schemaName)
+    {
+        unityCatalog.createSchema(schemaName);
+    }
+
+    @Override
+    protected void dropSchema(String schema)
+    {
+        unityCatalog.dropSchema(schema);
+    }
+
+    @Override
+    protected AutoCloseable createTable(String schema, String tableName, String tableDefinition)
+    {
+        unityCatalog.createTable(schema, tableName, tableDefinition);
+        return () -> unityCatalog.dropTable(schema, tableName);
+    }
+
     @Override
     protected void dropTableFromMetastore(String tableName)
     {
@@ -114,7 +133,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     @Override
     protected String schemaPath()
     {
-        return format("%s/%s", warehouseLocation, getSession().getSchema());
+        return format("%s/%s", warehouseLocation, getSession().getSchema().orElseThrow());
     }
 
     @Override
