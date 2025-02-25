@@ -29,9 +29,6 @@ import io.trino.operator.DirectExchangeClientSupplier;
 import io.trino.server.ExternalUriInfo;
 import io.trino.server.ForStatementResource;
 import io.trino.server.ServerConfig;
-import io.trino.server.protocol.spooling.QueryDataEncoder;
-import io.trino.server.protocol.spooling.QueryDataEncoders;
-import io.trino.server.protocol.spooling.SpoolingQueryDataProducer;
 import io.trino.server.resultscache.ActiveResultsCacheEntry;
 import io.trino.server.resultscache.ResultsCacheManager;
 import io.trino.server.security.ResourceSecurity;
@@ -85,7 +82,7 @@ public class ExecutingStatementResource
     private static final DataSize MAX_TARGET_RESULT_SIZE = DataSize.of(128, MEGABYTE);
 
     private final QueryManager queryManager;
-    private final QueryDataEncoders encoders;
+    private final QueryDataProducerFactory queryDataProducerFactory;
     private final DirectExchangeClientSupplier directExchangeClientSupplier;
     private final ExchangeManagerRegistry exchangeManagerRegistry;
     private final BlockEncodingSerde blockEncodingSerde;
@@ -102,7 +99,7 @@ public class ExecutingStatementResource
     @Inject
     public ExecutingStatementResource(
             QueryManager queryManager,
-            QueryDataEncoders encoders,
+            QueryDataProducerFactory queryDataProducerFactory,
             DirectExchangeClientSupplier directExchangeClientSupplier,
             ExchangeManagerRegistry exchangeManagerRegistry,
             BlockEncodingSerde blockEncodingSerde,
@@ -114,7 +111,7 @@ public class ExecutingStatementResource
             ServerConfig serverConfig)
     {
         this.queryManager = requireNonNull(queryManager, "queryManager is null");
-        this.encoders = requireNonNull(encoders, "encoders is null");
+        this.queryDataProducerFactory = requireNonNull(queryDataProducerFactory, "queryDataProducerFactory is null");
         this.directExchangeClientSupplier = requireNonNull(directExchangeClientSupplier, "directExchangeClientSupplier is null");
         this.exchangeManagerRegistry = requireNonNull(exchangeManagerRegistry, "exchangeManagerRegistry is null");
         this.blockEncodingSerde = requireNonNull(blockEncodingSerde, "blockEncodingSerde is null");
@@ -202,13 +199,10 @@ public class ExecutingStatementResource
             throw new NotFoundException("Query not found");
         }
 
-        Optional<QueryDataEncoder.Factory> encoderFactory = session.getQueryDataEncoding()
-                .map(encoders::get);
-
         // TODO: https://starburstdata.atlassian.net/browse/SEP-14832
         //  add support for encoded and spooled query data
         Optional<ActiveResultsCacheEntry> resultsCacheEntry;
-        if (encoderFactory.isEmpty()) {
+        if (session.getQueryDataEncoding().isEmpty()) {
             resultsCacheEntry = resultsCacheManager.registerQuery(queryId);
         }
         else {
@@ -219,9 +213,7 @@ public class ExecutingStatementResource
                 session,
                 querySlug,
                 queryManager,
-                encoderFactory
-                        .map(SpoolingQueryDataProducer::createSpooledQueryDataProducer)
-                        .orElseGet(JsonBytesQueryDataProducer::new),
+                queryDataProducerFactory.create(session),
                 queryInfoUrlFactory.getQueryInfoUrl(queryId),
                 directExchangeClientSupplier,
                 exchangeManagerRegistry,
