@@ -34,7 +34,7 @@ final class TestTpchPlugin
         ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
         Map<String, String> config = ImmutableMap.of(
                 "non-existent-property", "value",
-                "tpch.produce-pages", "true");
+                "tpch.column-naming", "STANDARD");
 
         Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new ConnectorContext() {});
 

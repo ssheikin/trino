@@ -84,11 +84,11 @@ public class TestSetCatalogPropertiesTask
                         """,
                 ImmutableList.of(
                         new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
-                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("true"))),
+                        new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("false"))),
                 """
                            "tpch.column-naming" = 'STANDARD',
                            "tpch.double-type-mapping" = 'DOUBLE',
-                           "tpch.produce-pages" = 'true'
+                           "tpch.predicate-pushdown-enabled" = 'false'
                         """);
     }
 
@@ -137,14 +137,14 @@ public class TestSetCatalogPropertiesTask
                 ImmutableList.of(
                         new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
                         new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE")),
-                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("true"))),
+                        new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("false"))),
                 """
                            "tpch.column-naming" = 'STANDARD',
                            "tpch.double-type-mapping" = 'DOUBLE',
-                           "tpch.produce-pages" = 'true'
+                           "tpch.predicate-pushdown-enabled" = 'false'
                         """,
                 ImmutableList.of(
-                        new Property(new Identifier("tpch.produce-pages")),
+                        new Property(new Identifier("tpch.predicate-pushdown-enabled")),
                         new Property(new Identifier("tpch.column-naming"))),
                 """
                            "tpch.double-type-mapping" = 'DOUBLE'
@@ -161,11 +161,11 @@ public class TestSetCatalogPropertiesTask
                         // unchanged:
                         new Property(new Identifier("tpch.max-rows-per-page"), new StringLiteral("128")),
                         // to update:
-                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("true"))),
+                        new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("false"))),
                 """
                            "tpch.double-type-mapping" = 'DOUBLE',
                            "tpch.max-rows-per-page" = '128',
-                           "tpch.produce-pages" = 'true'
+                           "tpch.predicate-pushdown-enabled" = 'false'
                         """,
                 ImmutableList.of(
                         // added:
@@ -175,14 +175,14 @@ public class TestSetCatalogPropertiesTask
                         // added:
                         new Property(new Identifier("tpch.partitioning-enabled"), new StringLiteral("true")),
                         // to update:
-                        new Property(new Identifier("tpch.produce-pages"), new StringLiteral("false")),
+                        new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("true")),
                         // added:
                         new Property(new Identifier("tpch.splits-per-node"), new StringLiteral("16"))),
                 """
                            "tpch.column-naming" = 'STANDARD',
                            "tpch.max-rows-per-page" = '128',
                            "tpch.partitioning-enabled" = 'true',
-                           "tpch.produce-pages" = 'false',
+                           "tpch.predicate-pushdown-enabled" = 'true',
                            "tpch.splits-per-node" = '16'
                         """);
     }
