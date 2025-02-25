@@ -26,6 +26,8 @@ import io.trino.plugin.hive.metastore.thrift.ThriftMetastoreModule;
 
 import java.util.Optional;
 
+import static com.google.inject.util.Modules.EMPTY_MODULE;
+
 public class HiveMetastoreModule
         extends AbstractConfigurationAwareModule
 {
@@ -49,6 +51,8 @@ public class HiveMetastoreModule
                 case FILE -> new FileMetastoreModule();
                 case GLUE -> new GlueMetastoreModule();
                 case GLUE_V1 -> new io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule();
+                // these are not handled by Trino
+                case THRIFT_CDP7 -> EMPTY_MODULE;
             });
         }
 

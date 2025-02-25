@@ -22,6 +22,8 @@ import io.trino.plugin.deltalake.metastore.thrift.DeltaLakeThriftMetastoreModule
 import io.trino.plugin.hive.metastore.CachingHiveMetastoreModule;
 import io.trino.plugin.hive.metastore.MetastoreTypeConfig;
 
+import static com.google.inject.util.Modules.EMPTY_MODULE;
+
 public class DeltaLakeMetastoreModule
         extends AbstractConfigurationAwareModule
 {
@@ -33,6 +35,8 @@ public class DeltaLakeMetastoreModule
             case FILE -> new DeltaLakeFileMetastoreModule();
             case GLUE -> new DeltaLakeGlueMetastoreModule();
             case GLUE_V1 -> new DeltaLakeGlueV1MetastoreModule();
+            // these are not handled by Trino
+            case THRIFT_CDP7 -> EMPTY_MODULE;
         });
 
         install(new CachingHiveMetastoreModule());

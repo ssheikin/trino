@@ -23,6 +23,7 @@ public class MetastoreTypeConfig
     public enum MetastoreType
     {
         THRIFT,
+        THRIFT_CDP7,
         FILE,
         GLUE,
         GLUE_V1,
