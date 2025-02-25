@@ -163,6 +163,7 @@ public class QueryStateMachine
 
     private final AtomicReference<String> setAuthorizationUser = new AtomicReference<>();
     private final AtomicBoolean resetAuthorizationUser = new AtomicBoolean();
+    private final Set<SelectedRole> setOriginalRoles = Sets.newConcurrentHashSet();
 
     private final Map<String, String> setSessionProperties = new ConcurrentHashMap<>();
     private final Set<String> resetSessionProperties = Sets.newConcurrentHashSet();
@@ -533,6 +534,7 @@ public class QueryStateMachine
                 Optional.ofNullable(setPath.get()),
                 Optional.ofNullable(setAuthorizationUser.get()),
                 resetAuthorizationUser.get(),
+                setOriginalRoles,
                 setSessionProperties,
                 resetSessionProperties,
                 setRoles,
@@ -631,6 +633,7 @@ public class QueryStateMachine
                 Optional.ofNullable(setPath.get()),
                 Optional.ofNullable(setAuthorizationUser.get()),
                 resetAuthorizationUser.get(),
+                setOriginalRoles,
                 setSessionProperties,
                 resetSessionProperties,
                 setRoles,
@@ -1039,6 +1042,11 @@ public class QueryStateMachine
         resetAuthorizationUser.set(true);
     }
 
+    public void addSetOriginalRoles(SelectedRole role)
+    {
+        setOriginalRoles.add(requireNonNull(role, "role is null"));
+    }
+
     public void addSetSessionProperties(String key, String value)
     {
         setSessionProperties.put(requireNonNull(key, "key is null"), requireNonNull(value, "value is null"));
@@ -1438,6 +1446,7 @@ public class QueryStateMachine
                 queryInfo.getSetPath(),
                 queryInfo.getSetAuthorizationUser(),
                 queryInfo.isResetAuthorizationUser(),
+                queryInfo.getSetOriginalRoles(),
                 queryInfo.getSetSessionProperties(),
                 queryInfo.getResetSessionProperties(),
                 queryInfo.getSetRoles(),

@@ -66,6 +66,8 @@ public record ResultQueryInfo(
         @JsonProperty
         boolean resetAuthorizationUser,
         @JsonProperty
+        Set<SelectedRole> setOriginalRoles,
+        @JsonProperty
         Map<String, String> setSessionProperties,
         @JsonProperty
         Set<String> resetSessionProperties,
@@ -104,6 +106,7 @@ public record ResultQueryInfo(
             @JsonProperty("setPath") Optional<String> setPath,
             @JsonProperty("setAuthorizationUser") Optional<String> setAuthorizationUser,
             @JsonProperty("resetAuthorizationUser") boolean resetAuthorizationUser,
+            @JsonProperty("setOriginalRoles") Set<SelectedRole> setOriginalRoles,
             @JsonProperty("setSessionProperties") Map<String, String> setSessionProperties,
             @JsonProperty("resetSessionProperties") Set<String> resetSessionProperties,
             @JsonProperty("setRoles") Map<String, SelectedRole> setRoles,
@@ -130,6 +133,7 @@ public record ResultQueryInfo(
         this.setPath = requireNonNull(setPath, "setPath is null");
         this.setAuthorizationUser = requireNonNull(setAuthorizationUser, "setAuthorizationUser is null");
         this.resetAuthorizationUser = resetAuthorizationUser;
+        this.setOriginalRoles = requireNonNull(setOriginalRoles, "setOriginalRoles is null");
         this.setSessionProperties = requireNonNull(setSessionProperties, "setSessionProperties is null");
         this.resetSessionProperties = requireNonNull(resetSessionProperties, "resetSessionProperties is null");
         this.addedPreparedStatements = requireNonNull(addedPreparedStatements, "addedPreparedStatements is null");
@@ -159,6 +163,7 @@ public record ResultQueryInfo(
                 queryInfo.getSetPath(),
                 queryInfo.getSetAuthorizationUser(),
                 queryInfo.isResetAuthorizationUser(),
+                queryInfo.getSetOriginalRoles(),
                 queryInfo.getSetSessionProperties(),
                 queryInfo.getResetSessionProperties(),
                 queryInfo.getSetRoles(),

@@ -62,6 +62,7 @@ public class QueryInfo
     private final Optional<String> setPath;
     private final Optional<String> setAuthorizationUser;
     private final boolean resetAuthorizationUser;
+    private final Set<SelectedRole> setOriginalRoles;
     private final Map<String, String> setSessionProperties;
     private final Set<String> resetSessionProperties;
     private final Map<String, SelectedRole> setRoles;
@@ -103,6 +104,7 @@ public class QueryInfo
             @JsonProperty("setPath") Optional<String> setPath,
             @JsonProperty("setAuthorizationUser") Optional<String> setAuthorizationUser,
             @JsonProperty("resetAuthorizationUser") boolean resetAuthorizationUser,
+            @JsonProperty("setOriginalRoles") Set<SelectedRole> setOriginalRoles,
             @JsonProperty("setSessionProperties") Map<String, String> setSessionProperties,
             @JsonProperty("resetSessionProperties") Set<String> resetSessionProperties,
             @JsonProperty("setRoles") Map<String, SelectedRole> setRoles,
@@ -138,6 +140,7 @@ public class QueryInfo
         requireNonNull(setSchema, "setSchema is null");
         requireNonNull(setPath, "setPath is null");
         requireNonNull(setAuthorizationUser, "setAuthorizationUser is null");
+        requireNonNull(setOriginalRoles, "setOriginalRoles is null");
         requireNonNull(setSessionProperties, "setSessionProperties is null");
         requireNonNull(resetSessionProperties, "resetSessionProperties is null");
         requireNonNull(addedPreparedStatements, "addedPreparedStatements is null");
@@ -171,6 +174,7 @@ public class QueryInfo
         this.setPath = setPath;
         this.setAuthorizationUser = setAuthorizationUser;
         this.resetAuthorizationUser = resetAuthorizationUser;
+        this.setOriginalRoles = setOriginalRoles;
         this.setSessionProperties = ImmutableMap.copyOf(setSessionProperties);
         this.resetSessionProperties = ImmutableSet.copyOf(resetSessionProperties);
         this.setRoles = ImmutableMap.copyOf(setRoles);
@@ -293,6 +297,12 @@ public class QueryInfo
     public boolean isResetAuthorizationUser()
     {
         return resetAuthorizationUser;
+    }
+
+    @JsonProperty
+    public Set<SelectedRole> getSetOriginalRoles()
+    {
+        return setOriginalRoles;
     }
 
     @JsonProperty
@@ -475,6 +485,7 @@ public class QueryInfo
                 setPath,
                 setAuthorizationUser,
                 resetAuthorizationUser,
+                setOriginalRoles,
                 setSessionProperties,
                 resetSessionProperties,
                 setRoles,
