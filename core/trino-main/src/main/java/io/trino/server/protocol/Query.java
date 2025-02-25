@@ -198,7 +198,7 @@ class Query
             Session session,
             Slug slug,
             QueryManager queryManager,
-            QueryDataProducer queryDataProducer,
+            QueryDataProducerFactory queryDataProducerFactory,
             Optional<URI> queryInfoUrl,
             DirectExchangeClientSupplier directExchangeClientSupplier,
             ExchangeManagerRegistry exchangeManagerRegistry,
@@ -217,7 +217,7 @@ class Query
                 getRetryPolicy(session),
                 exchangeManagerRegistry);
 
-        Query result = new Query(session, slug, queryManager, queryDataProducer, queryInfoUrl, resultsCacheEntry, exchangeDataSource, dataProcessorExecutor, timeoutExecutor, blockEncodingSerde);
+        Query result = new Query(session, slug, queryManager, queryDataProducerFactory.create(session), queryInfoUrl, resultsCacheEntry, exchangeDataSource, dataProcessorExecutor, timeoutExecutor, blockEncodingSerde);
 
         result.queryManager.setOutputInfoListener(result.getQueryId(), result::setQueryOutputInfo);
 
