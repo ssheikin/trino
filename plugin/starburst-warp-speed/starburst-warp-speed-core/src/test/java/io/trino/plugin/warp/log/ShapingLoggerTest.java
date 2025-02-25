@@ -43,7 +43,7 @@ public class ShapingLoggerTest
     @Test
     public void testSimple()
     {
-        ShapingLogger shapingLogger = shapingLoggerFactory.getInstance(logger, 2, Duration.ZERO, 1);
+        ShapingLogger shapingLogger = shapingLoggerFactory.getInstance(this.getClass(), logger, 2, Duration.ZERO, 1, ShapingLogger.MODE.FORMAT);
 
         shapingLogger.info("%s", "test");
         verify(logger, never()).info(eq("test"));
