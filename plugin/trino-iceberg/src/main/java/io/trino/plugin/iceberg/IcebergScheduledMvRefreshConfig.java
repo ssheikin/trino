@@ -17,7 +17,7 @@ import io.airlift.configuration.Config;
 
 public class IcebergScheduledMvRefreshConfig
 {
-    private boolean scheduledMaterializedViewRefreshEnabled;
+    private boolean scheduledMaterializedViewRefreshEnabled = true;
 
     public boolean isScheduledMaterializedViewRefreshEnabled()
     {

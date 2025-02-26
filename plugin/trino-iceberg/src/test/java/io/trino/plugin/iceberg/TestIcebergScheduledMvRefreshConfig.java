@@ -28,18 +28,18 @@ public class TestIcebergScheduledMvRefreshConfig
     public void testDefaults()
     {
         assertRecordedDefaults(recordDefaults(IcebergScheduledMvRefreshConfig.class)
-                .setScheduledMaterializedViewRefreshEnabled(false));
+                .setScheduledMaterializedViewRefreshEnabled(true));
     }
 
     @Test
     public void testExplicitPropertyMappings()
     {
         Map<String, String> properties = ImmutableMap.<String, String>builder()
-                .put("iceberg.scheduled-materialized-view-refresh-enabled", "true")
+                .put("iceberg.scheduled-materialized-view-refresh-enabled", "false")
                 .buildOrThrow();
 
         IcebergScheduledMvRefreshConfig expected = new IcebergScheduledMvRefreshConfig()
-                .setScheduledMaterializedViewRefreshEnabled(true);
+                .setScheduledMaterializedViewRefreshEnabled(false);
 
         assertFullMapping(properties, expected);
     }
