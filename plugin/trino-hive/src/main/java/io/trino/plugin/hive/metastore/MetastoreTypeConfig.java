@@ -28,6 +28,7 @@ public class MetastoreTypeConfig
         GLUE,
         GLUE_V1,
         UNITY,
+        UNLOAD,
     }
 
     private MetastoreType metastoreType = THRIFT;

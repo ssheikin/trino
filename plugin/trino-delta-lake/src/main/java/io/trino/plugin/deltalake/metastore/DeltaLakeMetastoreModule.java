@@ -36,7 +36,7 @@ public class DeltaLakeMetastoreModule
             case GLUE -> new DeltaLakeGlueMetastoreModule();
             case GLUE_V1 -> new DeltaLakeGlueV1MetastoreModule();
             // these are not handled by Trino
-            case THRIFT_CDP7, UNITY -> EMPTY_MODULE;
+            case THRIFT_CDP7, UNITY, UNLOAD -> EMPTY_MODULE;
         });
 
         install(new CachingHiveMetastoreModule());
