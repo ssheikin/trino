@@ -47,8 +47,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Set;
 
+import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHdfsFileSystemS3WithSSEC
@@ -67,10 +67,10 @@ public class TestHdfsFileSystemS3WithSSEC
 
     public TestHdfsFileSystemS3WithSSEC()
     {
-        bucketName = environmentVariable("EMPTY_S3_BUCKET");
-        s3Endpoint = environmentVariable("S3_BUCKET_ENDPOINT");
-        accessKey = environmentVariable("AWS_ACCESS_KEY_ID");
-        secretKey = environmentVariable("AWS_SECRET_ACCESS_KEY");
+        bucketName = requireEnv("EMPTY_S3_BUCKET");
+        s3Endpoint = requireEnv("S3_BUCKET_ENDPOINT");
+        accessKey = requireEnv("AWS_ACCESS_KEY_ID");
+        secretKey = requireEnv("AWS_SECRET_ACCESS_KEY");
     }
 
     @BeforeAll
@@ -95,11 +95,6 @@ public class TestHdfsFileSystemS3WithSSEC
         hdfsContext = new HdfsContext(ConnectorIdentity.ofUser("test"));
 
         fileSystem = new HdfsFileSystem(hdfsEnvironment, hdfsContext, new TrinoHdfsFileSystemStats());
-    }
-
-    private static String environmentVariable(String name)
-    {
-        return requireNonNull(System.getenv(name), "Environment variable not set: " + name);
     }
 
     @AfterEach
