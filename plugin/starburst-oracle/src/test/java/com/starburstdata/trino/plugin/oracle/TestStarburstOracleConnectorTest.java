@@ -43,7 +43,6 @@ import java.util.OptionalLong;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.base.Strings.repeat;
 import static com.starburstdata.trino.plugin.oracle.OracleDataTypes.oracleTimestamp3TimeZoneDataType;
 import static com.starburstdata.trino.plugin.oracle.OracleDataTypes.prestoTimestampWithTimeZoneDataType;
 import static com.starburstdata.trino.plugin.oracle.OracleTestUsers.PASSWORD;
@@ -189,8 +188,8 @@ public class TestStarburstOracleConnectorTest
                 ImmutableList.of("'my_long_char', 'my_long_varchar'"))) {
             // Verify using a large value in WHERE, larger than the 2000 and 4000 bytes Oracle max
             // this does not work in Oracle 11
-            assertThat(query(format("SELECT c_long_char FROM %s WHERE c_long_char = '" + repeat("💩", 2000) + "'", table.getName()))).isFullyPushedDown();
-            assertThat(query(format("SELECT c_long_varchar FROM %s WHERE c_long_varchar = '" + repeat("💩", 4000) + "'", table.getName()))).isFullyPushedDown();
+            assertThat(query(format("SELECT c_long_char FROM %s WHERE c_long_char = '" + "💩".repeat(2000) + "'", table.getName()))).isFullyPushedDown();
+            assertThat(query(format("SELECT c_long_varchar FROM %s WHERE c_long_varchar = '" + "💩".repeat(4000) + "'", table.getName()))).isFullyPushedDown();
         }
     }
 

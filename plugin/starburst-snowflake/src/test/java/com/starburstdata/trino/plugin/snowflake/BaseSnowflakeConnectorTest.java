@@ -37,7 +37,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.base.Strings.repeat;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.TEST_SCHEMA;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.BooleanType.BOOLEAN;
@@ -313,8 +312,8 @@ public abstract class BaseSnowflakeConnectorTest
             // this expects the unqualified table name as an argument
             assertThat(getQueryRunner().tableExists(getSession(), testTable.getName().substring(TEST_SCHEMA.length() + 1))).isTrue();
             assertQuery(format("SELECT c_char FROM %s WHERE c_varchar = cast('my_varchar' as varchar(20))", testTable.getName()), "SELECT 'my_char'");
-            assertQueryReturnsEmptyResult(format("SELECT c_char FROM %s WHERE c_long_char = '" + repeat("💩", 2000) + "'", testTable.getName()));
-            assertQueryReturnsEmptyResult(format("SELECT c_char FROM %s WHERE c_long_varchar = '" + repeat("💩", 4000) + "'", testTable.getName()));
+            assertQueryReturnsEmptyResult(format("SELECT c_char FROM %s WHERE c_long_char = '" + "💩".repeat(2000) + "'", testTable.getName()));
+            assertQueryReturnsEmptyResult(format("SELECT c_char FROM %s WHERE c_long_varchar = '" + "💩".repeat(4000) + "'", testTable.getName()));
         }
     }
 
