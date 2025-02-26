@@ -52,7 +52,7 @@ public class HiveMetastoreModule
                 case GLUE -> new GlueMetastoreModule();
                 case GLUE_V1 -> new io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule();
                 // these are not handled by Trino
-                case THRIFT_CDP7 -> EMPTY_MODULE;
+                case THRIFT_CDP7, UNITY -> EMPTY_MODULE;
             });
         }
 
