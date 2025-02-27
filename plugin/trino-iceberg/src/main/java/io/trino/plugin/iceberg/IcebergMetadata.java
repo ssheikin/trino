@@ -47,6 +47,7 @@ import io.trino.plugin.hive.HiveWrittenPartitions;
 import io.trino.plugin.iceberg.aggregation.DataSketchStateSerializer;
 import io.trino.plugin.iceberg.aggregation.IcebergThetaSketchForStats;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
+import io.trino.plugin.iceberg.functions.IcebergFunctionProvider;
 import io.trino.plugin.iceberg.procedure.IcebergAddFilesFromTableHandle;
 import io.trino.plugin.iceberg.procedure.IcebergAddFilesHandle;
 import io.trino.plugin.iceberg.procedure.IcebergDropExtendedStatsHandle;
@@ -110,6 +111,11 @@ import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.expression.FunctionName;
 import io.trino.spi.expression.Variable;
+import io.trino.spi.function.BoundSignature;
+import io.trino.spi.function.FunctionDependencyDeclaration;
+import io.trino.spi.function.FunctionId;
+import io.trino.spi.function.FunctionMetadata;
+import io.trino.spi.function.SchemaFunctionName;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.predicate.TupleDomain;
@@ -430,6 +436,7 @@ public class IcebergMetadata
             .add(SORTED_BY_PROPERTY)
             .build();
     public static final Set<String> UPDATABLE_MATERIALIZED_VIEW_PROPERTIES = ImmutableSet.of(REFRESH_SCHEDULE, REFRESH_SCHEDULE_TIMEZONE);
+    private static final String SYSTEM_SCHEMA = "system";
 
     public static final String NUMBER_OF_DISTINCT_VALUES_NAME = "NUMBER_OF_DISTINCT_VALUES";
     private static final FunctionName NUMBER_OF_DISTINCT_VALUES_FUNCTION = new FunctionName(IcebergThetaSketchForStats.NAME);
@@ -482,6 +489,32 @@ public class IcebergMetadata
         this.allowedExtraProperties = requireNonNull(allowedExtraProperties, "allowedExtraProperties is null");
         this.icebergScanExecutor = requireNonNull(icebergScanExecutor, "icebergScanExecutor is null");
         this.metadataFetchingExecutor = requireNonNull(metadataFetchingExecutor, "metadataFetchingExecutor is null");
+    }
+
+    @Override
+    public Collection<FunctionMetadata> listFunctions(ConnectorSession session, String schemaName)
+    {
+        return schemaName.equals(SYSTEM_SCHEMA) ? IcebergFunctionProvider.FUNCTIONS : List.of();
+    }
+
+    @Override
+    public Collection<FunctionMetadata> getFunctions(ConnectorSession session, SchemaFunctionName name)
+    {
+        if (!name.getSchemaName().equals(SYSTEM_SCHEMA)) {
+            return List.of();
+        }
+        return IcebergFunctionProvider.FUNCTIONS.stream()
+                .filter(function -> function.getCanonicalName().equals(name.getFunctionName()))
+                .toList();
+    }
+
+    @Override
+    public FunctionMetadata getFunctionMetadata(ConnectorSession session, FunctionId functionId)
+    {
+        return IcebergFunctionProvider.FUNCTIONS.stream()
+                .filter(function -> function.getFunctionId().equals(functionId))
+                .findFirst()
+                .orElseThrow();
     }
 
     @Override
@@ -2345,6 +2378,12 @@ public class IcebergMetadata
         catch (IOException e) {
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed accessing data for table: " + schemaTableName, e);
         }
+    }
+
+    @Override
+    public FunctionDependencyDeclaration getFunctionDependencies(ConnectorSession session, FunctionId functionId, BoundSignature boundSignature)
+    {
+        return FunctionDependencyDeclaration.NO_DEPENDENCIES;
     }
 
     @Override
