@@ -14,10 +14,12 @@
 package io.trino.plugin.iceberg;
 
 import io.trino.Session;
+import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.SchemaTableName;
+import io.trino.sql.query.QueryAssertions;
 import io.trino.sql.tree.ExplainType;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
@@ -30,6 +32,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import java.time.ZoneId;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.trino.testing.TestingNames.randomNameSuffix;
@@ -71,7 +74,7 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
         getQueryRunner().execute("DROP SCHEMA %s.%s CASCADE".formatted(TEST_CATALOG, schemaName));
     }
 
-    protected DistributedQueryRunner createQueryRunner(TestingWorkScheduler workScheduler, Map<String, String> icebergCatalogProperties)
+    protected DistributedQueryRunner createQueryRunner(WorkScheduler workScheduler, Map<String, String> icebergCatalogProperties)
             throws Exception
     {
         return IcebergQueryRunner.builder()
@@ -109,6 +112,44 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
         finally {
             assertUpdate("DROP SCHEMA %s.%s CASCADE".formatted(TEST_CATALOG_WITHOUT_SCHEDULING, schema));
         }
+    }
+
+    @Test
+    public void testWorkSchedulerNotAvailable()
+            throws Exception
+    {
+        String materializedViewName = "test_work_scheduler_not_available_" + randomNameSuffix();
+        String schema = "without_work_scheduling_" + randomNameSuffix();
+        Session withoutWorkScheduler = Session.builder(getSession())
+                .setCatalog(TEST_CATALOG)
+                .setSchema(schema)
+                .build();
+
+        CatalogSchemaTableName catalogMaterializedViewName = new CatalogSchemaTableName(TEST_CATALOG, new SchemaTableName(schema, materializedViewName));
+        try (DistributedQueryRunner queryRunner = createQueryRunner(new NoopWorkScheduler(), ImmutableMap.<String, String>builder()
+                .putAll(getIcebergCatalogProperties())
+                .put("iceberg.scheduled-materialized-view-refresh-enabled", "true")
+                .buildOrThrow())) {
+            QueryAssertions queryAssertions = new QueryAssertions(queryRunner);
+            assertUpdate(queryRunner, withoutWorkScheduler, createSchemaSql(TEST_CATALOG, schema));
+            try {
+                assertThat(queryAssertions.query(withoutWorkScheduler, "CREATE MATERIALIZED VIEW " + catalogMaterializedViewName + " WITH (refresh_schedule = '0 0 * * *') AS SELECT 1 AS c"))
+                        .failure().hasMessageContaining("materialized view property 'refresh_schedule' does not exist");
+                assertThat(queryAssertions.query(
+                        withoutWorkScheduler,
+                        "SELECT catalog_name FROM system.metadata.materialized_view_properties WHERE property_name = 'refresh_schedule'"))
+                        .result()
+                        .isEmpty();
+            }
+            finally {
+                assertUpdate(queryRunner, withoutWorkScheduler, "DROP SCHEMA %s.%s CASCADE".formatted(TEST_CATALOG, schema));
+            }
+        }
+    }
+
+    private static void assertUpdate(DistributedQueryRunner queryRunner, Session withoutWorkScheduler, String sql)
+    {
+        io.trino.testing.QueryAssertions.assertUpdate(queryRunner, withoutWorkScheduler, sql, OptionalLong.empty(), Optional.empty());
     }
 
     @Test

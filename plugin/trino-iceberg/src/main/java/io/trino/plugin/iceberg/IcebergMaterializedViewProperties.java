@@ -15,6 +15,8 @@ package io.trino.plugin.iceberg;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.trino.spi.NoopWorkScheduler;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.WorkScheduler.RefreshSchedule;
 import io.trino.spi.session.PropertyMetadata;
 
@@ -34,7 +36,11 @@ public class IcebergMaterializedViewProperties
     private final List<PropertyMetadata<?>> materializedViewProperties;
 
     @Inject
-    public IcebergMaterializedViewProperties(IcebergConfig icebergConfig, IcebergScheduledMvRefreshConfig icebergScheduledMvRefreshConfig, IcebergTableProperties tableProperties)
+    public IcebergMaterializedViewProperties(
+            IcebergConfig icebergConfig,
+            IcebergScheduledMvRefreshConfig icebergScheduledMvRefreshConfig,
+            WorkScheduler workScheduler,
+            IcebergTableProperties tableProperties)
     {
         ImmutableList.Builder<PropertyMetadata<?>> materializedViewProperties = ImmutableList.builder();
         materializedViewProperties.add(stringProperty(
@@ -44,7 +50,7 @@ public class IcebergMaterializedViewProperties
                         false))
                 // Materialized view should allow configuring all the supported iceberg table properties for the storage table
                 .addAll(tableProperties.getTableProperties());
-        if (icebergScheduledMvRefreshConfig.isScheduledMaterializedViewRefreshEnabled()) {
+        if (icebergScheduledMvRefreshConfig.isScheduledMaterializedViewRefreshEnabled() && !(workScheduler instanceof NoopWorkScheduler)) {
             materializedViewProperties.add(stringProperty(
                     REFRESH_SCHEDULE,
                     "Cron schedule to use for refreshing the materialized view",
