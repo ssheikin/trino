@@ -225,6 +225,7 @@ public class TestDeltaLakeSplitManager
                 LocationAccessControl.ALLOW_ALL,
                 transactionLogAccess,
                 typeManager,
+                DeltaLakeAccessControlMetadataFactory.DEFAULT,
                 new DeltaLakeConfig(),
                 JsonCodec.jsonCodec(DataFileInfo.class),
                 JsonCodec.jsonCodec(DeltaLakeMergeResult.class),

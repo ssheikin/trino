@@ -81,6 +81,7 @@ import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.json.JsonBinder.jsonBinder;
 import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
 import static io.trino.plugin.base.ClosingBinder.closingBinder;
+import static io.trino.plugin.deltalake.DeltaLakeAccessControlMetadataFactory.DEFAULT;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
@@ -100,6 +101,7 @@ public class DeltaLakeModule
         binder.bind(boolean.class).annotatedWith(HideDeltaLakeTables.class).toInstance(false);
 
         install(new ConnectorAccessControlModule());
+        newOptionalBinder(binder, DeltaLakeAccessControlMetadataFactory.class).setDefault().toInstance(DEFAULT);
 
         newSetBinder(binder, SystemTable.class);
         Multibinder<SystemTableProvider> systemTableProviders = newSetBinder(binder, SystemTableProvider.class);

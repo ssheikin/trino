@@ -130,6 +130,7 @@ public class TestDeltaLakeCacheIds
                 LocationAccessControl.ALLOW_ALL,
                 transactionLogAccess,
                 typeManager,
+                DeltaLakeAccessControlMetadataFactory.DEFAULT,
                 config,
                 JsonCodec.jsonCodec(DataFileInfo.class),
                 JsonCodec.jsonCodec(DeltaLakeMergeResult.class),
