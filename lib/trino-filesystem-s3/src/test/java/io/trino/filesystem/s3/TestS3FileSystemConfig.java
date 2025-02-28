@@ -76,6 +76,7 @@ public class TestS3FileSystemConfig
                 .setHttpProxyPassword(null)
                 .setHttpProxyPreemptiveBasicProxyAuth(false)
                 .setSupportsExclusiveCreate(true)
+                .setCrossRegionAccessEnabled(false)
                 .setApplicationId("Trino")
                 .setCustomCredentialProviderClass(null)
                 .setCustomCredentialProviderArguments(""));
@@ -119,6 +120,7 @@ public class TestS3FileSystemConfig
                 .put("s3.http-proxy.preemptive-basic-auth", "true")
                 .put("s3.exclusive-create", "false")
                 .put("s3.application-id", "application id")
+                .put("s3.cross-region-access", "true")
                 .put("s3.custom-credential-provider-class", "SampleClass")
                 .put("s3.custom-credential-provider-class.arguments", "argument1=value1,argument2=value2")
                 .buildOrThrow();
@@ -157,6 +159,7 @@ public class TestS3FileSystemConfig
                 .setHttpProxyPassword("test")
                 .setHttpProxyPreemptiveBasicProxyAuth(true)
                 .setSupportsExclusiveCreate(false)
+                .setCrossRegionAccessEnabled(true)
                 .setApplicationId("application id")
                 .setCustomCredentialProviderClass("SampleClass")
                 .setCustomCredentialProviderArguments("argument1=value1,argument2=value2");
