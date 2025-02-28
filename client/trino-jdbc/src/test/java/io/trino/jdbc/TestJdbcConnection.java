@@ -1017,7 +1017,7 @@ public class TestJdbcConnection
         @Override
         public Map<String, String> getSetSessionProperties()
         {
-            return Map.of();
+            return ImmutableMap.of();
         }
 
         @Override
@@ -1029,19 +1029,19 @@ public class TestJdbcConnection
         @Override
         public Map<String, ClientSelectedRole> getSetRoles()
         {
-            return Map.of("unimportant", new ClientSelectedRole(ROLE, Optional.of("test_role")));
+            return ImmutableMap.of("unimportant", new ClientSelectedRole(ROLE, Optional.of("test_role")));
         }
 
         @Override
         public Map<String, String> getAddedPreparedStatements()
         {
-            return Map.of();
+            return ImmutableMap.of();
         }
 
         @Override
         public Set<String> getDeallocatedPreparedStatements()
         {
-            return Set.of();
+            return ImmutableSet.of();
         }
 
         @Override
