@@ -34,6 +34,9 @@ public class TestSnowflakePlugin
         connectorFactories.get(0).create("test",
                         ImmutableMap.of(
                                 "connection-url", "jdbc:snowflake:test",
+                                "connection-user", "test",
+                                "snowflake.connection-private-key", "test",
+                                "snowflake.connection-private-key.passphrase", "test",
                                 "snowflake.role", "test",
                                 "snowflake.database", "test",
                                 "snowflake.warehouse", "test"),
@@ -44,6 +47,9 @@ public class TestSnowflakePlugin
                         "test",
                         ImmutableMap.of(
                                 "connection-url", "jdbc:snowflake:test",
+                                "connection-user", "test",
+                                "snowflake.connection-private-key", "test",
+                                "snowflake.connection-private-key.passphrase", "test",
                                 "snowflake.role", "test",
                                 "snowflake.database", "test",
                                 "snowflake.warehouse", "test"),
@@ -62,6 +68,9 @@ public class TestSnowflakePlugin
                             "test",
                             ImmutableMap.of(
                                     "connection-url", "jdbc:snowflake:test",
+                                    "connection-user", "test",
+                                    "snowflake.connection-private-key", "test",
+                                    "snowflake.connection-private-key.passphrase", "test",
                                     "snowflake.database", "test",
                                     "snowflake.warehouse", "test",
                                     "snowflake.proxy.enabled", "true",
