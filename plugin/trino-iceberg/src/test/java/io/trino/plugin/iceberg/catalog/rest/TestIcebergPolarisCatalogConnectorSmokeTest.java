@@ -90,7 +90,7 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
                 .addIcebergProperty("iceberg.rest-catalog.uri", catalogUri)
                 .addIcebergProperty("iceberg.rest-catalog.warehouse", TestingPolarisCatalog.WAREHOUSE)
                 .addIcebergProperty("iceberg.rest-catalog.security", "OAUTH2")
-                .addIcebergProperty("iceberg.rest-catalog.oauth2.credential", polarisCatalog.oauth2Credentials())
+                .addIcebergProperty("iceberg.rest-catalog.oauth2.credential", TestingPolarisCatalog.CREDENTIAL)
                 .addIcebergProperty("iceberg.rest-catalog.oauth2.scope", "PRINCIPAL_ROLE:ALL")
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();
@@ -99,7 +99,7 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
     @Override
     protected String getCreateCatalogSqlTemplate()
     {
-        return getCreateCatalogSqlTemplate(polarisCatalog.oauth2Credentials());
+        return getCreateCatalogSqlTemplate(TestingPolarisCatalog.CREDENTIAL);
     }
 
     private String getCreateCatalogSqlTemplate(String credential)
