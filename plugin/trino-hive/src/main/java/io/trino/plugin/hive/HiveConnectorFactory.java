@@ -195,7 +195,7 @@ public class HiveConnectorFactory
                 new TypeDeserializerModule(context.getTypeManager()),
                 new HiveModule(),
                 new CachingDirectoryListerModule(directoryLister),
-                new HiveMetastoreModule(metastore),
+                new HiveMetastoreModule(metastore, true),
                 new HiveSecurityModule(),
                 fileSystemFactory
                         .map(factory -> (Module) binder -> binder.bind(TrinoFileSystemFactory.class).toInstance(factory))

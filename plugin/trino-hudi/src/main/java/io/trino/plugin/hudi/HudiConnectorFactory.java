@@ -129,7 +129,7 @@ public class HudiConnectorFactory
                 new MBeanModule(),
                 new JsonModule(),
                 new HudiModule(),
-                new HiveMetastoreModule(Optional.empty()),
+                new HiveMetastoreModule(Optional.empty(), false),
                 new FileSystemModule(catalogName, context.getNodeManager(), context.getOpenTelemetry(), false, quietBootstrap),
                 new MBeanServerModule(),
                 module,
