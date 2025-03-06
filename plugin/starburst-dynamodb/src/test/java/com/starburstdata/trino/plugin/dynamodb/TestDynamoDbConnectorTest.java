@@ -50,7 +50,10 @@ public class TestDynamoDbConnectorTest
             throws Exception
     {
         this.server = closeAfterClass(new TestingDynamoDbServer());
-        return DynamoDbQueryRunner.builder(server.getEndpointUrl(), server.getSchemaDirectory())
+        return DynamoDbQueryRunner.builder(server.getSchemaDirectory())
+                .setEndpointUrl(server.getEndpointUrl())
+                .setAwsAccessKey("accessKey")
+                .setAwsSecretKey("secretKey")
                 .setFirstColumnAsPrimaryKeyEnabled(true)
                 .enablePredicatePushdown()
                 .build();
