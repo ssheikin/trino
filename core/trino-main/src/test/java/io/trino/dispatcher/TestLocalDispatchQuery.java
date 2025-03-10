@@ -95,8 +95,8 @@ public class TestLocalDispatchQuery
     private final Executor executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
     private final Metadata metadata = createTestMetadataManager();
     private final TransactionManager transactionManager = createTestTransactionManager();
-    private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(
-            new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty()), ImmutableList.of(), Optional.empty());
+    private final CreateTable statement = new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty());
+    private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(statement, statement, ImmutableList.of(), Optional.empty());
 
     @Test
     public void testSubmittedForDispatchedQuery()
