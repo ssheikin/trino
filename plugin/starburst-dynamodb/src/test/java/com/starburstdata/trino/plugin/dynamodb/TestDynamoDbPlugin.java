@@ -51,9 +51,6 @@ public class TestDynamoDbPlugin
         ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
         Map<String, String> config = ImmutableMap.of(
                 "non-existent-property", "value",
-                "credential-provider.type", "inline",
-                "connection-user", "user",
-                "connection-password", "password",
                 "dynamodb.aws-access-key", "accesskey",
                 "dynamodb.aws-secret-key", "secretkey",
                 "dynamodb.aws-region", "us-east-2");
@@ -61,6 +58,6 @@ public class TestDynamoDbPlugin
         Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new TestingConnectorContext());
 
         assertThat(sensitiveProperties)
-                .containsExactlyInAnyOrder("non-existent-property", "connection-password", "dynamodb.aws-access-key", "dynamodb.aws-secret-key");
+                .containsExactlyInAnyOrder("non-existent-property", "dynamodb.aws-access-key", "dynamodb.aws-secret-key");
     }
 }
