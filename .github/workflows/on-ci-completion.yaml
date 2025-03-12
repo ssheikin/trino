@@ -15,6 +15,8 @@ jobs:
         with:
           script: |
             console.log("Checking " + context.payload.workflow_run.html_url);
+            const branch = context.payload.workflow_run.head_branch;
+            const isMasterOrReleaseBranch = (branch == "master" || branch.startsWith("release-"));
             if (context.payload.workflow_run.run_attempt > 1) {
               console.log("Workflow was already rerun")
               return;
@@ -28,31 +30,28 @@ jobs:
                 steps.push(step);
               }
               if (steps.length < 2) {
-                console.warn("Not enough steps for job: " + job.name);
+                console.log("Not enough steps for job: " + job.name);
                 return;
               }
               const lastStep = steps[steps.length - 1];
-              if (lastStep.name != "Complete job") {
-                console.warn("Unexpected last step name: " + lastStep.name);
+              // If failure happened due to spot loss, last step will not be "Complete job".
+              // "Complete job" appears only if job ended in somewhat expected way
+              if (lastStep.name == "Complete job") {
+                console.log("Last step name: " + lastStep.name + " => Probably not a spot loss");
                 return;
               }
-              if (lastStep.conclusion != "success") {
-                console.warn("Unexpected last step conclusion: " + lastStep.conclusion);
+              if (lastStep.conclusion != "skipped") {
+                console.log("Last step: " + lastStep.name + " concluded with: " + lastStep.conclusion + " => Probably not a spot loss");
                 return;
               }
-              const previousStep = steps[steps.length - 2];
-              if (!previousStep.name.startsWith("Post ")) {
-                console.warn("Unexpected penultimate step name: " + previousStep.name);
-                return;
-              }
-              if (previousStep.conclusion != "skipped") {
-                console.log("Skipping job as penultimate step was not skipped");
-                return;
-              }
-              console.log("Will retry job: " + job.name);
+              console.log("Will trigger rerun-failed-jobs due to job: " + job.name);
               should_retry = true;
               return;
-            })
+            });
+            if (isMasterOrReleaseBranch) {
+              console.log("Will trigger rerun-failed-jobs once for release branch: " + branch);
+              should_retry = true;
+            }
             if (should_retry) {
               await github.request("POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs", {
                 owner: context.payload.workflow_run.repository.owner.login,
