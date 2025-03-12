@@ -39,7 +39,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
-public class CachingHiveMetastoreModule
+public final class CachingHiveMetastoreModule
         extends AbstractConfigurationAwareModule
 {
     @Override
@@ -53,6 +53,18 @@ public class CachingHiveMetastoreModule
         // export under the old name, for backwards compatibility
         newExporter(binder).export(HiveMetastoreFactory.class)
                 .as(generator -> generator.generatedNameOf(CachingHiveMetastore.class));
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        return obj instanceof CachingHiveMetastoreModule;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return getClass().hashCode();
     }
 
     @Provides
