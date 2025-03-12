@@ -92,7 +92,7 @@ public class HiveMetadataFactory
             TrinoFileSystemFactory fileSystemFactory,
             HiveViewReaderFactory hiveViewReaderFactory,
             HivePartitionManager partitionManager,
-            ExecutorService executorService,
+            @ForHiveMetadata ExecutorService executorService,
             @ForHiveTransactionHeartbeats ScheduledExecutorService heartbeatService,
             TypeManager typeManager,
             LocationService locationService,
