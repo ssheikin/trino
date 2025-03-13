@@ -70,5 +70,6 @@ public class TestingIcebergGlueCatalogModule
         newOptionalBinder(binder, Key.get(new TypeLiteral<Predicate<Table>>() {}, ForGlueHiveMetastore.class))
                 .setBinding().toInstance(table -> true);
         install(new GlueMetastoreModule());
+        newOptionalBinder(binder, GlueClientProvider.class).setDefault().to(DefaultGlueClientProvider.class).in(Scopes.SINGLETON);
     }
 }

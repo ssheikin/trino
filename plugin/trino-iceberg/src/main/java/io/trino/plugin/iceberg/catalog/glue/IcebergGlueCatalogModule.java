@@ -52,5 +52,6 @@ public class IcebergGlueCatalogModule
 
         install(new IcebergHiveMetastoreModule());
         install(new GlueMetastoreModule());
+        newOptionalBinder(binder, GlueClientProvider.class).setDefault().to(DefaultGlueClientProvider.class).in(Scopes.SINGLETON);
     }
 }
