@@ -304,6 +304,11 @@
         </dependency>
 
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <scope>provided</scope>
@@ -434,6 +439,12 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-core</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>glue</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -732,6 +743,7 @@
                     <configuration>
                         <ignoredNonTestScopedDependencies>
                             <ignoredNonTestScopedDependency>org.apache.parquet:parquet-common</ignoredNonTestScopedDependency>
+                            <ignoredNonTestScopedDependency>software.amazon.awssdk:utils</ignoredNonTestScopedDependency>
                         </ignoredNonTestScopedDependencies>
                     </configuration>
                 </plugin>
