@@ -21,6 +21,7 @@ import io.trino.execution.warnings.WarningCollector;
 import io.trino.security.AccessControl;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.Identity;
+import io.trino.spi.security.SelectedRole;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.SetSessionAuthorization;
@@ -28,16 +29,22 @@ import io.trino.sql.tree.StringLiteral;
 import io.trino.transaction.TransactionManager;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static io.trino.spi.StandardErrorCode.GENERIC_USER_ERROR;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.spi.security.SelectedRole.Type.ALL;
+import static io.trino.spi.security.SelectedRole.Type.NONE;
+import static io.trino.spi.security.SelectedRole.Type.ROLE;
 import static java.util.Objects.requireNonNull;
 
 public class SetSessionAuthorizationTask
         implements DataDefinitionTask<SetSessionAuthorization>
 {
+    public static final String IMPERSONATION_CATALOG = "_impersonation";
     private final AccessControl accessControl;
     private final TransactionManager transactionManager;
 
@@ -91,6 +98,18 @@ public class SetSessionAuthorizationTask
             accessControl.checkCanImpersonateUser(originalIdentity, user);
         }
         stateMachine.setSetAuthorizationUser(user);
+        SelectedRole selectedRole;
+        Set<String> enabledRoles = originalIdentity.getEnabledRoles();
+        if (enabledRoles.isEmpty()) {
+            selectedRole = new SelectedRole(NONE, Optional.empty());
+        }
+        else if (enabledRoles.size() == 1) {
+            selectedRole = new SelectedRole(ROLE, Optional.of(enabledRoles.iterator().next()));
+        }
+        else {
+            selectedRole = new SelectedRole(ALL, Optional.empty());
+        }
+        stateMachine.addSetRole(IMPERSONATION_CATALOG, selectedRole);
         return immediateFuture(null);
     }
 }

@@ -151,6 +151,7 @@ public class TestingAccessControlManager
     private BiPredicate<Identity, String> denyIdentityTable = IDENTITY_TABLE_TRUE;
     private BiPredicate<Identity, String> denyIdentityFunction = IDENTITY_FUNCTION_TRUE;
     private AtomicReference<BiPredicate<ConnectorIdentity, String>> deniedLocations = new AtomicReference<>(LOCATION_ALLOW_ALL);
+    private BiPredicate<Identity, String> denyImpersonationFunction = IDENTITY_FUNCTION_TRUE;
 
     @Inject
     public TestingAccessControlManager(
@@ -204,6 +205,7 @@ public class TestingAccessControlManager
         deniedLocations.set(LOCATION_ALLOW_ALL);
         rowFilters.clear();
         columnMasks.clear();
+        denyImpersonationFunction = IDENTITY_FUNCTION_TRUE;
     }
 
     public void denyLocations(BiPredicate<ConnectorIdentity, String> deniedLocations)
@@ -234,6 +236,11 @@ public class TestingAccessControlManager
     public void denyIdentityFunction(BiPredicate<Identity, String> denyIdentityFunction)
     {
         this.denyIdentityFunction = requireNonNull(denyIdentityFunction, "denyIdentityFunction is null");
+    }
+
+    public void denyImpersonation(BiPredicate<Identity, String> denyImpersonationFunction)
+    {
+        this.denyImpersonationFunction = requireNonNull(denyImpersonationFunction, "denyImpersonationFunction is null");
     }
 
     @Override
@@ -271,6 +278,9 @@ public class TestingAccessControlManager
     @Override
     public void checkCanImpersonateUser(Identity identity, String userName)
     {
+        if (!denyImpersonationFunction.test(identity, userName)) {
+            denyImpersonateUser(identity.getUser(), userName);
+        }
         if (shouldDenyPrivilege(userName, userName, IMPERSONATE_USER)) {
             denyImpersonateUser(identity.getUser(), userName);
         }
