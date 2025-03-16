@@ -19,7 +19,6 @@ import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.Multibinder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.hive.HideDeltaLakeTables;
 import io.trino.plugin.hive.metastore.glue.GlueMetastoreStats;
@@ -27,14 +26,12 @@ import io.trino.plugin.hive.metastore.glue.v1.ForGlueHiveMetastore;
 import io.trino.plugin.hive.metastore.glue.v1.GlueCredentialsProvider;
 import io.trino.plugin.hive.metastore.glue.v1.GlueHiveMetastoreConfig;
 import io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule;
+import io.trino.plugin.iceberg.catalog.IcebergHiveMetastoreModule;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
-import io.trino.plugin.iceberg.procedure.MigrateProcedure;
-import io.trino.spi.procedure.Procedure;
 
 import java.util.function.Predicate;
 
-import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
@@ -59,8 +56,8 @@ public class IcebergGlueCatalogModule
         binder.bind(Key.get(boolean.class, HideDeltaLakeTables.class)).toInstance(false);
         newOptionalBinder(binder, Key.get(new TypeLiteral<Predicate<Table>>() {}, ForGlueHiveMetastore.class))
                 .setBinding().toInstance(table -> true);
+
+        install(new IcebergHiveMetastoreModule());
         install(new GlueMetastoreModule());
-        Multibinder<Procedure> procedures = newSetBinder(binder, Procedure.class);
-        procedures.addBinding().toProvider(MigrateProcedure.class).in(Scopes.SINGLETON);
     }
 }
