@@ -23,12 +23,15 @@ public class TestDiscoveredIdentifier
     {
         HiveIdentifier validHiveTable = new HiveIdentifier("valid_table");
         TrinoIdentifier validTrinoTable = new TrinoIdentifier("valid_table");
+        AlphanumericWithUnderscore validAlphanumericTable = new AlphanumericWithUnderscore("valid_table");
 
         {
             assertThat(validHiveTable).isEqualTo(validTrinoTable);
             assertThat(validHiveTable).hasSameHashCodeAs(validTrinoTable);
+            assertThat(validHiveTable).hasSameHashCodeAs(validAlphanumericTable);
             assertThat(new TableName(Optional.empty(), validHiveTable)).isEqualTo(new TableName(Optional.empty(), validTrinoTable));
-            assertThat(new TableName(Optional.empty(), validHiveTable)).hasSameHashCodeAs(new TableName(Optional.empty(), validTrinoTable));
+            assertThat(new TableName(Optional.empty(), validAlphanumericTable)).isEqualTo(new TableName(Optional.empty(), validTrinoTable));
+            assertThat(new TableName(Optional.empty(), validAlphanumericTable)).hasSameHashCodeAs(new TableName(Optional.empty(), validTrinoTable));
 
             assertThat(validTrinoTable).isEqualTo(validHiveTable);
             assertThat(validTrinoTable).hasSameHashCodeAs(validHiveTable);
@@ -38,9 +41,12 @@ public class TestDiscoveredIdentifier
 
         HiveIdentifier convertedHiveTable = HiveIdentifier.toHiveIdentifier("not=valid=hive=should=convert_table");
         TrinoIdentifier notConvertedTrinoTable = new TrinoIdentifier("not=valid=hive=should=convert_table");
+        AlphanumericWithUnderscore convertedAlphanumericTable = AlphanumericWithUnderscore.toAlphanumericWithUnderscore("not=valid=hive=should=convert_table");
 
         {
             assertThat(convertedHiveTable).isNotEqualTo(notConvertedTrinoTable);
+            assertThat(convertedAlphanumericTable).isNotEqualTo(notConvertedTrinoTable);
+            assertThat(convertedAlphanumericTable).isEqualTo(convertedHiveTable);
             assertThat(convertedHiveTable).doesNotHaveSameHashCodeAs(notConvertedTrinoTable);
             assertThat(new TableName(Optional.empty(), convertedHiveTable)).isNotEqualTo(new TableName(Optional.empty(), notConvertedTrinoTable));
             assertThat(new TableName(Optional.empty(), convertedHiveTable)).doesNotHaveSameHashCodeAs(new TableName(Optional.empty(), notConvertedTrinoTable));

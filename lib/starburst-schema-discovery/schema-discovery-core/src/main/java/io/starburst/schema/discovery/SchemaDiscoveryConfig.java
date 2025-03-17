@@ -11,12 +11,14 @@ package io.starburst.schema.discovery;
 
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
+import io.starburst.schema.discovery.models.IdentifierConstraint;
 import jakarta.validation.constraints.Min;
 
 public class SchemaDiscoveryConfig
 {
     private int schemaDiscoveryConcurrency = 8;
     private int maxBucketQuantity = 10;
+    private IdentifierConstraint identifierConstraint = IdentifierConstraint.ENFORCED_ALPHANUMERIC;
 
     @Min(1)
     public int getSchemaDiscoveryConcurrency()
@@ -43,6 +45,19 @@ public class SchemaDiscoveryConfig
     public SchemaDiscoveryConfig setMaxBucketQuantity(int maxBucketQuantity)
     {
         this.maxBucketQuantity = maxBucketQuantity;
+        return this;
+    }
+
+    public IdentifierConstraint getIdentifierConstraint()
+    {
+        return identifierConstraint;
+    }
+
+    @Config("schema-discovery.identifier-constraint")
+    @ConfigDescription("Constraint used for identifiers during the discovery process")
+    public SchemaDiscoveryConfig setIdentifierConstraint(IdentifierConstraint identifierConstraint)
+    {
+        this.identifierConstraint = identifierConstraint;
         return this;
     }
 }

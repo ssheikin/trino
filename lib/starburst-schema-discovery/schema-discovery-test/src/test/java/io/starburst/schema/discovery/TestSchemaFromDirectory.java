@@ -19,6 +19,7 @@ import io.starburst.schema.discovery.internal.Column;
 import io.starburst.schema.discovery.internal.HiveType;
 import io.starburst.schema.discovery.internal.HiveTypes;
 import io.starburst.schema.discovery.io.DiscoveryTrinoFileSystem;
+import io.starburst.schema.discovery.models.AlphanumericWithUnderscore;
 import io.starburst.schema.discovery.models.DiscoveredColumns;
 import io.starburst.schema.discovery.models.DiscoveredSchema;
 import io.starburst.schema.discovery.models.DiscoveredTable;
@@ -69,6 +70,7 @@ import static io.starburst.schema.discovery.internal.HiveTypes.structType;
 import static io.starburst.schema.discovery.io.LocationUtils.uriFromLocation;
 import static io.starburst.schema.discovery.models.DiscoveredIdentifierTestingUtils.toTestingHiveIdentifier;
 import static io.starburst.schema.discovery.models.DiscoveredIdentifierTestingUtils.toTestingIdentifier;
+import static io.starburst.schema.discovery.models.IdentifierConstraint.ENFORCED_ALPHANUMERIC;
 import static io.starburst.schema.discovery.models.IdentifierConstraint.VALID_IN_HIVE_AND_TRINO;
 import static io.starburst.schema.discovery.models.IdentifierConstraint.VALID_IN_TRINO;
 import static io.starburst.schema.discovery.models.LowerCaseString.toLowerCase;
@@ -332,7 +334,7 @@ public class TestSchemaFromDirectory
                 .matches(discovered -> discovered.errors().isEmpty() && discovered.tables().size() == 1 && discovered.rootPath().path().endsWith("csv/dates_single_col/"))
                 .extracting(discovered -> discovered.tables().getFirst())
                 .matches(table -> table.valid() && table.format() == TableFormat.CSV && table.columns().columns().size() == 1 &&
-                                  table.columns().columns().getFirst().type().equals(new HiveType(STRING_TYPE)));
+                        table.columns().columns().getFirst().type().equals(new HiveType(STRING_TYPE)));
     }
 
     /**
@@ -511,6 +513,22 @@ public class TestSchemaFromDirectory
                 .allMatch(DiscoveredTable::valid)
                 // equal sign in directory is filtered out from table name, to make it valid
                 .allMatch(table -> table.tableName().equals(new TableName(Optional.empty(), toTestingHiveIdentifier("day24"))));
+    }
+
+    @Test
+    public void testDiscoveryOnFolderWithIllegalTableNameWithAlphanumericCompatibility()
+            throws Exception
+    {
+        DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, ENFORCED_ALPHANUMERIC, newCachedThreadPool());
+        Location directory = Util.testFilePath("partition-projection/template/wrong_projection/nested/August-2023");
+        ListenableFuture<DiscoveredSchema> discoveryFuture = controller.guess(new GuessRequest(uriFromLocation(directory), CSV_OPTIONS));
+        DiscoveredSchema discoveredTableSet = discoveryFuture.get(5, TimeUnit.SECONDS);
+
+        assertThat(discoveredTableSet.tables())
+                .hasSize(1)
+                .allMatch(DiscoveredTable::valid)
+                .allMatch(table -> table.tableName().equals(new TableName(Optional.empty(), AlphanumericWithUnderscore.toAlphanumericWithUnderscore("august_2023"))));
     }
 
     @Test

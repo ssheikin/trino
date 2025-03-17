@@ -12,10 +12,12 @@ package io.starburst.schema.discovery.models;
 /**
  * Used for determining whether discovered identifiers needs to follow additional constraints (f.e. when using HMS)
  * <p>
- * When used only for deserialization of already discovered tables, VALID_IN_TRINO should be used as it allows more identifiers
+ * When used only for deserialization of already discovered tables, VALID_IN_TRINO should be used as it allows more identifiers,
+ * ENFORCED_ALPHANUMERIC allows only lowercase alphanumeric chars with underscore.
  */
 public enum IdentifierConstraint
 {
     VALID_IN_TRINO,
-    VALID_IN_HIVE_AND_TRINO
+    VALID_IN_HIVE_AND_TRINO,
+    ENFORCED_ALPHANUMERIC,
 }

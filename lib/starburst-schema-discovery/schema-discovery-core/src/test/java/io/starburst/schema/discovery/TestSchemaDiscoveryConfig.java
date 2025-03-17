@@ -10,6 +10,7 @@
 package io.starburst.schema.discovery;
 
 import com.google.common.collect.ImmutableMap;
+import io.starburst.schema.discovery.models.IdentifierConstraint;
 import jakarta.validation.constraints.Min;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,7 @@ public class TestSchemaDiscoveryConfig
     {
         assertRecordedDefaults(recordDefaults(SchemaDiscoveryConfig.class)
                 .setSchemaDiscoveryConcurrency(8)
+                .setIdentifierConstraint(IdentifierConstraint.ENFORCED_ALPHANUMERIC)
                 .setMaxBucketQuantity(10));
     }
 
@@ -37,10 +39,12 @@ public class TestSchemaDiscoveryConfig
         Map<String, String> properties = ImmutableMap.<String, String>builder()
                 .put("schema-discovery.concurrency", "16")
                 .put("schema-discovery.max-buckets", "15")
+                .put("schema-discovery.identifier-constraint", "VALID_IN_TRINO")
                 .buildOrThrow();
 
         SchemaDiscoveryConfig expected = new SchemaDiscoveryConfig()
                 .setSchemaDiscoveryConcurrency(16)
+                .setIdentifierConstraint(IdentifierConstraint.VALID_IN_TRINO)
                 .setMaxBucketQuantity(15);
 
         assertFullMapping(properties, expected);
