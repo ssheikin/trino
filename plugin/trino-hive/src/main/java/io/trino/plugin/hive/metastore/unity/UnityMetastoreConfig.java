@@ -16,6 +16,7 @@ package io.trino.plugin.hive.metastore.unity;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
 import io.airlift.configuration.ConfigSecuritySensitive;
+import io.airlift.configuration.LegacyConfig;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.Optional;
@@ -33,6 +34,8 @@ public class UnityMetastoreConfig
     }
 
     @Config("hive.metastore.unity.catalog-name")
+    @LegacyConfig("delta.metastore.unity.catalog-name") // used to be used in SEP
+    @ConfigDescription("Catalog name for Unity metastore")
     public UnityMetastoreConfig setCatalogName(String catalogName)
     {
         this.catalogName = catalogName;
@@ -46,6 +49,8 @@ public class UnityMetastoreConfig
     }
 
     @Config("hive.metastore.unity.host")
+    @LegacyConfig("delta.metastore.unity.host") // used to be used in SEP
+    @ConfigDescription("Databricks Host for Unity metastore")
     public UnityMetastoreConfig setHost(String host)
     {
         this.host = host;
@@ -60,6 +65,7 @@ public class UnityMetastoreConfig
 
     @ConfigSecuritySensitive
     @Config("hive.metastore.unity.token")
+    @LegacyConfig("delta.metastore.unity.access-token") // used to be used in SEP
     @ConfigDescription("Unity metastore personal access token")
     public UnityMetastoreConfig setToken(String token)
     {
