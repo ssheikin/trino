@@ -27,10 +27,13 @@ import io.trino.plugin.hive.AllowHiveTableRename;
 import io.trino.plugin.hive.metastore.unity.UnityHiveMetastoreFactory;
 import io.trino.plugin.hive.metastore.unity.UnityMetastoreConfig;
 
+import java.util.EnumSet;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.READ_ONLY;
+import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.STARBURST;
 import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.UNITY;
 
 public class DeltaLakeUnityMetastoreModule
@@ -40,7 +43,7 @@ public class DeltaLakeUnityMetastoreModule
     protected void setup(Binder binder)
     {
         DeltaLakeSecurityConfig securityConfig = buildConfigObject(DeltaLakeSecurityConfig.class);
-        checkArgument(securityConfig.getSecuritySystem() == READ_ONLY || securityConfig.getSecuritySystem() == UNITY, "delta.security must be set to READ_ONLY or UNITY");
+        checkArgument(EnumSet.of(READ_ONLY, UNITY, STARBURST).contains(securityConfig.getSecuritySystem()), "delta.security must be set to READ_ONLY, UNITY or STARBURST");
         configBinder(binder).bindConfig(UnityMetastoreConfig.class);
 
         binder.bind(UnityHiveMetastoreFactory.class).in(Scopes.SINGLETON);
