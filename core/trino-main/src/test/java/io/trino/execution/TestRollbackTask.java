@@ -21,7 +21,6 @@ import io.trino.execution.warnings.WarningCollector;
 import io.trino.metadata.Metadata;
 import io.trino.security.AllowAllAccessControl;
 import io.trino.spi.resourcegroups.ResourceGroupId;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.Rollback;
 import io.trino.transaction.TransactionId;
@@ -124,7 +123,8 @@ public class TestRollbackTask
     {
         return QueryStateMachine.begin(
                 Optional.empty(),
-                _ -> new RedactedQuery(query, Optional.empty()),
+                query,
+                Optional.empty(),
                 session,
                 URI.create("fake://uri"),
                 new ResourceGroupId("test"),

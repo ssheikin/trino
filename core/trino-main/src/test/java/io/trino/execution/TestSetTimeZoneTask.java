@@ -19,7 +19,6 @@ import io.trino.execution.warnings.WarningCollector;
 import io.trino.spi.TrinoException;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.type.TimeZoneNotSupportedException;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.tree.FunctionCall;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.IntervalLiteral;
@@ -253,7 +252,8 @@ public class TestSetTimeZoneTask
     {
         return QueryStateMachine.begin(
                 Optional.empty(),
-                _ -> new RedactedQuery(query, Optional.empty()),
+                query,
+                Optional.empty(),
                 testSession(),
                 URI.create("fake://uri"),
                 new ResourceGroupId("test"),

@@ -13,7 +13,6 @@
  */
 package io.trino.dispatcher;
 
-import com.google.common.base.Function;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -46,8 +45,6 @@ import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
 import io.trino.spi.resourcegroups.SelectionContext;
 import io.trino.spi.resourcegroups.SelectionCriteria;
-import io.trino.sql.RedactedQuery;
-import io.trino.sql.SensitiveStatementRedactor;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.weakref.jmx.Flatten;
@@ -88,7 +85,6 @@ public class DispatchManager
     private final SessionPropertyDefaults sessionPropertyDefaults;
     private final SessionPropertyManager sessionPropertyManager;
     private final Tracer tracer;
-    private final SensitiveStatementRedactor sensitiveStatementRedactor;
 
     private final int maxQueryLength;
 
@@ -112,7 +108,6 @@ public class DispatchManager
             SessionPropertyDefaults sessionPropertyDefaults,
             SessionPropertyManager sessionPropertyManager,
             Tracer tracer,
-            SensitiveStatementRedactor sensitiveStatementRedactor,
             QueryManagerConfig queryManagerConfig,
             DispatchExecutor dispatchExecutor,
             QueryMonitor queryMonitor,
@@ -128,7 +123,6 @@ public class DispatchManager
         this.sessionPropertyDefaults = requireNonNull(sessionPropertyDefaults, "sessionPropertyDefaults is null");
         this.sessionPropertyManager = requireNonNull(sessionPropertyManager, "sessionPropertyManager is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
-        this.sensitiveStatementRedactor = requireNonNull(sensitiveStatementRedactor, "sensitiveStatementRedactor is null");
 
         this.maxQueryLength = queryManagerConfig.getMaxQueryLength();
 
@@ -249,7 +243,7 @@ public class DispatchManager
             DispatchQuery dispatchQuery = dispatchQueryFactory.createDispatchQuery(
                     session,
                     sessionContext.getTransactionId(),
-                    getRedactedQueryProvider(preparedQuery, query),
+                    query,
                     preparedQuery,
                     slug,
                     selectionContext.getResourceGroupId());
@@ -287,11 +281,6 @@ public class DispatchManager
                     .recordException(throwable)
                     .end();
         }
-    }
-
-    private Function<Session, RedactedQuery> getRedactedQueryProvider(PreparedQuery preparedQuery, String query)
-    {
-        return session -> sensitiveStatementRedactor.redact(query, preparedQuery, session);
     }
 
     private boolean queryCreated(DispatchQuery dispatchQuery)

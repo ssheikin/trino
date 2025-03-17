@@ -27,7 +27,6 @@ import io.trino.spi.security.Identity;
 import io.trino.spi.security.RoleGrant;
 import io.trino.spi.security.SelectedRole;
 import io.trino.spi.security.TrinoPrincipal;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.Statement;
 import io.trino.testing.QueryRunner;
@@ -161,7 +160,8 @@ public class TestRoleTasks
     {
         QueryStateMachine stateMachine = QueryStateMachine.begin(
                 Optional.empty(),
-                _ -> new RedactedQuery(statement, Optional.empty()),
+                statement,
+                Optional.empty(),
                 testSessionBuilder()
                         .setIdentity(Identity.ofUser(USER_NAME))
                         .build(),

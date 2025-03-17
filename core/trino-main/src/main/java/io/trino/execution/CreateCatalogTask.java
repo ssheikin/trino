@@ -86,7 +86,7 @@ public class CreateCatalogTask
         return immediateVoidFuture();
     }
 
-    public static Map<String, String> evaluateProperties(
+    private static Map<String, String> evaluateProperties(
             CreateCatalog statement,
             Session session,
             PlannerContext plannerContext,

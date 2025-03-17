@@ -123,8 +123,6 @@ public class FeaturesConfig
 
     private boolean faultTolerantExecutionExchangeEncryptionEnabled = true;
 
-    private boolean statementRedactingEnabled = true;
-
     public enum DataIntegrityVerification
     {
         NONE,
@@ -515,18 +513,6 @@ public class FeaturesConfig
     public FeaturesConfig setFaultTolerantExecutionExchangeEncryptionEnabled(boolean faultTolerantExecutionExchangeEncryptionEnabled)
     {
         this.faultTolerantExecutionExchangeEncryptionEnabled = faultTolerantExecutionExchangeEncryptionEnabled;
-        return this;
-    }
-
-    public boolean isStatementRedactingEnabled()
-    {
-        return statementRedactingEnabled;
-    }
-
-    @Config("deprecated.statement-redacting-enabled")
-    public FeaturesConfig setStatementRedactingEnabled(boolean statementRedactingEnabled)
-    {
-        this.statementRedactingEnabled = statementRedactingEnabled;
         return this;
     }
 

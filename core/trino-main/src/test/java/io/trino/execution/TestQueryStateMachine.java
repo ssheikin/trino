@@ -48,7 +48,6 @@ import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.security.SelectedRole;
 import io.trino.spi.type.Type;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.analyzer.Output;
 import io.trino.sql.planner.plan.PlanFragmentId;
 import io.trino.sql.planner.plan.PlanNodeId;
@@ -856,7 +855,8 @@ public class TestQueryStateMachine
             accessControl.setLocationAccessControls(List.of(LocationAccessControl.ALLOW_ALL));
             QueryStateMachine stateMachine = QueryStateMachine.beginWithTicker(
                     Optional.empty(),
-                    _ -> new RedactedQuery(QUERY, Optional.empty()),
+                    QUERY,
+                    Optional.empty(),
                     TEST_SESSION,
                     LOCATION,
                     new ResourceGroupId("test"),

@@ -62,7 +62,6 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.resourcegroups.QueryType;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.security.LocationAccessControl;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.tree.CreateTable;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.QualifiedName;
@@ -96,8 +95,8 @@ public class TestLocalDispatchQuery
     private final Executor executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
     private final Metadata metadata = createTestMetadataManager();
     private final TransactionManager transactionManager = createTestTransactionManager();
-    private final CreateTable statement = new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty());
-    private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(statement, statement, ImmutableList.of(), Optional.empty());
+    private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(
+            new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty()), ImmutableList.of(), Optional.empty());
 
     @Test
     public void testSubmittedForDispatchedQuery()
@@ -117,7 +116,8 @@ public class TestLocalDispatchQuery
         accessControl.setLocationAccessControls(List.of(LocationAccessControl.ALLOW_ALL));
         QueryStateMachine queryStateMachine = QueryStateMachine.begin(
                 Optional.empty(),
-                _ -> new RedactedQuery("sql", Optional.empty()),
+                "sql",
+                Optional.empty(),
                 TEST_SESSION,
                 URI.create("fake://fake-query"),
                 new ResourceGroupId("test"),
@@ -191,7 +191,8 @@ public class TestLocalDispatchQuery
         accessControl.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));
         QueryStateMachine queryStateMachine = QueryStateMachine.begin(
                 Optional.empty(),
-                _ -> new RedactedQuery("sql", Optional.empty()),
+                "sql",
+                Optional.empty(),
                 TEST_SESSION,
                 URI.create("fake://fake-query"),
                 new ResourceGroupId("test"),

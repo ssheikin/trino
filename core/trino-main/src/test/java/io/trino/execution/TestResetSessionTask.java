@@ -24,7 +24,6 @@ import io.trino.metadata.Metadata;
 import io.trino.metadata.SessionPropertyManager;
 import io.trino.security.AccessControl;
 import io.trino.spi.resourcegroups.ResourceGroupId;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.ResetSession;
@@ -107,7 +106,8 @@ public class TestResetSessionTask
 
         QueryStateMachine stateMachine = QueryStateMachine.begin(
                 Optional.empty(),
-                _ -> new RedactedQuery("reset foo", Optional.empty()),
+                "reset foo",
+                Optional.empty(),
                 session,
                 URI.create("fake://uri"),
                 new ResourceGroupId("test"),

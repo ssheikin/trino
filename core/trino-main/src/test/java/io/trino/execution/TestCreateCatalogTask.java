@@ -35,7 +35,6 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.resourcegroups.ResourceGroupId;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.NodeLocation;
@@ -85,7 +84,8 @@ public class TestCreateCatalogTask
         task = (CreateCatalogTask) tasks.get(CreateCatalog.class);
         queryStateMachine = QueryStateMachine.begin(
                 Optional.empty(),
-                _ -> new RedactedQuery("test", Optional.empty()),
+                "test",
+                Optional.empty(),
                 queryRunner.getDefaultSession(),
                 URI.create("fake://uri"),
                 new ResourceGroupId("test"),
@@ -177,7 +177,8 @@ public class TestCreateCatalogTask
             CreateCatalogTask task = (CreateCatalogTask) tasks.get(CreateCatalog.class);
             QueryStateMachine queryStateMachine = QueryStateMachine.begin(
                     Optional.empty(),
-                    _ -> new RedactedQuery("test", Optional.empty()),
+                    "test",
+                    Optional.empty(),
                     queryRunner.getDefaultSession(),
                     URI.create("fake://uri"),
                     new ResourceGroupId("test"),

@@ -56,7 +56,6 @@ import io.trino.spi.resourcegroups.QueryType;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.security.SelectedRole;
 import io.trino.spi.type.Type;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.SessionPropertyResolver.SessionPropertiesApplier;
 import io.trino.sql.analyzer.Output;
 import io.trino.sql.planner.PlanFragment;
@@ -85,7 +84,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -242,7 +240,8 @@ public class QueryStateMachine
      */
     public static QueryStateMachine begin(
             Optional<TransactionId> existingTransactionId,
-            Function<Session, RedactedQuery> queryProvider,
+            String query,
+            Optional<String> preparedQuery,
             Session session,
             URI self,
             ResourceGroupId resourceGroup,
@@ -260,7 +259,8 @@ public class QueryStateMachine
     {
         return beginWithTicker(
                 existingTransactionId,
-                queryProvider,
+                query,
+                preparedQuery,
                 session,
                 self,
                 resourceGroup,
@@ -280,7 +280,8 @@ public class QueryStateMachine
 
     static QueryStateMachine beginWithTicker(
             Optional<TransactionId> existingTransactionId,
-            Function<Session, RedactedQuery> queryProvider,
+            String query,
+            Optional<String> preparedQuery,
             Session session,
             URI self,
             ResourceGroupId resourceGroup,
@@ -334,11 +335,9 @@ public class QueryStateMachine
 
         querySpan.setAttribute(TrinoAttributes.QUERY_TYPE, queryType.map(Enum::name).orElse("UNKNOWN"));
 
-        RedactedQuery redactedQuery = queryProvider.apply(session);
-
         QueryStateMachine queryStateMachine = new QueryStateMachine(
-                redactedQuery.query(),
-                redactedQuery.preparedQuery(),
+                query,
+                preparedQuery,
                 session,
                 self,
                 resourceGroup,

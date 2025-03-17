@@ -39,7 +39,6 @@ import io.trino.security.AccessControl;
 import io.trino.server.protocol.Slug;
 import io.trino.spi.TrinoException;
 import io.trino.spi.resourcegroups.ResourceGroupId;
-import io.trino.sql.RedactedQuery;
 import io.trino.sql.SessionPropertyResolver;
 import io.trino.sql.tree.Statement;
 import io.trino.transaction.TransactionId;
@@ -47,7 +46,6 @@ import io.trino.transaction.TransactionManager;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.trino.util.StatementUtils.getQueryType;
@@ -115,7 +113,7 @@ public class LocalDispatchQueryFactory
     public DispatchQuery createDispatchQuery(
             Session session,
             Optional<TransactionId> existingTransactionId,
-            Function<Session, RedactedQuery> queryProvider,
+            String query,
             PreparedQuery preparedQuery,
             Slug slug,
             ResourceGroupId resourceGroup)
@@ -125,7 +123,8 @@ public class LocalDispatchQueryFactory
         ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker = new ScheduledSplitsPerTableTracker();
         QueryStateMachine stateMachine = QueryStateMachine.begin(
                 existingTransactionId,
-                queryProvider,
+                query,
+                preparedQuery.getPrepareSql(),
                 session,
                 locationFactory.createQueryLocation(session.getQueryId()),
                 resourceGroup,
