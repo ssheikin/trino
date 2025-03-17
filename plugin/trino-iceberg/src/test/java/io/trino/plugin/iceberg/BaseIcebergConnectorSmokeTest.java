@@ -228,9 +228,9 @@ public abstract class BaseIcebergConnectorSmokeTest
 
     protected String getCreateCatalogSqlTemplate(){
         return  """
-                CREATE CATALOG %1$s USING iceberg
+                CREATE CATALOG %s USING iceberg
                 WITH (
-                   "iceberg.file-format" = '%2$s'
+                   "iceberg.file-format" = '%s'
                 )""";
     }
 

@@ -117,16 +117,14 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
     protected String getCreateCatalogSqlTemplate()
     {
         return """
-                CREATE CATALOG %s USING iceberg
+                CREATE CATALOG %%s USING iceberg
                 WITH (
                    "fs.hadoop.enabled" = 'true',
                    "hive.metastore.glue.default-warehouse-dir" = '%s',
                    "iceberg.catalog.type" = 'glue',
-                   "iceberg.file-format" = '%s'
+                   "iceberg.file-format" = '%%s'
                 )""".formatted(
-                "%1$s", // Catalog name
-                schemaPath(),
-                "%2$s" // File format
+                schemaPath()
         );
     }
 

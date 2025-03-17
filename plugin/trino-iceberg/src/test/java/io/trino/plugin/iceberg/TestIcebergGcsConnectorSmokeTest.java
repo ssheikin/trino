@@ -155,7 +155,8 @@ public class TestIcebergGcsConnectorSmokeTest
     @Override
     protected String getCreateCatalogSqlTemplate()
     {
-        return getCreateCatalogSqlTemplate(gcpCredentials);
+        // The credentials contain a valid format string which needs to be escaped
+        return getCreateCatalogSqlTemplate(gcpCredentials.replace("%", "%%"));
     }
 
     @Override
@@ -167,19 +168,17 @@ public class TestIcebergGcsConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String gcsJsonKey)
     {
         return """
-                CREATE CATALOG %s USING iceberg
+                CREATE CATALOG %%s USING iceberg
                 WITH (
                    "fs.hadoop.enabled" = 'false',
                    "fs.native-gcs.enabled" = 'true',
                    "gcs.json-key" = '%s',
                    "hive.metastore.uri" = '%s',
                    "iceberg.catalog.type" = 'HIVE_METASTORE',
-                   "iceberg.file-format" = '%s'
+                   "iceberg.file-format" = '%%s'
                 )""".formatted(
-                "%1$s", // Catalog name
                 gcsJsonKey,
-                hiveHadoop.getHiveMetastoreEndpoint().toString(),
-                "%2$s" // File format
+                hiveHadoop.getHiveMetastoreEndpoint().toString()
         );
     }
 

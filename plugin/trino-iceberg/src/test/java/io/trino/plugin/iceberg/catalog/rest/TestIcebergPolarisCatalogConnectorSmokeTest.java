@@ -111,19 +111,17 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String credential)
     {
         return """
-                CREATE CATALOG %s USING iceberg
+                CREATE CATALOG %%s USING iceberg
                 WITH (
                    "fs.hadoop.enabled" = 'true',
                    "iceberg.catalog.type" = 'rest',
-                   "iceberg.file-format" = '%s',
+                   "iceberg.file-format" = '%%s',
                    "iceberg.rest-catalog.oauth2.credential" = '%s',
                    "iceberg.rest-catalog.oauth2.scope" = 'PRINCIPAL_ROLE:ALL',
                    "iceberg.rest-catalog.security" = 'OAUTH2',
                    "iceberg.rest-catalog.uri" = '%s',
                    "iceberg.rest-catalog.warehouse" = '%s'
                 )""".formatted(
-                "%1$s", // Catalog name
-                "%2$s", // File format
                 credential,
                 catalogUri,
                 TestingPolarisCatalog.WAREHOUSE

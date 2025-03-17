@@ -132,7 +132,7 @@ public class TestIcebergAbfsConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String accessKey)
     {
         return """
-                CREATE CATALOG %s USING iceberg
+                CREATE CATALOG %%s USING iceberg
                 WITH (
                    "azure.access-key" = '%s',
                    "azure.auth-type" = 'ACCESS_KEY',
@@ -140,12 +140,10 @@ public class TestIcebergAbfsConnectorSmokeTest
                    "fs.native-azure.enabled" = 'true',
                    "hive.metastore.uri" = '%s',
                    "iceberg.catalog.type" = 'HIVE_METASTORE',
-                   "iceberg.file-format" = '%s'
+                   "iceberg.file-format" = '%%s'
                 )""".formatted(
-                "%1$s", // Catalog name
                 accessKey,
-                hiveHadoop.getHiveMetastoreEndpoint().toString(),
-                "%2$s" // File format
+                hiveHadoop.getHiveMetastoreEndpoint().toString()
         );
     }
 
