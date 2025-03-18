@@ -100,6 +100,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
         );
     }
 
+    @Override
     protected void createSchema(String schemaName)
     {
         unityCatalog.createSchema(schemaName);
