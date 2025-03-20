@@ -100,12 +100,6 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     }
 
     @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate();
-    }
-
-    @Override
     protected void dropTableFromMetastore(String tableName)
     {
         throw new UnsupportedOperationException();

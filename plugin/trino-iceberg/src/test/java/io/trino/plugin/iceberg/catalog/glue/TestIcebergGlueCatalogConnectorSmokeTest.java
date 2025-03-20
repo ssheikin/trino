@@ -128,12 +128,6 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
         );
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate();
-    }
-
     @AfterAll
     public void cleanup()
     {

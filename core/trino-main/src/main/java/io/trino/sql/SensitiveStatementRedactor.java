@@ -111,28 +111,6 @@ public class SensitiveStatementRedactor
         return redactedSql;
     }
 
-    public CreateCatalog redact(CreateCatalog createCatalog, Map<String, String> properties)
-    {
-        if (enabled) {
-            ConnectorName connectorName = new ConnectorName(createCatalog.getConnectorName().getValue());
-            CatalogName catalogName = new CatalogName(createCatalog.getCatalogName().getValue());
-
-            Set<String> sensitiveProperties;
-            try {
-                CatalogProperties catalogProperties = catalogManager.createCatalogProperties(catalogName, connectorName, properties);
-                sensitiveProperties = catalogFactory.getSecuritySensitivePropertyNames(catalogProperties);
-            }
-            catch (RuntimeException e) {
-                sensitiveProperties = getPropertyNames(createCatalog.getProperties());
-            }
-
-            List<Property> redactedProperties = redactProperties(createCatalog.getProperties(), sensitiveProperties);
-
-            return createCatalog.withProperties(redactedProperties);
-        }
-        return createCatalog;
-    }
-
     private static List<Property> redactProperties(List<Property> properties, Set<String> sensitiveProperties)
     {
         return properties.stream()
@@ -143,14 +121,6 @@ public class SensitiveStatementRedactor
                     return property;
                 })
                 .collect(toImmutableList());
-    }
-
-    private static Set<String> getPropertyNames(List<Property> properties)
-    {
-        return properties.stream()
-                .map(Property::getName)
-                .map(Identifier::getValue)
-                .collect(toImmutableSet());
     }
 
     private class RedactingVisitor
@@ -229,6 +199,14 @@ public class SensitiveStatementRedactor
         {
             redacted = true;
             return redactProperties(properties, sensitiveProperties);
+        }
+
+        private static Set<String> getPropertyNames(List<Property> properties)
+        {
+            return properties.stream()
+                    .map(Property::getName)
+                    .map(Identifier::getValue)
+                    .collect(toImmutableSet());
         }
     }
 }

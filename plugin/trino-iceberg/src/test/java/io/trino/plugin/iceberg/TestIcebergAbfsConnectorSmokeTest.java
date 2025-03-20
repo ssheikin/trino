@@ -123,12 +123,6 @@ public class TestIcebergAbfsConnectorSmokeTest
         return getCreateCatalogSqlTemplate(accessKey);
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate("***");
-    }
-
     private String getCreateCatalogSqlTemplate(String accessKey)
     {
         return """

@@ -123,12 +123,6 @@ public class TestIcebergJdbcCatalogConnectorSmokeTest
         return getCreateCatalogSqlTemplate(server.getJdbcUrl(), PASSWORD);
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate("***", "***");
-    }
-
     private String getCreateCatalogSqlTemplate(String url, String password)
     {
         return """

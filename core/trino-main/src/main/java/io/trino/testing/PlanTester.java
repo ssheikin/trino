@@ -153,7 +153,6 @@ import io.trino.spi.Plugin;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockEncodingSerde;
 import io.trino.spi.catalog.CatalogName;
-import io.trino.spi.catalog.CatalogStore;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
@@ -172,7 +171,6 @@ import io.trino.split.PageSourceManager;
 import io.trino.split.SplitManager;
 import io.trino.split.SplitSource;
 import io.trino.sql.PlannerContext;
-import io.trino.sql.SensitiveStatementRedactor;
 import io.trino.sql.SqlEnvironmentConfig;
 import io.trino.sql.analyzer.Analysis;
 import io.trino.sql.analyzer.Analyzer;
@@ -318,7 +316,6 @@ public class PlanTester
     private final ViewPropertyManager viewPropertyManager;
     private final MaterializedViewPropertyManager materializedViewPropertyManager;
     private final AnalyzePropertyManager analyzePropertyManager;
-    private final SensitiveStatementRedactor sensitiveStatementRedactor;
 
     private final PageFunctionCompiler pageFunctionCompiler;
     private final ColumnarFilterCompiler filterCompiler;
@@ -373,8 +370,7 @@ public class PlanTester
         this.optimizerConfig = new OptimizerConfig();
         LazyCatalogFactory catalogFactory = new LazyCatalogFactory();
         this.catalogFactory = catalogFactory;
-        CatalogStore catalogStore = new InMemoryCatalogStore();
-        this.catalogManager = new CoordinatorDynamicCatalogManager(catalogStore, catalogFactory, directExecutor());
+        this.catalogManager = new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), catalogFactory, directExecutor());
         this.transactionManager = InMemoryTransactionManager.create(
                 new TransactionManagerConfig().setIdleTimeout(new Duration(1, TimeUnit.DAYS)),
                 yieldExecutor,
@@ -535,13 +531,6 @@ public class PlanTester
 
         catalogManager.registerGlobalSystemConnector(globalSystemConnector);
         languageFunctionManager.setPlannerContext(plannerContext);
-
-        this.sensitiveStatementRedactor = new SensitiveStatementRedactor(
-                new FeaturesConfig(),
-                plannerContext,
-                accessControl,
-                catalogFactory,
-                catalogManager);
 
         // rewrite session to use managed SessionPropertyMetadata
         this.defaultSession = new Session(
@@ -1071,8 +1060,7 @@ public class PlanTester
                                 columnPropertyManager,
                                 tablePropertyManager,
                                 viewPropertyManager,
-                                materializedViewPropertyManager,
-                                sensitiveStatementRedactor),
+                                materializedViewPropertyManager),
                         new ShowStatsRewrite(plannerContext.getMetadata(), queryExplainerFactory, statsCalculator),
                         new ExplainRewrite(queryExplainerFactory, new QueryPreparer(ImmutableSet.of(), sqlParser)))),
                 plannerContext.getTracer());

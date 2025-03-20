@@ -135,9 +135,11 @@ public abstract class BaseMySqlConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername());
+            assertUpdate(createFirstCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, "***", mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
+                    .isEqualTo(createFirstCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
@@ -148,10 +150,10 @@ public abstract class BaseMySqlConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = '%s',
                    "jdbc-types-mapped-to-varchar" = 'true'
-                )""";
-            assertUpdate(createSecondCatalogSql.formatted(secondCatalog, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
+                )""".formatted(secondCatalog, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername());
+            assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, "***", mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
+                    .isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));
         }
         finally {
@@ -173,7 +175,7 @@ public abstract class BaseMySqlConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {
@@ -186,9 +188,10 @@ public abstract class BaseMySqlConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
+            @Language("SQL")
+            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", mySqlServer.getJdbcUrl(), mySqlServer.getUsername());
+            assertUpdate(catalogWithIncorrectPassword);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue()).isEqualTo(catalogWithIncorrectPassword);
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA), "Could not create connection to database server. Attempted reconnect 3 times. Giving up.");
 
             assertUpdate("""
@@ -196,7 +199,7 @@ public abstract class BaseMySqlConnectorTest
                   "connection-password" = '%s'
                 """.formatted(catalog, mySqlServer.getPassword()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {

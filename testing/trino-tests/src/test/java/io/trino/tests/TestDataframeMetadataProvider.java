@@ -22,17 +22,14 @@ import com.starburstdata.dataframe.type.LongType;
 import com.starburstdata.dataframe.type.StringType;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.opentelemetry.api.OpenTelemetry;
-import io.trino.FeaturesConfig;
 import io.trino.Session;
 import io.trino.client.NodeVersion;
-import io.trino.connector.CatalogFactory;
 import io.trino.connector.CatalogServiceProvider;
 import io.trino.connector.CoordinatorDynamicCatalogManager;
 import io.trino.connector.InMemoryCatalogStore;
 import io.trino.connector.LazyCatalogFactory;
 import io.trino.connector.TestingTableFunctions;
 import io.trino.metadata.AnalyzePropertyManager;
-import io.trino.metadata.CatalogManager;
 import io.trino.metadata.CatalogTableFunctions;
 import io.trino.metadata.ColumnPropertyManager;
 import io.trino.metadata.InternalFunctionBundle;
@@ -54,7 +51,6 @@ import io.trino.server.dataframe.DataTypeMapper;
 import io.trino.server.dataframe.DataframeMetadataProvider;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.sql.PlannerContext;
-import io.trino.sql.SensitiveStatementRedactor;
 import io.trino.sql.SqlEnvironmentConfig;
 import io.trino.sql.analyzer.AnalyzerFactory;
 import io.trino.sql.analyzer.SessionTimeProvider;
@@ -121,27 +117,18 @@ public class TestDataframeMetadataProvider
         tablePropertyManager = planTester.getTablePropertyManager();
         analyzePropertyManager = planTester.getAnalyzePropertyManager();
 
-        CatalogFactory catalogFactory = new LazyCatalogFactory();
-        InMemoryCatalogStore catalogStore = new InMemoryCatalogStore();
-        CatalogManager catalogManager = new CoordinatorDynamicCatalogManager(catalogStore, catalogFactory, directExecutor());
         StatementRewrite statementRewrite = new StatementRewrite(ImmutableSet.of(new ShowQueriesRewrite(
                 new SqlEnvironmentConfig(),
                 plannerContext.getMetadata(),
                 SQL_PARSER,
                 accessControl,
-                catalogManager,
+                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), directExecutor()),
                 new SessionPropertyManager(),
                 new SchemaPropertyManager(CatalogServiceProvider.fail()),
                 new ColumnPropertyManager(CatalogServiceProvider.fail()),
                 tablePropertyManager,
                 new ViewPropertyManager(catalogName -> ImmutableMap.of()),
-                new MaterializedViewPropertyManager(catalogName -> ImmutableMap.of()),
-                new SensitiveStatementRedactor(
-                        new FeaturesConfig(),
-                        plannerContext,
-                        accessControl,
-                        catalogFactory,
-                        catalogManager))));
+                new MaterializedViewPropertyManager(catalogName -> ImmutableMap.of()))));
         StatementAnalyzerFactory statementAnalyzerFactory = new StatementAnalyzerFactory(
                 plannerContext,
                 SQL_PARSER,

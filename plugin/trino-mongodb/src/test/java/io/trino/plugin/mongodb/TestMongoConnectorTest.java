@@ -157,9 +157,10 @@ public class TestMongoConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getConnectionString()));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, "***"));
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getConnectionString());
+            assertUpdate(createFirstCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue()).isEqualTo(createFirstCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
@@ -168,10 +169,10 @@ public class TestMongoConnectorTest
                 WITH (
                    "mongodb.allow-local-scheduling" = 'true',
                    "mongodb.connection-url" = '%s'
-                )""";
-            assertUpdate(createSecondCatalogSql.formatted(secondCatalog, server.getConnectionString()));
+                )""".formatted(secondCatalog, server.getConnectionString());
+            assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, "***"));
+                    .isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));
         }
         finally {
@@ -193,7 +194,7 @@ public class TestMongoConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***"));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getConnectionString()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {
@@ -206,9 +207,11 @@ public class TestMongoConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "mongodb://host:1234"));
+            @Language("SQL")
+            String createInvalidCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "mongodb://host:1234");
+            assertUpdate(createInvalidCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***"));
+                    .isEqualTo(createInvalidCatalogSql);
             assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA)))
                     .isInstanceOf(QueryFailedException.class)
                     .hasMessageContaining("Timed out while waiting for a server");
@@ -218,7 +221,7 @@ public class TestMongoConnectorTest
                   "mongodb.connection-url" = '%s'
                 """.formatted(catalog, server.getConnectionString()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***"));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getConnectionString()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {

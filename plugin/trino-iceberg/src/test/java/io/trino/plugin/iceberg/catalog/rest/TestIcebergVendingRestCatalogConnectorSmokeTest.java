@@ -155,12 +155,6 @@ public class TestIcebergVendingRestCatalogConnectorSmokeTest
     }
 
     @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate();
-    }
-
-    @Override
     @BeforeAll
     public void initFileSystem()
     {

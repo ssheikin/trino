@@ -277,16 +277,17 @@ public class TestSalesforceConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE
                     .formatted(
                             firstCatalog,
                             SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED,
                             SALESFORCE_BASIC_AUTH_PASSWORD,
                             SALESFORCE_BASIC_AUTH_SECURITY_TOKEN,
-                            SALESFORCE_BASIC_AUTH_USER));
+                            SALESFORCE_BASIC_AUTH_USER);
+            assertUpdate(createFirstCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + firstCatalog))
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(firstCatalog, SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED, "***", "***", SALESFORCE_BASIC_AUTH_USER));
+                    .isEqualTo(createFirstCatalogSql);
             assertThat(computeActual("SHOW TABLES FROM %s.%s".formatted(firstCatalog, "salesforce")).getMaterializedRows()).isNotEmpty();
 
             @Language("SQL")
@@ -298,15 +299,15 @@ public class TestSalesforceConnectorTest
                    "salesforce.password" = '%s',
                    "salesforce.security-token" = '%s',
                    "salesforce.user" = '%s'
-                )""";
-            assertUpdate(createSecondCatalogSql.formatted(
-                    secondCatalog,
+                )""".formatted(
+                        secondCatalog,
                     SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED,
                     SALESFORCE_BASIC_AUTH_PASSWORD,
                     SALESFORCE_BASIC_AUTH_SECURITY_TOKEN,
-                    SALESFORCE_BASIC_AUTH_USER));
+                    SALESFORCE_BASIC_AUTH_USER);
+            assertUpdate(createSecondCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + secondCatalog))
-                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED, "***", "***", SALESFORCE_BASIC_AUTH_USER));
+                    .isEqualTo(createSecondCatalogSql);
             assertThat(computeActual("SHOW TABLES FROM %s.%s".formatted(secondCatalog, "salesforce")).getMaterializedRows()).isNotEmpty();
         }
         finally {
@@ -331,7 +332,12 @@ public class TestSalesforceConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog)).hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED, "***", "***", SALESFORCE_BASIC_AUTH_USER));
+                            .formatted(
+                                    catalog,
+                                    SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED,
+                                    SALESFORCE_BASIC_AUTH_PASSWORD,
+                                    SALESFORCE_BASIC_AUTH_SECURITY_TOKEN,
+                                    SALESFORCE_BASIC_AUTH_USER));
             assertThat(computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, "salesforce")).getMaterializedRows()).isNotEmpty();
         }
         finally {
@@ -344,10 +350,11 @@ public class TestSalesforceConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE
-                    .formatted(catalog, SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED, SALESFORCE_BASIC_AUTH_PASSWORD, SALESFORCE_BASIC_AUTH_SECURITY_TOKEN, "INVALID"));
-            assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED, "***", "***", "INVALID"));
+            @Language("SQL")
+            String catalogWithIncorrectUser = CREATE_CATALOG_SQL_TEMPLATE
+                    .formatted(catalog, SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED, SALESFORCE_BASIC_AUTH_PASSWORD, SALESFORCE_BASIC_AUTH_SECURITY_TOKEN, "INVALID");
+            assertUpdate(catalogWithIncorrectUser);
+            assertThat(computeScalar("SHOW CREATE CATALOG " + catalog)).isEqualTo(catalogWithIncorrectUser);
             assertThat(computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, "salesforce")).getMaterializedRows()).isEmpty();
 
             assertUpdate("""
@@ -356,7 +363,12 @@ public class TestSalesforceConnectorTest
                 """.formatted(catalog, SALESFORCE_BASIC_AUTH_USER));
             assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
-                            .formatted(catalog, SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED, "***", "***", SALESFORCE_BASIC_AUTH_USER));
+                            .formatted(
+                                    catalog,
+                                    SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED,
+                                    SALESFORCE_BASIC_AUTH_PASSWORD,
+                                    SALESFORCE_BASIC_AUTH_SECURITY_TOKEN,
+                                    SALESFORCE_BASIC_AUTH_USER));
             assertThat(computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, "salesforce")).getMaterializedRows()).isNotEmpty();
         }
         finally {

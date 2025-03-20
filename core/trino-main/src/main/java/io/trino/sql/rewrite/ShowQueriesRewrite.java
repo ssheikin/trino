@@ -56,7 +56,6 @@ import io.trino.spi.security.PrincipalType;
 import io.trino.spi.security.TrinoPrincipal;
 import io.trino.spi.session.PropertyMetadata;
 import io.trino.spi.type.Type;
-import io.trino.sql.SensitiveStatementRedactor;
 import io.trino.sql.SqlEnvironmentConfig;
 import io.trino.sql.analyzer.AnalyzerFactory;
 import io.trino.sql.parser.ParsingException;
@@ -188,7 +187,6 @@ public final class ShowQueriesRewrite
     private final ViewPropertyManager viewPropertyManager;
     private final MaterializedViewPropertyManager materializedViewPropertyManager;
     private final Optional<CatalogSchemaName> functionSchema;
-    private final SensitiveStatementRedactor sensitiveStatementRedactor;
 
     @Inject
     public ShowQueriesRewrite(
@@ -202,8 +200,7 @@ public final class ShowQueriesRewrite
             ColumnPropertyManager columnPropertyManager,
             TablePropertyManager tablePropertyManager,
             ViewPropertyManager viewPropertyManager,
-            MaterializedViewPropertyManager materializedViewPropertyManager,
-            SensitiveStatementRedactor sensitiveStatementRedactor)
+            MaterializedViewPropertyManager materializedViewPropertyManager)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.parser = requireNonNull(parser, "parser is null");
@@ -216,7 +213,6 @@ public final class ShowQueriesRewrite
         this.viewPropertyManager = requireNonNull(viewPropertyManager, "viewPropertyManager is null");
         this.materializedViewPropertyManager = requireNonNull(materializedViewPropertyManager, "materializedViewPropertyManager is null");
         this.functionSchema = defaultFunctionSchema(sqlEnvironmentConfig);
-        this.sensitiveStatementRedactor = requireNonNull(sensitiveStatementRedactor, "sensitiveStatementRedactor is null");
     }
 
     @Override
@@ -742,9 +738,7 @@ public final class ShowQueriesRewrite
                     Optional.empty(), // TODO catalog owner is not supported yet
                     Optional.empty()); // TODO catalog comment is not supported yet
 
-            CreateCatalog redactedCreateCatalog = sensitiveStatementRedactor.redact(createCatalog, properties);
-
-            return singleValueQuery("Create Catalog", formatSql(redactedCreateCatalog).trim());
+            return singleValueQuery("Create Catalog", formatSql(createCatalog).trim());
         }
 
         // catalog properties are known to be Strings only

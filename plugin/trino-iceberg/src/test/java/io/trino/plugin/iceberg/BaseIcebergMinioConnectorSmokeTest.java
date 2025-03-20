@@ -121,12 +121,6 @@ public abstract class BaseIcebergMinioConnectorSmokeTest
         return getCreateCatalogSqlTemplate(MINIO_SECRET_KEY);
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate("***");
-    }
-
     private String getCreateCatalogSqlTemplate(String secretKey)
     {
         return """

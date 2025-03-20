@@ -159,12 +159,6 @@ public class TestIcebergGcsConnectorSmokeTest
         return getCreateCatalogSqlTemplate(gcpCredentials.replace("%", "%%"));
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate("***");
-    }
-
     private String getCreateCatalogSqlTemplate(String gcsJsonKey)
     {
         return """

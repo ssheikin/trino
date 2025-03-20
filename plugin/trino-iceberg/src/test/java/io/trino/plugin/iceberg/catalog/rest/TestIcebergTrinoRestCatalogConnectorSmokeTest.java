@@ -125,12 +125,6 @@ public class TestIcebergTrinoRestCatalogConnectorSmokeTest
         );
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate();
-    }
-
     @AfterAll
     public void teardown()
     {

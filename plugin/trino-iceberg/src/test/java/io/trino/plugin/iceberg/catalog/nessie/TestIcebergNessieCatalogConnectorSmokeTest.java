@@ -134,12 +134,6 @@ public class TestIcebergNessieCatalogConnectorSmokeTest
     }
 
     @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate();
-    }
-
-    @Override
     protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
     {
         return switch (connectorBehavior) {

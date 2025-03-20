@@ -1547,9 +1547,10 @@ public abstract class BaseBigQueryConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, BIGQUERY_CREDENTIALS_KEY));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, "***"));
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, BIGQUERY_CREDENTIALS_KEY);
+            assertUpdate(createFirstCatalogSql);
+            assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue()).isEqualTo(createFirstCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
 
             @Language("SQL")
@@ -1558,10 +1559,10 @@ public abstract class BaseBigQueryConnectorTest
                     WITH (
                        "bigquery.credentials-key" = '%s',
                        "bigquery.projection-pushdown-enabled" = 'true'
-                    )""";
-            assertUpdate(createSecondCatalogSql.formatted(secondCatalog, BIGQUERY_CREDENTIALS_KEY));
+                    )""".formatted(secondCatalog, BIGQUERY_CREDENTIALS_KEY);
+            assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, "***"));
+                    .isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));
         }
         finally {
@@ -1583,7 +1584,7 @@ public abstract class BaseBigQueryConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***"));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, BIGQUERY_CREDENTIALS_KEY));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {
@@ -1596,9 +1597,11 @@ public abstract class BaseBigQueryConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, DUMMY_BIGQUERY_CREDENTIALS_KEY));
+            @Language("SQL")
+            String createInvalidCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, DUMMY_BIGQUERY_CREDENTIALS_KEY);
+            assertUpdate(createInvalidCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***"));
+                    .isEqualTo(createInvalidCatalogSql);
             assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA)))
                     .isInstanceOf(QueryFailedException.class)
                     .hasMessageContaining("Error getting access token for service account");
@@ -1608,7 +1611,7 @@ public abstract class BaseBigQueryConnectorTest
                       "bigquery.credentials-key" = '%s'
                     """.formatted(catalog, BIGQUERY_CREDENTIALS_KEY));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***"));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, BIGQUERY_CREDENTIALS_KEY));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TEST_SCHEMA));
         }
         finally {

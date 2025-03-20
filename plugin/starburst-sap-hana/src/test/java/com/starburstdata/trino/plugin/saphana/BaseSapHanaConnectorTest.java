@@ -108,9 +108,11 @@ public abstract class BaseSapHanaConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, server.getPassword(), server.getJdbcUrl(), server.getUser()));
+            @Language("SQL")
+            String createFirstCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, server.getPassword(), server.getJdbcUrl(), server.getUser());
+            assertUpdate(createFirstCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + firstCatalog))
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, CONNECTOR_NAME, "***", server.getJdbcUrl(), server.getUser()));
+                    .isEqualTo(createFirstCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
@@ -121,10 +123,10 @@ public abstract class BaseSapHanaConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = '%s',
                    "jdbc-types-mapped-to-varchar" = 'true'
-                )""";
-            assertUpdate(createSecondCatalogSql.formatted(secondCatalog, server.getPassword(), server.getJdbcUrl(), server.getUser()));
+                )""".formatted(secondCatalog, server.getPassword(), server.getJdbcUrl(), server.getUser());
+            assertUpdate(createSecondCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + secondCatalog))
-                    .isEqualTo(createSecondCatalogSql.formatted(secondCatalog, "***", server.getJdbcUrl(), server.getUser()));
+                    .isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));
         }
         finally {
@@ -146,7 +148,7 @@ public abstract class BaseSapHanaConnectorTest
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", server.getJdbcUrl(), server.getUser()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, server.getPassword(), server.getJdbcUrl(), server.getUser()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {
@@ -159,9 +161,10 @@ public abstract class BaseSapHanaConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", server.getJdbcUrl(), server.getUser()));
-            assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", server.getJdbcUrl(), server.getUser()));
+            @Language("SQL")
+            String catalogWithIncorrectPassword = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "INVALID", server.getJdbcUrl(), server.getUser());
+            assertUpdate(catalogWithIncorrectPassword);
+            assertThat(computeScalar("SHOW CREATE CATALOG " + catalog)).isEqualTo(catalogWithIncorrectPassword);
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA), ".*authentication failed");
 
             assertUpdate("""
@@ -169,7 +172,7 @@ public abstract class BaseSapHanaConnectorTest
                   "connection-password" = '%s'
                 """.formatted(catalog, server.getPassword()));
             assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, "***", server.getJdbcUrl(), server.getUser()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, CONNECTOR_NAME, server.getPassword(), server.getJdbcUrl(), server.getUser()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, TPCH_SCHEMA));
         }
         finally {

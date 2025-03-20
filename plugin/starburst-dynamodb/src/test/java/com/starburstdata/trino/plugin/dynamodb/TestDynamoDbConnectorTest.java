@@ -37,9 +37,9 @@ public class TestDynamoDbConnectorTest
     private static final String CREATE_CATALOG_SQL_TEMPLATE = """
                 CREATE CATALOG %s USING dynamodb
                 WITH (
-                   "dynamodb.aws-access-key" = '%s',
+                   "dynamodb.aws-access-key" = 'accesskey',
                    "dynamodb.aws-region" = 'us-east-2',
-                   "dynamodb.aws-secret-key" = '%s',
+                   "dynamodb.aws-secret-key" = 'secretkey',
                    "dynamodb.endpoint-url" = '%s',
                    "dynamodb.schema-directory" = '%s'
                 )""";
@@ -132,7 +132,7 @@ public class TestDynamoDbConnectorTest
     {
         String catalog = "new_catalog_" + randomNameSuffix();
         @Language("SQL")
-        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "accesskey", "secretkey", server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath());
+        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath());
         assertUpdate(createCatalogSql);
         assertCatalogs("system", "dynamodb", "tpch", "mock_dynamic_listing", "jmx", catalog);
 
@@ -152,16 +152,16 @@ public class TestDynamoDbConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, "accesskey", "secretkey", server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, "***", "***", server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, "amazondynamodb"));
 
             String secondSchemaDir = server.getSchemaDirectory().getAbsolutePath() + "/second/";
             createDir(secondSchemaDir);
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, "accesskey", "secretkey", server.getEndpointUrl(), secondSchemaDir));
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, server.getEndpointUrl(), secondSchemaDir));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, "***", "***", server.getEndpointUrl(), secondSchemaDir));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, server.getEndpointUrl(), secondSchemaDir));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, "amazondynamodb"));
         }
         finally {
@@ -187,14 +187,14 @@ public class TestDynamoDbConnectorTest
         String catalog = "catalog_rename_" + randomNameSuffix();
         try {
             String oldCatalog = "catalog_rename_" + randomNameSuffix();
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(oldCatalog, "accesskey", "secretkey", server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(oldCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(oldCatalog, "amazondynamodb"));
 
             assertUpdate("ALTER CATALOG %s RENAME TO %s".formatted(oldCatalog, catalog));
             assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                     .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***", "***", server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, "amazondynamodb"));
         }
         finally {
@@ -207,10 +207,10 @@ public class TestDynamoDbConnectorTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "accesskey", "secretkey", "INVALID", server.getSchemaDirectory().getAbsolutePath()));
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "INVALID", server.getSchemaDirectory().getAbsolutePath()));
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, "amazondynamodb"), "Error listing tables for catalog %s: The url must begin with http:// or https://".formatted(catalog));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***", "***", "INVALID", server.getSchemaDirectory().getAbsolutePath()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "INVALID", server.getSchemaDirectory().getAbsolutePath()));
 
             assertUpdate("""
                 ALTER CATALOG %s SET PROPERTIES
@@ -218,7 +218,7 @@ public class TestDynamoDbConnectorTest
                 """
                     .formatted(catalog, server.getEndpointUrl()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "***", "***", server.getEndpointUrl(), server.getSchemaDirectory()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getEndpointUrl(), server.getSchemaDirectory()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, "amazondynamodb"));
         }
         finally {

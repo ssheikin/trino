@@ -129,12 +129,6 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
         return getCreateCatalogSqlTemplate(S3_SECRET_KEY, SNOWFLAKE_PASSWORD, "SNAPPY");
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate("***", "***", "SNAPPY");
-    }
-
     private String getCreateCatalogSqlTemplate(String s3SecretKey, String snowflakePassword, String compressionCodec)
     {
         return """
@@ -738,22 +732,18 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
         String firstCatalog = "catalog_" + randomNameSuffix();
         String firstCreateCatalogSql = getCreateCatalogSqlTemplate(S3_SECRET_KEY, SNOWFLAKE_PASSWORD, "SNAPPY")
                 .formatted(firstCatalog, FileFormat.PARQUET);
-        String firstShowCreateCatalogSql = getCreateCatalogSqlTemplate("***", "***", "SNAPPY")
-                .formatted(firstCatalog, FileFormat.PARQUET);
         String secondCatalog = "catalog2_" + randomNameSuffix();
         String secondCreateCatalogSql = getCreateCatalogSqlTemplate(S3_SECRET_KEY, SNOWFLAKE_PASSWORD, "SNAPPY")
-                .formatted(secondCatalog, FileFormat.PARQUET);
-        String secondShowCreateCatalogSql = getCreateCatalogSqlTemplate("***", "***", "SNAPPY")
                 .formatted(secondCatalog, FileFormat.PARQUET);
         try {
             assertUpdate(firstCreateCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(firstShowCreateCatalogSql);
+                    .isEqualTo(firstCreateCatalogSql);
             assertQuerySucceeds("SHOW SCHEMAS FROM " + firstCatalog);
 
             assertUpdate(secondCreateCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(secondShowCreateCatalogSql);
+                    .isEqualTo(secondCreateCatalogSql);
             assertQuerySucceeds("SHOW SCHEMAS FROM " + secondCatalog);
         }
         finally {
@@ -769,12 +759,11 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
     public void testCatalogSetProperties()
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
-        String createCatalogSqlTemplate = getCreateCatalogSqlTemplate();
-        String showCreateCatalogSqlTemplate = getCreateCatalogSqlTemplateSecretsRedacted();
+        String createCatalogSql = getCreateCatalogSqlTemplate().formatted(catalog, format);
         try {
-            assertUpdate(createCatalogSqlTemplate.formatted(catalog, format));
+            assertUpdate(createCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(showCreateCatalogSqlTemplate.formatted(catalog, format));
+                    .isEqualTo(createCatalogSql);
 
             assertThatThrownBy(() -> assertUpdate("""
                     ALTER CATALOG %s SET PROPERTIES

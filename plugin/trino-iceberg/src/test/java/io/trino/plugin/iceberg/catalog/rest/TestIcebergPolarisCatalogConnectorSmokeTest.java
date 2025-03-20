@@ -102,12 +102,6 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
         return getCreateCatalogSqlTemplate(polarisCatalog.oauth2Credentials());
     }
 
-    @Override
-    protected String getCreateCatalogSqlTemplateSecretsRedacted()
-    {
-        return getCreateCatalogSqlTemplate("***");
-    }
-
     private String getCreateCatalogSqlTemplate(String credential)
     {
         return """
