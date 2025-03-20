@@ -62,10 +62,9 @@ public class HostAndPort
         if (this == o) {
             return true;
         }
-        if (!(o instanceof HostAndPort)) {
+        if (!(o instanceof HostAndPort that)) {
             return false;
         }
-        HostAndPort that = (HostAndPort) o;
         return Objects.equals(address, that.address);
     }
 

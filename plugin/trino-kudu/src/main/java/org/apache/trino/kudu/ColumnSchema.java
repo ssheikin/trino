@@ -282,10 +282,9 @@ public class ColumnSchema
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ColumnSchema)) {
+        if (!(o instanceof ColumnSchema that)) {
             return false;
         }
-        ColumnSchema that = (ColumnSchema) o;
         return Objects.equals(name, that.name) &&
                 Objects.equals(type, that.type) &&
                 key == that.key &&

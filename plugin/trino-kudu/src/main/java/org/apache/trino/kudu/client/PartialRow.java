@@ -1046,8 +1046,8 @@ public class PartialRow
                     addLong(columnIndex, (Long) val);
                     break;
                 case UNIXTIME_MICROS:
-                    if (val instanceof Timestamp) {
-                        addTimestamp(columnIndex, (Timestamp) val);
+                    if (val instanceof Timestamp timestamp) {
+                        addTimestamp(columnIndex, timestamp);
                     }
                     else {
                         addLong(columnIndex, (Long) val);
@@ -1069,8 +1069,8 @@ public class PartialRow
                     addDate(columnIndex, (Date) val);
                     break;
                 case BINARY:
-                    if (val instanceof byte[]) {
-                        addBinary(columnIndex, (byte[]) val);
+                    if (val instanceof byte[] bytes) {
+                        addBinary(columnIndex, bytes);
                     }
                     else {
                         addBinary(columnIndex, (ByteBuffer) val);

@@ -515,10 +515,9 @@ public class Schema
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof Schema)) {
+        if (!(obj instanceof Schema that)) {
             return false;
         }
-        Schema that = (Schema) obj;
         if (this.getPrimaryKeyColumnCount() != that.getPrimaryKeyColumnCount()) {
             return false;
         }

@@ -201,8 +201,8 @@ public class KuduMetrics
                             .collect(joining(",", "{", "}"));
                     String key = m.getId().getName() + " " + tags;
                     String value = "unknown";
-                    if (m instanceof Counter) {
-                        value = ((Counter) m).count() + " " + m.getId().getBaseUnit();
+                    if (m instanceof Counter counter) {
+                        value = counter.count() + " " + m.getId().getBaseUnit();
                     }
                     LOG.info(key + " : " + value);
                 });

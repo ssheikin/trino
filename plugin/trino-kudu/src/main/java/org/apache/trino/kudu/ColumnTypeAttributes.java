@@ -98,11 +98,9 @@ public class ColumnTypeAttributes
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ColumnTypeAttributes)) {
+        if (!(o instanceof ColumnTypeAttributes that)) {
             return false;
         }
-
-        ColumnTypeAttributes that = (ColumnTypeAttributes) o;
 
         if (hasPrecision != that.hasPrecision) {
             return false;

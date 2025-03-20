@@ -176,10 +176,9 @@ public class KuduPartitioner
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof BytesKey)) {
+            if (!(o instanceof BytesKey bytesKey)) {
                 return false;
             }
-            BytesKey bytesKey = (BytesKey) o;
             return compareTo(bytesKey) == 0;
         }
 

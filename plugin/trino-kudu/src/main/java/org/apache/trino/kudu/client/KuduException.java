@@ -101,7 +101,7 @@ public abstract class KuduException
     {
         // The message may be null.
         String message = e.getMessage() == null ? "" : e.getMessage();
-        if (e instanceof KuduException) {
+        if (e instanceof KuduException kuduException) {
             // The exception thrown inside the async code has a stack trace
             // that doesn't correspond to where the user actually called
             // some synchronous method. This can be very confusing for
@@ -110,14 +110,14 @@ public abstract class KuduException
             e.addSuppressed(new OriginalException(e));
             StackTraceElement[] stack = new Exception().getStackTrace();
             e.setStackTrace(stack);
-            return (KuduException) e;
+            return kuduException;
         }
         else if (e instanceof DeferredGroupException) {
             // The cause of a DeferredGroupException is the first exception it sees, we're just going to
             // use it as our main exception. DGE doesn't let us see the other exceptions anyways.
             Throwable cause = e.getCause();
-            if (cause instanceof Exception) {
-                return transformException((Exception) cause);
+            if (cause instanceof Exception exception) {
+                return transformException(exception);
             }
             // Else fall down into a generic exception at the end.
         }

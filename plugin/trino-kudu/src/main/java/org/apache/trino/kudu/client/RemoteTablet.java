@@ -347,11 +347,9 @@ public class RemoteTablet
         if (this == o) {
             return true;
         }
-        if (!(o instanceof RemoteTablet)) {
+        if (!(o instanceof RemoteTablet that)) {
             return false;
         }
-
-        RemoteTablet that = (RemoteTablet) o;
 
         return this.compareTo(that) == 0;
     }

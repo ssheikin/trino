@@ -431,10 +431,9 @@ public class KuduScanToken
         if (this == o) {
             return true;
         }
-        if (!(o instanceof KuduScanToken)) {
+        if (!(o instanceof KuduScanToken that)) {
             return false;
         }
-        KuduScanToken that = (KuduScanToken) o;
         return compareTo(that) == 0;
     }
 

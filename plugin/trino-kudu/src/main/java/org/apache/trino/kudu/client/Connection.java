@@ -302,10 +302,10 @@ class Connection
             throws Exception
     {
         // Process the results of a successful negotiation.
-        if (m instanceof Negotiator.Success) {
+        if (m instanceof Negotiator.Success success) {
             lock.lock();
             try {
-                negotiationResult = (Negotiator.Success) m;
+                negotiationResult = success;
                 checkState(state == State.TERMINATED || inflightMessages.isEmpty());
 
                 // Before switching to the READY state, it's necessary to empty the queuedMessages. There
@@ -359,7 +359,7 @@ class Connection
         }
 
         // Process the results of a failed negotiation.
-        if (m instanceof Negotiator.Failure) {
+        if (m instanceof Negotiator.Failure failure) {
             lock.lock();
             try {
                 if (state == State.TERMINATED) {
@@ -369,7 +369,7 @@ class Connection
                 checkState(inflightMessages.isEmpty());
 
                 state = State.NEGOTIATION_FAILED;
-                negotiationFailure = (Negotiator.Failure) m;
+                negotiationFailure = failure;
             }
             finally {
                 lock.unlock();
@@ -381,12 +381,11 @@ class Connection
         }
 
         // Some other event which the connection does not handle.
-        if (!(m instanceof CallResponse)) {
+        if (!(m instanceof CallResponse response)) {
             ctx.fireChannelRead(m);
             return;
         }
 
-        final CallResponse response = (CallResponse) m;
         final RpcHeader.ResponseHeader header = response.getHeader();
         if (!header.hasCallId()) {
             final int size = response.getTotalResponseSize();
@@ -455,8 +454,8 @@ class Connection
             throws Exception
     {
         KuduException error;
-        if (e instanceof KuduException) {
-            error = (KuduException) e;
+        if (e instanceof KuduException kuduException) {
+            error = kuduException;
         }
         else if (e instanceof RejectedExecutionException) {
             String message = String.format("%s RPC rejected by the executor (ignore if shutting down)",

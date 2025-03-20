@@ -253,9 +253,9 @@ class RpcProxy
                 client.handleInvalidAuthzToken(rpc, ex);
                 return;
             }
-            if (ex instanceof RecoverableException) {
+            if (ex instanceof RecoverableException recoverableException) {
                 // This check is specifically for the ERROR_SERVER_TOO_BUSY, ERROR_UNAVAILABLE and alike.
-                failOrRetryRpc(client, connection, rpc, (RecoverableException) ex);
+                failOrRetryRpc(client, connection, rpc, recoverableException);
                 return;
             }
             rpc.addTrace(traceBuilder.callStatus(ex.getStatus()).build());

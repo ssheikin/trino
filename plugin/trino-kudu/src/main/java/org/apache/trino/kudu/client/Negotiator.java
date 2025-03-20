@@ -1033,8 +1033,8 @@ public class Negotiator
                 // So, we try and determine whether the evaluateChallenge failed due to missing
                 // credentials, and return a nicer error message if so.
                 Throwable cause = saslException.getCause();
-                if (cause instanceof GSSException &&
-                        ((GSSException) cause).getMajor() == GSSException.NO_CRED) {
+                if (cause instanceof GSSException gssException &&
+                        gssException.getMajor() == GSSException.NO_CRED) {
                     throw new NonRecoverableException(
                             Status.ConfigurationError(
                                     "Server requires Kerberos, but this client is not authenticated " +
@@ -1055,11 +1055,11 @@ public class Negotiator
                 throws UnsupportedCallbackException
         {
             for (Callback callback : callbacks) {
-                if (callback instanceof NameCallback) {
-                    ((NameCallback) callback).setName(securityContext.getRealUser());
+                if (callback instanceof NameCallback nameCallback) {
+                    nameCallback.setName(securityContext.getRealUser());
                 }
-                else if (callback instanceof PasswordCallback) {
-                    ((PasswordCallback) callback).setPassword(new char[0]);
+                else if (callback instanceof PasswordCallback passwordCallback) {
+                    passwordCallback.setPassword(new char[0]);
                 }
                 else {
                     throw new UnsupportedCallbackException(callback,

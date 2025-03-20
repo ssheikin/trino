@@ -164,10 +164,9 @@ public class Partition
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Partition)) {
+        if (!(o instanceof Partition partition)) {
             return false;
         }
-        Partition partition = (Partition) o;
         return Arrays.equals(partitionKeyStart, partition.partitionKeyStart) &&
                 Arrays.equals(partitionKeyEnd, partition.partitionKeyEnd);
     }

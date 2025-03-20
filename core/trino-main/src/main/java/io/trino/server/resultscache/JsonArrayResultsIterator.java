@@ -161,8 +161,8 @@ public class JsonArrayResultsIterator
             }
         }
 
-        if (type instanceof ArrayType) {
-            Type elementType = ((ArrayType) type).getElementType();
+        if (type instanceof ArrayType arrayType) {
+            Type elementType = arrayType.getElementType();
 
             if (!(elementType instanceof TimestampType || elementType instanceof TimestampWithTimeZoneType)) {
                 return value;
@@ -177,9 +177,9 @@ public class JsonArrayResultsIterator
             return unmodifiableList(legacyValues);
         }
 
-        if (type instanceof MapType) {
-            Type keyType = ((MapType) type).getKeyType();
-            Type valueType = ((MapType) type).getValueType();
+        if (type instanceof MapType mapType) {
+            Type keyType = mapType.getKeyType();
+            Type valueType = mapType.getValueType();
 
             Map<Object, Object> mapValue = (Map<Object, Object>) value;
             Map<Object, Object> result = Maps.newHashMapWithExpectedSize(mapValue.size());
@@ -187,8 +187,8 @@ public class JsonArrayResultsIterator
             return unmodifiableMap(result);
         }
 
-        if (type instanceof RowType) {
-            List<RowType.Field> fields = ((RowType) type).getFields();
+        if (type instanceof RowType rowType) {
+            List<RowType.Field> fields = rowType.getFields();
             List<Object> values = (List<Object>) value;
 
             List<Object> result = new ArrayList<>(values.size());

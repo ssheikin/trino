@@ -504,38 +504,40 @@ public class ProtobufHelper
     protected static ByteString objectToByteStringNoType(String colName, Object value)
     {
         byte[] bytes;
-        if (value instanceof Boolean) {
-            bytes = Bytes.fromBoolean((Boolean) value);
+        if (value instanceof Boolean booleanValue) {
+            bytes = Bytes.fromBoolean(booleanValue);
         }
-        else if (value instanceof Byte) {
-            bytes = new byte[] {(Byte) value};
+        else if (value instanceof Byte byteValue) {
+            bytes = new byte[] {byteValue};
         }
-        else if (value instanceof Short) {
-            bytes = Bytes.fromShort((Short) value);
+        else if (value instanceof Short shortValue) {
+            bytes = Bytes.fromShort(shortValue);
         }
-        else if (value instanceof Integer) {
-            bytes = Bytes.fromInt((Integer) value);
+        else if (value instanceof Integer integer) {
+            bytes = Bytes.fromInt(integer);
         }
-        else if (value instanceof Long) {
-            bytes = Bytes.fromLong((Long) value);
+        else if (value instanceof Long longValue) {
+            bytes = Bytes.fromLong(longValue);
         }
-        else if (value instanceof String) {
-            bytes = ((String) value).getBytes(UTF_8);
+        else if (value instanceof String string) {
+            bytes = string.getBytes(UTF_8);
         }
-        else if (value instanceof byte[]) {
-            bytes = (byte[]) value;
+        else if (value instanceof byte[] bytesValue) {
+            bytes = bytesValue;
         }
-        else if (value instanceof ByteBuffer) {
-            bytes = ((ByteBuffer) value).array();
+        else if (value instanceof ByteBuffer byteBuffer) {
+            @SuppressWarnings("ByteBufferBackingArray")
+            byte[] array = byteBuffer.array();
+            bytes = array;
         }
-        else if (value instanceof Float) {
-            bytes = Bytes.fromFloat((Float) value);
+        else if (value instanceof Float floatValue) {
+            bytes = Bytes.fromFloat(floatValue);
         }
-        else if (value instanceof Double) {
-            bytes = Bytes.fromDouble((Double) value);
+        else if (value instanceof Double doubleValue) {
+            bytes = Bytes.fromDouble(doubleValue);
         }
-        else if (value instanceof BigDecimal) {
-            bytes = Bytes.fromBigDecimal((BigDecimal) value, DecimalUtil.MAX_DECIMAL_PRECISION);
+        else if (value instanceof BigDecimal bigDecimal) {
+            bytes = Bytes.fromBigDecimal(bigDecimal, DecimalUtil.MAX_DECIMAL_PRECISION);
         }
         else {
             throw new IllegalArgumentException("The default value provided for " +

@@ -46,10 +46,9 @@ public class IdPName
         if (this == o) {
             return true;
         }
-        if (!(o instanceof IdPName)) {
+        if (!(o instanceof IdPName idPName)) {
             return false;
         }
-        IdPName idPName = (IdPName) o;
         return name.equals(idPName.name);
     }
 

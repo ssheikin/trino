@@ -910,14 +910,14 @@ public class AsyncKuduSession
         public Object call(Exception e)
                 throws Exception
         {
-            if (e instanceof KuduException) {
+            if (e instanceof KuduException kuduException) {
                 Status status;
-                if (e instanceof NonCoveredRangeException) {
+                if (kuduException instanceof NonCoveredRangeException) {
                     status = Status.NotFound(String.format(
-                            "%s: %s", e.getMessage(), operation.getTable().getName()));
+                            "%s: %s", kuduException.getMessage(), operation.getTable().getName()));
                 }
                 else {
-                    status = ((KuduException) e).getStatus();
+                    status = kuduException.getStatus();
                 }
                 return new OperationResponse(0, null, 0, operation, new RowError(status, operation));
             }

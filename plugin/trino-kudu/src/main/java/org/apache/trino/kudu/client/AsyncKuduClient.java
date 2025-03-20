@@ -818,8 +818,8 @@ public class AsyncKuduClient
                 getTableSchema(name, null, null),
                 table -> Deferred.fromResult(true),
                 (Callback<Deferred<Boolean>, Exception>) e -> {
-                    if (e instanceof NonRecoverableException) {
-                        Status status = ((NonRecoverableException) e).getStatus();
+                    if (e instanceof NonRecoverableException nonRecoverableException) {
+                        Status status = nonRecoverableException.getStatus();
                         if (status.isNotFound()) {
                             return Deferred.fromResult(false);
                         }
@@ -969,13 +969,12 @@ public class AsyncKuduClient
         @Override
         public Void call(Exception arg)
         {
-            if (!(arg instanceof RecoverableException)) {
+            if (!(arg instanceof RecoverableException ex)) {
                 fakeRpc.errback(arg);
                 return null;
             }
 
             // Sleep and retry the entire operation.
-            RecoverableException ex = (RecoverableException) arg;
             long sleepTime = getSleepTimeForRpcMillis(fakeRpc);
             if (cannotRetryRequest(fakeRpc) ||
                     fakeRpc.timeoutTracker.wouldSleepingTimeoutMillis(sleepTime)) {
@@ -1339,8 +1338,8 @@ public class AsyncKuduClient
         @Override
         public Deferred<R> call(Exception arg)
         {
-            if (arg instanceof RecoverableException) {
-                return delayedSendRpcToTablet(request, (KuduException) arg);
+            if (arg instanceof RecoverableException recoverableException) {
+                return delayedSendRpcToTablet(request, recoverableException);
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("Notify RPC %s after lookup exception", request), arg);
@@ -2685,16 +2684,16 @@ public class AsyncKuduClient
         @Override
         public Boolean call(final Object resp)
         {
-            if (resp instanceof Exception) {
+            if (resp instanceof Exception exception) {
                 // The server returns an RpcRemoteException when the required feature is not supported.
                 // The exception should have an ERROR_INVALID_REQUEST error code and at least one
                 // unsupported feature flag.
-                if (resp instanceof RpcRemoteException &&
-                        ((RpcRemoteException) resp).getErrPB().getCode() == ERROR_INVALID_REQUEST &&
-                        ((RpcRemoteException) resp).getErrPB().getUnsupportedFeatureFlagsCount() >= 1) {
+                if (resp instanceof RpcRemoteException rpcRemoteException &&
+                        rpcRemoteException.getErrPB().getCode() == ERROR_INVALID_REQUEST &&
+                        rpcRemoteException.getErrPB().getUnsupportedFeatureFlagsCount() >= 1) {
                     return false;
                 }
-                throw new IllegalStateException((Exception) resp);
+                throw new IllegalStateException(exception);
             }
             return true;
         }

@@ -591,8 +591,8 @@ public class KuduPredicate
         else if (value instanceof Long) {
             return newComparisonPredicate(column, op, (long) value);
         }
-        else if (value instanceof Timestamp) {
-            return newComparisonPredicate(column, op, (Timestamp) value);
+        else if (value instanceof Timestamp timestamp) {
+            return newComparisonPredicate(column, op, timestamp);
         }
         else if (value instanceof Float) {
             return newComparisonPredicate(column, op, (float) value);
@@ -600,17 +600,17 @@ public class KuduPredicate
         else if (value instanceof Double) {
             return newComparisonPredicate(column, op, (double) value);
         }
-        else if (value instanceof BigDecimal) {
-            return newComparisonPredicate(column, op, (BigDecimal) value);
+        else if (value instanceof BigDecimal bigDecimal) {
+            return newComparisonPredicate(column, op, bigDecimal);
         }
-        else if (value instanceof String) {
-            return newComparisonPredicate(column, op, (String) value);
+        else if (value instanceof String string) {
+            return newComparisonPredicate(column, op, string);
         }
-        else if (value instanceof byte[]) {
-            return newComparisonPredicate(column, op, (byte[]) value);
+        else if (value instanceof byte[] bytes) {
+            return newComparisonPredicate(column, op, bytes);
         }
-        else if (value instanceof Date) {
-            return newComparisonPredicate(column, op, (Date) value);
+        else if (value instanceof Date date) {
+            return newComparisonPredicate(column, op, date);
         }
         else {
             throw new IllegalArgumentException(String.format("illegal type for %s predicate: %s",
@@ -1391,10 +1391,9 @@ public class KuduPredicate
         if (this == o) {
             return true;
         }
-        if (!(o instanceof KuduPredicate)) {
+        if (!(o instanceof KuduPredicate that)) {
             return false;
         }
-        KuduPredicate that = (KuduPredicate) o;
         return type == that.type &&
                 column.equals(that.column) &&
                 Arrays.equals(lower, that.lower) &&

@@ -95,10 +95,9 @@ public class ListTablesResponse
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof TableInfo)) {
+            if (!(o instanceof TableInfo tableInfo)) {
                 return false;
             }
-            TableInfo tableInfo = (TableInfo) o;
             return Objects.equals(tableId, tableInfo.tableId) &&
                     Objects.equals(tableName, tableInfo.tableName);
         }

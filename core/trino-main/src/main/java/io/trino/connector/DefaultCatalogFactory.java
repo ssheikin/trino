@@ -350,8 +350,8 @@ public class DefaultCatalogFactory
                 this.classLoader = classLoader;
             }
 
-            if (classLoader instanceof PluginClassLoader) {
-                handleResolver.registerClassLoader((PluginClassLoader) classLoader);
+            if (classLoader instanceof PluginClassLoader pluginClassLoader) {
+                handleResolver.registerClassLoader(pluginClassLoader);
             }
             return classLoader;
         }
@@ -364,8 +364,8 @@ public class DefaultCatalogFactory
                 classLoader = this.classLoader;
                 destroyed = true;
             }
-            if (classLoader instanceof PluginClassLoader) {
-                handleResolver.unregisterClassLoader((PluginClassLoader) classLoader);
+            if (classLoader instanceof PluginClassLoader pluginClassLoader) {
+                handleResolver.unregisterClassLoader(pluginClassLoader);
             }
         }
     }
