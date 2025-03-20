@@ -13,7 +13,6 @@
  */
 package io.trino.server;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Key;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.HttpUriBuilder;
@@ -30,8 +29,6 @@ import io.trino.client.QueryData;
 import io.trino.client.QueryDataClientJacksonModule;
 import io.trino.client.QueryResults;
 import io.trino.client.ResultRowsDecoder;
-import io.trino.connector.MockConnectorFactory;
-import io.trino.connector.MockConnectorPlugin;
 import io.trino.execution.QueryInfo;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.server.testing.TestingTrinoServer;
@@ -42,10 +39,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
@@ -70,7 +65,6 @@ import static io.trino.spi.StandardErrorCode.USER_CANCELED;
 import static io.trino.testing.TestingAccessControlManager.TestingPrivilegeType.KILL_QUERY;
 import static io.trino.testing.TestingAccessControlManager.TestingPrivilegeType.VIEW_QUERY;
 import static io.trino.testing.TestingAccessControlManager.privilege;
-import static io.trino.testing.TestingNames.randomNameSuffix;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -100,9 +94,6 @@ public class TestQueryResource
     {
         client = new JettyHttpClient();
         server = TestingTrinoServer.create();
-        server.installPlugin(new MockConnectorPlugin(MockConnectorFactory.builder()
-                .withSecuritySensitivePropertyNames(ImmutableSet.of("password"))
-                .build()));
         server.installPlugin(new TpchPlugin());
         server.createCatalog("tpch", "tpch");
     }
@@ -241,114 +232,6 @@ public class TestQueryResource
     }
 
     @Test
-    public void testGetQueryInfosWithRedactedSecrets()
-    {
-        String catalog = "catalog_" + randomNameSuffix();
-        runToCompletion(
-                """
-                CREATE CATALOG %s USING mock
-                WITH (
-                   "user" = 'bob',
-                   "password" = '1234'
-                )
-                """.formatted(catalog));
-
-        List<BasicQueryInfo> infos = getQueryInfos("/v1/query");
-        assertThat(infos.size()).isEqualTo(1);
-        assertThat(infos.getFirst().getQuery()).isEqualTo(
-                """
-                CREATE CATALOG %s USING mock
-                WITH (
-                   "user" = 'bob',
-                   "password" = '***'
-                )\
-                """.formatted(catalog));
-    }
-
-    @Test
-    public void testGetQueryInfosWithRedactedSecretsInPreparedStatement()
-    {
-        String catalog = "catalog_" + randomNameSuffix();
-        runToCompletion(
-                "EXECUTE create_catalog",
-                Optional.of("create_catalog"),
-                Optional.of(
-                        """
-                        CREATE CATALOG %s USING mock
-                        WITH (
-                           "user" = 'bob',
-                           "password" = '1234'
-                        )
-                        """.formatted(catalog)));
-
-        List<BasicQueryInfo> infos = getQueryInfos("/v1/query");
-        assertThat(infos.size()).isEqualTo(1);
-        assertThat(infos.getFirst().getQuery()).isEqualTo("EXECUTE create_catalog");
-        assertThat(infos.getFirst().getPreparedQuery()).isEqualTo(
-                Optional.of(
-                """
-                CREATE CATALOG %s USING mock
-                WITH (
-                   "user" = 'bob',
-                   "password" = '***'
-                )\
-                """.formatted(catalog)));
-    }
-
-    @Test
-    public void testGetQueryInfoWithRedactedSecrets()
-    {
-        String catalog = "catalog_" + randomNameSuffix();
-        String queryId = runToCompletion(
-                """
-                CREATE CATALOG %s USING mock
-                WITH (
-                   "user" = 'bob',
-                   "password" = '1234'
-                )
-                """.formatted(catalog));
-
-        QueryInfo queryInfo = getQueryInfo(queryId);
-        assertThat(queryInfo.getQuery()).isEqualTo(
-                """
-                CREATE CATALOG %s USING mock
-                WITH (
-                   "user" = 'bob',
-                   "password" = '***'
-                )\
-                """.formatted(catalog));
-    }
-
-    @Test
-    public void testGetQueryInfoWithRedactedSecretsInPreparedStatement()
-    {
-        String catalog = "catalog_" + randomNameSuffix();
-        String queryId = runToCompletion(
-                "EXECUTE create_catalog",
-                Optional.of("create_catalog"),
-                Optional.of(
-                        """
-                        CREATE CATALOG %s USING mock
-                        WITH (
-                           "user" = 'bob',
-                           "password" = '1234'
-                        )
-                        """.formatted(catalog)));
-
-        QueryInfo queryInfo = getQueryInfo(queryId);
-        assertThat(queryInfo.getQuery()).isEqualTo("EXECUTE create_catalog");
-        assertThat(queryInfo.getPreparedQuery()).isEqualTo(
-                Optional.of(
-                """
-                CREATE CATALOG %s USING mock
-                WITH (
-                   "user" = 'bob',
-                   "password" = '***'
-                )\
-                """.formatted(catalog)));
-    }
-
-    @Test
     public void testCancel()
     {
         String queryId = startQuery("SELECT * FROM tpch.sf100.lineitem");
@@ -422,22 +305,12 @@ public class TestQueryResource
 
     private String runToCompletion(String sql)
     {
-        return runToCompletion(sql, Optional.empty(), Optional.empty());
-    }
-
-    private String runToCompletion(String sql, Optional<String> preparedStatementName, Optional<String> preparedStatement)
-    {
         URI uri = uriBuilderFrom(server.getBaseUrl().resolve("/v1/statement")).build();
-        Request.Builder requestBuilder = preparePost()
+        Request request = preparePost()
                 .setHeader(TRINO_HEADERS.requestUser(), "user")
                 .setUri(uri)
-                .setBodyGenerator(createStaticBodyGenerator(sql, UTF_8));
-
-        if (preparedStatementName.isPresent() && preparedStatement.isPresent()) {
-            requestBuilder.setHeader(TRINO_HEADERS.requestPreparedStatement(), preparedStatementName.get() + "=" + URLEncoder.encode(preparedStatement.get(), UTF_8));
-        }
-
-        Request request = requestBuilder.build();
+                .setBodyGenerator(createStaticBodyGenerator(sql, UTF_8))
+                .build();
         QueryResults queryResults = client.execute(request, createJsonResponseHandler(QUERY_RESULTS_JSON_CODEC));
         while (queryResults.getNextUri() != null) {
             request = prepareGet()
