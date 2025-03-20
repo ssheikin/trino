@@ -80,7 +80,7 @@ public class SetCatalogPropertiesTask
         return immediateVoidFuture();
     }
 
-    public static Map<String, Optional<String>> evaluateProperties(
+    private static Map<String, Optional<String>> evaluateProperties(
             SetCatalogProperties statement,
             Session session,
             PlannerContext plannerContext,

@@ -58,12 +58,6 @@ public interface CatalogManager
         }
 
         @Override
-        public CatalogProperties alterCatalogProperties(CatalogName catalogName, Map<String, Optional<String>> properties)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void createCatalog(CatalogName catalogName, ConnectorName connectorName, Map<String, String> properties, boolean notExists)
         {
             throw new UnsupportedOperationException();
@@ -101,14 +95,6 @@ public interface CatalogManager
      * but does not modify any state.
      */
     CatalogProperties createCatalogProperties(CatalogName catalogName, ConnectorName connectorName, Map<String, String> properties);
-
-    /**
-     * Updates {@link CatalogProperties} for an existing catalog in the same way as {@link CatalogManager#alterCatalog(CatalogName, Map)},
-     * but does not modify any state.
-     *
-     * @throws io.trino.spi.TrinoException if the specified catalog does not exist
-     */
-    CatalogProperties alterCatalogProperties(CatalogName catalogName, Map<String, Optional<String>> properties);
 
     void createCatalog(CatalogName catalogName, ConnectorName connectorName, Map<String, String> properties, boolean notExists);
 

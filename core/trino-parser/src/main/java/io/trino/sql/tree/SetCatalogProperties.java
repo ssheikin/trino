@@ -45,11 +45,6 @@ public final class SetCatalogProperties
         this.properties = ImmutableList.copyOf(requireNonNull(properties, "properties is null"));
     }
 
-    public SetCatalogProperties withProperties(List<Property> properties)
-    {
-        return new SetCatalogProperties(getLocation().orElseThrow(), name, properties);
-    }
-
     public Identifier getName()
     {
         return name;

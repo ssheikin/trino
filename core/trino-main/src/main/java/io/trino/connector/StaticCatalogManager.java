@@ -218,12 +218,6 @@ public class StaticCatalogManager
     }
 
     @Override
-    public CatalogProperties alterCatalogProperties(CatalogName catalogName, Map<String, Optional<String>> properties)
-    {
-        throw new TrinoException(NOT_SUPPORTED, "ALTER CATALOG is not supported by the static catalog store");
-    }
-
-    @Override
     public ConnectorServices getConnectorServices(CatalogHandle catalogHandle)
     {
         CatalogConnector catalogConnector = catalogs.get(catalogHandle.getCatalogName());

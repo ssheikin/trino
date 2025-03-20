@@ -19,7 +19,6 @@ import io.trino.Session;
 import io.trino.connector.CatalogFactory;
 import io.trino.execution.CreateCatalogTask;
 import io.trino.execution.QueryPreparer.PreparedQuery;
-import io.trino.execution.SetCatalogPropertiesTask;
 import io.trino.metadata.CatalogManager;
 import io.trino.security.AccessControl;
 import io.trino.spi.catalog.CatalogName;
@@ -35,7 +34,6 @@ import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.Prepare;
 import io.trino.sql.tree.Property;
-import io.trino.sql.tree.SetCatalogProperties;
 import io.trino.sql.tree.Statement;
 import io.trino.sql.tree.StringLiteral;
 
@@ -223,30 +221,6 @@ public class SensitiveStatementRedactor
             }
 
             List<Property> redactedProperties = redact(properties, sensitiveProperties);
-
-            return node.withProperties(redactedProperties);
-        }
-
-        @Override
-        protected Node visitSetCatalogProperties(SetCatalogProperties node, Void context)
-        {
-            CatalogName catalogName = new CatalogName(node.getName().getValue());
-
-            Set<String> sensitiveProperties;
-            try {
-                Map<String, Optional<String>> evaluatedProperties = SetCatalogPropertiesTask.evaluateProperties(node, session, plannerContext, accessControl, parameters);
-                CatalogProperties catalogProperties = catalogManager.alterCatalogProperties(catalogName, evaluatedProperties);
-                sensitiveProperties = catalogFactory.getSecuritySensitivePropertyNames(catalogProperties);
-            }
-            catch (RuntimeException e) {
-                // To obtain security-sensitive properties, we need to perform a few steps that usually occur during
-                // the execution phase, such as evaluating properties, resolving secrets, validating the configuration, etc.
-                // If any exception occurs while performing these steps preemptively, we don't want to fail the entire query
-                // because it's not the redactor's responsibility. Instead, we take a defensive approach and mask all the properties.
-                sensitiveProperties = getPropertyNames(node.getProperties());
-            }
-
-            List<Property> redactedProperties = redact(node.getProperties(), sensitiveProperties);
 
             return node.withProperties(redactedProperties);
         }

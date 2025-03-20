@@ -190,22 +190,6 @@ public class CoordinatorDynamicCatalogManager
     }
 
     @Override
-    public CatalogProperties alterCatalogProperties(CatalogName catalogName, Map<String, Optional<String>> properties)
-    {
-        Catalog catalog = activeCatalogs.get(catalogName);
-        if (catalog == null) {
-            throw new TrinoException(NOT_FOUND, format("Catalog '%s' does not exist", catalogName));
-        }
-
-        CatalogConnector catalogConnector = allCatalogs.get(catalog.getCatalogHandle());
-        if (catalogConnector == null) {
-            throw new TrinoException(NOT_FOUND, format("Catalog '%s' does not exist", catalogName));
-        }
-
-        return updateProperties(catalogName, catalogConnector.getCatalogProperties(), properties);
-    }
-
-    @Override
     public void ensureCatalogsLoaded(Session session, List<CatalogProperties> catalogs)
     {
         List<CatalogProperties> missingCatalogs = catalogs.stream()
@@ -362,7 +346,9 @@ public class CoordinatorDynamicCatalogManager
     private CatalogConnector createCatalogLikeInternal(CatalogName oldCatalogName, CatalogName catalogName, Map<String, Optional<String>> properties)
     {
         CatalogHandle catalogHandle = activeCatalogs.get(oldCatalogName).getCatalogHandle();
-        CatalogProperties catalogProperties = updateProperties(catalogName, allCatalogs.get(catalogHandle).getCatalogProperties(), properties);
+        CatalogProperties oldCatalogProperties = allCatalogs.get(catalogHandle).getCatalogProperties().orElseThrow();
+        Map<String, String> newProperties = updateProperties(oldCatalogProperties, properties);
+        CatalogProperties catalogProperties = catalogStore.createCatalogProperties(catalogName, oldCatalogProperties.connectorName(), newProperties);
 
         // get or create catalog for the handle
         CatalogConnector catalog = allCatalogs.computeIfAbsent(
@@ -373,13 +359,8 @@ public class CoordinatorDynamicCatalogManager
         return catalog;
     }
 
-    private CatalogProperties updateProperties(
-            CatalogName catalogName,
-            Optional<CatalogProperties> catalogProperties,
-            Map<String, Optional<String>> changedProperties)
+    private static Map<String, String> updateProperties(CatalogProperties existingProperties, Map<String, Optional<String>> changedProperties)
     {
-        CatalogProperties existingProperties = catalogProperties.orElseThrow();
-
         ImmutableSet.Builder<String> removedPropertiesBuilder = ImmutableSet.builder();
         ImmutableMap.Builder<String, String> updatedPropertiesBuilder = ImmutableMap.builder();
         for (Map.Entry<String, Optional<String>> property : changedProperties.entrySet()) {
@@ -395,12 +376,10 @@ public class CoordinatorDynamicCatalogManager
 
         Map<String, String> oldProperties = Maps.filterKeys(existingProperties.properties(), key -> !removedProperties.contains(key));
 
-        ImmutableMap<String, String> newProperties = ImmutableMap.<String, String>builder()
+        return ImmutableMap.<String, String>builder()
                 .putAll(oldProperties)
                 .putAll(updatedProperties)
                 .buildKeepingLast();
-
-        return catalogStore.createCatalogProperties(catalogName, existingProperties.connectorName(), newProperties);
     }
 
     public void registerGlobalSystemConnector(GlobalSystemConnector connector)
