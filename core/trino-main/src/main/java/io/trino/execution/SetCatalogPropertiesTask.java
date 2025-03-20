@@ -71,7 +71,7 @@ public class SetCatalogPropertiesTask
 
         String catalogName = statement.getName().getValue();
 
-        Map<String, Optional<String>> properties = evaluateProperties(statement, session, plannerContext, accessControl, parameters);
+        Map<String, Optional<String>> properties = getProperties(statement, parameters, session);
 
         accessControl.checkCanSetCatalogProperties(session.toSecurityContext(), catalogName, properties);
 
@@ -80,12 +80,7 @@ public class SetCatalogPropertiesTask
         return immediateVoidFuture();
     }
 
-    private static Map<String, Optional<String>> evaluateProperties(
-            SetCatalogProperties statement,
-            Session session,
-            PlannerContext plannerContext,
-            AccessControl accessControl,
-            List<Expression> parameters)
+    private Map<String, Optional<String>> getProperties(SetCatalogProperties statement, List<Expression> parameters, Session session)
     {
         Map<NodeRef<Parameter>, Expression> boundParameters = bindParameters(statement, parameters);
         ImmutableMap.Builder<String, Optional<String>> propertiesBuilder = ImmutableMap.builder();
