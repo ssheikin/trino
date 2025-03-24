@@ -22,15 +22,12 @@ import io.trino.metastore.HiveMetastoreFactory;
 import io.trino.metastore.RawHiveMetastoreFactory;
 import io.trino.plugin.deltalake.AllowDeltaLakeManagedTableRename;
 import io.trino.plugin.deltalake.DeltaLakeConfig;
-import io.trino.plugin.deltalake.DeltaLakeSecurityConfig;
 import io.trino.plugin.deltalake.MaxTableParameterLength;
 import io.trino.plugin.deltalake.metastore.DeltaLakeTableOperationsProvider;
 import io.trino.plugin.hive.AllowHiveTableRename;
 import io.trino.plugin.hive.metastore.unity.SupportedUnityTableFormatsProvider;
 import io.trino.plugin.hive.metastore.unity.UnityHiveMetastoreFactory;
 import io.trino.plugin.hive.metastore.unity.UnityMetastoreConfig;
-
-import java.util.EnumSet;
 
 import static com.databricks.sdk.service.catalog.DataSourceFormat.AVRO;
 import static com.databricks.sdk.service.catalog.DataSourceFormat.CSV;
@@ -39,12 +36,9 @@ import static com.databricks.sdk.service.catalog.DataSourceFormat.JSON;
 import static com.databricks.sdk.service.catalog.DataSourceFormat.ORC;
 import static com.databricks.sdk.service.catalog.DataSourceFormat.PARQUET;
 import static com.databricks.sdk.service.catalog.DataSourceFormat.TEXT;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
-import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.READ_ONLY;
-import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.STARBURST;
 
 public class DeltaLakeUnityMetastoreModule
         extends AbstractConfigurationAwareModule
@@ -52,8 +46,6 @@ public class DeltaLakeUnityMetastoreModule
     @Override
     protected void setup(Binder binder)
     {
-        DeltaLakeSecurityConfig securityConfig = buildConfigObject(DeltaLakeSecurityConfig.class);
-        checkArgument(EnumSet.of(READ_ONLY, STARBURST).contains(securityConfig.getSecuritySystem()), "delta.security must be set to READ_ONLY or STARBURST");
         configBinder(binder).bindConfig(UnityMetastoreConfig.class);
 
         binder.bind(UnityHiveMetastoreFactory.class).in(Scopes.SINGLETON);
