@@ -43,6 +43,37 @@ public class TestDynamoDbPlugin
     }
 
     @Test
+    public void testCreateConnectorWithoutAwsKeys(@TempDir Path tempDir)
+    {
+        Plugin plugin = new TestingDynamoDbPlugin(false);
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
+        factory.create(
+                        "test",
+                        ImmutableMap.<String, String>builder()
+                                .put("dynamodb.aws-region", "us-east-2")
+                                .put("dynamodb.schema-directory", tempDir.toFile().getAbsolutePath())
+                                .buildOrThrow(),
+                        new TestingConnectorContext())
+                .shutdown();
+    }
+
+    @Test
+    public void testCreateConnectorWithDefaultCredentialsChain(@TempDir Path tempDir)
+    {
+        Plugin plugin = new TestingDynamoDbPlugin(false);
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
+        factory.create(
+                        "test",
+                        ImmutableMap.<String, String>builder()
+                                .put("dynamodb.use-default-aws-chain-provider", "true")
+                                .put("dynamodb.aws-region", "us-east-2")
+                                .put("dynamodb.schema-directory", tempDir.toFile().getAbsolutePath())
+                                .buildOrThrow(),
+                        new TestingConnectorContext())
+                .shutdown();
+    }
+
+    @Test
     void testGetSecuritySensitivePropertyNames()
     {
         Plugin plugin = new TestingDynamoDbPlugin(false);
