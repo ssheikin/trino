@@ -14,11 +14,8 @@ import io.airlift.configuration.ConfigDescription;
 import io.airlift.configuration.ConfigSecuritySensitive;
 import io.airlift.configuration.validation.FileExists;
 import io.trino.plugin.jdbc.credential.CredentialConfig;
-import jakarta.annotation.PostConstruct;
 
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkState;
 
 public class SnowflakeCredentialConfig
         extends CredentialConfig
@@ -66,24 +63,5 @@ public class SnowflakeCredentialConfig
     {
         this.privateKeyPassphrase = Optional.ofNullable(privateKeyPassphrase);
         return this;
-    }
-
-    @PostConstruct
-    public void validate()
-    {
-        checkState(getConnectionUser().isPresent(), "Connection user is not configured");
-        checkState(
-                (getPrivateKey().isPresent() || getPrivateKeyFile().isPresent()) != getConnectionPassword().isPresent(),
-                "Either password or private key must be set, but not both");
-        if (getConnectionPassword().isEmpty()) {
-            checkState(
-                    getPrivateKey().isPresent() != getPrivateKeyFile().isPresent(),
-                    "snowflake.connection-private-key and snowflake.connection-private-key-file cannot be set simultaneously");
-        }
-        if (getPrivateKeyPassphrase().isPresent()) {
-            checkState(
-                    getPrivateKey().isPresent() || getPrivateKeyFile().isPresent(),
-                    "snowflake.connection-private-key.passphrase is set, but snowflake.connection-private-key or snowflake.connection-private-key-file is missing");
-        }
     }
 }

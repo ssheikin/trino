@@ -21,7 +21,6 @@ import java.util.Map;
 import static io.airlift.configuration.testing.ConfigAssertions.assertFullMapping;
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TestSnowflakeCredentialConfig
 {
@@ -58,46 +57,5 @@ class TestSnowflakeCredentialConfig
                 .setConnectionPassword("password");
 
         assertFullMapping(properties, expected);
-    }
-
-    @Test
-    public void testInvalidSetting()
-    {
-        SnowflakeCredentialConfig noUsernameConfig = new SnowflakeCredentialConfig();
-        assertThatThrownBy(noUsernameConfig::validate)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Connection user is not configured");
-
-        SnowflakeCredentialConfig bothKeyFileOptionsConfig = new SnowflakeCredentialConfig();
-        bothKeyFileOptionsConfig.setConnectionUser("username");
-        bothKeyFileOptionsConfig.setPrivateKey("key");
-        bothKeyFileOptionsConfig.setPrivateKeyFile("key-file");
-        assertThatThrownBy(bothKeyFileOptionsConfig::validate)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("snowflake.connection-private-key and snowflake.connection-private-key-file cannot be set simultaneously");
-
-        SnowflakeCredentialConfig keyAndPasswordConfig = new SnowflakeCredentialConfig();
-        keyAndPasswordConfig.setConnectionUser("username");
-        keyAndPasswordConfig.setConnectionPassword("password");
-        keyAndPasswordConfig.setPrivateKey("key");
-        assertThatThrownBy(keyAndPasswordConfig::validate)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Either password or private key must be set, but not both");
-
-        SnowflakeCredentialConfig keyFileAndPasswordConfig = new SnowflakeCredentialConfig();
-        keyFileAndPasswordConfig.setConnectionUser("username");
-        keyFileAndPasswordConfig.setConnectionPassword("password");
-        keyFileAndPasswordConfig.setPrivateKeyFile("key");
-        assertThatThrownBy(keyFileAndPasswordConfig::validate)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Either password or private key must be set, but not both");
-
-        SnowflakeCredentialConfig passwordAndPassphraseConfig = new SnowflakeCredentialConfig();
-        passwordAndPassphraseConfig.setConnectionUser("username");
-        passwordAndPassphraseConfig.setConnectionPassword("password");
-        passwordAndPassphraseConfig.setPrivateKeyPassphrase("key");
-        assertThatThrownBy(passwordAndPassphraseConfig::validate)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("snowflake.connection-private-key.passphrase is set, but snowflake.connection-private-key or snowflake.connection-private-key-file is missing");
     }
 }
