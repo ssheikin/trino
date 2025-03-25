@@ -108,11 +108,12 @@ public final class SchemaDiscoverySystemTable
         Optional<String> rescanType = tryGetSingleVarcharValue(constraint, 9);
         Optional<String> rescanMetadata = tryGetSingleVarcharValue(constraint, 10);
 
+        DiscoveredIdentifier normalizedSchema = DiscoveredIdentifier.identifierFromString(schema.isBlank() ? "discovered" : schema, controllerFactory.getIdentifierConstraint());
         SchemaExplorer schemaExplorer = new SchemaExplorer(controllerFactory.createSchemaDiscoveryController(session), objectMapper(), new CommaDelimitedOptionsParser(ImmutableList.of(GeneralOptions.class, CsvOptions.class)));
         DiscoveryConfig discoveryConfig = new DiscoveryConfig(
                 uri,
                 options,
-                new GenerateOptions(DiscoveredIdentifier.of(schema.isBlank() ? "discovered" : schema), maxBucketQuantity, true, Optional.empty()),
+                new GenerateOptions(normalizedSchema, maxBucketQuantity, true, Optional.empty()),
                 previousMetadataJson,
                 rescanType,
                 rescanUri,
@@ -125,7 +126,7 @@ public final class SchemaDiscoverySystemTable
         String operationsJson = toJson(operations.operations());
         String metadataJson = toJson(clean(discovered.discoveredSchema().tables()));
         String errorsJson = toJson(discovered.discoveredSchema().errors());
-        table.addRow(uri, previousMetadataJson.orElse(null), schema, options, sql, operationsJson, errorsJson, metadataJson, rescanUri.orElse(null), rescanType.orElse(null), rescanMetadata.orElse(null));
+        table.addRow(uri, previousMetadataJson.orElse(null), normalizedSchema.string(), options, sql, operationsJson, errorsJson, metadataJson, rescanUri.orElse(null), rescanType.orElse(null), rescanMetadata.orElse(null));
         return table.build().cursor();
     }
 

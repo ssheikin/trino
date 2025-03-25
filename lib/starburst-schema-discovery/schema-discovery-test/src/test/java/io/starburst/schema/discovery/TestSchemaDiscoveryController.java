@@ -25,6 +25,7 @@ import io.starburst.schema.discovery.models.DiscoveredPartitionValues;
 import io.starburst.schema.discovery.models.DiscoveredPartitions;
 import io.starburst.schema.discovery.models.DiscoveredSchema;
 import io.starburst.schema.discovery.models.DiscoveredTable;
+import io.starburst.schema.discovery.models.IdentifierConstraint;
 import io.starburst.schema.discovery.models.TableFormat;
 import io.starburst.schema.discovery.options.GeneralOptions;
 import io.starburst.schema.discovery.options.OptionsMap;
@@ -32,16 +33,19 @@ import io.starburst.schema.discovery.processor.Processor;
 import io.starburst.schema.discovery.request.GuessRequest;
 import io.trino.filesystem.Location;
 import io.trino.plugin.hive.projection.ProjectionType;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.starburst.schema.discovery.Util.orcDataSourceFactory;
@@ -56,12 +60,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestSchemaDiscoveryController
 {
-    @Test
-    public void testPartitioned()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraints")
+    public void testPartitioned(IdentifierConstraint identifierConstraint)
             throws ExecutionException, InterruptedException
     {
         DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint);
         Location directory = Util.testFilePath("csv/partitioned");
         ListenableFuture<DiscoveredSchema> future = controller.guess(new GuessRequest(uriFromLocation(directory), CsvOptions.standard()));
         DiscoveredSchema discoveredTables = future.get();
@@ -86,12 +91,13 @@ public class TestSchemaDiscoveryController
         assertThat(discoveredTables.tables()).hasSize(1).containsExactly(expectedDiscoveredTable);
     }
 
-    @Test
-    public void testNestedPartitioned()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraints")
+    public void testNestedPartitioned(IdentifierConstraint identifierConstraint)
             throws ExecutionException, InterruptedException
     {
         DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint);
         Location directory = Util.testFilePath("csv/nested_partitions");
         ListenableFuture<DiscoveredSchema> future = controller.guess(new GuessRequest(URI.create(directory.toString()), CsvOptions.standard()));
         DiscoveredSchema discoveredTables = future.get();
@@ -128,12 +134,13 @@ public class TestSchemaDiscoveryController
                 .containsExactly(expectedTable);
     }
 
-    @Test
-    public void testTableOptionOverrides()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraints")
+    public void testTableOptionOverrides(IdentifierConstraint identifierConstraint)
             throws ExecutionException, InterruptedException
     {
         DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint);
         Location directory = Util.testFilePath("schema");
         DiscoveredSchema discoveredTables = controller.guess(new GuessRequest(uriFromLocation(directory), ImmutableMap.of())).get();
         assertThat(discoveredTables.tables()).extracting(DiscoveredTable::format).containsExactlyInAnyOrder(TableFormat.CSV, TableFormat.PARQUET);
@@ -149,12 +156,13 @@ public class TestSchemaDiscoveryController
         assertThat(discoveredTables.tables()).extracting(DiscoveredTable::columns).anyMatch(t -> t.columns().size() == 19);
     }
 
-    @Test
-    public void testShallowDiscoveryPartitions()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraints")
+    public void testShallowDiscoveryPartitions(IdentifierConstraint identifierConstraint)
             throws Exception
     {
         DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint);
         Map<String, String> includeOnlyNestedOptions = ImmutableMap.of(
                 INCLUDE_PATTERNS, "**/csv/*/{nptable}/*");
         Location directory = Util.testFilePath("csv/nested_partitions");
@@ -168,12 +176,13 @@ public class TestSchemaDiscoveryController
                 .allMatch(t -> t.valid() && t.format() == TableFormat.UNKNOWN);
     }
 
-    @Test
-    public void testShallowDiscovery()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraintsTopSchema")
+    public void testShallowDiscovery(IdentifierConstraint identifierConstraint, Set<String> tableNames)
             throws ExecutionException, InterruptedException
     {
         DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint);
         Map<String, String> includeOnlyNestedOptions = ImmutableMap.of(
                 INCLUDE_PATTERNS, "**/csv/top-schema/{under-top-schema-1,under-top-schema-2}/*");
         Location directory = Util.testFilePath("csv/top-schema");
@@ -183,16 +192,18 @@ public class TestSchemaDiscoveryController
         assertThat(discoveredShallowSchema.tables())
                 .hasSize(2)
                 .anyMatch(t -> t.discoveredPartitions().columns().isEmpty())
+                .allMatch(t -> tableNames.contains(t.tableName().toString()))
                 .allMatch(t -> t.columns().columns().isEmpty())
                 .allMatch(t -> t.valid() && t.format() == TableFormat.CSV);
     }
 
-    @Test
-    public void testShallowDiscoveryNestedPartitions()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraints")
+    public void testShallowDiscoveryNestedPartitions(IdentifierConstraint identifierConstraint)
             throws Exception
     {
         DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint);
         Location directory = Util.testFilePath("csv/nested_partitions");
 
         DiscoveredSchema discoveredShallowSchema = controller.discoverTablesShallow(new GuessRequest(uriFromLocation(directory), ImmutableMap.of())).get();
@@ -205,13 +216,14 @@ public class TestSchemaDiscoveryController
     }
 
     // this test was observed to be flaky, let it run multiple times as its fast anyway
-    @RepeatedTest(value = 100)
-    public void testColumnsErrorShouldBeScopedToTable()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraints")
+    public void testColumnsErrorShouldBeScopedToTable(IdentifierConstraint identifierConstraint)
             throws ExecutionException, InterruptedException
     {
         // make it discover correct format, but fail on processing file later (simulate corrupted data)
         DiscoveryTrinoFileSystem fileSystem = new DiscoveryTrinoFileSystem(new ErroringTrinoFileSystem("csv/partitioned", "000000_0", 9000, 3));
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint, directExecutor());
         Location directory = Util.testFilePath("csv/partitioned");
         ListenableFuture<DiscoveredSchema> future = controller.guess(new GuessRequest(uriFromLocation(directory), CsvOptions.standard()));
         DiscoveredSchema discoveredTables = future.get();
@@ -229,12 +241,13 @@ public class TestSchemaDiscoveryController
                 .last().matches(e -> e.contains("no valid columns were found"));
     }
 
-    @Test
-    public void testNestedIncludePatterns()
+    @ParameterizedTest
+    @MethodSource("providerIdentifierConstraintsTopSchema")
+    public void testNestedIncludePatterns(IdentifierConstraint identifierConstraint, Set<String> tableNames)
             throws Exception
     {
         DiscoveryTrinoFileSystem fileSystem = Util.fileSystem();
-        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO);
+        SchemaDiscoveryController controller = new SchemaDiscoveryController(_ -> fileSystem, parquetDataSourceFactory, orcDataSourceFactory, TRINO, identifierConstraint);
         Map<String, String> includeOnlyNestedOptions = ImmutableMap.of(
                 INCLUDE_PATTERNS, "**/csv/{top-schema/under-top-schema-1/child-schema-1}*");
         Location directory = Util.testFilePath("csv/top-schema");
@@ -243,6 +256,7 @@ public class TestSchemaDiscoveryController
         assertThat(discoveredSchema.tables())
                 .hasSize(1)
                 .anyMatch(t -> t.discoveredPartitions().columns().isEmpty())
+                .allMatch(t -> tableNames.contains(t.tableName().toString()))
                 .allMatch(t -> !t.columns().columns().isEmpty())
                 .allMatch(t -> t.valid() && t.format() == TableFormat.CSV);
     }
@@ -264,6 +278,19 @@ public class TestSchemaDiscoveryController
         limitsTest(3, 1, 3, 1, 4, 7);
         limitsTest(2, 1, 3, 1, 4);
         limitsTest(2, 2, 3, 1, 4);
+    }
+
+    public static Object[][] providerIdentifierConstraintsTopSchema()
+    {
+        return new Object[][] {
+                {IdentifierConstraint.ENFORCED_ALPHANUMERIC, Set.of("under_top_schema_1.child_schema_1", "under_top_schema_2.child_schema_2")},
+                {IdentifierConstraint.VALID_IN_TRINO, Set.of("under-top-schema-1.child-schema-1", "under-top-schema-2.child-schema-2")}
+        };
+    }
+
+    public static Stream<IdentifierConstraint> providerIdentifierConstraints()
+    {
+        return Stream.of(IdentifierConstraint.VALID_IN_TRINO, IdentifierConstraint.ENFORCED_ALPHANUMERIC);
     }
 
     private void limitsTest(int tableQty, int filePerTableQty, int filesPerTableModulo, int... expectedColumnQtys)
