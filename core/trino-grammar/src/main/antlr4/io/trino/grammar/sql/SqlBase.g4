@@ -305,6 +305,7 @@ groupBy
 
 groupingElement
     : groupingSet                                            #singleGroupingSet
+    | AUTO                                                   #auto
     | ROLLUP '(' (groupingSet (',' groupingSet)*)? ')'       #rollup
     | CUBE '(' (groupingSet (',' groupingSet)*)? ')'         #cube
     | GROUPING SETS '(' groupingSet (',' groupingSet)* ')'   #multipleGroupingSets
@@ -1048,6 +1049,7 @@ AS: 'AS';
 ASC: 'ASC';
 AT: 'AT';
 AUTHORIZATION: 'AUTHORIZATION';
+AUTO: 'AUTO';
 BEGIN: 'BEGIN';
 BERNOULLI: 'BERNOULLI';
 BETWEEN: 'BETWEEN';
