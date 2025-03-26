@@ -31,11 +31,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-core</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.cronutils</groupId>
             <artifactId>cron-utils</artifactId>
             <version>9.2.1</version>
@@ -422,12 +417,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
             <groupId>com.google.auth</groupId>
             <artifactId>google-auth-library-oauth2-http</artifactId>
             <scope>runtime</scope>
@@ -524,6 +513,7 @@
             <artifactId>kms</artifactId>
             <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>retries-spi</artifactId>
@@ -846,6 +836,7 @@
                     <configuration>
                         <ignoredNonTestScopedDependencies>
                             <ignoredNonTestScopedDependency>org.apache.parquet:parquet-common</ignoredNonTestScopedDependency>
+                            <ignoredNonTestScopedDependency>software.amazon.awssdk:aws-core</ignoredNonTestScopedDependency>
                             <ignoredNonTestScopedDependency>software.amazon.awssdk:utils</ignoredNonTestScopedDependency>
                         </ignoredNonTestScopedDependencies>
                     </configuration>
@@ -926,23 +917,15 @@
                                 <exclude>**/Test*Avro*.java</exclude>
                                 <exclude>**/Test*Minio*.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogConnectorSmokeTest.java</exclude>
-                                <exclude>**/TestIcebergGlueCatalogV1ConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestTrinoGlueCatalog.java</exclude>
-                                <exclude>**/TestTrinoGlueCatalogV1.java</exclude>
                                 <exclude>**/TestSharedGlueMetastore.java</exclude>
-                                <exclude>**/TestSharedGlueMetastoreV1.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogAccessOperations.java</exclude>
-                                <exclude>**/TestIcebergGlueCatalogAccessOperationsV1.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogMaterializedView.java</exclude>
-                                <exclude>**/TestIcebergGlueCatalogMaterializedViewV1.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTest.java</exclude>
-                                <exclude>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV1.java</exclude>
                                 <exclude>**/TestIcebergGlueCreateTableFailure.java</exclude>
                                 <exclude>**/TestIcebergGlueTableOperationsInsertFailure.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogSkipArchive.java</exclude>
-                                <exclude>**/TestIcebergGlueCatalogSkipArchiveV1.java</exclude>
                                 <exclude>**/TestIcebergS3AndGlueMetastoreTest.java</exclude>
-                                <exclude>**/TestIcebergS3AndGlueMetastoreTestV1.java</exclude>
                                 <exclude>**/TestIcebergS3TablesConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestIcebergBigLakeMetastoreConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestIcebergGcsConnectorSmokeTest.java</exclude>
@@ -1009,23 +992,15 @@
                         <configuration>
                             <includes>
                                 <include>**/TestIcebergGlueCatalogConnectorSmokeTest.java</include>
-                                <include>**/TestIcebergGlueCatalogV1ConnectorSmokeTest.java</include>
                                 <include>**/TestTrinoGlueCatalog.java</include>
-                                <include>**/TestTrinoGlueCatalogV1.java</include>
                                 <include>**/TestSharedGlueMetastore.java</include>
-                                <include>**/TestSharedGlueMetastoreV1.java</include>
                                 <include>**/TestIcebergGlueCatalogAccessOperations.java</include>
-                                <include>**/TestIcebergGlueCatalogAccessOperationsV1.java</include>
                                 <include>**/TestIcebergGlueCatalogMaterializedView.java</include>
-                                <include>**/TestIcebergGlueCatalogMaterializedViewV1.java</include>
                                 <include>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTest.java</include>
-                                <include>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV1.java</include>
                                 <include>**/TestIcebergGlueCreateTableFailure.java</include>
                                 <include>**/TestIcebergGlueTableOperationsInsertFailure.java</include>
                                 <include>**/TestIcebergGlueCatalogSkipArchive.java</include>
-                                <include>**/TestIcebergGlueCatalogSkipArchiveV1.java</include>
                                 <include>**/TestIcebergS3AndGlueMetastoreTest.java</include>
-                                <include>**/TestIcebergS3AndGlueMetastoreTestV1.java</include>
                                 <include>**/TestIcebergS3TablesConnectorSmokeTest.java</include>
                                 <include>**/TestIcebergBigLakeMetastoreConnectorSmokeTest.java</include>
                                 <include>**/TestIcebergGcsConnectorSmokeTest.java</include>
