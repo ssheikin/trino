@@ -25,6 +25,7 @@ import io.airlift.units.Duration;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.trino.ExceededCpuLimitException;
+import io.trino.ExceededOutputDataSizeLimitException;
 import io.trino.Session;
 import io.trino.execution.QueryExecution.QueryOutputInfo;
 import io.trino.execution.StateMachine.StateChangeListener;
@@ -57,6 +58,7 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static io.airlift.concurrent.Threads.threadsNamed;
 import static io.trino.ExceededScanLimitException.maxQueryScanPhysicalBytesExceeded;
 import static io.trino.SystemSessionProperties.getQueryMaxCpuTime;
+import static io.trino.SystemSessionProperties.getQueryMaxOutputDataSize;
 import static io.trino.SystemSessionProperties.getQueryMaxScanPhysicalBytes;
 import static io.trino.execution.QueryState.RUNNING;
 import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
@@ -127,6 +129,13 @@ public class SqlQueryManager
             }
             catch (Throwable e) {
                 log.error(e, "Error enforcing query scan bytes limits");
+            }
+
+            try {
+                enforceOutputLimits();
+            }
+            catch (Throwable e) {
+                log.error(e, "Error enforcing output limits");
             }
         }, 1, 1, TimeUnit.SECONDS);
     }
@@ -382,6 +391,17 @@ public class SqlQueryManager
                 DataSize scan = query.getBasicQueryInfo().getQueryStats().getPhysicalInputDataSize();
                 if (scan.compareTo(limit) > 0) {
                     query.fail(maxQueryScanPhysicalBytesExceeded(limit));
+                }
+            });
+        }
+    }
+
+    private void enforceOutputLimits()
+    {
+        for (QueryExecution query : queryTracker.getAllQueries()) {
+            getQueryMaxOutputDataSize(query.getSession()).ifPresent(limit -> {
+                if (query.getQueryInfo().getQueryStats().getOutputDataSize().compareTo(limit) > 0) {
+                    query.fail(new ExceededOutputDataSizeLimitException(limit));
                 }
             });
         }
