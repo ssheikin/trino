@@ -606,7 +606,7 @@ public class SemiTransactionalHiveMetastore
 
     public synchronized void replaceTable(String databaseName, String tableName, Table table, PrincipalPrivileges principalPrivileges)
     {
-        setExclusive(delegate -> delegate.replaceTable(databaseName, tableName, table, principalPrivileges));
+        setExclusive(delegate -> delegate.replaceTable(databaseName, tableName, table, principalPrivileges, ImmutableMap.of()));
     }
 
     public synchronized void renameTable(String databaseName, String tableName, String newDatabaseName, String newTableName)
@@ -3078,7 +3078,7 @@ public class SemiTransactionalHiveMetastore
                 metastore.alterTransactionalTable(newTable, transaction.getAcidTransactionId(), transaction.getWriteId(), principalPrivileges);
             }
             else {
-                metastore.replaceTable(newTable.getDatabaseName(), newTable.getTableName(), newTable, principalPrivileges);
+                metastore.replaceTable(newTable.getDatabaseName(), newTable.getTableName(), newTable, principalPrivileges, ImmutableMap.of());
             }
         }
 
@@ -3092,7 +3092,7 @@ public class SemiTransactionalHiveMetastore
                 metastore.alterTransactionalTable(oldTable, transaction.getAcidTransactionId(), transaction.getWriteId(), principalPrivileges);
             }
             else {
-                metastore.replaceTable(oldTable.getDatabaseName(), oldTable.getTableName(), oldTable, principalPrivileges);
+                metastore.replaceTable(oldTable.getDatabaseName(), oldTable.getTableName(), oldTable, principalPrivileges, ImmutableMap.of());
             }
         }
     }

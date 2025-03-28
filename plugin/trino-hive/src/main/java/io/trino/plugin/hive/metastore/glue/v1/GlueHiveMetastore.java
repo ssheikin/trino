@@ -488,7 +488,7 @@ public class GlueHiveMetastore
     }
 
     @Override
-    public void replaceTable(String databaseName, String tableName, Table newTable, PrincipalPrivileges principalPrivileges)
+    public void replaceTable(String databaseName, String tableName, Table newTable, PrincipalPrivileges principalPrivileges, Map<String, String> environmentContext)
     {
         if (!tableName.equals(newTable.getTableName()) || !databaseName.equals(newTable.getDatabaseName())) {
             throw new TrinoException(NOT_SUPPORTED, "Table rename is not yet supported by Glue service");
@@ -546,7 +546,7 @@ public class GlueHiveMetastore
         Table newTable = Table.builder(oldTable)
                 .setParameter(TABLE_COMMENT, comment)
                 .build();
-        replaceTable(databaseName, tableName, newTable, null);
+        replaceTable(databaseName, tableName, newTable, null, ImmutableMap.of());
     }
 
     @Override
@@ -624,7 +624,7 @@ public class GlueHiveMetastore
         Table newTable = Table.builder(oldTable)
                 .addDataColumn(new Column(columnName, columnType, Optional.ofNullable(columnComment), ImmutableMap.of()))
                 .build();
-        replaceTable(databaseName, tableName, newTable, null);
+        replaceTable(databaseName, tableName, newTable, null, ImmutableMap.of());
     }
 
     @Override
@@ -648,7 +648,7 @@ public class GlueHiveMetastore
         Table newTable = Table.builder(oldTable)
                 .setDataColumns(newDataColumns.build())
                 .build();
-        replaceTable(databaseName, tableName, newTable, null);
+        replaceTable(databaseName, tableName, newTable, null, ImmutableMap.of());
     }
 
     @Override
@@ -670,7 +670,7 @@ public class GlueHiveMetastore
         Table newTable = Table.builder(oldTable)
                 .setDataColumns(newDataColumns.build())
                 .build();
-        replaceTable(databaseName, tableName, newTable, null);
+        replaceTable(databaseName, tableName, newTable, null, ImmutableMap.of());
     }
 
     @Override
@@ -695,7 +695,7 @@ public class GlueHiveMetastore
                 .setPartitionColumns(matchingPartitionColumn.map(index -> setColumnCommentForIndex(partitionColumns, index, comment)).orElse(partitionColumns))
                 .build();
 
-        replaceTable(databaseName, tableName, updatedTable, null);
+        replaceTable(databaseName, tableName, updatedTable, null, ImmutableMap.of());
     }
 
     private static Optional<Integer> indexOfColumnWithName(List<Column> columns, String columnName)
