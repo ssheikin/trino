@@ -1682,11 +1682,36 @@ jobs:
           SNOWFLAKE_ROLE: ${{ vars.SNOWFLAKE_ROLE }}
           SNOWFLAKE_WAREHOUSE: ${{ vars.SNOWFLAKE_WAREHOUSE }}
         run: |
-          exec testing/trino-product-tests-launcher/target/trino-product-tests-launcher-*-executable.jar suite run \
-            --suite ${{ matrix.suite }} \
-            --config config-${{ matrix.config }} \
+          MATRIX_SUITE="${{ matrix.suite }}"
+          MATRIX_CONFIG="${{ matrix.config }}"
+          EVENT_NAME="${{ github.event_name }}"
+          EVENT_SCHEDULE="${{ github.event.schedule }}"
+          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          SYNAPSE_LABEL_PRESENT=false
+          if [[ " $PR_LABELS " == *" synapse "* ]]; then
+            SYNAPSE_LABEL_PRESENT=true
+          fi
+
+          if [[ "$MATRIX_SUITE" == "suite-synapse" ]]; then
+            if [[ "$EVENT_NAME" == "schedule" && "$EVENT_SCHEDULE" == "0 0 * * 6" ]] || \
+               [[ "$SYNAPSE_LABEL_PRESENT" == "true" ]] || \
+               [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+              echo "Running Synapse PT weekly"
+              testing/trino-product-tests-launcher/target/trino-product-tests-launcher-*-executable.jar suite run \
+              --suite "$MATRIX_SUITE" \
+              --config "config-$MATRIX_CONFIG" \
+              ${PTL_OPTS:-} \
+              --bind=off --logs-dir logs/ --timeout 2h
+            else
+              echo "Skipping Synapse PT since it's not a scheduled build"
+            fi
+          else
+            testing/trino-product-tests-launcher/target/trino-product-tests-launcher-*-executable.jar suite run \
+            --suite "$MATRIX_SUITE" \
+            --config "config-$MATRIX_CONFIG" \
             ${PTL_OPTS:-} \
             --bind=off --logs-dir logs/ --timeout 2h
+          fi
       - name: Upload test results
         uses: ./.github/actions/process-test-results
         if: always()
