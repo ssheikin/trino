@@ -1203,8 +1203,7 @@ jobs:
       - name: Maven Tests
         id: tests
         if: >-
-          matrix.modules != 'plugin/trino-singlestore'
-          && matrix.modules != 'plugin/starburst-snowflake'
+          matrix.modules != 'plugin/starburst-snowflake'
           && matrix.modules != 'plugin/starburst-ai'
           && matrix.modules != 'lib/starburst-ai-client'
           && ! (contains(matrix.modules, 'trino-mongodb') && contains(matrix.profile, 'cloud-tests'))
@@ -1336,13 +1335,6 @@ jobs:
             -Dtesting.azure-abfs-access-key="${ABFS_ACCESSKEY}" \
             -Dtesting.gcp-storage-bucket="${GCP_STORAGE_BUCKET}" \
             -Dtesting.gcp-credentials-key="${GCP_CREDENTIALS_KEY}"
-      - name: Memsql Tests
-        id: tests-memsql
-        env:
-          MEMSQL_LICENSE: ${{ env.SEP_CI_SEP_MEMSQL_LICENSE }}
-        if: matrix.modules == 'plugin/trino-singlestore' && (env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || env.MEMSQL_LICENSE != '')
-        run: |
-          $MAVEN test ${MAVEN_TEST} -pl :trino-singlestore -Dmemsql.license=${MEMSQL_LICENSE}
       - name: Cloud MongoDB Tests
         id: tests-mongodb
         if: matrix.modules == 'plugin/trino-mongodb' && contains(matrix.profile, 'cloud-tests') && (env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || env.MONGODB_ATLAS_CONNECTION_URL != '')
@@ -1522,7 +1514,6 @@ jobs:
               || steps.tests-azure.outcome == 'failure'
               || steps.tests-gcs.outcome == 'failure'
               || steps.tests-delta.outcome == 'failure'
-              || steps.tests-memsql.outcome == 'failure'
               || steps.tests-mongodb.outcome == 'failure'
               || steps.tests-bq.outcome == 'failure'
               || steps.tests-bq-smoke.outcome == 'failure'
