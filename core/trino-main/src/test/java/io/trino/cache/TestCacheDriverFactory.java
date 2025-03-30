@@ -125,6 +125,7 @@ public class TestCacheDriverFactory
     private final PlanNodeIdAllocator planNodeIdAllocator = new PlanNodeIdAllocator();
     private TestSplitCache splitCache;
     private CacheManagerRegistry registry;
+    private CachePerformanceTracker cachePerformanceTracker;
     private JsonCodec<TupleDomain> tupleDomainCodec;
     private ScheduledExecutorService scheduledExecutor;
 
@@ -137,6 +138,7 @@ public class TestCacheDriverFactory
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setEnabled(true);
         registry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(config, DataSize.of(1024, MEGABYTE).toBytes()), new TestingBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager(), new SecretsResolver(ImmutableMap.of()));
+        cachePerformanceTracker = new CachePerformanceTracker();
         TestCacheManagerFactory cacheManagerFactory = new TestCacheManagerFactory();
         registry.loadCacheManager(cacheManagerFactory, ImmutableMap.of());
         splitCache = cacheManagerFactory.getCacheManager().getSplitCache();
@@ -221,7 +223,8 @@ public class TestCacheDriverFactory
                 createStaticDynamicFilterSupplier(ImmutableList.of(new TestDynamicFilter(DynamicFilterTupleDomain.withColumnDomains(
                         ImmutableMap.of(columnHandle, DynamicFilterDomain.multipleValues(BIGINT, LongStream.range(0L, 100L).boxed().toList()))), true))),
                 ImmutableList.of(driverFactory, driverFactory, driverFactory),
-                new CacheStats());
+                new CacheStats(),
+                cachePerformanceTracker);
 
         Optional<ConnectorPageSource> pageSource = Optional.of(new EmptyPageSource());
         splitCache.addExpectedCacheLookup(
@@ -249,7 +252,8 @@ public class TestCacheDriverFactory
                 createStaticDynamicFilterSupplier(ImmutableList.of(new TestDynamicFilter(DynamicFilterTupleDomain.withColumnDomains(
                         ImmutableMap.of(columnHandle, DynamicFilterDomain.multipleValues(BIGINT, LongStream.range(0L, 100L).boxed().toList()))), true))),
                 ImmutableList.of(driverFactory, driverFactory, driverFactory),
-                new CacheStats());
+                new CacheStats(),
+                cachePerformanceTracker);
 
         splitCache.addExpectedCacheLookup(
                 Optional.of(SPLIT_ID),
@@ -288,7 +292,8 @@ public class TestCacheDriverFactory
                 createStaticDynamicFilterSupplier(ImmutableList.of(commonDynamicFilter)),
                 createStaticDynamicFilterSupplier(ImmutableList.of(new TestDynamicFilter(originalDynamicPredicate, true))),
                 ImmutableList.of(driverFactory, driverFactory, driverFactory),
-                new CacheStats());
+                new CacheStats(),
+                cachePerformanceTracker);
 
         // baseSignature should use original dynamic filter because it contains more domains
         splitCache.addExpectedCacheLookup(TupleDomain.all(), originalDynamicPredicate.transformKeys(columnHandles::get).toTupleDomain());
@@ -352,7 +357,8 @@ public class TestCacheDriverFactory
                 createStaticDynamicFilterSupplier(ImmutableList.of(dynamicFilter)),
                 createStaticDynamicFilterSupplier(ImmutableList.of(InternalDynamicFilter.EMPTY)),
                 ImmutableList.of(driverFactory, driverFactory, driverFactory),
-                new CacheStats());
+                new CacheStats(),
+                cachePerformanceTracker);
 
         splitCache.addExpectedCacheLookup(
                 // cacheId
@@ -526,7 +532,8 @@ public class TestCacheDriverFactory
                 createStaticDynamicFilterSupplier(ImmutableList.of(InternalDynamicFilter.EMPTY)),
                 createStaticDynamicFilterSupplier(ImmutableList.of(InternalDynamicFilter.EMPTY)),
                 ImmutableList.of(driverFactory, driverFactory, driverFactory),
-                new CacheStats());
+                new CacheStats(),
+                cachePerformanceTracker);
     }
 
     private DriverFactory createDriverFactory(AtomicInteger operatorIdAllocator)

@@ -34,6 +34,7 @@ import io.trino.block.BlockJsonSerde;
 import io.trino.cache.CacheConfig;
 import io.trino.cache.CacheManagerRegistry;
 import io.trino.cache.CacheMetadata;
+import io.trino.cache.CachePerformanceTracker;
 import io.trino.cache.CacheStats;
 import io.trino.client.NodeVersion;
 import io.trino.connector.CatalogFactory;
@@ -329,6 +330,7 @@ public class PlanTester
     private final PluginManager pluginManager;
     private final ExchangeManagerRegistry exchangeManagerRegistry;
     private final CacheManagerRegistry cacheManagerRegistry;
+    private final CachePerformanceTracker cachePerformanceTracker;
     private final JsonCodec<TupleDomain> tupleDomainCodec;
     private final SpoolingManagerRegistry spoolingManagerRegistry;
     private final TaskManagerConfig taskManagerConfig;
@@ -506,6 +508,7 @@ public class PlanTester
                 nodeManager);
 
         cacheManagerRegistry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(new NodeMemoryConfig()), plannerContext.getBlockEncodingSerde(), new CacheStats(), new InMemoryNodeManager(), new SecretsResolver(ImmutableMap.of()));
+        cachePerformanceTracker = new CachePerformanceTracker();
         tupleDomainCodec = getTupleDomainJsonCodec(blockEncodingSerde, typeManager);
         exchangeManagerRegistry = new ExchangeManagerRegistry(noop(), noopTracer(), secretsResolver);
         spoolingManagerRegistry = new SpoolingManagerRegistry(new ServerConfig(), new SpoolingEnabledConfig(), noop(), noopTracer());
@@ -837,6 +840,7 @@ public class PlanTester
                 tableExecuteContextManager,
                 exchangeManagerRegistry,
                 cacheManagerRegistry,
+                cachePerformanceTracker,
                 tupleDomainCodec,
                 nodeManager.getCurrentNode().getNodeVersion(),
                 new CompilerConfig());
