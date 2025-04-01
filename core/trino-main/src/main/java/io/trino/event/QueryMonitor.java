@@ -473,6 +473,7 @@ public class QueryMonitor
                     .reduce(Metrics.EMPTY, Metrics::mergeWith);
 
             inputs.add(new QueryInputMetadata(
+                    input.getConnectorName(),
                     input.getCatalogName(),
                     input.getCatalogVersion(),
                     input.getSchema(),
