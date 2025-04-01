@@ -45,7 +45,6 @@ import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.READ_ONLY;
 import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.STARBURST;
-import static io.trino.plugin.deltalake.DeltaLakeSecurityModule.DeltaLakeSecurity.UNITY;
 
 public class DeltaLakeUnityMetastoreModule
         extends AbstractConfigurationAwareModule
@@ -54,7 +53,7 @@ public class DeltaLakeUnityMetastoreModule
     protected void setup(Binder binder)
     {
         DeltaLakeSecurityConfig securityConfig = buildConfigObject(DeltaLakeSecurityConfig.class);
-        checkArgument(EnumSet.of(READ_ONLY, UNITY, STARBURST).contains(securityConfig.getSecuritySystem()), "delta.security must be set to READ_ONLY, UNITY or STARBURST");
+        checkArgument(EnumSet.of(READ_ONLY, STARBURST).contains(securityConfig.getSecuritySystem()), "delta.security must be set to READ_ONLY or STARBURST");
         configBinder(binder).bindConfig(UnityMetastoreConfig.class);
 
         binder.bind(UnityHiveMetastoreFactory.class).in(Scopes.SINGLETON);
