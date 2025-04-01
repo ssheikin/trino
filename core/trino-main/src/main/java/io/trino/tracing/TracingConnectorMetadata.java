@@ -244,19 +244,10 @@ public class TracingConnectorMetadata
     }
 
     @Override
-    public Optional<Object> getInfo(ConnectorTableHandle table)
-    {
-        Span span = startSpan("getInfo", table);
-        try (var _ = scopedSpan(span)) {
-            return delegate.getInfo(table);
-        }
-    }
-
-    @Override
     public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle table)
     {
         Span span = startSpan("getInfo", table);
-        try (var ignored = scopedSpan(span)) {
+        try (var _ = scopedSpan(span)) {
             return delegate.getInfo(session, table);
         }
     }

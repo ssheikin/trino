@@ -275,17 +275,9 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
-    public Optional<Object> getInfo(ConnectorTableHandle table)
-    {
-        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            return delegate.getInfo(table);
-        }
-    }
-
-    @Override
     public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle table)
     {
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
             return delegate.getInfo(session, table);
         }
     }

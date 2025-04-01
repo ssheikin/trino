@@ -219,12 +219,6 @@ public class MockPlanAlternativeMetadata
     }
 
     @Override
-    public Optional<Object> getInfo(ConnectorTableHandle tableHandle)
-    {
-        return delegate.getInfo(getDelegate(tableHandle));
-    }
-
-    @Override
     public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         return delegate.getInfo(session, getDelegate(tableHandle));

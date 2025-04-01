@@ -2613,7 +2613,7 @@ public class IcebergMetadata
     }
 
     @Override
-    public Optional<Object> getInfo(ConnectorTableHandle tableHandle)
+    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         IcebergTableHandle icebergTableHandle = (IcebergTableHandle) tableHandle;
         List<String> partitionFields = icebergTableHandle.getPartitionSpecJson()
@@ -2627,12 +2627,6 @@ public class IcebergMetadata
                 icebergTableHandle.getSnapshotId(),
                 partitionFields,
                 getFileFormat(icebergTableHandle.getStorageProperties()).name()));
-    }
-
-    @Override
-    public Optional<Object> getInfo(ConnectorSession session, ConnectorTableHandle tableHandle)
-    {
-        return getInfo(tableHandle);
     }
 
     @Override
