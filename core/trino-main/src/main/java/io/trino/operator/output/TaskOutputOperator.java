@@ -124,6 +124,7 @@ public class TaskOutputOperator
     @Override
     public void finish()
     {
+        updateMetrics();
         finished = true;
     }
 
@@ -164,6 +165,7 @@ public class TaskOutputOperator
 
         outputBuffer.enqueue(splitAndSerializePage(page));
         operatorContext.recordOutput(page.getSizeInBytes(), page.getPositionCount());
+        updateMetrics();
     }
 
     private List<Slice> splitAndSerializePage(Page page)
@@ -180,5 +182,10 @@ public class TaskOutputOperator
     public Page getOutput()
     {
         return null;
+    }
+
+    private void updateMetrics()
+    {
+        operatorContext.setLatestMetrics(serializer.getMetrics());
     }
 }

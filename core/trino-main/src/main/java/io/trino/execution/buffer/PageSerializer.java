@@ -15,6 +15,7 @@ package io.trino.execution.buffer;
 
 import io.airlift.slice.Slice;
 import io.trino.spi.Page;
+import io.trino.spi.metrics.Metrics;
 import io.trino.spi.type.Type;
 
 import java.util.List;
@@ -24,4 +25,14 @@ public interface PageSerializer
     Slice serialize(Page page, List<? extends Type> types);
 
     long getRetainedSizeInBytes();
+
+    default Metrics getMetrics()
+    {
+        return Metrics.EMPTY;
+    }
+
+    default Metrics getAndResetMetrics()
+    {
+        return getMetrics();
+    }
 }
