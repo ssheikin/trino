@@ -322,7 +322,7 @@ public class DeltaLakePageSourceProvider
                 delegateIndex++;
             }
             else if (missingColumnNames.contains(column.baseColumnName())) {
-                transform.constantValue(column.baseType().createNullBlock());
+                transform.constantValue(column.type().createNullBlock());
             }
             else {
                 transform.column(delegateIndex);
