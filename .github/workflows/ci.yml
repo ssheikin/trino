@@ -687,9 +687,9 @@ jobs:
           slack-text: |
             :boom: Synapse nightly tests failed on branch: ${{ steps.should_notify.outputs.branch }} (<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|see CI job for details>) (:thumbsup: this message if you take care of this)
 
-  # -------------------------------------------------------------
+  # --------------------------------------------------------------
   # Weekly run all snowflake tests, labeled PRs to limit CI costs
-  # -------------------------------------------------------------
+  # --------------------------------------------------------------
   snowflake-weekly-tests:
     name: snowflake-weekly-tests
     runs-on: [ self-hosted, gha-fleet-ec2-4cpu-16gb-amd64, latest ]
@@ -820,10 +820,10 @@ jobs:
           slack-text: |
             :boom: Snowflake weekly tests failed on branch: ${{ steps.should_notify.outputs.branch }} (<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|see CI job for details>) (:thumbsup: this message if you take care of this)
 
-  # --------------------------------------------------------------------------------
-  # Only run default profile snowflake tests nightly, labeled PRs, to limit CI costs.
+  # --------------------------------------------------------------------------------------
+  # Only run smoke-test profile snowflake tests nightly, labeled PRs to limit CI costs.
   # The release-* branches are excluded
-  # --------------------------------------------------------------------------------
+  # --------------------------------------------------------------------------------------
   snowflake-nightly-tests:
     name: snowflake-nightly-tests
     runs-on: [ self-hosted, gha-fleet-ec2-4cpu-16gb-amd64, latest ]
