@@ -1898,6 +1898,10 @@ jobs:
           if [[ " $PR_LABELS " == *" synapse "* ]]; then
             SYNAPSE_LABEL_PRESENT=true
           fi
+          SNOWFLAKE_LABEL_PRESENT=false
+          if [[ " $PR_LABELS " == *" snowflake "* ]]; then
+            SNOWFLAKE_LABEL_PRESENT=true
+          fi
 
           if [[ "$MATRIX_SUITE" == "suite-synapse" ]]; then
             if [[ "$EVENT_NAME" == "schedule" && "$EVENT_SCHEDULE" == "0 0 * * 6" ]] || \
@@ -1911,6 +1915,18 @@ jobs:
               --bind=off --logs-dir logs/ --timeout 2h
             else
               echo "Skipping Synapse PT since it's not a scheduled build"
+            fi
+          elif [[ "$MATRIX_SUITE" == "suite-starburst-snowflake" ]]; then
+            if [[ "$EVENT_NAME" == "schedule" && "$EVENT_SCHEDULE" == "0 0 * * 6" ]] || \
+               [[ "$SNOWFLAKE_LABEL_PRESENT" == "true" ]]; then
+              echo "Running Snowflake PT weekly"
+              testing/trino-product-tests-launcher/target/trino-product-tests-launcher-*-executable.jar suite run \
+              --suite "$MATRIX_SUITE" \
+              --config "config-$MATRIX_CONFIG" \
+              ${PTL_OPTS:-} \
+              --bind=off --logs-dir logs/ --timeout 2h
+            else
+              echo "Skipping Snowflake PT since it's not a scheduled build"
             fi
           else
             testing/trino-product-tests-launcher/target/trino-product-tests-launcher-*-executable.jar suite run \
