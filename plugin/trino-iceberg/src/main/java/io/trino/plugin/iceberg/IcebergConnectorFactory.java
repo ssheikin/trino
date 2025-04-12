@@ -24,6 +24,7 @@ import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
+import io.starburst.ai.client.AiClientModule;
 import io.trino.filesystem.manager.FileSystemModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
@@ -122,7 +123,7 @@ public class IcebergConnectorFactory
                 new IcebergSecurityModule(),
                 icebergCatalogModule.orElse(new IcebergCatalogModule()),
                 new MBeanServerModule(),
-                new IcebergAiModule(),
+                new AiClientModule(),
                 new IcebergFileSystemModule(catalogName, context, quietBootstrap),
                 binder -> {
                     binder.bind(ClassLoader.class).toInstance(IcebergConnectorFactory.class.getClassLoader());
