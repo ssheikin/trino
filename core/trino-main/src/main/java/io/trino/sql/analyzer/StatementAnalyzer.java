@@ -228,14 +228,16 @@ import io.trino.sql.tree.SampledRelation;
 import io.trino.sql.tree.SecurityCharacteristic;
 import io.trino.sql.tree.Select;
 import io.trino.sql.tree.SelectItem;
-import io.trino.sql.tree.SetAuthorizationStatement;
 import io.trino.sql.tree.SetCatalogProperties;
 import io.trino.sql.tree.SetColumnType;
 import io.trino.sql.tree.SetOperation;
 import io.trino.sql.tree.SetProperties;
+import io.trino.sql.tree.SetSchemaAuthorization;
 import io.trino.sql.tree.SetSession;
 import io.trino.sql.tree.SetSessionAuthorization;
+import io.trino.sql.tree.SetTableAuthorization;
 import io.trino.sql.tree.SetTimeZone;
+import io.trino.sql.tree.SetViewAuthorization;
 import io.trino.sql.tree.SimpleGroupBy;
 import io.trino.sql.tree.SingleColumn;
 import io.trino.sql.tree.SkipTo;
@@ -1156,7 +1158,7 @@ class StatementAnalyzer
         }
 
         @Override
-        protected Scope visitSetAuthorization(SetAuthorizationStatement node, Optional<Scope> scope)
+        protected Scope visitSetSchemaAuthorization(SetSchemaAuthorization node, Optional<Scope> scope)
         {
             return createAndAssignScope(node, scope);
         }
@@ -1227,6 +1229,12 @@ class StatementAnalyzer
 
         @Override
         protected Scope visitDropColumn(DropColumn node, Optional<Scope> scope)
+        {
+            return createAndAssignScope(node, scope);
+        }
+
+        @Override
+        protected Scope visitSetTableAuthorization(SetTableAuthorization node, Optional<Scope> scope)
         {
             return createAndAssignScope(node, scope);
         }
@@ -1358,6 +1366,12 @@ class StatementAnalyzer
 
         @Override
         protected Scope visitRenameMaterializedView(RenameMaterializedView node, Optional<Scope> scope)
+        {
+            return createAndAssignScope(node, scope);
+        }
+
+        @Override
+        protected Scope visitSetViewAuthorization(SetViewAuthorization node, Optional<Scope> scope)
         {
             return createAndAssignScope(node, scope);
         }

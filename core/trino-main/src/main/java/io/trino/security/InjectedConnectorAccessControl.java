@@ -22,7 +22,6 @@ import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.ColumnSchema;
 import io.trino.spi.connector.ConnectorAccessControl;
 import io.trino.spi.connector.ConnectorSecurityContext;
-import io.trino.spi.connector.EntityKindAndName;
 import io.trino.spi.connector.SchemaRoutineName;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.function.SchemaFunctionName;
@@ -79,8 +78,7 @@ public class InjectedConnectorAccessControl
     public void checkCanSetSchemaAuthorization(ConnectorSecurityContext context, String schemaName, TrinoPrincipal principal)
     {
         checkArgument(context == null, "context must be null");
-        CatalogSchemaName name = getCatalogSchemaName(schemaName);
-        accessControl.checkCanSetEntityAuthorization(securityContext, new EntityKindAndName("SCHEMA", List.of(name.getCatalogName(), name.getSchemaName())), principal);
+        accessControl.checkCanSetSchemaAuthorization(securityContext, getCatalogSchemaName(schemaName), principal);
     }
 
     @Override
@@ -213,7 +211,7 @@ public class InjectedConnectorAccessControl
     public void checkCanSetTableAuthorization(ConnectorSecurityContext context, SchemaTableName tableName, TrinoPrincipal principal)
     {
         checkArgument(context == null, "context must be null");
-        accessControl.checkCanSetEntityAuthorization(securityContext, new EntityKindAndName("TABLE", getQualifiedObjectNameParts(tableName)), principal);
+        accessControl.checkCanSetTableAuthorization(securityContext, getQualifiedObjectName(tableName), principal);
     }
 
     @Override
@@ -269,7 +267,7 @@ public class InjectedConnectorAccessControl
     public void checkCanSetViewAuthorization(ConnectorSecurityContext context, SchemaTableName viewName, TrinoPrincipal principal)
     {
         checkArgument(context == null, "context must be null");
-        accessControl.checkCanSetEntityAuthorization(securityContext, new EntityKindAndName("VIEW", getQualifiedObjectNameParts(viewName)), principal);
+        accessControl.checkCanSetViewAuthorization(securityContext, getQualifiedObjectName(viewName), principal);
     }
 
     @Override
@@ -544,11 +542,6 @@ public class InjectedConnectorAccessControl
     private QualifiedObjectName getQualifiedObjectName(SchemaRoutineName schemaRoutineName)
     {
         return new QualifiedObjectName(catalogName, schemaRoutineName.getSchemaName(), schemaRoutineName.getRoutineName());
-    }
-
-    private List<String> getQualifiedObjectNameParts(SchemaTableName schemaTableName)
-    {
-        return List.of(catalogName, schemaTableName.getSchemaName(), schemaTableName.getTableName());
     }
 
     private CatalogSchemaName getCatalogSchemaName(String schemaName)

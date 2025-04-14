@@ -38,7 +38,6 @@ import io.trino.spi.connector.ConnectorOutputMetadata;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.ConstraintApplicationResult;
-import io.trino.spi.connector.EntityKindAndName;
 import io.trino.spi.connector.JoinApplicationResult;
 import io.trino.spi.connector.JoinStatistics;
 import io.trino.spi.connector.JoinType;
@@ -281,6 +280,12 @@ public abstract class AbstractMockMetadata
     }
 
     @Override
+    public void setSchemaAuthorization(Session session, CatalogSchemaName source, TrinoPrincipal principal)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void createTable(Session session, String catalogName, ConnectorTableMetadata tableMetadata, SaveMode saveMode)
     {
         throw new UnsupportedOperationException();
@@ -372,6 +377,12 @@ public abstract class AbstractMockMetadata
 
     @Override
     public void dropNotNullConstraint(Session session, TableHandle tableHandle, ColumnHandle column)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setTableAuthorization(Session session, CatalogSchemaTableName table, TrinoPrincipal principal)
     {
         throw new UnsupportedOperationException();
     }
@@ -613,6 +624,12 @@ public abstract class AbstractMockMetadata
 
     @Override
     public void renameView(Session session, QualifiedObjectName source, QualifiedObjectName target)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setViewAuthorization(Session session, CatalogSchemaTableName view, TrinoPrincipal principal)
     {
         throw new UnsupportedOperationException();
     }
@@ -1018,12 +1035,6 @@ public abstract class AbstractMockMetadata
 
     @Override
     public WriterScalingOptions getInsertWriterScalingOptions(Session session, TableHandle tableHandle)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setEntityAuthorization(Session session, EntityKindAndName entityKindAndName, TrinoPrincipal principal)
     {
         throw new UnsupportedOperationException();
     }

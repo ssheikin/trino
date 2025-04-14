@@ -576,12 +576,6 @@ public abstract class ForwardingSystemAccessControl
     }
 
     @Override
-    public void checkCanSetEntityAuthorization(SystemSecurityContext context, EntityKindAndName entityKindAndName, TrinoPrincipal principal)
-    {
-        delegate().checkCanSetEntityAuthorization(context, entityKindAndName, principal);
-    }
-
-    @Override
     public void shutdown()
     {
         delegate().shutdown();

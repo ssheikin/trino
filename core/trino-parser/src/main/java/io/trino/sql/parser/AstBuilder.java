@@ -243,15 +243,17 @@ import io.trino.sql.tree.SecurityCharacteristic;
 import io.trino.sql.tree.Select;
 import io.trino.sql.tree.SelectItem;
 import io.trino.sql.tree.SessionProperty;
-import io.trino.sql.tree.SetAuthorizationStatement;
 import io.trino.sql.tree.SetCatalogProperties;
 import io.trino.sql.tree.SetColumnType;
 import io.trino.sql.tree.SetPath;
 import io.trino.sql.tree.SetProperties;
 import io.trino.sql.tree.SetRole;
+import io.trino.sql.tree.SetSchemaAuthorization;
 import io.trino.sql.tree.SetSession;
 import io.trino.sql.tree.SetSessionAuthorization;
+import io.trino.sql.tree.SetTableAuthorization;
 import io.trino.sql.tree.SetTimeZone;
+import io.trino.sql.tree.SetViewAuthorization;
 import io.trino.sql.tree.ShowCatalogs;
 import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
@@ -525,11 +527,10 @@ class AstBuilder
     }
 
     @Override
-    public Node visitSetAuthorization(SqlBaseParser.SetAuthorizationContext context)
+    public Node visitSetSchemaAuthorization(SqlBaseParser.SetSchemaAuthorizationContext context)
     {
-        return new SetAuthorizationStatement(
+        return new SetSchemaAuthorization(
                 getLocation(context),
-                context.ownedEntityKind().getText().toUpperCase(ENGLISH),
                 getQualifiedName(context.qualifiedName()),
                 getPrincipalSpecification(context.principal()));
     }
@@ -888,6 +889,15 @@ class AstBuilder
     }
 
     @Override
+    public Node visitSetTableAuthorization(SqlBaseParser.SetTableAuthorizationContext context)
+    {
+        return new SetTableAuthorization(
+                getLocation(context),
+                getQualifiedName(context.qualifiedName()),
+                getPrincipalSpecification(context.principal()));
+    }
+
+    @Override
     public Node visitDropColumn(SqlBaseParser.DropColumnContext context)
     {
         return new DropColumn(getLocation(context),
@@ -954,6 +964,15 @@ class AstBuilder
     public Node visitRenameMaterializedView(SqlBaseParser.RenameMaterializedViewContext context)
     {
         return new RenameMaterializedView(getLocation(context), getQualifiedName(context.from), getQualifiedName(context.to), context.EXISTS() != null);
+    }
+
+    @Override
+    public Node visitSetViewAuthorization(SqlBaseParser.SetViewAuthorizationContext context)
+    {
+        return new SetViewAuthorization(
+                getLocation(context),
+                getQualifiedName(context.qualifiedName()),
+                getPrincipalSpecification(context.principal()));
     }
 
     @Override
