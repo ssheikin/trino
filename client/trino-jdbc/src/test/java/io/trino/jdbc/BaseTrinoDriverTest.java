@@ -1186,16 +1186,12 @@ public abstract class BaseTrinoDriverTest
             statement.execute("SET SESSION AUTHORIZATION john");
             assertThat(connection.getAuthorizationUser()).isEqualTo("john");
             statement.execute("SET ROLE ALL");
-            assertThat(connection.getRoles()).isEqualTo(ImmutableMap.of(
-                    "system", new ClientSelectedRole(ClientSelectedRole.Type.ALL, Optional.empty()),
-                    "_impersonation", new ClientSelectedRole(ClientSelectedRole.Type.NONE, Optional.empty())));
+            assertThat(connection.getRoles()).isEqualTo(ImmutableMap.of("system", new ClientSelectedRole(ClientSelectedRole.Type.ALL, Optional.empty())));
             statement.execute("SET SESSION AUTHORIZATION bob");
             assertThat(connection.getAuthorizationUser()).isEqualTo("bob");
-            assertThat(connection.getRoles()).isEqualTo(ImmutableMap.of("_impersonation", new ClientSelectedRole(ClientSelectedRole.Type.NONE, Optional.empty())));
+            assertThat(connection.getRoles()).isEqualTo(ImmutableMap.of());
             statement.execute("SET ROLE NONE");
-            assertThat(connection.getRoles()).isEqualTo(ImmutableMap.of(
-                    "system", new ClientSelectedRole(ClientSelectedRole.Type.NONE, Optional.empty()),
-                    "_impersonation", new ClientSelectedRole(ClientSelectedRole.Type.NONE, Optional.empty())));
+            assertThat(connection.getRoles()).isEqualTo(ImmutableMap.of("system", new ClientSelectedRole(ClientSelectedRole.Type.NONE, Optional.empty())));
             statement.execute("RESET SESSION AUTHORIZATION");
             assertThat(connection.getAuthorizationUser()).isEqualTo(null);
             assertThat(connection.getRoles()).isEqualTo(ImmutableMap.of());

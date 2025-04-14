@@ -25,7 +25,6 @@ import org.junit.jupiter.api.parallel.Execution;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.trino.testing.TestingSession.testSessionBuilder;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
 @Execution(SAME_THREAD) // TestingSystemSecurityMetadata is shared mutable state
@@ -97,14 +96,10 @@ public class TestSystemSecurityMetadata
         assertQueryReturnsEmptyResult(alice, "SHOW CURRENT ROLES");
         assertQueryReturnsEmptyResult(alice, "SHOW ROLE GRANTS");
         assertQueryReturnsEmptyResult(alice, "SELECT * FROM system.information_schema.applicable_roles");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW ROLES"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW CURRENT ROLES"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW ROLE GRANTS"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SELECT * FROM system.information_schema.applicable_roles"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SHOW ROLES", "Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SHOW CURRENT ROLES", "Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SHOW ROLE GRANTS", "Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SELECT * FROM system.information_schema.applicable_roles", "Access Denied: Cannot set role role1");
 
         assertQuerySucceeds("GRANT role1 TO USER alice");
         assertQuerySucceeds(alice, "SET ROLE role1");
@@ -122,14 +117,10 @@ public class TestSystemSecurityMetadata
         assertQueryReturnsEmptyResult(alice, "SHOW CURRENT ROLES");
         assertQueryReturnsEmptyResult(alice, "SHOW ROLE GRANTS");
         assertQueryReturnsEmptyResult(alice, "SELECT * FROM system.information_schema.applicable_roles");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW ROLES"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW CURRENT ROLES"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW ROLE GRANTS"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SELECT * FROM system.information_schema.applicable_roles"))
-                .hasMessageContaining("Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SHOW ROLES", "Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SHOW CURRENT ROLES", "Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SHOW ROLE GRANTS", "Access Denied: Cannot set role role1");
+        assertQueryFails(aliceWithRole, "SELECT * FROM system.information_schema.applicable_roles", "Access Denied: Cannot set role role1");
 
         assertQuerySucceeds("DROP ROLE role1");
     }
@@ -147,8 +138,7 @@ public class TestSystemSecurityMetadata
         assertQuerySucceeds("GRANT role1 TO USER alice");
 
         String roleNotApplicableErrorMessage = "Access Denied: Cannot set role role2";
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW ROLES"))
-                .hasMessageContaining(roleNotApplicableErrorMessage);
+        assertQueryFails(aliceWithRole, "SHOW ROLES", roleNotApplicableErrorMessage);
 
         assertQuerySucceeds("GRANT role2 TO ROLE role1");
         assertQuery(alice, "SHOW ROLES", "VALUES 'role1', 'role2'");
@@ -162,8 +152,7 @@ public class TestSystemSecurityMetadata
                         + "('role1', 'ROLE', 'role2', 'NO')");
 
         assertQuerySucceeds("REVOKE role2 FROM ROLE role1");
-        assertThatThrownBy(() -> getQueryRunner().execute(aliceWithRole, "SHOW ROLES"))
-                .hasMessageContaining(roleNotApplicableErrorMessage);
+        assertQueryFails(aliceWithRole, "SHOW ROLES", roleNotApplicableErrorMessage);
 
         assertQuerySucceeds("REVOKE role1 FROM USER alice");
         assertQuerySucceeds("DROP ROLE role1");

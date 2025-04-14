@@ -22,7 +22,6 @@ import io.trino.metadata.SessionPropertyManager;
 import io.trino.security.AccessControl;
 import io.trino.spi.QueryId;
 import io.trino.spi.security.Identity;
-import io.trino.spi.security.SelectedRole;
 import io.trino.spi.type.TimeZoneKey;
 import io.trino.sql.SqlEnvironmentConfig;
 import io.trino.sql.SqlPath;
@@ -32,10 +31,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.trino.Session.SessionBuilder;
 import static io.trino.SystemSessionProperties.TIME_ZONE_ID;
-import static io.trino.execution.SetSessionAuthorizationTask.IMPERSONATION_CATALOG;
 import static io.trino.server.HttpRequestSessionContextFactory.addEnabledRoles;
 import static java.util.Map.Entry;
 import static java.util.Objects.requireNonNull;
@@ -90,22 +87,11 @@ public class QuerySessionSupplier
         Identity identity = context.getIdentity();
         if (!originalIdentity.getUser().equals(identity.getUser())) {
             // When the current user (user) and the original user are different, we check if the original user can impersonate current user.
-            // We preserve the information of original user and his enabled roles in the originalIdentity,
+            // We preserve the information of original user in the originalIdentity,
             // and it will be used for the impersonation checks and be used as the source of audit information.
             accessControl.checkCanSetUser(originalIdentity.getPrincipal(), identity.getUser());
-            SelectedRole impersonatingRole = identity.getCatalogRoles().get(IMPERSONATION_CATALOG);
-            if (impersonatingRole != null) {
-                originalIdentity = addEnabledRoles(originalIdentity, impersonatingRole, metadata);
-            }
             accessControl.checkCanImpersonateUser(originalIdentity, identity.getUser());
         }
-        Map<String, SelectedRole> identityCatalogRoles = identity.getCatalogRoles()
-                .entrySet().stream()
-                .filter(entry -> !entry.getKey().equals(IMPERSONATION_CATALOG))
-                .collect(toImmutableMap(Entry::getKey, Entry::getValue));
-        identity = Identity.from(identity)
-                .withConnectorRoles(identityCatalogRoles)
-                .build();
 
         // add the enabled roles
         identity = addEnabledRoles(identity, context.getSelectedRole(), metadata);

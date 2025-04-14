@@ -54,12 +54,10 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static io.trino.execution.SetSessionAuthorizationTask.IMPERSONATION_CATALOG;
 import static io.trino.metadata.Catalog.failedCatalog;
 import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_AVAILABLE;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_FOUND;
-import static io.trino.spi.StandardErrorCode.GENERIC_USER_ERROR;
 import static io.trino.spi.StandardErrorCode.NOT_FOUND;
 import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.util.Executors.executeUntilFailure;
@@ -264,9 +262,6 @@ public class CoordinatorDynamicCatalogManager
         requireNonNull(connectorName, "connectorName is null");
         requireNonNull(properties, "properties is null");
 
-        if (catalogName.toString().equalsIgnoreCase(IMPERSONATION_CATALOG)) {
-            throw new TrinoException(GENERIC_USER_ERROR, IMPERSONATION_CATALOG + " is not a valid catalog name");
-        }
         catalogsUpdateLock.lock();
         try {
             checkState(state != State.STOPPED, "ConnectorManager is stopped");

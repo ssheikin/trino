@@ -53,10 +53,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.configuration.ConfigurationLoader.loadPropertiesFrom;
-import static io.trino.execution.SetSessionAuthorizationTask.IMPERSONATION_CATALOG;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_AVAILABLE;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_FOUND;
-import static io.trino.spi.StandardErrorCode.GENERIC_USER_ERROR;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.util.Executors.executeUntilFailure;
@@ -88,9 +86,6 @@ public class StaticCatalogManager
         for (File file : listCatalogFiles(config.getCatalogConfigurationDir())) {
             String catalogName = Files.getNameWithoutExtension(file.getName());
             checkArgument(!catalogName.equals(GlobalSystemConnector.NAME), "Catalog name SYSTEM is reserved for internal usage");
-            if (catalogName.equalsIgnoreCase(IMPERSONATION_CATALOG)) {
-                throw new TrinoException(GENERIC_USER_ERROR, IMPERSONATION_CATALOG + " is not a valid catalog name");
-            }
             if (disabledCatalogs.contains(catalogName)) {
                 log.info("Skipping disabled catalog %s", catalogName);
                 continue;
