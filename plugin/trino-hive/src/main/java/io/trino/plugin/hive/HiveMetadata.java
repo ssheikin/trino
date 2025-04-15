@@ -2966,7 +2966,7 @@ public class HiveMetadata
                     }
 
                     ConnectorViewDefinition definition = hiveViewReaderFactory.createViewReader(session, getMetastore(session), view, this::redirectTable)
-                            .decodeViewData(view.getViewOriginalText().get(), view, catalogName);
+                            .decodeViewData(view.getViewOriginalText(), view, catalogName);
                     // use owner field table metadata if it exists
                     if (view.getOwner().isPresent() && !definition.isRunAsInvoker()) {
                         definition = new ConnectorViewDefinition(
