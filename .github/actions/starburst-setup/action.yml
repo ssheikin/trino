@@ -71,7 +71,7 @@ runs:
       if: inputs.login-docker != 'false'
       uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3
       env:
-        DOCKER_REGISTRY: "843985043183.dkr.ecr.us-east-2.amazonaws.com"
+        DOCKER_REGISTRY: "843985043183.dkr.ecr.us-east-1.amazonaws.com"
       with:
         registry: ${{ env.DOCKER_REGISTRY }}
     - name: "Login to ECR pull-through cache"
