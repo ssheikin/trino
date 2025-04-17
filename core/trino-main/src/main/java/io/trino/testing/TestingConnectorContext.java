@@ -34,6 +34,7 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
+import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
@@ -99,6 +100,12 @@ public final class TestingConnectorContext
     public MetadataProvider getMetadataProvider()
     {
         return NOOP_METADATA_PROVIDER;
+    }
+
+    @Override
+    public AiModelAccessControl getAiModelAccessControl()
+    {
+        return AiModelAccessControl.ALLOW_ALL;
     }
 
     @Override

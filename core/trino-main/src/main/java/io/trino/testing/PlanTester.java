@@ -161,6 +161,7 @@ import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
 import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
@@ -437,6 +438,7 @@ public class PlanTester
                 new UnimplementedMetastore(),
                 nodeSchedulerConfig,
                 accessControlManager,
+                AiModelAccessControl.ALLOW_ALL,
                 optimizerConfig,
                 new ConfigurationFactory(ImmutableMap.of()),
                 secretsResolver));

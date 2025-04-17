@@ -45,6 +45,7 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.connector.metastore.Metastore;
+import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 import io.trino.sql.planner.OptimizerConfig;
@@ -86,6 +87,7 @@ public class DefaultCatalogFactory
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
     private final LocationAccessControl locationAccessControl;
+    private final AiModelAccessControl aiModelAccessControl;
     private final Map<String, String> serverProperties;
     private final ConcurrentMap<ConnectorName, InternalConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
     private final SecretsResolver secretsResolver;
@@ -107,6 +109,7 @@ public class DefaultCatalogFactory
             Metastore metastore,
             NodeSchedulerConfig nodeSchedulerConfig,
             LocationAccessControl locationAccessControl,
+            AiModelAccessControl aiModelAccessControl,
             OptimizerConfig optimizerConfig,
             ConfigurationFactory configurationFactory,
             SecretsResolver secretsResolver)
@@ -126,6 +129,7 @@ public class DefaultCatalogFactory
         this.metastore = requireNonNull(metastore, "metastore is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
+        this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
         this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
@@ -274,6 +278,7 @@ public class DefaultCatalogFactory
                 typeManager,
                 new InternalMetadataProvider(metadata, typeManager),
                 locationAccessControl,
+                aiModelAccessControl,
                 metastore,
                 pageSorter,
                 workScheduler,

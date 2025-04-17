@@ -22,6 +22,7 @@ import com.google.inject.Singleton;
 import io.airlift.log.Logger;
 import io.trino.plugin.base.security.DefaultSystemAccessControl;
 import io.trino.plugin.base.util.LoggingInvocationHandler;
+import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.GroupProvider;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.tracing.ForTracing;
@@ -45,6 +46,9 @@ public class AccessControlModule
         binder.bind(AccessControlManager.class).in(Scopes.SINGLETON);
         binder.bind(AccessControl.class).to(TracingAccessControl.class);
         binder.bind(LocationAccessControl.class).to(TracingLocationAccessControl.class);
+        newOptionalBinder(binder, AiModelAccessControl.class)
+                .setDefault()
+                .toInstance(AiModelAccessControl.ALLOW_ALL);
         binder.bind(GroupProviderManager.class).in(Scopes.SINGLETON);
         binder.bind(GroupProvider.class).to(GroupProviderManager.class).in(Scopes.SINGLETON);
         newExporter(binder).export(AccessControlManager.class).withGeneratedName();

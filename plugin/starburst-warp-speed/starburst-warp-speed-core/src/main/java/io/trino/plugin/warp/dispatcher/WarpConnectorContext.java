@@ -24,6 +24,7 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.metastore.Metastore;
+import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
@@ -138,5 +139,11 @@ public class WarpConnectorContext
     public LocationAccessControl getLocationAccessControl()
     {
         return connectorContext.getLocationAccessControl();
+    }
+
+    @Override
+    public AiModelAccessControl getAiModelAccessControl()
+    {
+        return connectorContext.getAiModelAccessControl();
     }
 }
