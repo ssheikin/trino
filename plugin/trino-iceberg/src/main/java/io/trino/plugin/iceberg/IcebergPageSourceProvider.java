@@ -1104,7 +1104,7 @@ public class IcebergPageSourceProvider
         ParquetDataSource dataSource = null;
         try {
             dataSource = createDataSource(inputFile, OptionalLong.of(fileSize), options, memoryContext, fileFormatDataSourceStats);
-            ParquetMetadata parquetMetadata = MetadataReader.readFooter(dataSource, options.getMaxFooterReadSize());
+            ParquetMetadata parquetMetadata = MetadataReader.readFooter(dataSource, options.getMaxFooterReadSize(), Optional.empty());
             FileMetadata fileMetaData = parquetMetadata.getFileMetaData();
             MessageType fileSchema = fileMetaData.getSchema();
             if (nameMapping.isPresent() && !ParquetSchemaUtil.hasIds(fileSchema)) {
@@ -1236,6 +1236,7 @@ public class IcebergPageSourceProvider
                     memoryContext,
                     options,
                     exception -> handleException(dataSourceId, exception),
+                    Optional.empty(),
                     Optional.empty(),
                     Optional.empty());
 
