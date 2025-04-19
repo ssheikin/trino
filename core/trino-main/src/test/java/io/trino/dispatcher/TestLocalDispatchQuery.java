@@ -64,6 +64,7 @@ import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.sql.tree.CreateTable;
 import io.trino.sql.tree.Expression;
+import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Statement;
 import io.trino.transaction.TransactionManager;
@@ -95,7 +96,7 @@ public class TestLocalDispatchQuery
     private final Executor executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
     private final Metadata metadata = createTestMetadataManager();
     private final TransactionManager transactionManager = createTestTransactionManager();
-    private final CreateTable statement = new CreateTable(QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty());
+    private final CreateTable statement = new CreateTable(new NodeLocation(1, 1), QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty());
     private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(statement, statement, ImmutableList.of(), Optional.empty());
 
     @Test
