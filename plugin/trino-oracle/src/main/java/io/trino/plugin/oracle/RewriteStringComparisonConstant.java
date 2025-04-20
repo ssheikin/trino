@@ -18,15 +18,14 @@ import io.trino.matching.Capture;
 import io.trino.matching.Captures;
 import io.trino.matching.Pattern;
 import io.trino.plugin.base.expression.ConnectorExpressionRule;
-import io.trino.plugin.jdbc.JdbcColumnHandle;
 import io.trino.plugin.jdbc.QueryParameter;
 import io.trino.plugin.jdbc.expression.ComparisonOperator;
 import io.trino.plugin.jdbc.expression.ParameterizedExpression;
 import io.trino.spi.expression.Call;
+import io.trino.spi.expression.Constant;
 import io.trino.spi.expression.Variable;
 import io.trino.spi.type.CharType;
 import io.trino.spi.type.VarcharType;
-import oracle.jdbc.OracleTypes;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -36,16 +35,18 @@ import static io.trino.matching.Capture.newCapture;
 import static io.trino.plugin.base.expression.ConnectorExpressionPatterns.argument;
 import static io.trino.plugin.base.expression.ConnectorExpressionPatterns.argumentCount;
 import static io.trino.plugin.base.expression.ConnectorExpressionPatterns.call;
+import static io.trino.plugin.base.expression.ConnectorExpressionPatterns.constant;
 import static io.trino.plugin.base.expression.ConnectorExpressionPatterns.functionName;
 import static io.trino.plugin.base.expression.ConnectorExpressionPatterns.type;
 import static io.trino.plugin.base.expression.ConnectorExpressionPatterns.variable;
+import static io.trino.plugin.oracle.RewriteStringComparison.isClob;
 import static io.trino.spi.type.BooleanType.BOOLEAN;
 
-public class RewriteStringComparison
+public class RewriteStringComparisonConstant
         implements ConnectorExpressionRule<Call, ParameterizedExpression>
 {
     private static final Capture<Variable> FIRST_ARGUMENT = newCapture();
-    private static final Capture<Variable> SECOND_ARGUMENT = newCapture();
+    private static final Capture<Constant> SECOND_ARGUMENT = newCapture();
     private static final Pattern<Call> PATTERN = call()
             .with(type().equalTo(BOOLEAN))
             .with(functionName().matching(Stream.of(ComparisonOperator.values())
@@ -55,7 +56,7 @@ public class RewriteStringComparison
                     ::contains))
             .with(argumentCount().equalTo(2))
             .with(argument(0).matching(variable().with(type().matching(type -> type instanceof CharType || type instanceof VarcharType)).capturedAs(FIRST_ARGUMENT)))
-            .with(argument(1).matching(variable().with(type().matching(type -> type instanceof CharType || type instanceof VarcharType)).capturedAs(SECOND_ARGUMENT)));
+            .with(argument(1).matching(constant().with(type().matching(type -> type instanceof CharType || type instanceof VarcharType)).capturedAs(SECOND_ARGUMENT)));
 
     @Override
     public Pattern<Call> getPattern()
@@ -68,9 +69,9 @@ public class RewriteStringComparison
     {
         ComparisonOperator comparison = ComparisonOperator.forFunctionName(expression.getFunctionName());
         Variable firstArgument = captures.get(FIRST_ARGUMENT);
-        Variable secondArgument = captures.get(SECOND_ARGUMENT);
+        Constant secondArgument = captures.get(SECOND_ARGUMENT);
 
-        if (isClob(firstArgument, context) || isClob(secondArgument, context)) {
+        if (isClob(firstArgument, context)) {
             return Optional.empty();
         }
         return context.defaultRewrite(firstArgument).flatMap(first ->
@@ -81,13 +82,5 @@ public class RewriteStringComparison
                                         .addAll(first.parameters())
                                         .addAll(second.parameters())
                                         .build())));
-    }
-
-    static boolean isClob(Variable variable, RewriteContext<?> context)
-    {
-        return switch (((JdbcColumnHandle) context.getAssignment(variable.getName())).getJdbcTypeHandle().jdbcType()) {
-            case OracleTypes.CLOB, OracleTypes.NCLOB -> true;
-            default -> false;
-        };
     }
 }

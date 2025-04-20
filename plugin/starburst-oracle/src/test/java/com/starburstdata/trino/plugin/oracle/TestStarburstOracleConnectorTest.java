@@ -20,6 +20,7 @@ import io.trino.plugin.oracle.BaseOracleConnectorTest;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.sql.planner.assertions.PlanMatchPattern;
+import io.trino.sql.planner.plan.FilterNode;
 import io.trino.sql.planner.plan.TableScanNode;
 import io.trino.sql.planner.plan.TopNNode;
 import io.trino.testing.QueryRunner;
@@ -47,6 +48,8 @@ import static com.starburstdata.trino.plugin.oracle.OracleDataTypes.oracleTimest
 import static com.starburstdata.trino.plugin.oracle.OracleDataTypes.prestoTimestampWithTimeZoneDataType;
 import static com.starburstdata.trino.plugin.oracle.OracleTestUsers.PASSWORD;
 import static com.starburstdata.trino.plugin.oracle.OracleTestUsers.USER;
+import static io.trino.plugin.jdbc.TypeHandlingJdbcSessionProperties.UNSUPPORTED_TYPE_HANDLING;
+import static io.trino.plugin.jdbc.UnsupportedTypeHandling.CONVERT_TO_VARCHAR;
 import static io.trino.spi.connector.SortOrder.ASC_NULLS_LAST;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.spi.type.VarcharType.createVarcharType;
@@ -136,6 +139,170 @@ public class TestStarburstOracleConnectorTest
         assertThat(query("SELECT regionkey, sum(nationkey) FROM nation GROUP BY regionkey HAVING sum(nationkey) = 77"))
                 .matches("VALUES (CAST(3 AS decimal(19,0)), CAST(77 AS decimal(38,0)))")
                 .isFullyPushedDown();
+    }
+
+    @Test
+    public void testStringComparisonConstantPushdown()
+    {
+        assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE nationkey = 1 OR name = 'ROMANIA'"))
+                .matches("""
+                        VALUES (CAST(1 AS DECIMAL(19,0)), CAST(1 AS DECIMAL(19,0)), CAST('ARGENTINA' AS varchar(25))),
+                               (CAST(3 AS DECIMAL(19,0)), CAST(19 AS DECIMAL(19,0)), CAST('ROMANIA' AS varchar(25)))""")
+                .isFullyPushedDown();
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                "test_string_comparison_pushdown",
+                """
+                (id int,
+                clob_string CLOB,
+                nclob_string NCLOB)
+                """,
+                List.of(
+                        "1, 'b', 'b'",
+                        "2, 'c', 'c'"))) {
+            assertThat(query("SELECT id FROM %s WHERE id = 1 OR clob_string = 'c'".formatted(table.getName())))
+                    .isNotFullyPushedDown(FilterNode.class);
+            assertThat(query("SELECT id FROM %s WHERE id = 1 OR nclob_string = 'c'".formatted(table.getName())))
+                    .isNotFullyPushedDown(FilterNode.class);
+        }
+    }
+
+    @Test
+    public void testNotPushdown()
+    {
+        assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE name NOT LIKE 'Romania' OR nationkey = 1"))
+                .isFullyPushedDown();
+        assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE NOT (name LIKE '%nia' OR nationkey = 1)"))
+                .isFullyPushedDown();
+        assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE name NOT LIKE 'Romania' OR nationkey = 1 AND NOT name LIKE 'Croatia'"))
+                .isFullyPushedDown();
+    }
+
+    @Test
+    public void testLikePushdown()
+    {
+        Session convertToVarchar = Session.builder(getSession())
+                .setCatalogSessionProperty("oracle", UNSUPPORTED_TYPE_HANDLING, CONVERT_TO_VARCHAR.name())
+                .build();
+        String withConnectorExpression = " OR some_column = 'x'";
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                "test_like_pushdown",
+                """
+                (
+                unsupported BFILE,
+                some_column VARCHAR2(100),
+                a_string VARCHAR2(100),
+                a_string_2 VARCHAR2(100),
+                a_char CHAR(100),
+                a_nvarchar NVARCHAR2(100),
+                a_nchar NCHAR(100))
+                """,
+                List.of(
+                        // Escape test: literal backslash
+                        "BFILENAME('/opt/oracle', ''), 'z', '\\\\', '\\\\', '\\\\', '\\\\', '\\\\'",
+                        // Underscore wildcard
+                        "BFILENAME('/opt/oracle', ''), 'z', '_', '_', '_', '_', '_'",
+                        // Percent wildcard
+                        "BFILENAME('/opt/oracle', ''), 'z', '%', '%', '%', '%', '%'",
+                        // Literal characters for comparison
+                        "BFILENAME('/opt/oracle', ''), 'z', 'a', 'a', 'a', 'a', 'a'",
+                        "BFILENAME('/opt/oracle', ''), 'z', 'b', 'b', 'b', 'b', 'b'",
+                        "BFILENAME('/opt/oracle', ''), 'z', 'c', 'c', 'c', 'c', 'c'"))) {
+            assertLike(true, table, withConnectorExpression, convertToVarchar);
+            assertLike(false, table, withConnectorExpression, convertToVarchar);
+        }
+    }
+
+    private void assertLike(boolean isPositive, TestTable table, String withConnectorExpression, Session convertToVarchar)
+    {
+        String like = isPositive ? "LIKE" : "NOT LIKE";
+
+        // Tests for VARCHAR2 column
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " NULL")).returnsEmptyResult();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " 'b'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " 'b'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " 'b%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " 'b%'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%b'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%b'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%b%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%b%'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query(convertToVarchar, "SELECT some_column FROM " + table.getName() + " WHERE unsupported " + like + " '%b%'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query(convertToVarchar, "SELECT some_column FROM " + table.getName() + " WHERE unsupported " + like + " '%b%'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " a_string")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " a_string" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query(convertToVarchar, "SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " unsupported")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query(convertToVarchar, "SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " unsupported" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+
+        // Tests for CHAR column
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " NULL")).returnsEmptyResult();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " 'b'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " 'b'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " 'b%'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " 'b%'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " '%b'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " '%b'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " '%b%'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_char " + like + " '%b%'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+
+        // Tests for NVARCHAR column
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " NULL")).returnsEmptyResult();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " 'b'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " 'b'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " 'b%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " 'b%'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " '%b'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " '%b'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " '%b%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nvarchar " + like + " '%b%'" + withConnectorExpression)).isFullyPushedDown();
+
+        // Tests for NCHAR column
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " NULL")).returnsEmptyResult();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " 'b'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " 'b'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " 'b%'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " 'b%'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " '%b'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " '%b'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " '%b%'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_nchar " + like + " '%b%'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+
+        // metacharacters for VARCHAR2
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '_'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '_'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '__'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '__'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%%'" + withConnectorExpression)).isFullyPushedDown();
+
+        // escape for VARCHAR2
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\b'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\b'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\_'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\_'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\__'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\__'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\%'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\%%'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\%%'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\\\'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\\\'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\\\\\'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\\\\\'" + withConnectorExpression)).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\' ESCAPE '\\'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\\\' ESCAPE '\\'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\%' ESCAPE '\\'")).isFullyPushedDown();
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '\\%' ESCAPE '\\'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%$_%' ESCAPE '$'")).isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT some_column FROM " + table.getName() + " WHERE a_string " + like + " '%$_%' ESCAPE '$'" + withConnectorExpression)).isNotFullyPushedDown(FilterNode.class);
     }
 
     @Override
