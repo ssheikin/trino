@@ -25,6 +25,7 @@ import io.trino.metadata.QualifiedObjectName;
 import io.trino.metastore.Database;
 import io.trino.metastore.HiveMetastore;
 import io.trino.metastore.HiveMetastoreFactory;
+import io.trino.parquet.crypto.DecryptionKeyRetriever;
 import io.trino.plugin.hive.fs.DirectoryLister;
 import io.trino.plugin.tpcds.TpcdsPlugin;
 import io.trino.plugin.tpch.ColumnNaming;
@@ -114,6 +115,7 @@ public final class HiveQueryRunner
         private ColumnNaming tpchColumnNaming = SIMPLIFIED;
         private DecimalTypeMapping tpchDecimalTypeMapping = DOUBLE;
         private boolean withPlanAlternatives;
+        private Optional<DecryptionKeyRetriever> decryptionKeyRetriever = Optional.empty();
 
         protected Builder()
         {
@@ -219,9 +221,17 @@ public final class HiveQueryRunner
             return self();
         }
 
+        @CanIgnoreReturnValue
         public SELF withPlanAlternatives()
         {
             withPlanAlternatives = true;
+            return self();
+        }
+
+        @CanIgnoreReturnValue
+        public SELF setDecryptionKeyRetriever(DecryptionKeyRetriever decryptionKeyRetriever)
+        {
+            this.decryptionKeyRetriever = Optional.of(requireNonNull(decryptionKeyRetriever, "decryptionKeyRetriever is null"));
             return self();
         }
 
@@ -261,8 +271,8 @@ public final class HiveQueryRunner
                     hiveProperties.put("fs.hadoop.enabled", "true");
                 }
 
-                queryRunner.installPlugin(new TestingHivePlugin(dataDir, metastore, module, directoryLister));
-                queryRunner.installPlugin(new MockPlanAlternativePlugin(new TestingHivePlugin(dataDir, metastore, module, directoryLister)));
+                queryRunner.installPlugin(new TestingHivePlugin(dataDir, metastore, decryptionKeyRetriever, module, directoryLister));
+                queryRunner.installPlugin(new MockPlanAlternativePlugin(new TestingHivePlugin(dataDir, metastore, decryptionKeyRetriever, module, directoryLister)));
 
                 Map<String, String> hiveProperties = new HashMap<>();
                 if (!skipTimezoneSetup) {

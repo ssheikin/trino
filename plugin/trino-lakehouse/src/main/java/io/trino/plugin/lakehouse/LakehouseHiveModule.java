@@ -47,6 +47,7 @@ import io.trino.plugin.hive.SystemTableProvider;
 import io.trino.plugin.hive.TransactionalMetadataFactory;
 import io.trino.plugin.hive.avro.AvroFileWriterFactory;
 import io.trino.plugin.hive.avro.AvroPageSourceFactory;
+import io.trino.plugin.hive.crypto.ParquetEncryptionModule;
 import io.trino.plugin.hive.fs.CachingDirectoryLister;
 import io.trino.plugin.hive.fs.DirectoryLister;
 import io.trino.plugin.hive.fs.TransactionScopeCachingDirectoryListerFactory;
@@ -146,6 +147,7 @@ class LakehouseHiveModule
         binder.install(new HiveExecutorModule());
 
         jsonCodecBinder(binder).bindJsonCodec(HiveCacheSplitId.class);
+        install(new ParquetEncryptionModule());
 
         newOptionalBinder(binder, HiveViewReaderFactory.class)
                 .setDefault().to(DefaultHiveViewReaderFactory.class).in(Scopes.SINGLETON);
