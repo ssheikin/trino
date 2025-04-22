@@ -14,9 +14,9 @@ import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.testing.TestingConnectorContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,10 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestDynamoDbPlugin
 {
     @Test
-    public void testCreateConnector()
-            throws Exception
+    public void testCreateConnector(@TempDir Path tempDir)
     {
-        File tempDirectory = Files.createTempDirectory("dynamodb-schemas").toFile();
         Plugin plugin = new TestingDynamoDbPlugin(false);
         ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
         factory.create(
@@ -38,7 +36,7 @@ public class TestDynamoDbPlugin
                         .put("dynamodb.aws-access-key", "accesskey")
                         .put("dynamodb.aws-secret-key", "secretkey")
                         .put("dynamodb.aws-region", "us-east-2")
-                        .put("dynamodb.schema-directory", tempDirectory.getAbsolutePath())
+                        .put("dynamodb.schema-directory", tempDir.toFile().getAbsolutePath())
                         .buildOrThrow(),
                 new TestingConnectorContext())
                 .shutdown();
