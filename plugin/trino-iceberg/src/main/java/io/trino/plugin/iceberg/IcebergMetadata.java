@@ -13,6 +13,10 @@
  */
 package io.trino.plugin.iceberg;
 
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Splitter.MapSplitter;
@@ -361,6 +365,7 @@ import static io.trino.plugin.iceberg.procedure.MigrationUtils.addFiles;
 import static io.trino.plugin.iceberg.procedure.MigrationUtils.addFilesFromTable;
 import static io.trino.spi.StandardErrorCode.COLUMN_ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.COLUMN_NOT_FOUND;
+import static io.trino.spi.StandardErrorCode.CONFIGURATION_INVALID;
 import static io.trino.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
 import static io.trino.spi.StandardErrorCode.INVALID_ARGUMENTS;
 import static io.trino.spi.StandardErrorCode.INVALID_PROCEDURE_ARGUMENT;
@@ -450,6 +455,8 @@ public class IcebergMetadata
     private static final Integer DELETE_BATCH_SIZE = 1000;
     public static final int GET_METADATA_BATCH_SIZE = 1000;
     private static final MapSplitter MAP_SPLITTER = Splitter.on(",").trimResults().omitEmptyStrings().withKeyValueSeparator("=");
+    private static final CronDefinition CRON_DEFINITION = CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX);
+    private static final CronParser CRON_PARSER = new CronParser(CRON_DEFINITION);
 
     private static final String DEPENDS_ON_TABLES = "dependsOnTables";
     private static final String DEPENDS_ON_TABLE_FUNCTIONS = "dependsOnTableFunctions";
@@ -3846,6 +3853,7 @@ public class IcebergMetadata
             boolean replace,
             boolean ignoreExisting)
     {
+        validateRefreshInterval((String) properties.get(REFRESH_SCHEDULE));
         catalog.createMaterializedView(session, viewName, definition, properties, replace, ignoreExisting);
     }
 
@@ -4040,6 +4048,7 @@ public class IcebergMetadata
         }
         Map<String, Object> currentProperties = catalog.getMaterializedViewProperties(session, viewName, catalog.getMaterializedView(session, viewName).orElseThrow());
         Optional<Object> targetSchedule = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE), () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE)));
+        targetSchedule.map(String.class::cast).ifPresent(IcebergMetadata::validateRefreshInterval);
         Optional<Object> targetTimeZone = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE_TIMEZONE),
                 () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE_TIMEZONE)));
         catalog.updateMaterializedViewRefreshSchedule(session, viewName, targetSchedule
@@ -4325,5 +4334,17 @@ public class IcebergMetadata
         statisticsBuilder.setRowCount(newStats.getRowCount());
         newStats.getColumnStatistics().forEach(statisticsBuilder::setColumnStatistics);
         return statisticsBuilder.build();
+    }
+
+    private static void validateRefreshInterval(String refreshInterval)
+    {
+        if (refreshInterval != null) {
+            try {
+                CRON_PARSER.parse(refreshInterval);
+            }
+            catch (RuntimeException e) {
+                throw new TrinoException(CONFIGURATION_INVALID, "Refresh interval is not cron string", e);
+            }
+        }
     }
 }
