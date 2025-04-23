@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kudu.client;
+package org.apache.trino.kudu.client;
 
 import io.trino.plugin.kudu.KuduClientSession;
 import io.trino.plugin.kudu.KuduClientWrapper;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkState;
 import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static java.lang.String.format;
-import static org.apache.kudu.client.SessionConfiguration.FlushMode.MANUAL_FLUSH;
+import static org.apache.trino.kudu.client.SessionConfiguration.FlushMode.MANUAL_FLUSH;
 
 /**
  * Not thread safe
@@ -72,6 +72,7 @@ public final class KuduOperationApplier
      * @param operation kudu operation
      */
     public void applyOperationAsync(Operation operation)
+
             throws KuduException
     {
         if (currentOperationsInBuffer >= bufferMaxOperations) {
@@ -103,6 +104,7 @@ public final class KuduOperationApplier
 
     @Override
     public void close()
+
             throws KuduException
     {
         List<OperationResponse> operationResponses = kuduSession.close();

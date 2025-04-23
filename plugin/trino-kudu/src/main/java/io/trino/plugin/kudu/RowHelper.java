@@ -13,9 +13,9 @@
  */
 package io.trino.plugin.kudu;
 
-import org.apache.kudu.Schema;
-import org.apache.kudu.client.PartialRow;
-import org.apache.kudu.client.RowResult;
+import org.apache.trino.kudu.Schema;
+import org.apache.trino.kudu.client.PartialRow;
+import org.apache.trino.kudu.client.RowResult;
 
 import java.nio.charset.StandardCharsets;
 

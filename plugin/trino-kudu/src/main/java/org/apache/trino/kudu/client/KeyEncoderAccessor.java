@@ -11,17 +11,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kudu.client;
+package org.apache.trino.kudu.client;
 
-import org.apache.kudu.Schema;
-import org.apache.kudu.client.PartitionSchema.HashBucketSchema;
+import org.apache.trino.kudu.Schema;
+import org.apache.trino.kudu.client.PartitionSchema.HashBucketSchema;
 
 /**
  * Little wrapper to access KeyEncoder in Kudu Java client.
  */
 public final class KeyEncoderAccessor
 {
-    private KeyEncoderAccessor() {}
+    private KeyEncoderAccessor()
+    {
+    }
 
     public static byte[] encodePrimaryKey(PartialRow row)
     {

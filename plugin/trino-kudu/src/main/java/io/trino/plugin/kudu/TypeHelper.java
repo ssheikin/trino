@@ -31,9 +31,9 @@ import io.trino.spi.type.TinyintType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarbinaryType;
 import io.trino.spi.type.VarcharType;
-import org.apache.kudu.ColumnSchema;
-import org.apache.kudu.ColumnTypeAttributes;
-import org.apache.kudu.client.RowResult;
+import org.apache.trino.kudu.ColumnSchema;
+import org.apache.trino.kudu.ColumnTypeAttributes;
+import org.apache.trino.kudu.client.RowResult;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -48,46 +48,46 @@ public final class TypeHelper
 {
     private TypeHelper() {}
 
-    public static org.apache.kudu.Type toKuduClientType(Type type)
+    public static org.apache.trino.kudu.Type toKuduClientType(Type type)
     {
         if (type == BooleanType.BOOLEAN) {
-            return org.apache.kudu.Type.BOOL;
+            return org.apache.trino.kudu.Type.BOOL;
         }
         if (type == TinyintType.TINYINT) {
-            return org.apache.kudu.Type.INT8;
+            return org.apache.trino.kudu.Type.INT8;
         }
         if (type == SmallintType.SMALLINT) {
-            return org.apache.kudu.Type.INT16;
+            return org.apache.trino.kudu.Type.INT16;
         }
         if (type == IntegerType.INTEGER) {
-            return org.apache.kudu.Type.INT32;
+            return org.apache.trino.kudu.Type.INT32;
         }
         if (type == BigintType.BIGINT) {
-            return org.apache.kudu.Type.INT64;
+            return org.apache.trino.kudu.Type.INT64;
         }
         if (type == RealType.REAL) {
-            return org.apache.kudu.Type.FLOAT;
+            return org.apache.trino.kudu.Type.FLOAT;
         }
         if (type == DoubleType.DOUBLE) {
-            return org.apache.kudu.Type.DOUBLE;
+            return org.apache.trino.kudu.Type.DOUBLE;
         }
         if (type instanceof DecimalType) {
-            return org.apache.kudu.Type.DECIMAL;
+            return org.apache.trino.kudu.Type.DECIMAL;
         }
         if (type instanceof CharType) {
-            return org.apache.kudu.Type.STRING;
+            return org.apache.trino.kudu.Type.STRING;
         }
         if (type instanceof VarcharType) {
-            return org.apache.kudu.Type.STRING;
+            return org.apache.trino.kudu.Type.STRING;
         }
         if (type instanceof VarbinaryType) {
-            return org.apache.kudu.Type.BINARY;
+            return org.apache.trino.kudu.Type.BINARY;
         }
         if (type == DateType.DATE) {
-            return org.apache.kudu.Type.DATE;
+            return org.apache.trino.kudu.Type.DATE;
         }
         if (type.equals(TIMESTAMP_MILLIS)) {
-            return org.apache.kudu.Type.UNIXTIME_MICROS;
+            return org.apache.trino.kudu.Type.UNIXTIME_MICROS;
         }
         throw new TrinoException(NOT_SUPPORTED, "Unsupported type: " + type);
     }
@@ -97,7 +97,7 @@ public final class TypeHelper
         return fromKuduClientType(column.getType(), column.getTypeAttributes());
     }
 
-    private static Type fromKuduClientType(org.apache.kudu.Type ktype, ColumnTypeAttributes attributes)
+    private static Type fromKuduClientType(org.apache.trino.kudu.Type ktype, ColumnTypeAttributes attributes)
     {
         switch (ktype) {
             case BOOL:

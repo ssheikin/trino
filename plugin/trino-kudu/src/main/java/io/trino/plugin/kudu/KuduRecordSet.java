@@ -19,9 +19,9 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.RecordCursor;
 import io.trino.spi.connector.RecordSet;
 import io.trino.spi.type.Type;
-import org.apache.kudu.Schema;
-import org.apache.kudu.client.KuduScanner;
-import org.apache.kudu.client.KuduTable;
+import org.apache.trino.kudu.Schema;
+import org.apache.trino.kudu.client.KuduScanner;
+import org.apache.trino.kudu.client.KuduTable;
 
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;

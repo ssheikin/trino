@@ -20,11 +20,11 @@ import io.trino.spi.Page;
 import io.trino.spi.block.Block;
 import io.trino.spi.connector.BucketFunction;
 import io.trino.spi.type.Type;
-import org.apache.kudu.Schema;
-import org.apache.kudu.client.KeyEncoderAccessor;
-import org.apache.kudu.client.KuduTable;
-import org.apache.kudu.client.PartialRow;
-import org.apache.kudu.client.PartitionSchema.HashBucketSchema;
+import org.apache.trino.kudu.Schema;
+import org.apache.trino.kudu.client.KeyEncoderAccessor;
+import org.apache.trino.kudu.client.KuduTable;
+import org.apache.trino.kudu.client.PartialRow;
+import org.apache.trino.kudu.client.PartitionSchema.HashBucketSchema;
 
 import java.util.List;
 

@@ -24,7 +24,7 @@ import io.trino.plugin.base.mapping.IdentifierMapping;
 import io.trino.plugin.kudu.schema.NoSchemaEmulation;
 import io.trino.plugin.kudu.schema.SchemaEmulation;
 import io.trino.plugin.kudu.schema.SchemaEmulationByTableNameConvention;
-import org.apache.kudu.client.KuduClient;
+import org.apache.trino.kudu.client.KuduClient;
 
 import java.util.function.Function;
 
@@ -33,7 +33,7 @@ import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.base.util.SystemProperties.setJavaSecurityKrb5Conf;
 import static io.trino.plugin.kudu.KuduAuthenticationConfig.KuduAuthenticationType.KERBEROS;
 import static io.trino.plugin.kudu.KuduAuthenticationConfig.KuduAuthenticationType.NONE;
-import static org.apache.kudu.client.KuduClient.KuduClientBuilder;
+import static org.apache.trino.kudu.client.KuduClient.KuduClientBuilder;
 
 public class KuduSecurityModule
         extends AbstractConfigurationAwareModule
