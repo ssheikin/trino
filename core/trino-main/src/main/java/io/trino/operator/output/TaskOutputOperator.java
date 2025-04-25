@@ -53,7 +53,7 @@ public class TaskOutputOperator
         @Override
         public OperatorFactory createOutputOperator(int operatorId, PlanNodeId planNodeId, List<Type> types, Function<Page, Page> pagePreprocessor, PagesSerdeFactory serdeFactory)
         {
-            return new TaskOutputOperatorFactory(operatorId, planNodeId, outputBuffer, pagePreprocessor, serdeFactory);
+            return new TaskOutputOperatorFactory(operatorId, planNodeId, outputBuffer, types, pagePreprocessor, serdeFactory);
         }
     }
 
@@ -63,14 +63,16 @@ public class TaskOutputOperator
         private final int operatorId;
         private final PlanNodeId planNodeId;
         private final OutputBuffer outputBuffer;
+        private final List<Type> types;
         private final Function<Page, Page> pagePreprocessor;
         private final PagesSerdeFactory serdeFactory;
 
-        public TaskOutputOperatorFactory(int operatorId, PlanNodeId planNodeId, OutputBuffer outputBuffer, Function<Page, Page> pagePreprocessor, PagesSerdeFactory serdeFactory)
+        public TaskOutputOperatorFactory(int operatorId, PlanNodeId planNodeId, OutputBuffer outputBuffer, List<Type> types, Function<Page, Page> pagePreprocessor, PagesSerdeFactory serdeFactory)
         {
             this.operatorId = operatorId;
             this.planNodeId = requireNonNull(planNodeId, "planNodeId is null");
             this.outputBuffer = requireNonNull(outputBuffer, "outputBuffer is null");
+            this.types = ImmutableList.copyOf(types);
             this.pagePreprocessor = requireNonNull(pagePreprocessor, "pagePreprocessor is null");
             this.serdeFactory = requireNonNull(serdeFactory, "serdeFactory is null");
         }
@@ -79,7 +81,7 @@ public class TaskOutputOperator
         public Operator createOperator(DriverContext driverContext)
         {
             OperatorContext operatorContext = driverContext.addOperatorContext(operatorId, planNodeId, TaskOutputOperator.class.getSimpleName());
-            return new TaskOutputOperator(operatorContext, outputBuffer, pagePreprocessor, serdeFactory);
+            return new TaskOutputOperator(operatorContext, outputBuffer, types, pagePreprocessor, serdeFactory);
         }
 
         @Override
@@ -88,21 +90,23 @@ public class TaskOutputOperator
         @Override
         public OperatorFactory duplicate()
         {
-            return new TaskOutputOperatorFactory(operatorId, planNodeId, outputBuffer, pagePreprocessor, serdeFactory);
+            return new TaskOutputOperatorFactory(operatorId, planNodeId, outputBuffer, types, pagePreprocessor, serdeFactory);
         }
     }
 
     private final OperatorContext operatorContext;
     private final OutputBuffer outputBuffer;
+    private final List<Type> types;
     private final Function<Page, Page> pagePreprocessor;
     private final PageSerializer serializer;
     private ListenableFuture<Void> isBlocked = NOT_BLOCKED;
     private boolean finished;
 
-    public TaskOutputOperator(OperatorContext operatorContext, OutputBuffer outputBuffer, Function<Page, Page> pagePreprocessor, PagesSerdeFactory serdeFactory)
+    public TaskOutputOperator(OperatorContext operatorContext, OutputBuffer outputBuffer, List<Type> types, Function<Page, Page> pagePreprocessor, PagesSerdeFactory serdeFactory)
     {
         this.operatorContext = requireNonNull(operatorContext, "operatorContext is null");
         this.outputBuffer = requireNonNull(outputBuffer, "outputBuffer is null");
+        this.types = ImmutableList.copyOf(types);
         this.pagePreprocessor = requireNonNull(pagePreprocessor, "pagePreprocessor is null");
         this.serializer = serdeFactory.createSerializer(operatorContext.getSession().getExchangeEncryptionKey().map(Ciphers::deserializeAesEncryptionKey));
 
@@ -167,7 +171,7 @@ public class TaskOutputOperator
         List<Page> split = splitPage(page, DEFAULT_MAX_PAGE_SIZE_IN_BYTES);
         ImmutableList.Builder<Slice> builder = ImmutableList.builderWithExpectedSize(split.size());
         for (Page p : split) {
-            builder.add(serializer.serialize(p));
+            builder.add(serializer.serialize(p, types));
         }
         return builder.build();
     }
