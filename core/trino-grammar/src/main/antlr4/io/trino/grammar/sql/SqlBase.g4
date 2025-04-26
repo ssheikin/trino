@@ -256,11 +256,15 @@ propertyValue
 
 queryNoWith
     : queryTerm
-      (ORDER BY sortItem (',' sortItem)*)?
+      orderBy?
       (OFFSET offset=rowCount (ROW | ROWS)?)?
       ( (LIMIT limit=limitRowCount)
       | (FETCH (FIRST | NEXT) (fetchFirst=rowCount)? (ROW | ROWS) (ONLY | WITH TIES))
       )?
+    ;
+
+orderBy
+    : ORDER BY sortItem (',' sortItem)*
     ;
 
 limitRowCount
@@ -327,7 +331,7 @@ windowDefinition
 windowSpecification
     : (existingWindowName=identifier)?
       (PARTITION BY partition+=expression (',' partition+=expression)*)?
-      (ORDER BY sortItem (',' sortItem)*)?
+      orderBy?
       windowFrame?
     ;
 
@@ -398,7 +402,7 @@ patternRecognition
     : aliasedRelation (
         MATCH_RECOGNIZE '('
           (PARTITION BY partition+=expression (',' partition+=expression)*)?
-          (ORDER BY sortItem (',' sortItem)*)?
+          orderBy?
           (MEASURES measureDefinition (',' measureDefinition)*)?
           rowsPerMatch?
           (AFTER MATCH skipTo)?
@@ -585,12 +589,12 @@ primaryExpression
     | ROW '(' expression (',' expression)* ')'                                            #rowConstructor
     | name=LISTAGG '(' setQuantifier? expression (',' string)?
         (ON OVERFLOW listAggOverflowBehavior)? ')'
-        (WITHIN GROUP '(' ORDER BY sortItem (',' sortItem)* ')')
+        (WITHIN GROUP '(' orderBy ')')
         filter? over?                                                                     #listagg
     | processingMode? qualifiedName '(' (label=identifier '.')? ASTERISK ')'
         filter? over?                                                                     #functionCall
     | processingMode? qualifiedName '(' (setQuantifier? expression (',' expression)*)?
-        (ORDER BY sortItem (',' sortItem)*)? ')' filter? (nullTreatment? over)?           #functionCall
+        orderBy? ')' filter? (nullTreatment? over)?                                       #functionCall
     | identifier over                                                                     #measure
     | identifier '->' expression                                                          #lambda
     | '(' (identifier (',' identifier)*)? ')' '->' expression                             #lambda
