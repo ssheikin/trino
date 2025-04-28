@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.json.JsonCodec;
 import io.airlift.units.DataSize;
+import io.trino.FeaturesConfig;
 import io.trino.Session;
 import io.trino.cache.CommonPlanAdaptation.PlanSignatureWithPredicate;
 import io.trino.execution.ScheduledSplit;
@@ -143,7 +144,7 @@ public class TestCacheDriverFactory
         registry.loadCacheManager(cacheManagerFactory, ImmutableMap.of());
         splitCache = cacheManagerFactory.getCacheManager().getSplitCache();
         TypeManager typeManager = new TestingTypeManager();
-        tupleDomainCodec = getTupleDomainJsonCodec(new InternalBlockEncodingSerde(new BlockEncodingManager(), typeManager), typeManager);
+        tupleDomainCodec = getTupleDomainJsonCodec(new InternalBlockEncodingSerde(new BlockEncodingManager(new FeaturesConfig()), typeManager), typeManager);
         scheduledExecutor = Executors.newScheduledThreadPool(1);
     }
 
