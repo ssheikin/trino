@@ -20,21 +20,21 @@ import io.starburst.vbyte.VByteEncoder;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockEncoding;
 import io.trino.spi.block.BlockEncodingSerde;
-import io.trino.spi.block.LongArrayBlock;
+import io.trino.spi.block.IntArrayBlock;
 
 import java.util.Optional;
 
-import static io.trino.block.VByteUtils.vByteDecodeLongs;
-import static io.trino.block.VByteUtils.vByteEncodeLongs;
+import static io.trino.block.VByteUtils.vByteDecodeInts;
+import static io.trino.block.VByteUtils.vByteEncodeInts;
 import static io.trino.spi.block.EncoderUtil.decodeNullBits;
 import static io.trino.spi.block.EncoderUtil.encodeNullsAsBits;
 import static io.trino.spi.block.EncoderUtil.retrieveNullBits;
 import static java.lang.System.arraycopy;
 
-public class LongArrayVByteBlockEncoding
+public class IntArrayVByteBlockEncoding
         implements BlockEncoding
 {
-    public static final String NAME = "LONG_ARRAY_VB";
+    public static final String NAME = "INT_ARRAY_VB";
 
     private final VByteEncoder vByteEncoder = VByteEncoder.create();
     private final VByteDecoder vByteDecoder = VByteDecoder.create();
@@ -48,52 +48,53 @@ public class LongArrayVByteBlockEncoding
     @Override
     public Class<? extends Block> getBlockClass()
     {
-        return LongArrayBlock.class;
+        return IntArrayBlock.class;
     }
 
     @Override
     public void writeBlock(BlockEncodingSerde blockEncodingSerde, SliceOutput sliceOutput, Block block)
     {
-        LongArrayBlock longArrayBlock = (LongArrayBlock) block;
-        int positionCount = longArrayBlock.getPositionCount();
+        IntArrayBlock intArrayBlock = (IntArrayBlock) block;
+        int positionCount = intArrayBlock.getPositionCount();
         sliceOutput.appendInt(positionCount);
 
-        encodeNullsAsBits(sliceOutput, longArrayBlock);
+        encodeNullsAsBits(sliceOutput, intArrayBlock);
 
-        if (!longArrayBlock.mayHaveNull()) {
-            vByteEncodeLongs(vByteEncoder, sliceOutput, longArrayBlock.getRawValues(), longArrayBlock.getRawValuesOffset(), longArrayBlock.getPositionCount());
+        if (!intArrayBlock.mayHaveNull()) {
+            vByteEncodeInts(vByteEncoder, sliceOutput, intArrayBlock.getRawValues(), intArrayBlock.getRawValuesOffset(), intArrayBlock.getPositionCount());
         }
         else {
-            long[] valuesWithoutNull = new long[positionCount];
+            int[] valuesWithoutNull = new int[positionCount];
             int nonNullPositionCount = 0;
             for (int i = 0; i < positionCount; i++) {
-                valuesWithoutNull[nonNullPositionCount] = longArrayBlock.getLong(i);
-                if (!longArrayBlock.isNull(i)) {
+                valuesWithoutNull[nonNullPositionCount] = intArrayBlock.getInt(i);
+                if (!intArrayBlock.isNull(i)) {
                     nonNullPositionCount++;
                 }
             }
 
             sliceOutput.writeInt(nonNullPositionCount);
-            vByteEncodeLongs(vByteEncoder, sliceOutput, valuesWithoutNull, 0, nonNullPositionCount);
+
+            vByteEncodeInts(vByteEncoder, sliceOutput, valuesWithoutNull, 0, nonNullPositionCount);
         }
     }
 
     @Override
-    public LongArrayBlock readBlock(BlockEncodingSerde blockEncodingSerde, SliceInput sliceInput)
+    public IntArrayBlock readBlock(BlockEncodingSerde blockEncodingSerde, SliceInput sliceInput)
     {
         int positionCount = sliceInput.readInt();
 
         byte[] valueIsNullPacked = retrieveNullBits(sliceInput, positionCount);
-        long[] values = new long[positionCount];
+        int[] values = new int[positionCount];
 
         if (valueIsNullPacked == null) {
-            vByteDecodeLongs(vByteDecoder, sliceInput, positionCount, values);
-            return new LongArrayBlock(positionCount, Optional.empty(), values);
+            vByteDecodeInts(vByteDecoder, sliceInput, positionCount, values);
+            return new IntArrayBlock(positionCount, Optional.empty(), values);
         }
         boolean[] valueIsNull = decodeNullBits(valueIsNullPacked, positionCount);
 
         int nonNullPositionCount = sliceInput.readInt();
-        vByteDecodeLongs(vByteDecoder, sliceInput, nonNullPositionCount, values);
+        vByteDecodeInts(vByteDecoder, sliceInput, nonNullPositionCount, values);
 
         int position = nonNullPositionCount - 1;
 
@@ -122,6 +123,6 @@ public class LongArrayVByteBlockEncoding
             }
             // Do nothing if there are only nulls
         }
-        return new LongArrayBlock(positionCount, Optional.of(valueIsNull), values);
+        return new IntArrayBlock(positionCount, Optional.of(valueIsNull), values);
     }
 }
