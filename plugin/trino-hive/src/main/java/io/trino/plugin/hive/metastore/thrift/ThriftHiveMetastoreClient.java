@@ -197,7 +197,7 @@ public class ThriftHiveMetastoreClient
     public List<TableMeta> getTableMeta(String databaseName)
             throws TException
     {
-        // TODO: remove this once Unity adds support for getTableMeta
+        // TODO: remove this once Unity adds support for getTableMeta and HMS will fix incorrect behaviour on tables with tbl_type NULL https://starburstdata.atlassian.net/browse/SEP-16581
         if (!metastoreSupportsTableMeta) {
             String catalogDatabaseName = prependCatalogToDbName(catalogName, databaseName);
             Map<String, TableMeta> tables = new HashMap<>();
