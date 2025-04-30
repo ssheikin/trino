@@ -691,6 +691,11 @@ public class DefaultJdbcMetadata
             joinConditions.add(converted.get());
         }
 
+        List<ParameterizedExpression> convertedJoinConditions = joinConditions.build();
+        if (convertedJoinConditions.isEmpty()) {
+            return Optional.empty();
+        }
+
         Optional<PreparedQuery> joinQuery = jdbcClient.implementJoin(
                 session,
                 joinType,
@@ -700,7 +705,7 @@ public class DefaultJdbcMetadata
                 asPreparedQuery(rightHandle),
                 newRightColumns.entrySet().stream()
                         .collect(toImmutableMap(Entry::getKey, entry -> entry.getValue().getColumnName())),
-                joinConditions.build(),
+                convertedJoinConditions,
                 statistics);
 
         if (joinQuery.isEmpty()) {
