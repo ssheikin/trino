@@ -124,6 +124,7 @@ import io.trino.operator.Driver;
 import io.trino.operator.DriverContext;
 import io.trino.operator.FlatHashStrategyCompiler;
 import io.trino.operator.GroupByHashPageIndexerFactory;
+import io.trino.operator.NullSafeHashCompiler;
 import io.trino.operator.PagesIndex;
 import io.trino.operator.PagesIndexPageSorter;
 import io.trino.operator.SplitDriverFactory;
@@ -299,6 +300,7 @@ public class PlanTester
     private final InternalNodeManager nodeManager;
     private final TypeOperators typeOperators;
     private final BlockTypeOperators blockTypeOperators;
+    private final NullSafeHashCompiler hashCompiler;
     private final PlannerContext plannerContext;
     private final GlobalFunctionCatalog globalFunctionCatalog;
     private final StatsCalculator statsCalculator;
@@ -369,6 +371,7 @@ public class PlanTester
 
         this.typeOperators = new TypeOperators();
         this.blockTypeOperators = new BlockTypeOperators(typeOperators);
+        this.hashCompiler = new NullSafeHashCompiler(typeOperators);
         this.sqlParser = new SqlParser();
         this.nodeManager = new InMemoryNodeManager();
         PageSorter pageSorter = new PagesIndexPageSorter(new PagesIndex.TestingFactory(false));
@@ -451,7 +454,7 @@ public class PlanTester
         this.indexManager = new IndexManager(createIndexProvider(catalogManager));
         NodeScheduler nodeScheduler = new NodeScheduler(new UniformNodeSelectorFactory(nodeManager, nodeSchedulerConfig, new NodeTaskMap(finalizerService)));
         this.sessionPropertyManager = createSessionPropertyManager(catalogManager, taskManagerConfig, cacheConfig, optimizerConfig);
-        this.nodePartitioningManager = new NodePartitioningManager(nodeScheduler, typeOperators, createNodePartitioningProvider(catalogManager));
+        this.nodePartitioningManager = new NodePartitioningManager(nodeScheduler, hashCompiler, createNodePartitioningProvider(catalogManager));
         TableProceduresRegistry tableProceduresRegistry = new TableProceduresRegistry(createTableProceduresProvider(catalogManager));
         FunctionManager functionManager = new FunctionManager(createFunctionProvider(catalogManager), globalFunctionCatalog, languageFunctionManager);
         this.schemaPropertyManager = createSchemaPropertyManager(catalogManager);
@@ -841,6 +844,7 @@ public class PlanTester
                 new DynamicFilterConfig(),
                 blockTypeOperators,
                 typeOperators,
+                hashCompiler,
                 tableExecuteContextManager,
                 exchangeManagerRegistry,
                 cacheManagerRegistry,
