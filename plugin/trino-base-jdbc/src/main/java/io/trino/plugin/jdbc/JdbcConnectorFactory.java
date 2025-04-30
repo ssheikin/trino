@@ -63,7 +63,9 @@ public class JdbcConnectorFactory
 
         Bootstrap app = createBootstrap(catalogName, requiredConfig, context);
 
-        Injector injector = app.initialize();
+        Injector injector = app
+                .loadSecretsPlugins()
+                .initialize();
 
         return injector.getInstance(JdbcConnector.class);
     }
