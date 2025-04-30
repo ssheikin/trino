@@ -99,7 +99,7 @@ public class GlueCatalogIdInterceptor
             case CreateUserDefinedFunctionRequest.Builder builder -> builder.catalogId(catalogId);
             case UpdateUserDefinedFunctionRequest.Builder builder -> builder.catalogId(catalogId);
             case DeleteUserDefinedFunctionRequest.Builder builder -> builder.catalogId(catalogId);
-            default -> throw new IllegalArgumentException("Unsupported request: " + request);
+            default -> {}
         }
     }
 }
