@@ -206,12 +206,12 @@ public interface Metastore
         /**
          * Match all values that the given value is a prefix of.
          */
-        record MatchByPrefix(String prefix)
+        record MatchByPrefix(String... prefixes)
                 implements PropertyMatch
         {
             public MatchByPrefix
             {
-                requireNonNull(prefix, "prefix is null");
+                requireNonNull(prefixes, "prefixes is null");
             }
         }
 
