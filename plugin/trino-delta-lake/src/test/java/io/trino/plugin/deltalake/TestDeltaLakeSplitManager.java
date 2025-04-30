@@ -42,6 +42,7 @@ import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogSynchronize
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogWriterFactory;
 import io.trino.plugin.hive.HiveTransactionHandle;
 import io.trino.plugin.hive.NodeVersion;
+import io.trino.plugin.hive.metastore.MetastoreTypeConfig;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.plugin.hive.parquet.ParquetWriterConfig;
 import io.trino.spi.SplitWeight;
@@ -239,7 +240,8 @@ public class TestDeltaLakeSplitManager
                 false,
                 new NodeVersion("test_version"),
                 new DeltaLakeTableMetadataScheduler(new TestingNodeManager(), TESTING_TYPE_MANAGER, new DeltaLakeFileMetastoreTableOperationsProvider(hiveMetastoreFactory), Integer.MAX_VALUE, new DeltaLakeConfig()),
-                newDirectExecutorService());
+                newDirectExecutorService(),
+                new MetastoreTypeConfig());
 
         ConnectorSession session = testingConnectorSessionWithConfig(deltaLakeConfig);
         DeltaLakeTransactionManager deltaLakeTransactionManager = new DeltaLakeTransactionManager(metadataFactory);

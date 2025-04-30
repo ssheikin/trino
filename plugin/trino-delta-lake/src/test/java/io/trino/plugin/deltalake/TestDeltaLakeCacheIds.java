@@ -44,6 +44,7 @@ import io.trino.plugin.deltalake.transactionlog.writer.NoIsolationSynchronizer;
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogSynchronizerManager;
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogWriterFactory;
 import io.trino.plugin.hive.NodeVersion;
+import io.trino.plugin.hive.metastore.MetastoreTypeConfig;
 import io.trino.plugin.hive.metastore.UnimplementedHiveMetastore;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.spi.SplitWeight;
@@ -144,7 +145,8 @@ public class TestDeltaLakeCacheIds
                 true,
                 new NodeVersion("test_version"),
                 new DeltaLakeTableMetadataScheduler(nodeManager, TESTING_TYPE_MANAGER, new DeltaLakeFileMetastoreTableOperationsProvider(hiveMetastoreFactory), Integer.MAX_VALUE, config),
-                newDirectExecutorService());
+                newDirectExecutorService(),
+                new MetastoreTypeConfig());
         metadata = new DeltaLakeCacheMetadata(
                 createJsonCodec(DeltaLakeCacheTableId.class),
                 createJsonCodec(DeltaLakeColumnHandle.class));

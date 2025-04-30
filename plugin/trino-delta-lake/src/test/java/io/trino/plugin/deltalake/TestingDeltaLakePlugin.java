@@ -21,6 +21,7 @@ import io.trino.filesystem.local.LocalFileSystemFactory;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.deltalake.transactionlog.writer.LocalTransactionLogSynchronizer;
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogSynchronizer;
+import io.trino.plugin.hive.metastore.MetastoreTypeConfig;
 import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
@@ -110,6 +111,7 @@ public class TestingDeltaLakePlugin
                     newMapBinder(binder, String.class, TransactionLogSynchronizer.class)
                             .addBinding("local").toInstance(new LocalTransactionLogSynchronizer(localFileSystemFactory));
                     configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, defaults -> defaults.setCatalogDirectory("local:///"));
+                    configBinder(binder).bindConfig(MetastoreTypeConfig.class);
                 };
             }
         });
