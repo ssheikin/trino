@@ -263,7 +263,7 @@ public class SourcePartitionedScheduler
                 nextSplitBatchFuture = splitSource.getNextBatch(splitBatchSize);
 
                 long start = System.nanoTime();
-                addSuccessCallback(nextSplitBatchFuture, () -> stageExecution.recordGetSplitTime(start));
+                addSuccessCallback(nextSplitBatchFuture, () -> stageExecution.recordGetSplitTime(partitionedNode, start));
                 sourceTable.ifPresent(source -> addSuccessCallback(
                         nextSplitBatchFuture,
                         (splitBatch) -> scheduledSplitsPerTableTracker.recordScheduledSplitCount(source, partitionedNode, splitBatch.getSplits().size())));
