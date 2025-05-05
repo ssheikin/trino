@@ -519,7 +519,7 @@ public final class DictionaryBlock
         return new DictionaryBlock(0, positionCount, newDictionary.getUnderlyingValueBlock(), newIds, false, false, randomDictionaryId());
     }
 
-    boolean isSequentialIds()
+    public boolean isSequentialIds()
     {
         if (uniqueIds == -1) {
             calculateCompactSize();
@@ -528,7 +528,7 @@ public final class DictionaryBlock
         return isSequentialIds;
     }
 
-    int getUniqueIds()
+    public int getUniqueIds()
     {
         if (uniqueIds == -1) {
             calculateCompactSize();
