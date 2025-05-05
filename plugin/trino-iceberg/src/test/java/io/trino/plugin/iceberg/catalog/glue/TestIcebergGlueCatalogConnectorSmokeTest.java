@@ -15,6 +15,7 @@ package io.trino.plugin.iceberg.catalog.glue;
 
 import com.amazonaws.services.glue.AWSGlueAsync;
 import com.amazonaws.services.glue.AWSGlueAsyncClientBuilder;
+import com.amazonaws.services.glue.model.Column;
 import com.amazonaws.services.glue.model.DeleteTableRequest;
 import com.amazonaws.services.glue.model.EntityNotFoundException;
 import com.amazonaws.services.glue.model.GetTableRequest;
@@ -54,6 +55,8 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import java.util.List;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.MoreCollectors.onlyElement;
+import static io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter.getColumnParameters;
 import static io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter.getStorageDescriptor;
 import static io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter.getTableParameters;
 import static io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter.getTableType;
@@ -197,6 +200,26 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
             assertUpdate("CALL system.register_table(CURRENT_SCHEMA, '" + table.getName() + "', '" + initialLocation + "')");
             assertThat(getStorageDescriptor(getGlueTable(table.getName())).orElseThrow().getLocation())
                     .isEqualTo(initialLocation);
+        }
+    }
+
+    @Test
+    void testDefaultValueParameter()
+    {
+        try (TestTable table = newTrinoTable("test_column_default", "(x INT DEFAULT 123) WITH (format_version=3)")) {
+            Table glueTable = getGlueTable(table.getName());
+            Column column = getStorageDescriptor(glueTable).orElseThrow().getColumns().stream().collect(onlyElement());
+            assertThat(getColumnParameters(column)).containsEntry("trino_default_value", "123");
+        }
+    }
+
+    @Test
+    void testTooLongDefaultValueParameter()
+    {
+        String defaultValue = "x".repeat(512001);
+        try (TestTable table = newTrinoTable("test_column_default", "(x VARCHAR DEFAULT '" + defaultValue + "') WITH (format_version=3)")) {
+            Table glueTable = getGlueTable(table.getName());
+            assertThat(getStorageDescriptor(glueTable).orElseThrow().getColumns()).isEmpty();
         }
     }
 
