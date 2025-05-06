@@ -321,7 +321,7 @@ public class DockerContainer
             }
         }
 
-        ImmutableList<String> filesToCopy = files.build();
+        List<String> filesToCopy = files.build();
         if (filesToCopy.isEmpty()) {
             log.warn("There are no log files to copy from container %s", logicalName);
             return;

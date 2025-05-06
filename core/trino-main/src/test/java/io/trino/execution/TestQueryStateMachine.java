@@ -767,7 +767,7 @@ public class TestQueryStateMachine
         private List<TrinoWarning> warnings = ImmutableList.of();
         private String setAuthorizationUser;
         private TransactionId transactionId;
-        private ImmutableMap<String, String> addPreparedStatements = ImmutableMap.of();
+        private Map<String, String> addPreparedStatements = ImmutableMap.of();
 
         @CanIgnoreReturnValue
         public QueryStateMachineBuilder withTicker(Ticker ticker)
