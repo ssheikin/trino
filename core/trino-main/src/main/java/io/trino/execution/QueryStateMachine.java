@@ -684,6 +684,8 @@ public class QueryStateMachine
         long revocableMemoryReservation = 0;
         long totalMemoryReservation = 0;
 
+        long spilledDataSize = 0;
+
         long totalScheduledTime = 0;
         long failedScheduledTime = 0;
         long totalCpuTime = 0;
@@ -750,6 +752,7 @@ public class QueryStateMachine
             userMemoryReservation += stageStats.getUserMemoryReservation().toBytes();
             revocableMemoryReservation += stageStats.getRevocableMemoryReservation().toBytes();
             totalMemoryReservation += stageStats.getTotalMemoryReservation().toBytes();
+            spilledDataSize += stageStats.getSpilledDataSize().toBytes();
             totalScheduledTime += stageStats.getTotalScheduledTime().roundTo(MILLISECONDS);
             failedScheduledTime += stageStats.getFailedScheduledTime().roundTo(MILLISECONDS);
             totalCpuTime += stageStats.getTotalCpuTime().roundTo(MILLISECONDS);
@@ -907,6 +910,8 @@ public class QueryStateMachine
                 succinctBytes(getPeakTaskUserMemory()),
                 succinctBytes(getPeakTaskRevocableMemory()),
                 succinctBytes(getPeakTaskTotalMemory()),
+
+                succinctBytes(spilledDataSize),
 
                 scheduled,
                 progressPercentage,
@@ -1554,6 +1559,7 @@ public class QueryStateMachine
                 queryStats.getPeakTaskUserMemory(),
                 queryStats.getPeakTaskRevocableMemory(),
                 queryStats.getPeakTaskTotalMemory(),
+                queryStats.getSpilledDataSize(),
                 queryStats.isScheduled(),
                 queryStats.getProgressPercentage(),
                 queryStats.getRunningPercentage(),
