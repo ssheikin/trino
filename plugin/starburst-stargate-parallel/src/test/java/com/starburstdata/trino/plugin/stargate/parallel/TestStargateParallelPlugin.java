@@ -40,7 +40,8 @@ class TestStargateParallelPlugin
                 "ssl.enabled", "true",
                 "ssl.truststore.password", "password");
 
-        var ignored = factory.create("test", properties, new TestingConnectorContext());
+        factory.create("test", properties, new TestingConnectorContext())
+                .shutdown();
     }
 
     @Test
