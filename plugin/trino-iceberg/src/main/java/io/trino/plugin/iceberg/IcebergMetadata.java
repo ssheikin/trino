@@ -2551,6 +2551,9 @@ public class IcebergMetadata
                 catch (IOException e) {
                     throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
                 }
+                catch (NotFoundException e) {
+                    throw new TrinoException(ICEBERG_INVALID_METADATA, "Manifest file does not exist: " + manifest.path());
+                }
             }
         }
 
