@@ -10,7 +10,7 @@
 
     <groupId>io.trino</groupId>
     <artifactId>trino-root</artifactId>
-    <version>474-e.0.17-SNAPSHOT</version>
+    <version>474-e.0.17</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
