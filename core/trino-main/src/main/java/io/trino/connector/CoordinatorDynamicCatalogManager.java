@@ -63,6 +63,7 @@ import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.util.Executors.executeUntilFailure;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
 
 @ThreadSafe
 public class CoordinatorDynamicCatalogManager
@@ -186,8 +187,10 @@ public class CoordinatorDynamicCatalogManager
     @Override
     public void ensureCatalogsLoaded(Session session, List<CatalogProperties> catalogs)
     {
-        List<CatalogProperties> missingCatalogs = catalogs.stream()
-                .filter(catalog -> !allCatalogs.containsKey(catalog.catalogHandle()))
+        List<CatalogName> missingCatalogs = catalogs.stream()
+                .map(CatalogProperties::catalogHandle)
+                .filter(not(allCatalogs::containsKey))
+                .map(CatalogHandle::getCatalogName)
                 .collect(toImmutableList());
 
         if (!missingCatalogs.isEmpty()) {
