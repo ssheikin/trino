@@ -15,7 +15,6 @@ package io.trino.plugin.iceberg;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.trino.Session;
 import io.trino.connector.MockConnectorFactory;
@@ -1194,12 +1193,6 @@ public abstract class BaseIcebergMaterializedViewTest
             implements ConnectorSplit
     {
         private static final int INSTANCE_SIZE = instanceSize(SequenceConnectorSplit.class);
-
-        @Override
-        public Map<String, String> getSplitInfo()
-        {
-            return ImmutableMap.of();
-        }
 
         @JsonIgnore
         @Override

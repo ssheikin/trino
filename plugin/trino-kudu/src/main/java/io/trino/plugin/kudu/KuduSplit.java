@@ -16,14 +16,13 @@ package io.trino.plugin.kudu;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.trino.spi.HostAddress;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.SchemaTableName;
 
 import java.util.List;
-import java.util.Map;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.slice.SizeOf.instanceSize;
 import static io.airlift.slice.SizeOf.sizeOf;
@@ -89,9 +88,12 @@ public class KuduSplit
     }
 
     @Override
-    public Map<String, String> getSplitInfo()
+    public String toString()
     {
-        return ImmutableMap.of("bucketNumber", String.valueOf(bucketNumber), "addresses", addresses.stream().map(HostAddress::toString).collect(joining(",")));
+        return toStringHelper(this)
+                .add("bucketNumber", bucketNumber)
+                .add("addresses", addresses.stream().map(HostAddress::toString).collect(joining(",")))
+                .toString();
     }
 
     @Override

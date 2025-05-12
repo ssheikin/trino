@@ -18,6 +18,7 @@ import io.trino.spi.connector.ConnectorSplit;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.slice.SizeOf.instanceSize;
 import static io.trino.client.SerializationShim.fromColumns;
@@ -71,12 +72,13 @@ public record StargateParallelSplit(
     }
 
     @Override
-    public Map<String, String> getSplitInfo()
+    public String toString()
     {
-        return Map.of(
-                "encoding", encoding,
-                "segments", Integer.toString(segments.size()),
-                "size", Long.toString(getTotalSegmentsSize()));
+        return toStringHelper(this)
+                .add("encoding", encoding)
+                .add("segments", segments.size())
+                .add("size", getTotalSegmentsSize())
+                .toString();
     }
 
     @Override
