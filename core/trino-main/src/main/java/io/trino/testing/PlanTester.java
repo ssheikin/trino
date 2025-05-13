@@ -446,6 +446,7 @@ public class PlanTester
                 AiModelAccessControl.ALLOW_ALL,
                 optimizerConfig,
                 new ConfigurationFactory(ImmutableMap.of()),
+                new LocalMemoryManager(new NodeMemoryConfig()),
                 secretsResolver));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
         this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager));
