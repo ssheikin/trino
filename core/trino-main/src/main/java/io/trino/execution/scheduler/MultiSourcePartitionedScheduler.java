@@ -50,7 +50,7 @@ public class MultiSourcePartitionedScheduler
     private static final Logger log = Logger.get(MultiSourcePartitionedScheduler.class);
 
     private final StageExecution stageExecution;
-    private final Queue<SourceScheduler> partitionedSourceSchedulers;
+    private final Queue<SourceScheduler> sourceSchedulers;
     private final Map<InternalNode, RemoteTask> scheduledTasks = new HashMap<>();
     private final DynamicFilterService dynamicFilterService;
     private final SplitPlacementPolicy splitPlacementPolicy;
@@ -59,6 +59,7 @@ public class MultiSourcePartitionedScheduler
     public MultiSourcePartitionedScheduler(
             StageExecution stageExecution,
             Map<PlanNodeId, SplitSource> partitionedSplitSources,
+            Map<PlanNodeId, SplitSource> replicatedSplitSources,
             Map<PlanNodeId, Optional<QualifiedObjectName>> sourceTables,
             ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker,
             SplitPlacementPolicy splitPlacementPolicy,
@@ -68,9 +69,21 @@ public class MultiSourcePartitionedScheduler
             BooleanSupplier anySourceTaskBlocked)
     {
         requireNonNull(partitionedSplitSources, "partitionedSplitSources is null");
-        checkArgument(partitionedSplitSources.size() > 1, "It is expected that there will be more than one split sources");
+        checkArgument(replicatedSplitSources.size() + partitionedSplitSources.size() > 1, "It is expected that there will be more than one split sources");
+        checkArgument(!partitionedSplitSources.isEmpty(), "Expected some non-replicated sources");
 
         ImmutableList.Builder<SourceScheduler> sourceSchedulers = ImmutableList.builder();
+        for (PlanNodeId planNodeId : replicatedSplitSources.keySet()) {
+            // replicated sources are used only for exchanges, so we do not need any dynamic filters handling here
+            SplitSource splitSource = replicatedSplitSources.get(planNodeId);
+            SourceScheduler sourceScheduler = new SourceReplicatedScheduler(
+                    stageExecution,
+                    planNodeId,
+                    splitSource,
+                    splitBatchSize,
+                    scheduledTasks);
+            sourceSchedulers.add(sourceScheduler);
+        }
         for (PlanNodeId planNodeId : partitionedSplitSources.keySet()) {
             SplitSource splitSource = partitionedSplitSources.get(planNodeId);
             SourceScheduler sourceScheduler = newSourcePartitionedSchedulerAsSourceScheduler(
@@ -89,7 +102,7 @@ public class MultiSourcePartitionedScheduler
             sourceSchedulers.add(sourceScheduler);
         }
         this.stageExecution = requireNonNull(stageExecution, "stageExecution is null");
-        this.partitionedSourceSchedulers = new ArrayDeque<>(sourceSchedulers.build());
+        this.sourceSchedulers = new ArrayDeque<>(sourceSchedulers.build());
         this.dynamicFilterService = requireNonNull(dynamicFilterService, "dynamicFilterService is null");
         this.splitPlacementPolicy = requireNonNull(splitPlacementPolicy, "splitPlacementPolicy is null");
     }
@@ -120,9 +133,11 @@ public class MultiSourcePartitionedScheduler
         Optional<ScheduleResult.BlockedReason> blockedReason = Optional.empty();
         int splitsScheduled = 0;
 
-        while (!partitionedSourceSchedulers.isEmpty()) {
-            SourceScheduler scheduler = partitionedSourceSchedulers.peek();
+        while (!sourceSchedulers.isEmpty()) {
+            SourceScheduler scheduler = sourceSchedulers.peek();
             ScheduleResult scheduleResult = scheduler.schedule();
+            // keep the replicated splits for later if new tasks are created
+            stageExecution.addReplicatedSplits(scheduleResult.getNewReplicatedSplits());
 
             splitsScheduled += scheduleResult.getSplitsScheduled();
             newScheduledTasks.addAll(scheduleResult.getNewTasks());
@@ -135,18 +150,18 @@ public class MultiSourcePartitionedScheduler
             }
 
             stageExecution.schedulingComplete(scheduler.getPlanNodeId());
-            partitionedSourceSchedulers.remove().close();
+            sourceSchedulers.remove().close();
         }
         if (blockedReason.isPresent()) {
-            return new ScheduleResult(partitionedSourceSchedulers.isEmpty(), newScheduledTasks.build(), blocked, blockedReason.get(), splitsScheduled);
+            return new ScheduleResult(sourceSchedulers.isEmpty(), newScheduledTasks.build(), blocked, blockedReason.get(), splitsScheduled);
         }
-        return new ScheduleResult(partitionedSourceSchedulers.isEmpty(), newScheduledTasks.build(), splitsScheduled);
+        return new ScheduleResult(sourceSchedulers.isEmpty(), newScheduledTasks.build(), splitsScheduled);
     }
 
     @Override
     public void close()
     {
-        for (SourceScheduler sourceScheduler : partitionedSourceSchedulers) {
+        for (SourceScheduler sourceScheduler : sourceSchedulers) {
             try {
                 sourceScheduler.close();
             }
@@ -154,7 +169,7 @@ public class MultiSourcePartitionedScheduler
                 log.warn(t, "Error closing split source");
             }
         }
-        partitionedSourceSchedulers.clear();
+        sourceSchedulers.clear();
     }
 
     private void scheduleTaskOnRandomNode()
