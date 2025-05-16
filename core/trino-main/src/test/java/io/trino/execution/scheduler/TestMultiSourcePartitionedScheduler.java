@@ -701,6 +701,7 @@ public class TestMultiSourcePartitionedScheduler
         return createPipelinedStageExecution(
                 stage,
                 outputBuffers.buildOrThrow(),
+                ImmutableMap.of(),
                 TaskLifecycleListener.NO_OP,
                 new NoOpFailureDetector(),
                 queryExecutor,
