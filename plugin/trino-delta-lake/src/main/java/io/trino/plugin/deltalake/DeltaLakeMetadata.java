@@ -80,6 +80,9 @@ import io.trino.plugin.deltalake.transactionlog.TransactionLogEntries;
 import io.trino.plugin.deltalake.transactionlog.checkpoint.CheckpointWriterManager;
 import io.trino.plugin.deltalake.transactionlog.checkpoint.MetadataAndProtocolEntries;
 import io.trino.plugin.deltalake.transactionlog.checkpoint.TransactionLogTail;
+import io.trino.plugin.deltalake.transactionlog.reader.FileSystemTransactionLogReader;
+import io.trino.plugin.deltalake.transactionlog.reader.TransactionLogReader;
+import io.trino.plugin.deltalake.transactionlog.reader.TransactionLogReaderFactory;
 import io.trino.plugin.deltalake.transactionlog.statistics.DeltaLakeFileStatistics;
 import io.trino.plugin.deltalake.transactionlog.statistics.DeltaLakeJsonFileStatistics;
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionConflictException;
@@ -307,7 +310,6 @@ import static io.trino.plugin.deltalake.transactionlog.TransactionLogParser.getM
 import static io.trino.plugin.deltalake.transactionlog.TransactionLogUtil.getTransactionLogDir;
 import static io.trino.plugin.deltalake.transactionlog.TransactionLogUtil.getTransactionLogJsonEntryPath;
 import static io.trino.plugin.deltalake.transactionlog.checkpoint.TransactionLogTail.getEntriesFromJson;
-import static io.trino.plugin.deltalake.transactionlog.checkpoint.TransactionLogTail.loadNewTail;
 import static io.trino.plugin.deltalake.util.DeltaLakeDomains.fileModifiedTimeMatchesPredicate;
 import static io.trino.plugin.deltalake.util.DeltaLakeDomains.fileSizeMatchesPredicate;
 import static io.trino.plugin.deltalake.util.DeltaLakeDomains.getFileModifiedTimeDomain;
@@ -480,6 +482,7 @@ public class DeltaLakeMetadata
     private final Map<SchemaTableName, Long> latestTableVersions = new ConcurrentHashMap<>();
     private final Map<QueriedTable, TableSnapshot> queriedSnapshots = new ConcurrentHashMap<>();
     private final Executor metadataFetchingExecutor;
+    private final TransactionLogReaderFactory transactionLogReaderFactory;
 
     private record QueriedTable(SchemaTableName schemaTableName, long version)
     {
@@ -513,7 +516,8 @@ public class DeltaLakeMetadata
             boolean useUniqueTableLocation,
             boolean allowManagedTableRename,
             boolean isOperateOnUnityMetastore,
-            Executor metadataFetchingExecutor)
+            Executor metadataFetchingExecutor,
+            TransactionLogReaderFactory transactionLogReaderFactory)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
@@ -540,9 +544,10 @@ public class DeltaLakeMetadata
         this.allowManagedTableRename = allowManagedTableRename;
         this.isOperateOnUnityMetastore = isOperateOnUnityMetastore;
         this.metadataFetchingExecutor = requireNonNull(metadataFetchingExecutor, "metadataFetchingExecutor is null");
+        this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory");
     }
 
-    public TableSnapshot getSnapshot(ConnectorSession session, SchemaTableName table, String tableLocation, Optional<Long> atVersion)
+    public TableSnapshot getSnapshot(ConnectorSession session, TransactionLogReader transactionLogReader, SchemaTableName table, String tableLocation, Optional<Long> atVersion)
     {
         Optional<Long> version = atVersion.or(() -> Optional.ofNullable(latestTableVersions.get(table)));
 
@@ -554,7 +559,7 @@ public class DeltaLakeMetadata
         }
 
         try {
-            TableSnapshot snapshot = transactionLogAccess.loadSnapshot(session, table, tableLocation, version);
+            TableSnapshot snapshot = transactionLogAccess.loadSnapshot(session, transactionLogReader, table, tableLocation, version);
             Long currentVersion = latestTableVersions.put(table, snapshot.getVersion());
             // in case of concurrent call to get snapshot, we could be in the situation,
             // when latestTableVersions contains version but queriedSnapshots doesn't contain snapshot yet
@@ -666,7 +671,7 @@ public class DeltaLakeMetadata
 
         String tableLocation = table.location();
         TrinoFileSystem fileSystem = fileSystemFactory.create(session);
-        TableSnapshot tableSnapshot = getSnapshot(session, tableName, tableLocation, endVersion.map(version -> getVersion(fileSystem, tableLocation, version)));
+        TableSnapshot tableSnapshot = getSnapshot(session, transactionLogReaderFactory.createReader(table), tableName, tableLocation, endVersion.map(version -> getVersion(fileSystem, tableLocation, version)));
 
         MetadataAndProtocolEntries logEntries;
         try {
@@ -982,7 +987,8 @@ public class DeltaLakeMetadata
                 return RelationCommentMetadata.forRelation(tableName, Optional.ofNullable(table.getParameters().get(TABLE_COMMENT)));
             }
 
-            TableSnapshot snapshot = getSnapshot(session, tableName, tableLocation, Optional.empty());
+            TransactionLogReader transactionLogReader = transactionLogReaderFactory.createReader(convertToDeltaMetastoreTable(table));
+            TableSnapshot snapshot = getSnapshot(session, transactionLogReader, tableName, tableLocation, Optional.empty());
             MetadataEntry metadata = transactionLogAccess.getMetadataEntry(session, snapshot);
             enqueueUpdateInfo(session, table.getDatabaseName(), table.getTableName(), snapshot.getVersion(), metadata.getSchemaString(), Optional.ofNullable(metadata.getDescription()));
             return RelationCommentMetadata.forRelation(tableName, Optional.ofNullable(metadata.getDescription()));
@@ -1058,7 +1064,8 @@ public class DeltaLakeMetadata
                             List<ColumnMetadata> columnsMetadata = metadataScheduler.getColumnsMetadata(table);
                             return Stream.of(TableColumnsMetadata.forTable(tableName, columnsMetadata));
                         }
-                        TableSnapshot snapshot = transactionLogAccess.loadSnapshot(session, tableName, tableLocation, Optional.empty());
+                        TransactionLogReader transactionLogReader = transactionLogReaderFactory.createReader(convertToDeltaMetastoreTable(table));
+                        TableSnapshot snapshot = transactionLogAccess.loadSnapshot(session, transactionLogReader, tableName, tableLocation, Optional.empty());
                         MetadataEntry metadata = transactionLogAccess.getMetadataEntry(session, snapshot);
                         ProtocolEntry protocol = transactionLogAccess.getProtocolEntry(session, snapshot);
                         List<ColumnMetadata> columnMetadata = getTableColumnMetadata(metadata, protocol);
@@ -1274,9 +1281,10 @@ public class DeltaLakeMetadata
                 ProtocolEntry protocolEntry;
                 if (replaceExistingTable) {
                     commitVersion = getMandatoryCurrentVersion(fileSystem, location, tableHandle.getReadVersion()) + 1;
-                    transactionLogWriter = transactionLogWriterFactory.newWriter(session, location);
+                    transactionLogWriter = transactionLogWriterFactory.createWriter(session, tableHandle);
                     try (Stream<AddFileEntry> activeFiles = transactionLogAccess.getActiveFiles(
                             session,
+                            transactionLogReaderFactory.createReader(tableHandle),
                             getSnapshot(session, tableHandle),
                             tableHandle.getMetadataEntry(),
                             tableHandle.getProtocolEntry(),
@@ -1307,6 +1315,7 @@ public class DeltaLakeMetadata
                                 .setDescription(tableMetadata.getComment())
                                 .setSchemaString(serializeSchemaAsJson(deltaTable.build()))
                                 .setPartitionColumns(getPartitionedBy(tableMetadata.getProperties()))
+                                // TODO: please care about the ucTableId property when Unity catalog support creating managed tables
                                 .setConfiguration(configurationForNewTable(checkpointInterval, changeDataFeedEnabled, deletionVectorsEnabled, columnMappingMode, maxFieldId, inCommitTimestampEnabled)),
                         inCommitTimestampEnabled.orElse(false) ? OptionalLong.of(System.currentTimeMillis()) : OptionalLong.empty());
 
@@ -1696,7 +1705,7 @@ public class DeltaLakeMetadata
                             handle.readVersion().getAsLong(),
                             commitVersion - 1));
                 }
-                transactionLogWriter = transactionLogWriterFactory.newWriter(session, handle.location());
+                transactionLogWriter = transactionLogWriterFactory.createFileSystemWriter(session, location);
             }
             appendTableEntries(
                     commitVersion,
@@ -1716,6 +1725,7 @@ public class DeltaLakeMetadata
                 DeltaLakeTableHandle deltaLakeTableHandle = (DeltaLakeTableHandle) getTableHandle(session, schemaTableName, Optional.empty(), Optional.empty());
                 try (Stream<AddFileEntry> activeFiles = transactionLogAccess.getActiveFiles(
                         session,
+                        transactionLogReaderFactory.createReader(deltaLakeTableHandle),
                         getSnapshot(session, deltaLakeTableHandle),
                         deltaLakeTableHandle.getMetadataEntry(),
                         deltaLakeTableHandle.getProtocolEntry(),
@@ -1808,7 +1818,7 @@ public class DeltaLakeMetadata
         try {
             long commitVersion = handle.getReadVersion() + 1;
 
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, handle.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, handle);
             appendTableEntries(
                     commitVersion,
                     transactionLogWriter,
@@ -1849,7 +1859,7 @@ public class DeltaLakeMetadata
                     .build();
             String schemaString = serializeSchemaAsJson(deltaTable);
 
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, deltaLakeTableHandle.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, deltaLakeTableHandle);
             appendTableEntries(
                     commitVersion,
                     transactionLogWriter,
@@ -1912,6 +1922,7 @@ public class DeltaLakeMetadata
             boolean tableHasDataFiles;
             try (Stream<AddFileEntry> addFileEntries = transactionLogAccess.getActiveFiles(
                     session,
+                    transactionLogReaderFactory.createReader(handle),
                     getSnapshot(session, handle),
                     handle.getMetadataEntry(),
                     handle.getProtocolEntry(),
@@ -1949,7 +1960,7 @@ public class DeltaLakeMetadata
             }
 
             Optional<Boolean> inCommitTimestampEnabled = inCommitTimestampEnabled(handle.getMetadataEntry(), protocolEntry);
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, handle.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, handle);
             appendTableEntries(
                     commitVersion,
                     transactionLogWriter,
@@ -2030,7 +2041,7 @@ public class DeltaLakeMetadata
 
         String schemaString = serializeSchemaAsJson(deltaTable);
         try {
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, table.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, table);
             appendTableEntries(
                     commitVersion,
                     transactionLogWriter,
@@ -2099,7 +2110,7 @@ public class DeltaLakeMetadata
                 .build();
         String schemaString = serializeSchemaAsJson(deltaTable);
         try {
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, table.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, table);
             appendTableEntries(
                     commitVersion,
                     transactionLogWriter,
@@ -2139,7 +2150,7 @@ public class DeltaLakeMetadata
         long commitVersion = table.getReadVersion() + 1;
         String schemaString = serializeSchemaAsJson(deltaTable);
         try {
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, table.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, table);
             appendTableEntries(
                     commitVersion,
                     transactionLogWriter,
@@ -2501,7 +2512,7 @@ public class DeltaLakeMetadata
             throws IOException
     {
         // it is not obvious why we need to persist this readVersion
-        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, insertTableHandle.location());
+        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, insertTableHandle.location(), insertTableHandle.metadataEntry(), insertTableHandle.protocolEntry());
         OptionalLong inCommitTimestamp = getNextInCommitTimestamp(inCommitTimestampEnabled(insertTableHandle.metadataEntry(), insertTableHandle.protocolEntry()), currentVersion, fileSystemFactory.create(session), insertTableHandle.location());
         transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, isolationLevel, commitVersion, Instant.now().toEpochMilli(), INSERT_OPERATION, currentVersion, isBlindAppend, inCommitTimestamp));
 
@@ -2585,7 +2596,8 @@ public class DeltaLakeMetadata
         String sourceTableName;
         try {
             // The clone commit is the first commit of the cloned table, so set the endVersion to 0
-            TransactionLogTail transactionLogTail = loadNewTail(fileSystem, handle.getLocation(), Optional.empty(), Optional.of(0L), DataSize.ofBytes(0));
+            TransactionLogReader transactionLogReader = transactionLogReaderFactory.createReader(handle);
+            TransactionLogTail transactionLogTail = transactionLogReader.loadNewTail(session, Optional.empty(), Optional.of(0L), DataSize.ofBytes(0));
             List<Transaction> transactions = transactionLogTail.getTransactions();
             if (transactions.isEmpty()) {
                 return Optional.empty();
@@ -2640,6 +2652,7 @@ public class DeltaLakeMetadata
         ImmutableMap.Builder<String, DeletionVectorEntry> deletionVectors = ImmutableMap.builder();
         try (Stream<AddFileEntry> activeFiles = transactionLogAccess.getActiveFiles(
                 session,
+                transactionLogReaderFactory.createReader(handle),
                 getSnapshot(session, handle),
                 handle.getMetadataEntry(),
                 handle.getProtocolEntry(),
@@ -2729,7 +2742,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle handle = mergeHandle.tableHandle();
         String tableLocation = handle.getLocation();
 
-        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, tableLocation);
+        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, handle);
 
         long createdTime = Instant.now().toEpochMilli();
 
@@ -3001,7 +3014,7 @@ public class DeltaLakeMetadata
             int attemptCount)
             throws IOException
     {
-        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, tableLocation);
+        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, tableLocation, optimizeHandle.getMetadataEntry(), optimizeHandle.getProtocolEntry());
 
         long createdTime = Instant.now().toEpochMilli();
         TrinoFileSystem fileSystem = fileSystemFactory.create(session);
@@ -3071,8 +3084,7 @@ public class DeltaLakeMetadata
     private boolean allowWrite(ConnectorSession session, DeltaLakeTableHandle tableHandle)
     {
         try {
-            String tableMetadataDirectory = getTransactionLogDir(tableHandle.getLocation());
-            boolean requiresOptIn = transactionLogWriterFactory.newWriter(session, tableMetadataDirectory).isUnsafe();
+            boolean requiresOptIn = transactionLogWriterFactory.createWriter(session, tableHandle).isUnsafe();
             return !requiresOptIn || unsafeWritesEnabled;
         }
         catch (TrinoException e) {
@@ -3134,7 +3146,7 @@ public class DeltaLakeMetadata
 
     private TableSnapshot getSnapshot(ConnectorSession session, DeltaLakeTableHandle table)
     {
-        return getSnapshot(session, table.getSchemaTableName(), table.getLocation(), Optional.of(table.getReadVersion()));
+        return getSnapshot(session, transactionLogReaderFactory.createReader(table), table.getSchemaTableName(), table.getLocation(), Optional.of(table.getReadVersion()));
     }
 
     private ProtocolEntry protocolEntryForTable(int readerVersion, int writerVersion, boolean containsTimestampType, Map<String, Object> properties)
@@ -3185,7 +3197,8 @@ public class DeltaLakeMetadata
         try {
             // We are writing checkpoint synchronously. It should not be long lasting operation for tables where transaction log is not humongous.
             // Tables with really huge transaction logs would behave poorly in read flow already.
-            TableSnapshot snapshot = getSnapshot(session, table, tableLocation, Optional.of(readVersion));
+            TransactionLogReader transactionLogReader = new FileSystemTransactionLogReader(tableLocation, fileSystemFactory);
+            TableSnapshot snapshot = getSnapshot(session, transactionLogReader, table, tableLocation, Optional.of(readVersion));
             long lastCheckpointVersion = snapshot.getLastCheckpointVersion().orElse(0L);
             if (newVersion - lastCheckpointVersion < checkpointInterval.orElse(defaultCheckpointInterval)) {
                 return;
@@ -3196,11 +3209,13 @@ public class DeltaLakeMetadata
             // The snapshot obtained above may already be on a version higher than `newVersion` because some other transaction could have just been committed.
             // This does not pose correctness issue but may be confusing if someone looks into transaction log.
             // To fix that we should allow for getting snapshot for given version.
+
+            // Now, the catalog managed table possible meet this condition
             if (snapshot.getVersion() > newVersion) {
                 LOG.info("Snapshot for table %s already at version %s when checkpoint requested for version %s", table, snapshot.getVersion(), newVersion);
             }
 
-            TableSnapshot updatedSnapshot = snapshot.getUpdatedSnapshot(fileSystemFactory.create(session), Optional.of(newVersion)).orElseThrow();
+            TableSnapshot updatedSnapshot = snapshot.getUpdatedSnapshot(session, transactionLogReader, fileSystemFactory.create(session), Optional.of(newVersion)).orElseThrow();
             checkpointWriterManager.writeCheckpoint(session, updatedSnapshot);
         }
         catch (Exception e) {
@@ -3361,7 +3376,7 @@ public class DeltaLakeMetadata
         }
 
         try {
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, handle.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, handle);
             transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, IsolationLevel.WRITESERIALIZABLE, commitVersion, createdTime, SET_TBLPROPERTIES_OPERATION, readVersion, true, inCommitTimestamp));
             protocolEntry.ifPresent(transactionLogWriter::appendProtocolEntry);
 
@@ -4064,6 +4079,7 @@ public class DeltaLakeMetadata
         Map<String, AddFileEntry> addFileEntriesWithNoStats;
         try (Stream<AddFileEntry> activeFiles = transactionLogAccess.getActiveFiles(
                 session,
+                transactionLogReaderFactory.createReader(tableHandle),
                 getSnapshot(session, tableHandle),
                 tableHandle.getMetadataEntry(),
                 tableHandle.getProtocolEntry(),
@@ -4109,7 +4125,7 @@ public class DeltaLakeMetadata
             long createdTime = Instant.now().toEpochMilli();
             long readVersion = tableHandle.getReadVersion();
             long commitVersion = readVersion + 1;
-            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, tableHandle.getLocation());
+            TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, tableHandle);
             transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(
                     session,
                     IsolationLevel.WRITESERIALIZABLE,
@@ -4336,6 +4352,7 @@ public class DeltaLakeMetadata
         }
 
         String tableLocation = table.get().location();
+        TransactionLogReader transactionLogReader = transactionLogReaderFactory.createReader(table.get());
 
         return switch (tableType.get()) {
             case DATA -> throw new VerifyException("Unexpected DATA table type"); // Handled above.
@@ -4344,15 +4361,17 @@ public class DeltaLakeMetadata
                     tableLocation,
                     fileSystemFactory,
                     transactionLogAccess,
-                    typeManager));
+                    typeManager,
+                    transactionLogReader));
             case TRANSACTIONS -> Optional.of(new DeltaLakeTransactionsTable(
                     systemTableName,
                     tableLocation,
                     fileSystemFactory,
                     transactionLogAccess,
-                    typeManager));
-            case PROPERTIES -> Optional.of(new DeltaLakePropertiesTable(systemTableName, tableLocation, transactionLogAccess));
-            case PARTITIONS -> Optional.of(new DeltaLakePartitionsTable(session, systemTableName, tableLocation, transactionLogAccess, typeManager));
+                    typeManager,
+                    transactionLogReader));
+            case PROPERTIES -> Optional.of(new DeltaLakePropertiesTable(systemTableName, tableLocation, transactionLogAccess, transactionLogReader));
+            case PARTITIONS -> Optional.of(new DeltaLakePartitionsTable(session, systemTableName, tableLocation, transactionLogAccess, typeManager, transactionLogReader));
         };
     }
 
@@ -4446,7 +4465,7 @@ public class DeltaLakeMetadata
     {
         String tableLocation = tableHandle.location();
 
-        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, tableLocation);
+        TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.createWriter(session, tableHandle);
 
         long writeTimestamp = Instant.now().toEpochMilli();
         TrinoFileSystem fileSystem = fileSystemFactory.create(session);
@@ -4526,6 +4545,7 @@ public class DeltaLakeMetadata
         TableSnapshot tableSnapshot = getSnapshot(session, tableHandle);
         Stream<AddFileEntry> validDataFiles = transactionLogAccess.getActiveFiles(
                 session,
+                transactionLogReaderFactory.createReader(tableHandle),
                 tableSnapshot,
                 tableHandle.getMetadataEntry(),
                 tableHandle.getProtocolEntry(),

@@ -26,6 +26,7 @@ import io.trino.plugin.deltalake.statistics.CachingExtendedStatisticsAccess;
 import io.trino.plugin.deltalake.statistics.FileBasedTableStatisticsProvider;
 import io.trino.plugin.deltalake.transactionlog.TransactionLogAccess;
 import io.trino.plugin.deltalake.transactionlog.checkpoint.CheckpointWriterManager;
+import io.trino.plugin.deltalake.transactionlog.reader.TransactionLogReaderFactory;
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogWriterFactory;
 import io.trino.plugin.hive.NodeVersion;
 import io.trino.plugin.hive.TrinoViewHiveMetastore;
@@ -73,6 +74,7 @@ public class DeltaLakeMetadataFactory
     private final boolean usingSystemSecurity;
     private final boolean isOperateOnUnityMetastore;
     private final String trinoVersion;
+    private final TransactionLogReaderFactory transactionLogReaderFactory;
 
     @Inject
     public DeltaLakeMetadataFactory(
@@ -95,7 +97,8 @@ public class DeltaLakeMetadataFactory
             NodeVersion nodeVersion,
             DeltaLakeTableMetadataScheduler metadataScheduler,
             @ForDeltaLakeMetadata ExecutorService executorService,
-            MetastoreTypeConfig metastoreTypeConfig)
+            MetastoreTypeConfig metastoreTypeConfig,
+            TransactionLogReaderFactory transactionLogReaderFactory)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.hiveMetastoreFactory = requireNonNull(hiveMetastoreFactory, "hiveMetastore is null");
@@ -127,6 +130,7 @@ public class DeltaLakeMetadataFactory
             this.metadataFetchingExecutor = new BoundedExecutor(executorService, deltaLakeConfig.getMetadataParallelism());
         }
         this.isOperateOnUnityMetastore = metastoreTypeConfig.getMetastoreType() == UNITY;
+        this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory is null");
     }
 
     public DeltaLakeMetadata create(ConnectorIdentity identity)
@@ -141,7 +145,8 @@ public class DeltaLakeMetadataFactory
         FileBasedTableStatisticsProvider tableStatisticsProvider = new FileBasedTableStatisticsProvider(
                 typeManager,
                 transactionLogAccess,
-                statisticsAccess);
+                statisticsAccess,
+                transactionLogReaderFactory);
         TrinoViewHiveMetastore trinoViewHiveMetastore = new TrinoViewHiveMetastore(
                 hiveMetastore,
                 usingSystemSecurity,
@@ -171,7 +176,8 @@ public class DeltaLakeMetadataFactory
                 useUniqueTableLocation,
                 allowManagedTableRename,
                 isOperateOnUnityMetastore,
-                metadataFetchingExecutor);
+                metadataFetchingExecutor,
+                transactionLogReaderFactory);
     }
 
     public CachingHiveMetastore createTransactionMetastore(ConnectorIdentity identity)
