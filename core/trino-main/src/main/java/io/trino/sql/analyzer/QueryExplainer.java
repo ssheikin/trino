@@ -23,7 +23,10 @@ import io.trino.execution.warnings.WarningCollector;
 import io.trino.spi.TrinoException;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.SqlFormatter;
+import io.trino.sql.newir.FormatOptions;
+import io.trino.sql.newir.Program;
 import io.trino.sql.planner.LogicalPlanner;
+import io.trino.sql.planner.LogicalPlanner.PlanOptions;
 import io.trino.sql.planner.Plan;
 import io.trino.sql.planner.PlanFragmenter;
 import io.trino.sql.planner.PlanNodeIdAllocator;
@@ -69,6 +72,7 @@ public class QueryExplainer
     private final StatsCalculator statsCalculator;
     private final CostCalculator costCalculator;
     private final NodeVersion version;
+    private final FormatOptions formatOptions;
 
     QueryExplainer(
             PlanOptimizersFactory planOptimizersFactory,
@@ -78,7 +82,8 @@ public class QueryExplainer
             AnalyzerFactory analyzerFactory,
             StatsCalculator statsCalculator,
             CostCalculator costCalculator,
-            NodeVersion version)
+            NodeVersion version,
+            FormatOptions formatOptions)
     {
         this.planOptimizers = requireNonNull(planOptimizersFactory.getPlanOptimizers(), "planOptimizers is null");
         this.alternativeOptimizers = requireNonNull(alternativesOptimizersFactory.getPlanOptimizers(), "alternativeOptimizers is null");
@@ -88,6 +93,7 @@ public class QueryExplainer
         this.statsCalculator = requireNonNull(statsCalculator, "statsCalculator is null");
         this.costCalculator = requireNonNull(costCalculator, "costCalculator is null");
         this.version = requireNonNull(version, "version is null");
+        this.formatOptions = requireNonNull(formatOptions, "formatOptions is null");
     }
 
     public void validate(Session session, Statement statement, List<Expression> parameters, WarningCollector warningCollector, PlanOptimizersStatsCollector planOptimizersStatsCollector)
@@ -162,6 +168,11 @@ public class QueryExplainer
 
     public Plan getLogicalPlan(Session session, Statement statement, List<Expression> parameters, WarningCollector warningCollector, PlanOptimizersStatsCollector planOptimizersStatsCollector)
     {
+        return getLogicalPlan(session, statement, parameters, warningCollector, planOptimizersStatsCollector, false).oldIrPlan();
+    }
+
+    private PlanOptions getLogicalPlan(Session session, Statement statement, List<Expression> parameters, WarningCollector warningCollector, PlanOptimizersStatsCollector planOptimizersStatsCollector, boolean reuseCommonSubqueriesSupported)
+    {
         // analyze statement
         Analysis analysis = analyze(session, statement, parameters, warningCollector, planOptimizersStatsCollector);
 
@@ -178,8 +189,9 @@ public class QueryExplainer
                 costCalculator,
                 warningCollector,
                 planOptimizersStatsCollector,
-                new CachingTableStatsProvider(plannerContext.getMetadata(), session));
-        return logicalPlanner.plan(analysis, OPTIMIZED_AND_VALIDATED, true);
+                new CachingTableStatsProvider(plannerContext.getMetadata(), session),
+                formatOptions);
+        return logicalPlanner.plan(analysis, OPTIMIZED_AND_VALIDATED, true, reuseCommonSubqueriesSupported);
     }
 
     private Analysis analyze(Session session, Statement statement, List<Expression> parameters, WarningCollector warningCollector, PlanOptimizersStatsCollector planOptimizersStatsCollector)
@@ -190,8 +202,17 @@ public class QueryExplainer
 
     private SubPlan getDistributedPlan(Session session, Statement statement, List<Expression> parameters, WarningCollector warningCollector, PlanOptimizersStatsCollector planOptimizersStatsCollector)
     {
-        Plan plan = getLogicalPlan(session, statement, parameters, warningCollector, planOptimizersStatsCollector);
-        return planFragmenter.createSubPlans(session, plan, false, warningCollector);
+        PlanOptions planOptions = getLogicalPlan(session, statement, parameters, warningCollector, planOptimizersStatsCollector, true);
+
+        Optional<Program> optimizedProgram = planOptions.newIrProgram();
+        if (optimizedProgram.isPresent()) {
+            Optional<SubPlan> optionalFragmentedPlan = planFragmenter.createSubPlans(session, optimizedProgram.get(), false, warningCollector);
+            if (optionalFragmentedPlan.isPresent()) {
+                return optionalFragmentedPlan.get();
+            }
+        }
+
+        return planFragmenter.createSubPlans(session, planOptions.oldIrPlan(), false, warningCollector);
     }
 
     private static <T extends Statement> Optional<String> explainDataDefinition(T statement, List<Expression> parameters)
