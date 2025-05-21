@@ -249,12 +249,14 @@ import static io.trino.plugin.deltalake.DeltaLakeTableProperties.CHANGE_DATA_FEE
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.CHECKPOINT_INTERVAL_PROPERTY;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.COLUMN_MAPPING_MODE_PROPERTY;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.DELETION_VECTORS_ENABLED_PROPERTY;
+import static io.trino.plugin.deltalake.DeltaLakeTableProperties.IN_COMMIT_TIMESTAMP_ENABLED_PROPERTY;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.LOCATION_PROPERTY;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.PARTITIONED_BY_PROPERTY;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.getChangeDataFeedEnabled;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.getCheckpointInterval;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.getColumnMappingMode;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.getDeletionVectorsEnabled;
+import static io.trino.plugin.deltalake.DeltaLakeTableProperties.getInCommitTimestampEnabled;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.getLocation;
 import static io.trino.plugin.deltalake.DeltaLakeTableProperties.getPartitionedBy;
 import static io.trino.plugin.deltalake.metastore.DeltaLakeTableMetadataScheduler.containsSchemaString;
@@ -285,6 +287,7 @@ import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.ge
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.getGeneratedColumnExpressions;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.getIsolationLevel;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.getMaxColumnId;
+import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.inCommitTimestampEnabled;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.isAppendOnly;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.isDeletionVectorEnabled;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.serializeColumnType;
@@ -296,6 +299,9 @@ import static io.trino.plugin.deltalake.transactionlog.DeltaLakeTableFeatures.un
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeTableFeatures.unsupportedWriterFeatures;
 import static io.trino.plugin.deltalake.transactionlog.MetadataEntry.DELTA_CHANGE_DATA_FEED_ENABLED_PROPERTY;
 import static io.trino.plugin.deltalake.transactionlog.MetadataEntry.DELTA_CHECKPOINT_INTERVAL_PROPERTY;
+import static io.trino.plugin.deltalake.transactionlog.MetadataEntry.DELTA_IN_COMMIT_TIMESTAMP_ENABLED_PROPERTY;
+import static io.trino.plugin.deltalake.transactionlog.MetadataEntry.DELTA_IN_COMMIT_TIMESTAMP_ENABLED_TIMESTAMP_PROPERTY;
+import static io.trino.plugin.deltalake.transactionlog.MetadataEntry.DELTA_IN_COMMIT_TIMESTAMP_ENABLED_VERSION_PROPERTY;
 import static io.trino.plugin.deltalake.transactionlog.MetadataEntry.configurationForNewTable;
 import static io.trino.plugin.deltalake.transactionlog.TransactionLogParser.getMandatoryCurrentVersion;
 import static io.trino.plugin.deltalake.transactionlog.TransactionLogUtil.getTransactionLogDir;
@@ -408,6 +414,7 @@ public class DeltaLakeMetadata
     public static final int TIMESTAMP_NTZ_SUPPORTED_WRITER_VERSION = 7;
     public static final int DELETION_VECTORS_SUPPORTED_READER_VERSION = 3;
     public static final int DELETION_VECTORS_SUPPORTED_WRITER_VERSION = 7;
+    public static final int IN_COMMIT_TIMESTAMP_SUPPORTED_WRITER_VERSION = 7;
     private static final RetryPolicy<Object> TRANSACTION_CONFLICT_RETRY_POLICY = RetryPolicy.builder()
             .handleIf(throwable -> Throwables.getCausalChain(throwable).stream().anyMatch(TransactionConflictException.class::isInstance))
             .withDelay(Duration.ofMillis(400))
@@ -433,6 +440,7 @@ public class DeltaLakeMetadata
     public static final Set<String> UPDATABLE_TABLE_PROPERTIES = ImmutableSet.<String>builder()
             .add(CHECKPOINT_INTERVAL_PROPERTY)
             .add(CHANGE_DATA_FEED_ENABLED_PROPERTY)
+            .add(IN_COMMIT_TIMESTAMP_ENABLED_PROPERTY)
             .build();
 
     public static final Set<String> CHANGE_DATA_FEED_COLUMN_NAMES = ImmutableSet.<String>builder()
@@ -1228,6 +1236,7 @@ public class DeltaLakeMetadata
         Optional<Boolean> changeDataFeedEnabled = getChangeDataFeedEnabled(tableMetadata.getProperties());
         ColumnMappingMode columnMappingMode = getColumnMappingMode(tableMetadata.getProperties());
         boolean deletionVectorsEnabled = getDeletionVectorsEnabled(tableMetadata.getProperties());
+        Optional<Boolean> inCommitTimestampEnabled = getInCommitTimestampEnabled(tableMetadata.getProperties());
         AtomicInteger fieldId = new AtomicInteger();
 
         validateTableColumns(tableMetadata);
@@ -1298,7 +1307,8 @@ public class DeltaLakeMetadata
                                 .setDescription(tableMetadata.getComment())
                                 .setSchemaString(serializeSchemaAsJson(deltaTable.build()))
                                 .setPartitionColumns(getPartitionedBy(tableMetadata.getProperties()))
-                                .setConfiguration(configurationForNewTable(checkpointInterval, changeDataFeedEnabled, deletionVectorsEnabled, columnMappingMode, maxFieldId)));
+                                .setConfiguration(configurationForNewTable(checkpointInterval, changeDataFeedEnabled, deletionVectorsEnabled, columnMappingMode, maxFieldId, inCommitTimestampEnabled)),
+                        inCommitTimestampEnabled.orElse(false) ? OptionalLong.of(System.currentTimeMillis()) : OptionalLong.empty());
 
                 transactionLogWriter.flush();
 
@@ -1323,6 +1333,42 @@ public class DeltaLakeMetadata
         else {
             metastore.createTable(table, principalPrivileges);
         }
+    }
+
+    private static OptionalLong getNextInCommitTimestamp(Optional<Boolean> inCommitTimestampEnabled, long preVersion, TrinoFileSystem fileSystem, String tableLocation)
+    {
+        if (inCommitTimestampEnabled.isEmpty() || !inCommitTimestampEnabled.get()) {
+            return OptionalLong.empty();
+        }
+
+        checkState(preVersion >= 0, "preVersion must be >= 0");
+        Optional<TransactionLogEntries> entries;
+        try {
+            entries = getEntriesFromJson(preVersion, fileSystem.newInputFile(getTransactionLogJsonEntryPath(getTransactionLogDir(tableLocation), preVersion)), DataSize.ofBytes(0));
+        }
+        catch (IOException e) {
+            throw new TrinoException(DELTA_LAKE_BAD_WRITE, "Unable to access file system for: " + tableLocation, e);
+        }
+
+        long currentMillis = System.currentTimeMillis();
+        if (entries.isEmpty()) {
+            return OptionalLong.of(currentMillis);
+        }
+
+        Optional<CommitInfoEntry> commitInfoEntry = Optional.empty();
+        try (Stream<DeltaLakeTransactionLogEntry> logEntryStream = entries.orElseThrow().getEntries(fileSystem)) {
+            commitInfoEntry = logEntryStream.filter(entry -> entry.getCommitInfo() != null)
+                    .findFirst()
+                    .map(DeltaLakeTransactionLogEntry::getCommitInfo);
+        }
+
+        if (commitInfoEntry.isEmpty()) {
+            return OptionalLong.of(currentMillis);
+        }
+
+        CommitInfoEntry commitInfo = commitInfoEntry.get();
+        long preVersionTimestamp = commitInfo.inCommitTimestamp().orElse(commitInfo.timestamp());
+        return OptionalLong.of(Math.max(preVersionTimestamp + 1, System.currentTimeMillis()));
     }
 
     public Table buildTable(ConnectorSession session, SchemaTableName schemaTableName, String location, boolean isExternal, Optional<String> tableComment, long version, String schemaString)
@@ -1483,6 +1529,7 @@ public class DeltaLakeMetadata
                 external,
                 tableMetadata.getComment(),
                 getChangeDataFeedEnabled(tableMetadata.getProperties()),
+                getInCommitTimestampEnabled(tableMetadata.getProperties()),
                 getDeletionVectorsEnabled(tableMetadata.getProperties()),
                 serializeSchemaAsJson(deltaTable.build()),
                 columnMappingMode,
@@ -1661,7 +1708,8 @@ public class DeltaLakeMetadata
                             .setDescription(handle.comment())
                             .setSchemaString(schemaString)
                             .setPartitionColumns(handle.partitionedBy())
-                            .setConfiguration(configurationForNewTable(handle.checkpointInterval(), handle.changeDataFeedEnabled(), handle.deletionVectorsEnabled(), columnMappingMode, handle.maxColumnId())));
+                            .setConfiguration(configurationForNewTable(handle.checkpointInterval(), handle.changeDataFeedEnabled(), handle.deletionVectorsEnabled(), columnMappingMode, handle.maxColumnId(), handle.inCommitTimestampEnabled())),
+                    handle.inCommitTimestampEnabled().orElse(false) ? OptionalLong.of(System.currentTimeMillis()) : OptionalLong.empty());
             appendAddFileEntries(transactionLogWriter, dataFileInfos, physicalPartitionNames, columnNames, true);
             if (handle.readVersion().isPresent()) {
                 long writeTimestamp = Instant.now().toEpochMilli();
@@ -1768,7 +1816,8 @@ public class DeltaLakeMetadata
                     session,
                     protocolEntry,
                     MetadataEntry.builder(handle.getMetadataEntry())
-                            .setDescription(comment));
+                            .setDescription(comment),
+                    getNextInCommitTimestamp(inCommitTimestampEnabled(metadataEntry, protocolEntry), handle.getReadVersion(), fileSystemFactory.create(session), handle.getLocation()));
             transactionLogWriter.flush();
             enqueueUpdateInfo(session, handle.getSchemaName(), handle.getTableName(), commitVersion, metadataEntry.getSchemaString(), comment);
         }
@@ -1808,7 +1857,8 @@ public class DeltaLakeMetadata
                     session,
                     protocolEntry,
                     MetadataEntry.builder(deltaLakeTableHandle.getMetadataEntry())
-                            .setSchemaString(schemaString));
+                            .setSchemaString(schemaString),
+                    getNextInCommitTimestamp(inCommitTimestampEnabled(deltaLakeTableHandle.getMetadataEntry(), protocolEntry), deltaLakeTableHandle.getReadVersion(), fileSystemFactory.create(session), deltaLakeTableHandle.getLocation()));
             transactionLogWriter.flush();
             enqueueUpdateInfo(
                     session,
@@ -1898,6 +1948,7 @@ public class DeltaLakeMetadata
                 configuration.put(MAX_COLUMN_ID_CONFIGURATION_KEY, String.valueOf(maxColumnId.get()));
             }
 
+            Optional<Boolean> inCommitTimestampEnabled = inCommitTimestampEnabled(handle.getMetadataEntry(), protocolEntry);
             TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, handle.getLocation());
             appendTableEntries(
                     commitVersion,
@@ -1909,10 +1960,12 @@ public class DeltaLakeMetadata
                             containsTimestampType(newColumnMetadata.getType()),
                             changeDataFeedEnabled,
                             columnMappingMode,
-                            deletionVectorEnabled),
+                            deletionVectorEnabled,
+                            inCommitTimestampEnabled),
                     MetadataEntry.builder(handle.getMetadataEntry())
                             .setSchemaString(schemaString)
-                            .setConfiguration(configuration));
+                            .setConfiguration(configuration),
+                    getNextInCommitTimestamp(inCommitTimestampEnabled, handle.getReadVersion(), fileSystemFactory.create(session), handle.getLocation()));
             transactionLogWriter.flush();
             enqueueUpdateInfo(
                     session,
@@ -1985,7 +2038,8 @@ public class DeltaLakeMetadata
                     session,
                     protocolEntry,
                     MetadataEntry.builder(metadataEntry)
-                            .setSchemaString(schemaString));
+                            .setSchemaString(schemaString),
+                    getNextInCommitTimestamp(inCommitTimestampEnabled(metadataEntry, protocolEntry), table.getReadVersion(), fileSystemFactory.create(session), table.getLocation()));
             transactionLogWriter.flush();
             enqueueUpdateInfo(session, table.getSchemaName(), table.getTableName(), commitVersion, schemaString, Optional.ofNullable(metadataEntry.getDescription()));
         }
@@ -2054,7 +2108,8 @@ public class DeltaLakeMetadata
                     protocolEntry,
                     MetadataEntry.builder(metadataEntry)
                             .setSchemaString(schemaString)
-                            .setPartitionColumns(partitionColumns));
+                            .setPartitionColumns(partitionColumns),
+                    getNextInCommitTimestamp(inCommitTimestampEnabled(metadataEntry, protocolEntry), table.getReadVersion(), fileSystemFactory.create(session), table.getLocation()));
             transactionLogWriter.flush();
             enqueueUpdateInfo(session, table.getSchemaName(), table.getTableName(), commitVersion, schemaString, Optional.ofNullable(metadataEntry.getDescription()));
             // Don't update extended statistics because it uses physical column names internally
@@ -2092,7 +2147,8 @@ public class DeltaLakeMetadata
                     session,
                     protocolEntry,
                     MetadataEntry.builder(metadataEntry)
-                            .setSchemaString(schemaString));
+                            .setSchemaString(schemaString),
+                    getNextInCommitTimestamp(inCommitTimestampEnabled(metadataEntry, protocolEntry), table.getReadVersion(), fileSystemFactory.create(session), table.getLocation()));
             transactionLogWriter.flush();
             enqueueUpdateInfo(session, table.getSchemaName(), table.getTableName(), commitVersion, schemaString, Optional.ofNullable(metadataEntry.getDescription()));
         }
@@ -2107,10 +2163,11 @@ public class DeltaLakeMetadata
             String operation,
             ConnectorSession session,
             ProtocolEntry protocolEntry,
-            MetadataEntry.Builder metadataEntry)
+            MetadataEntry.Builder metadataEntry,
+            OptionalLong inCommitTimestamp)
     {
         long createdTime = System.currentTimeMillis();
-        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, IsolationLevel.WRITESERIALIZABLE, commitVersion, createdTime, operation, 0, true));
+        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, IsolationLevel.WRITESERIALIZABLE, commitVersion, createdTime, operation, 0, true, inCommitTimestamp));
 
         transactionLogWriter.appendProtocolEntry(protocolEntry);
         transactionLogWriter.appendMetadataEntry(metadataEntry.setCreatedTime(createdTime).build());
@@ -2445,7 +2502,8 @@ public class DeltaLakeMetadata
     {
         // it is not obvious why we need to persist this readVersion
         TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, insertTableHandle.location());
-        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, isolationLevel, commitVersion, Instant.now().toEpochMilli(), INSERT_OPERATION, currentVersion, isBlindAppend));
+        OptionalLong inCommitTimestamp = getNextInCommitTimestamp(inCommitTimestampEnabled(insertTableHandle.metadataEntry(), insertTableHandle.protocolEntry()), currentVersion, fileSystemFactory.create(session), insertTableHandle.location());
+        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, isolationLevel, commitVersion, Instant.now().toEpochMilli(), INSERT_OPERATION, currentVersion, isBlindAppend, inCommitTimestamp));
 
         ColumnMappingMode columnMappingMode = getColumnMappingMode(insertTableHandle.metadataEntry(), insertTableHandle.protocolEntry());
         List<String> partitionColumns = getPartitionColumns(
@@ -2684,7 +2742,8 @@ public class DeltaLakeMetadata
         checkForConcurrentTransactionConflicts(session, fileSystem, enforcedSourcePartitionConstraints, isolationLevel, currentVersion, readVersion, handle.getLocation(), attemptCount);
         long commitVersion = currentVersion + 1;
 
-        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, isolationLevel, commitVersion, createdTime, MERGE_OPERATION, handle.getReadVersion(), sameAsTargetSourceTableHandles.isEmpty()));
+        OptionalLong inCommitTimestamp = getNextInCommitTimestamp(inCommitTimestampEnabled(handle.getMetadataEntry(), handle.getProtocolEntry()), currentVersion, fileSystem, handle.getLocation());
+        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, isolationLevel, commitVersion, createdTime, MERGE_OPERATION, handle.getReadVersion(), sameAsTargetSourceTableHandles.isEmpty(), inCommitTimestamp));
         // TODO: Delta writes another field "operationMetrics" (https://github.com/trinodb/trino/issues/12005)
 
         long writeTimestamp = Instant.now().toEpochMilli();
@@ -2956,7 +3015,8 @@ public class DeltaLakeMetadata
                 createdTime,
                 OPTIMIZE_OPERATION,
                 optimizeHandle.getCurrentVersion().orElseThrow(() -> new IllegalArgumentException("currentVersion not set")),
-                false));
+                false,
+                getNextInCommitTimestamp(inCommitTimestampEnabled(optimizeHandle.getMetadataEntry(), optimizeHandle.getProtocolEntry()), currentVersion, fileSystem, tableLocation)));
         // TODO: Delta writes another field "operationMetrics" that I haven't
         //   seen before. It contains delete/update metrics. Investigate/include it.
 
@@ -3084,7 +3144,8 @@ public class DeltaLakeMetadata
                 containsTimestampType,
                 getChangeDataFeedEnabled(properties),
                 getColumnMappingMode(properties),
-                getDeletionVectorsEnabled(properties));
+                getDeletionVectorsEnabled(properties),
+                getInCommitTimestampEnabled(properties));
     }
 
     private ProtocolEntry protocolEntry(
@@ -3092,7 +3153,8 @@ public class DeltaLakeMetadata
             boolean containsTimestampType,
             Optional<Boolean> changeDataFeedEnabled,
             ColumnMappingMode columnMappingMode,
-            boolean deletionVectorsEnabled)
+            boolean deletionVectorsEnabled,
+            Optional<Boolean> inCommitTimestampEnabled)
     {
         if (changeDataFeedEnabled.isPresent() && changeDataFeedEnabled.get()) {
             protocolEntry.enableChangeDataFeed();
@@ -3105,6 +3167,9 @@ public class DeltaLakeMetadata
         }
         if (deletionVectorsEnabled) {
             protocolEntry.enableDeletionVector();
+        }
+        if (inCommitTimestampEnabled.isPresent() && inCommitTimestampEnabled.get()) {
+            protocolEntry.enableInCommitTimestamp();
         }
         return protocolEntry.build();
     }
@@ -3208,11 +3273,12 @@ public class DeltaLakeMetadata
             long createdTime,
             String operation,
             long readVersion,
-            boolean isBlindAppend)
+            boolean isBlindAppend,
+            OptionalLong inCommitTimestamp)
     {
         return new CommitInfoEntry(
                 commitVersion,
-                OptionalLong.empty(), // TODO: support write inCommitTimestamp
+                inCommitTimestamp,
                 createdTime,
                 session.getUser(),
                 session.getUser(),
@@ -3265,6 +3331,21 @@ public class DeltaLakeMetadata
             }
             configuration.put(DELTA_CHANGE_DATA_FEED_ENABLED_PROPERTY, String.valueOf(changeDataFeedEnabled));
         }
+
+        OptionalLong inCommitTimestamp = OptionalLong.empty();
+        if (properties.containsKey(IN_COMMIT_TIMESTAMP_ENABLED_PROPERTY)) {
+            boolean inCommitTimestampEnabled = (Boolean) properties.get(IN_COMMIT_TIMESTAMP_ENABLED_PROPERTY)
+                    .orElseThrow(() -> new IllegalArgumentException("The in_commit_timestamp_enabled property cannot be empty"));
+            if (inCommitTimestampEnabled) {
+                requiredWriterVersion = max(requiredWriterVersion, IN_COMMIT_TIMESTAMP_SUPPORTED_WRITER_VERSION);
+                inCommitTimestamp = getNextInCommitTimestamp(Optional.of(true), handle.getReadVersion(), fileSystemFactory.create(session), handle.getLocation());
+                checkState(inCommitTimestamp.isPresent(), "Fail to get next in-commit timestamp for table %s", handle.getSchemaTableName());
+                configuration.put(DELTA_IN_COMMIT_TIMESTAMP_ENABLED_VERSION_PROPERTY, String.valueOf(handle.getReadVersion() + 1));
+                configuration.put(DELTA_IN_COMMIT_TIMESTAMP_ENABLED_TIMESTAMP_PROPERTY, String.valueOf(inCommitTimestamp.getAsLong()));
+            }
+            configuration.put(DELTA_IN_COMMIT_TIMESTAMP_ENABLED_PROPERTY, String.valueOf(inCommitTimestampEnabled));
+        }
+
         metadataEntry = Optional.of(buildMetadataEntry(handle.getMetadataEntry(), configuration, createdTime));
 
         long readVersion = handle.getReadVersion();
@@ -3275,9 +3356,13 @@ public class DeltaLakeMetadata
             protocolEntry = Optional.of(new ProtocolEntry(currentProtocolEntry.minReaderVersion(), requiredWriterVersion, currentProtocolEntry.readerFeatures(), currentProtocolEntry.writerFeatures()));
         }
 
+        if (inCommitTimestamp.isPresent()) {
+            protocolEntry = Optional.of(ProtocolEntry.builder(protocolEntry.orElse(currentProtocolEntry)).enableInCommitTimestamp().build());
+        }
+
         try {
             TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, handle.getLocation());
-            transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, IsolationLevel.WRITESERIALIZABLE, commitVersion, createdTime, SET_TBLPROPERTIES_OPERATION, readVersion, true));
+            transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, IsolationLevel.WRITESERIALIZABLE, commitVersion, createdTime, SET_TBLPROPERTIES_OPERATION, readVersion, true, inCommitTimestamp));
             protocolEntry.ifPresent(transactionLogWriter::appendProtocolEntry);
 
             metadataEntry.ifPresent(transactionLogWriter::appendMetadataEntry);
@@ -4025,7 +4110,15 @@ public class DeltaLakeMetadata
             long readVersion = tableHandle.getReadVersion();
             long commitVersion = readVersion + 1;
             TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriter(session, tableHandle.getLocation());
-            transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, IsolationLevel.WRITESERIALIZABLE, commitVersion, createdTime, OPTIMIZE_OPERATION, readVersion, true));
+            transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(
+                    session,
+                    IsolationLevel.WRITESERIALIZABLE,
+                    commitVersion,
+                    createdTime,
+                    OPTIMIZE_OPERATION,
+                    readVersion,
+                    true,
+                    getNextInCommitTimestamp(inCommitTimestampEnabled(tableHandle.getMetadataEntry(), tableHandle.getProtocolEntry()), readVersion, fileSystemFactory.create(session), tableHandle.getLocation())));
             updatedAddFileEntries.forEach(transactionLogWriter::appendAddFileEntry);
             transactionLogWriter.flush();
         }
@@ -4360,7 +4453,15 @@ public class DeltaLakeMetadata
         long currentVersion = getMandatoryCurrentVersion(fileSystem, tableLocation, readVersion.get());
         checkForConcurrentTransactionConflicts(session, fileSystem, ImmutableList.of(tableHandle.getEnforcedPartitionConstraint()), isolationLevel, currentVersion, readVersion, tableHandle.getLocation(), attemptCount);
         long commitVersion = currentVersion + 1;
-        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(session, isolationLevel, commitVersion, writeTimestamp, operation, tableHandle.getReadVersion(), false));
+        transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(
+                session,
+                isolationLevel,
+                commitVersion,
+                writeTimestamp,
+                operation,
+                tableHandle.getReadVersion(),
+                false,
+                getNextInCommitTimestamp(inCommitTimestampEnabled(tableHandle.getMetadataEntry(), tableHandle.getProtocolEntry()), readVersion.get(), fileSystem, tableHandle.getLocation())));
 
         Domain pathDomain = getPathDomain(tableHandle.getNonPartitionConstraint());
         Domain fileModifiedDomain = getFileModifiedTimeDomain(tableHandle.getNonPartitionConstraint());
