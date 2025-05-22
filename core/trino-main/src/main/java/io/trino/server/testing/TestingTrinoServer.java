@@ -520,7 +520,7 @@ public class TestingTrinoServer
 
     public Optional<Plan> getQueryPlan(QueryId queryId)
     {
-        return queryManager.getQueryPlan(queryId);
+        return queryManager.getOldIrQueryPlan(queryId);
     }
 
     public QueryInfo getFullQueryInfo(QueryId queryId)
