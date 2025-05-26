@@ -21,9 +21,11 @@ import io.trino.spi.Page;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorSession;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static com.google.common.base.Verify.verify;
 import static io.trino.server.protocol.JsonEncodingUtils.writePagesToJsonGenerator;
 import static java.util.Objects.requireNonNull;
 
@@ -62,5 +64,18 @@ public class JsonBytesQueryData
         return pages.stream()
                 .mapToLong(Page::getPositionCount)
                 .sum();
+    }
+
+    public JsonBytesQueryData mergeWith(JsonBytesQueryData other)
+    {
+        verify(Arrays.equals(this.typeEncoders, other.typeEncoders), "Type encoders should be the same to merge results");
+        verify(Arrays.equals(this.sourcePageChannels, other.sourcePageChannels), "Source page channels should be the same to merge results");
+
+        return new JsonBytesQueryData(
+                connectorSession,
+                exceptionHandler,
+                typeEncoders,
+                sourcePageChannels,
+                ImmutableList.<Page>builder().addAll(pages).addAll(other.pages).build());
     }
 }

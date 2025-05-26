@@ -479,7 +479,8 @@ class Query
                     queryInfo.output(),
                     queryInfo.referencedTables(),
                     resultRows.getOptionalColumns(),
-                    resultRows);
+                    resultRows,
+                    queryData);
         }
 
         if (isStarted && (queryInfo.outputStage().isEmpty() || exchangeDataSource.isFinished())) {

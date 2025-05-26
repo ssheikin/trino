@@ -15,7 +15,6 @@ package io.trino.server.resultscache;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
@@ -23,7 +22,9 @@ import io.airlift.concurrent.MoreFutures;
 import io.airlift.log.Logger;
 import io.trino.Session;
 import io.trino.client.Column;
+import io.trino.client.QueryData;
 import io.trino.execution.Input;
+import io.trino.server.protocol.JsonBytesQueryData;
 import io.trino.server.protocol.QueryResultRows;
 import io.trino.server.resultscache.CacheEntry.Reference;
 import io.trino.spi.QueryId;
@@ -40,11 +41,11 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static io.trino.server.resultscache.JsonArrayResultsIterator.toIterableList;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CACHED;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.CACHING;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.NO_COLUMNS;
 import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.OVER_MAX_SIZE;
+import static io.trino.server.resultscache.ResultsCacheEntry.ResultsCacheResult.Status.PROTOCOL_ERROR;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 
@@ -149,8 +150,12 @@ public class ActiveResultsCacheEntry
             Optional<Output> output,
             List<TableInfo> referencedTables,
             List<Column> columns,
-            QueryResultRows resultRows)
+            QueryResultRows resultRows,
+            QueryData queryData)
     {
+        if (queryData == null || queryData.isNull()) {
+            return;
+        }
         List<CompletionCallback> completionCallbacks = new ArrayList<>();
         try {
             synchronized (this) {
@@ -180,8 +185,13 @@ public class ActiveResultsCacheEntry
                             .map(entry -> new Reference(entry.getCatalog(), entry.getSchema(), entry.getTable(), false))
                             .filter(not(tablesReferences::contains))
                             .collect(toImmutableSet());
-
-                    resultsData = Optional.of(new ResultsData(columns, tablesReferences, viewsReferences));
+                    switch (queryData) {
+                        case JsonBytesQueryData _ -> resultsData = Optional.of(new ResultsData.DirectResultsData(columns, tablesReferences, viewsReferences));
+                        default -> {
+                            completionCallbacks.add(setInvalidState(PROTOCOL_ERROR));
+                            return;
+                        }
+                    }
                 }
 
                 long retainedSizeInBytes = resultRows.countRetainedSizeInBytes();
@@ -196,8 +206,14 @@ public class ActiveResultsCacheEntry
                     return;
                 }
 
-                log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, retainedSizeInBytes, currentSize);
-                resultsData.get().addRecords(toIterableList(session, resultRows, _ -> {}));
+                Optional<ResultsCacheResult.Status> status = resultsData.get().append(queryData);
+                if (status.isPresent()) {
+                    log.debug("QueryId: %s, error while appending to cache entry, not caching results", queryId);
+                    completionCallbacks.add(setInvalidState(status.get()));
+                }
+                else {
+                    log.debug("QueryId: %s, appending to cache entry, %s bytes, %s current total size", queryId, retainedSizeInBytes, currentSize);
+                }
             }
         }
         finally {
@@ -229,31 +245,89 @@ public class ActiveResultsCacheEntry
                                 user,
                                 queryId.toString(),
                                 query,
-                                resultsData.columns,
-                                resultsData.data,
-                                Optional.of(resultsData.tablesReferences),
-                                Optional.of(resultsData.viewsReferences))));
+                                resultsData.columns(),
+                                resultsData.data(),
+                                Optional.of(resultsData.getTablesReferences()),
+                                Optional.of(resultsData.getViewsReferences()))));
         MoreFutures.addExceptionCallback(submitFuture, throwable ->
                 log.error(throwable, "Upload to cache failed"));
     }
 
-    private static class ResultsData
+    private sealed interface ResultsData
     {
-        private final List<Column> columns;
-        private final List<List<Object>> data = new ArrayList<>();
-        private final Set<Reference> tablesReferences;
-        private final Set<Reference> viewsReferences;
+        QueryData data();
 
-        public ResultsData(List<Column> columns, Set<Reference> tableReferences, Set<Reference> viewsReferences)
-        {
-            this.columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
-            this.tablesReferences = ImmutableSet.copyOf(requireNonNull(tableReferences, "tableReferences is null"));
-            this.viewsReferences = ImmutableSet.copyOf(requireNonNull(viewsReferences, "viewsReferences is null"));
-        }
+        List<Column> columns();
 
-        public void addRecords(Iterable<List<Object>> records)
+        Optional<ResultsCacheResult.Status> append(QueryData queryData);
+
+        Set<Reference> getTablesReferences();
+
+        Set<Reference> getViewsReferences();
+
+        final class DirectResultsData
+                implements ResultsData
         {
-            Iterables.addAll(data, records);
+            private final Set<Reference> tablesReferences;
+            private final Set<Reference> viewReferences;
+            private final List<Column> columns;
+            private JsonBytesQueryData data;
+
+            public DirectResultsData(List<Column> columns, Set<Reference> tablesReferences, Set<Reference> viewsReferences)
+            {
+                this.tablesReferences = ImmutableSet.copyOf(tablesReferences);
+                this.viewReferences = ImmutableSet.copyOf(viewsReferences);
+                this.columns = ImmutableList.copyOf(columns);
+            }
+
+            @Override
+            public List<Column> columns()
+            {
+                return columns;
+            }
+
+            @Override
+            public JsonBytesQueryData data()
+            {
+                return data;
+            }
+
+            @Override
+            public Set<Reference> getTablesReferences()
+            {
+                return tablesReferences;
+            }
+
+            @Override
+            public Set<Reference> getViewsReferences()
+            {
+                return viewReferences;
+            }
+
+            @Override
+            public Optional<ResultsCacheResult.Status> append(QueryData queryData)
+            {
+                if (!(queryData instanceof JsonBytesQueryData jsonBytesQueryData)) {
+                    return Optional.of(PROTOCOL_ERROR);
+                }
+                try {
+                    append(jsonBytesQueryData);
+                    return Optional.empty();
+                }
+                catch (Exception e) {
+                    return Optional.of(PROTOCOL_ERROR);
+                }
+            }
+
+            private void append(JsonBytesQueryData current)
+            {
+                if (data == null) {
+                    data = current;
+                }
+                else {
+                    data = data.mergeWith(current);
+                }
+            }
         }
     }
 

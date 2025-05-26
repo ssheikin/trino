@@ -45,7 +45,7 @@ public interface ResultsCacheEntry
             QUERY_HAS_SYSTEM_TABLE("query has system table", true),
             CONNECTOR_IS_UNCACHEABLE("query uses connector that should not use cache", true),
             UNSUPPORTED_QUERY_DATA_FORMAT("query produced unsupported data format", true),
-            /**/;
+            PROTOCOL_ERROR("protocol error", true);
 
             private final String display;
             private final boolean isFiltered;
