@@ -298,6 +298,8 @@ import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.se
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.serializeStatsAsJson;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.validateType;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeSchemaSupport.verifySupportedColumnMapping;
+import static io.trino.plugin.deltalake.transactionlog.DeltaLakeTableFeatures.CATALOG_OWNED_TABLE_PREVIEW_FEATURE_NAME;
+import static io.trino.plugin.deltalake.transactionlog.DeltaLakeTableFeatures.IN_COMMIT_TIMESTAMP_FEATURE_NAME;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeTableFeatures.unsupportedReaderFeatures;
 import static io.trino.plugin.deltalake.transactionlog.DeltaLakeTableFeatures.unsupportedWriterFeatures;
 import static io.trino.plugin.deltalake.transactionlog.MetadataEntry.DELTA_CHANGE_DATA_FEED_ENABLED_PROPERTY;
@@ -547,6 +549,46 @@ public class DeltaLakeMetadata
         this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory");
     }
 
+    public static boolean isCatalogOwnedTable(ProtocolEntry protocolEntry)
+    {
+        return protocolEntry.readerFeaturesContains(CATALOG_OWNED_TABLE_PREVIEW_FEATURE_NAME) || protocolEntry.writerFeaturesContains(CATALOG_OWNED_TABLE_PREVIEW_FEATURE_NAME);
+    }
+
+    public void checkValidCatalogOwnedTable(DeltaLakeTableHandle tableHandle)
+    {
+        if (!isCatalogOwnedTable(tableHandle.getProtocolEntry())) {
+            return;
+        }
+        if (tableHandle.getMetadataEntry().getTableId().isEmpty()) {
+            throw new TrinoException(DELTA_LAKE_INVALID_TABLE, "Table id is missing for catalog owned table");
+        }
+        if (!tableHandle.managed()) {
+            throw new TrinoException(DELTA_LAKE_INVALID_TABLE, "Catalog owned table must be managed");
+        }
+        if (!isOperateOnUnityMetastore) {
+            throw new TrinoException(DELTA_LAKE_INVALID_TABLE, "Catalog owned table only supported on Unity metastore");
+        }
+        if (!tableHandle.getProtocolEntry().writerFeaturesContains(IN_COMMIT_TIMESTAMP_FEATURE_NAME)) {
+            throw new TrinoException(DELTA_LAKE_INVALID_TABLE, "Catalog owned table must support in commit timestamp feature");
+        }
+    }
+
+    public void checkValidCatalogOwnedTable(DeltaMetastoreTable table)
+    {
+        if (!table.catalogOwned()) {
+            return;
+        }
+        if (table.tableId().isEmpty()) {
+            throw new TrinoException(DELTA_LAKE_INVALID_TABLE, "Table id is missing for catalog owned table");
+        }
+        if (!table.managed()) {
+            throw new TrinoException(DELTA_LAKE_INVALID_TABLE, "Catalog owned table must be managed");
+        }
+        if (!isOperateOnUnityMetastore) {
+            throw new TrinoException(DELTA_LAKE_INVALID_TABLE, "Catalog owned table only supported on Unity metastore");
+        }
+    }
+
     public TableSnapshot getSnapshot(ConnectorSession session, TransactionLogReader transactionLogReader, SchemaTableName table, String tableLocation, Optional<Long> atVersion)
     {
         Optional<Long> version = atVersion.or(() -> Optional.ofNullable(latestTableVersions.get(table)));
@@ -667,6 +709,7 @@ public class DeltaLakeMetadata
             return null;
         }
         DeltaMetastoreTable table = convertToDeltaMetastoreTable(metastoreTable.get());
+        checkValidCatalogOwnedTable(table);
         boolean managed = table.managed();
 
         String tableLocation = table.location();
@@ -780,6 +823,7 @@ public class DeltaLakeMetadata
     public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table)
     {
         DeltaLakeTableHandle tableHandle = checkValidTableHandle(table);
+        checkValidCatalogOwnedTable(tableHandle);
         // This method does not calculate column metadata for the projected columns
         checkArgument(tableHandle.getProjectedColumns().isEmpty(), "Unexpected projected columns");
         MetadataEntry metadataEntry = tableHandle.getMetadataEntry();
@@ -878,6 +922,7 @@ public class DeltaLakeMetadata
     public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         DeltaLakeTableHandle table = checkValidTableHandle(tableHandle);
+        checkValidCatalogOwnedTable(table);
         return table.getProjectedColumns()
                 .map(projectColumns -> (Collection<DeltaLakeColumnHandle>) projectColumns)
                 .orElseGet(() -> getColumns(table.getMetadataEntry(), table.getProtocolEntry())).stream()
@@ -1116,6 +1161,7 @@ public class DeltaLakeMetadata
     public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkValidCatalogOwnedTable(handle);
         if (!isTableStatisticsEnabled(session)) {
             return TableStatistics.empty();
         }
@@ -1216,6 +1262,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle tableHandle = null;
         if (connectorTableHandle != null) {
             tableHandle = checkValidTableHandle(connectorTableHandle);
+            checkValidCatalogOwnedTable(tableHandle);
         }
         boolean replaceExistingTable = tableHandle != null && saveMode == SaveMode.REPLACE;
         if (replaceExistingTable) {
@@ -1322,7 +1369,10 @@ public class DeltaLakeMetadata
                 transactionLogWriter.flush();
 
                 if (replaceExistingTable) {
-                    writeCheckpointIfNeeded(session, schemaTableName, location, tableHandle.getReadVersion(), checkpointInterval, commitVersion);
+                    long lastKnownBackfilledVersion = isCatalogOwnedTable(tableHandle.getProtocolEntry())
+                            ? getMandatoryCurrentVersion(fileSystem, tableHandle.location(), tableHandle.getReadVersion())
+                            : commitVersion;
+                    writeCheckpointIfNeeded(session, schemaTableName, location, tableHandle.getReadVersion(), checkpointInterval, lastKnownBackfilledVersion);
                 }
             }
         }
@@ -1445,6 +1495,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle handle = null;
         if (connectorTableHandle != null) {
             handle = checkValidTableHandle(connectorTableHandle);
+            checkValidCatalogOwnedTable(handle);
         }
         List<String> partitionedBy = getPartitionedBy(tableMetadata.getProperties());
 
@@ -1742,7 +1793,10 @@ public class DeltaLakeMetadata
             writeCommitted = true;
 
             if (handle.replace() && handle.readVersion().isPresent()) {
-                writeCheckpointIfNeeded(session, schemaTableName, handle.location(), handle.readVersion().getAsLong(), handle.checkpointInterval(), commitVersion);
+                long lastKnownBackfilledVersion = isCatalogOwnedTable(handle.protocolEntry())
+                        ? getMandatoryCurrentVersion(fileSystemFactory.create(session), handle.location(), handle.readVersion().getAsLong())
+                        : commitVersion;
+                writeCheckpointIfNeeded(session, schemaTableName, handle.location(), handle.readVersion().getAsLong(), handle.checkpointInterval(), lastKnownBackfilledVersion);
             }
 
             if (isCollectExtendedStatisticsColumnStatisticsOnWrite(session) && !computedStatistics.isEmpty()) {
@@ -1805,6 +1859,7 @@ public class DeltaLakeMetadata
     public void setTableComment(ConnectorSession session, ConnectorTableHandle tableHandle, Optional<String> comment)
     {
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkValidCatalogOwnedTable(handle);
         checkSupportedWriterVersion(handle);
         ColumnMappingMode columnMappingMode = getColumnMappingMode(handle.getMetadataEntry(), handle.getProtocolEntry());
         if (columnMappingMode != ID && columnMappingMode != NAME && columnMappingMode != NONE) {
@@ -1907,6 +1962,7 @@ public class DeltaLakeMetadata
         verify(position instanceof ColumnPosition.Last, "ColumnPosition must be instance of Last");
 
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkValidCatalogOwnedTable(handle);
         ProtocolEntry protocolEntry = handle.getProtocolEntry();
         checkSupportedWriterVersion(handle);
         ColumnMappingMode columnMappingMode = getColumnMappingMode(handle.getMetadataEntry(), protocolEntry);
@@ -2315,7 +2371,10 @@ public class DeltaLakeMetadata
             long commitVersion = Failsafe.with(TRANSACTION_CONFLICT_RETRY_POLICY)
                     .get(context -> commitInsertOperation(session, handle, sourceTableHandles, isolationLevel, dataFileInfos, readVersion, context.getAttemptCount()));
             writeCommitted = true;
-            writeCheckpointIfNeeded(session, handle.tableName(), handle.location(), handle.readVersion(), handle.metadataEntry().getCheckpointInterval(), commitVersion);
+            long lastKnownBackfilledVersion = isCatalogOwnedTable(handle.protocolEntry())
+                    ? getMandatoryCurrentVersion(fileSystemFactory.create(session), handle.location(), handle.readVersion())
+                    : commitVersion;
+            writeCheckpointIfNeeded(session, handle.tableName(), handle.location(), handle.readVersion(), handle.metadataEntry().getCheckpointInterval(), lastKnownBackfilledVersion);
             enqueueUpdateInfo(session, handle.tableName().getSchemaName(), handle.tableName().getTableName(), commitVersion, handle.metadataEntry().getSchemaString(), Optional.ofNullable(handle.metadataEntry().getDescription()));
 
             if (isCollectExtendedStatisticsColumnStatisticsOnWrite(session) && !computedStatistics.isEmpty() && !dataFileInfos.isEmpty()) {
@@ -2365,7 +2424,9 @@ public class DeltaLakeMetadata
         List<TupleDomain<DeltaLakeColumnHandle>> enforcedSourcePartitionConstraints = sameAsTargetSourceTableHandles.stream()
                 .map(DeltaLakeTableHandle::getEnforcedPartitionConstraint)
                 .collect(toImmutableList());
-        checkForConcurrentTransactionConflicts(session, fileSystem, enforcedSourcePartitionConstraints, isolationLevel, currentVersion, readVersion, handle.location(), attemptCount);
+        if (!isCatalogOwnedTable(handle.protocolEntry())) {
+            checkForConcurrentTransactionConflicts(session, fileSystem, enforcedSourcePartitionConstraints, isolationLevel, currentVersion, readVersion, handle.location(), attemptCount);
+        }
         long commitVersion = currentVersion + 1;
         writeTransactionLogForInsertOperation(session, handle, sameAsTargetSourceTableHandles.isEmpty(), isolationLevel, dataFileInfos, commitVersion, currentVersion);
         return commitVersion;
@@ -2711,9 +2772,12 @@ public class DeltaLakeMetadata
                     handle.getMetadataEntry().getSchemaString(),
                     Optional.ofNullable(handle.getMetadataEntry().getDescription()));
 
-            writeCheckpointIfNeeded(session, handle.getSchemaTableName(), handle.getLocation(), handle.getReadVersion(), checkpointInterval, commitVersion);
+            long lastKnownBackfilledVersion = isCatalogOwnedTable(handle.getProtocolEntry())
+                    ? getMandatoryCurrentVersion(fileSystemFactory.create(session), handle.location(), handle.getReadVersion())
+                    : commitVersion;
+            writeCheckpointIfNeeded(session, handle.getSchemaTableName(), handle.getLocation(), handle.getReadVersion(), checkpointInterval, lastKnownBackfilledVersion);
         }
-        catch (RuntimeException e) {
+        catch (RuntimeException | IOException e) {
             if (!writeCommitted) {
                 // TODO perhaps it should happen in a background thread (https://github.com/trinodb/trino/issues/12011)
                 cleanupFailedWrite(session, tableLocation, allFiles);
@@ -2752,7 +2816,9 @@ public class DeltaLakeMetadata
                 .collect(toImmutableList());
         TrinoFileSystem fileSystem = fileSystemFactory.create(session);
         long currentVersion = getMandatoryCurrentVersion(fileSystem, tableLocation, readVersion.get());
-        checkForConcurrentTransactionConflicts(session, fileSystem, enforcedSourcePartitionConstraints, isolationLevel, currentVersion, readVersion, handle.getLocation(), attemptCount);
+        if (!isCatalogOwnedTable(handle.getProtocolEntry())) {
+            checkForConcurrentTransactionConflicts(session, fileSystem, enforcedSourcePartitionConstraints, isolationLevel, currentVersion, readVersion, handle.getLocation(), attemptCount);
+        }
         long commitVersion = currentVersion + 1;
 
         OptionalLong inCommitTimestamp = getNextInCommitTimestamp(inCommitTimestampEnabled(handle.getMetadataEntry(), handle.getProtocolEntry()), currentVersion, fileSystem, handle.getLocation());
@@ -2842,6 +2908,7 @@ public class DeltaLakeMetadata
             RetryMode retryMode)
     {
         DeltaLakeTableHandle tableHandle = checkValidTableHandle(connectorTableHandle);
+        checkValidCatalogOwnedTable(tableHandle);
         checkUnsupportedWriterFeatures(tableHandle.getProtocolEntry());
 
         DeltaLakeTableProcedureId procedureId;
@@ -2986,13 +3053,16 @@ public class DeltaLakeMetadata
                     optimizeHandle.getMetadataEntry().getSchemaString(),
                     Optional.ofNullable(optimizeHandle.getMetadataEntry().getDescription()));
             Optional<Long> checkpointInterval = Optional.of(1L); // force checkpoint
+            long lastKnownBackfilledVersion = isCatalogOwnedTable(optimizeHandle.getProtocolEntry())
+                    ? getMandatoryCurrentVersion(fileSystemFactory.create(session), tableLocation, optimizeHandle.getCurrentVersion().orElseThrow())
+                    : commitVersion;
             writeCheckpointIfNeeded(
                     session,
                     executeHandle.schemaTableName(),
                     executeHandle.tableLocation(),
                     optimizeHandle.getCurrentVersion().orElseThrow(),
                     checkpointInterval,
-                    commitVersion);
+                    lastKnownBackfilledVersion);
         }
         catch (Exception e) {
             if (!writeCommitted) {
@@ -3019,7 +3089,9 @@ public class DeltaLakeMetadata
         long createdTime = Instant.now().toEpochMilli();
         TrinoFileSystem fileSystem = fileSystemFactory.create(session);
         long currentVersion = getMandatoryCurrentVersion(fileSystem, tableLocation, readVersion.get());
-        checkForConcurrentTransactionConflicts(session, fileSystem, ImmutableList.of(optimizeHandle.getEnforcedPartitionConstraint()), isolationLevel, currentVersion, readVersion, tableLocation, attemptCount);
+        if (!isCatalogOwnedTable(optimizeHandle.getProtocolEntry())) {
+            checkForConcurrentTransactionConflicts(session, fileSystem, ImmutableList.of(optimizeHandle.getEnforcedPartitionConstraint()), isolationLevel, currentVersion, readVersion, tableLocation, attemptCount);
+        }
         long commitVersion = currentVersion + 1;
         transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(
                 session,
@@ -3074,7 +3146,7 @@ public class DeltaLakeMetadata
         // according to databricks docs:
         // we should not to do path-based access to managed tables and that you give up your "warranty" so to speak if you do.
         // We do things like Predictive Optimization and tracking of shallow clones in UC which require operations to go through UC
-        if (isOperateOnUnityMetastore && table.managed()) {
+        if (!isCatalogOwnedTable(table.getProtocolEntry()) && isOperateOnUnityMetastore && table.managed()) {
             throw new TrinoException(
                     NOT_SUPPORTED,
                     "Writes are not supported on managed tables for Unity metastore");
@@ -3210,7 +3282,7 @@ public class DeltaLakeMetadata
             // This does not pose correctness issue but may be confusing if someone looks into transaction log.
             // To fix that we should allow for getting snapshot for given version.
 
-            // Now, the catalog managed table possible meet this condition
+            // Now, the catalog owned table possible meet this condition
             if (snapshot.getVersion() > newVersion) {
                 LOG.info("Snapshot for table %s already at version %s when checkpoint requested for version %s", table, snapshot.getVersion(), newVersion);
             }
@@ -3312,6 +3384,7 @@ public class DeltaLakeMetadata
     public void setTableProperties(ConnectorSession session, ConnectorTableHandle tableHandle, Map<String, Optional<Object>> properties)
     {
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkValidCatalogOwnedTable(handle);
         Set<String> unsupportedProperties = difference(properties.keySet(), UPDATABLE_TABLE_PROPERTIES);
         if (!unsupportedProperties.isEmpty()) {
             throw new TrinoException(NOT_SUPPORTED, "The following properties cannot be updated: " + String.join(", ", unsupportedProperties));
@@ -3883,6 +3956,7 @@ public class DeltaLakeMetadata
         }
 
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkValidCatalogOwnedTable(handle);
         MetadataEntry metadata = handle.getMetadataEntry();
 
         Optional<Instant> filesModifiedAfterFromProperties = getFilesModifiedAfterProperty(analyzeProperties);
@@ -4421,6 +4495,7 @@ public class DeltaLakeMetadata
     private OptionalLong executeDelete(ConnectorSession session, ConnectorTableHandle handle, String operation)
     {
         DeltaLakeTableHandle tableHandle = (DeltaLakeTableHandle) handle;
+        checkValidTableHandle(tableHandle);
         if (isAppendOnly(tableHandle.getMetadataEntry(), tableHandle.getProtocolEntry())) {
             throw new TrinoException(NOT_SUPPORTED, "Cannot modify rows from a table with '" + APPEND_ONLY_CONFIGURATION_KEY + "' set to true");
         }
@@ -4433,13 +4508,16 @@ public class DeltaLakeMetadata
             CommitDeleteOperationResult commitDeleteOperationResult = Failsafe.with(TRANSACTION_CONFLICT_RETRY_POLICY)
                     .get(context -> commitDeleteOperation(session, tableHandle, operation, isolationLevel, readVersion, context.getAttemptCount()));
 
+            long lastKnownBackfilledVersion = isCatalogOwnedTable(tableHandle.getProtocolEntry())
+                    ? getMandatoryCurrentVersion(fileSystemFactory.create(session), tableHandle.location(), tableHandle.getReadVersion())
+                    : commitDeleteOperationResult.commitVersion();
             writeCheckpointIfNeeded(
                     session,
                     tableHandle.getSchemaTableName(),
                     tableHandle.location(),
                     tableHandle.getReadVersion(),
                     tableHandle.getMetadataEntry().getCheckpointInterval(),
-                    commitDeleteOperationResult.commitVersion());
+                    lastKnownBackfilledVersion);
             enqueueUpdateInfo(
                     session,
                     tableHandle.getSchemaName(),
@@ -4470,7 +4548,9 @@ public class DeltaLakeMetadata
         long writeTimestamp = Instant.now().toEpochMilli();
         TrinoFileSystem fileSystem = fileSystemFactory.create(session);
         long currentVersion = getMandatoryCurrentVersion(fileSystem, tableLocation, readVersion.get());
-        checkForConcurrentTransactionConflicts(session, fileSystem, ImmutableList.of(tableHandle.getEnforcedPartitionConstraint()), isolationLevel, currentVersion, readVersion, tableHandle.getLocation(), attemptCount);
+        if (!isCatalogOwnedTable(tableHandle.getProtocolEntry())) {
+            checkForConcurrentTransactionConflicts(session, fileSystem, ImmutableList.of(tableHandle.getEnforcedPartitionConstraint()), isolationLevel, currentVersion, readVersion, tableHandle.getLocation(), attemptCount);
+        }
         long commitVersion = currentVersion + 1;
         transactionLogWriter.appendCommitInfoEntry(getCommitInfoEntry(
                 session,
