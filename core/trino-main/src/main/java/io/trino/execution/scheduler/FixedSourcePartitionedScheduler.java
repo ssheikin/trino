@@ -40,8 +40,11 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Sets.intersection;
+import static com.google.common.collect.Sets.union;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static io.trino.execution.scheduler.SourcePartitionedScheduler.newSourcePartitionedSchedulerAsSourceScheduler;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class FixedSourcePartitionedScheduler
@@ -58,7 +61,8 @@ public class FixedSourcePartitionedScheduler
 
     public FixedSourcePartitionedScheduler(
             StageExecution stageExecution,
-            Map<PlanNodeId, SplitSource> splitSources,
+            Map<PlanNodeId, SplitSource> partitionedSources,
+            Map<PlanNodeId, SplitSource> replicatedSplitSources,
             List<PlanNodeId> schedulingOrder,
             List<InternalNode> nodes,
             BucketNodeMap bucketNodeMap,
@@ -70,7 +74,7 @@ public class FixedSourcePartitionedScheduler
             ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker)
     {
         requireNonNull(stageExecution, "stageExecution is null");
-        requireNonNull(splitSources, "splitSources is null");
+        requireNonNull(partitionedSources, "splitSources is null");
         requireNonNull(bucketNodeMap, "bucketNodeMap is null");
         checkArgument(!nodes.isEmpty(), "nodes is empty");
         requireNonNull(tableExecuteContextManager, "tableExecuteContextManager is null");
@@ -78,7 +82,8 @@ public class FixedSourcePartitionedScheduler
         this.stageExecution = stageExecution;
         this.nodes = ImmutableList.copyOf(nodes);
 
-        checkArgument(splitSources.keySet().equals(ImmutableSet.copyOf(schedulingOrder)));
+        checkArgument(intersection(partitionedSources.keySet(), replicatedSplitSources.keySet()).isEmpty(), "Overlapping remote replicated and partitioned sources; %s; %s", partitionedSources.keySet(), replicatedSplitSources.keySet());
+        checkArgument(union(partitionedSources.keySet(), replicatedSplitSources.keySet()).equals(ImmutableSet.copyOf(schedulingOrder)));
 
         BucketedSplitPlacementPolicy splitPlacementPolicy = new BucketedSplitPlacementPolicy(nodeSelector, nodes, bucketNodeMap, stageExecution::getAllTasks);
 
@@ -87,22 +92,37 @@ public class FixedSourcePartitionedScheduler
         partitionIdAllocator = new PartitionIdAllocator();
         scheduledTasks = new HashMap<>();
         for (PlanNodeId planNodeId : schedulingOrder) {
-            SplitSource splitSource = splitSources.get(planNodeId);
-            // TODO : change anySourceTaskBlocked to accommodate the correct blocked status of source tasks
-            //  (ref : https://github.com/trinodb/trino/issues/4713)
-            SourceScheduler sourceScheduler = newSourcePartitionedSchedulerAsSourceScheduler(
-                    stageExecution,
-                    planNodeId,
-                    splitSource,
-                    splitPlacementPolicy,
-                    splitBatchSize,
-                    dynamicFilterService,
-                    tableExecuteContextManager,
-                    () -> true,
-                    partitionIdAllocator,
-                    scheduledTasks,
-                    sourceTables.get(planNodeId),
-                    scheduledSplitsPerTableTracker);
+            SourceScheduler sourceScheduler;
+            if (partitionedSources.containsKey(planNodeId)) {
+                SplitSource splitSource = partitionedSources.get(planNodeId);
+                // TODO : change anySourceTaskBlocked to accommodate the correct blocked status of source tasks
+                //  (ref : https://github.com/trinodb/trino/issues/4713)
+                sourceScheduler = newSourcePartitionedSchedulerAsSourceScheduler(
+                        stageExecution,
+                        planNodeId,
+                        splitSource,
+                        splitPlacementPolicy,
+                        splitBatchSize,
+                        dynamicFilterService,
+                        tableExecuteContextManager,
+                        () -> true,
+                        partitionIdAllocator,
+                        scheduledTasks,
+                        sourceTables.get(planNodeId),
+                        scheduledSplitsPerTableTracker);
+            }
+            else if (replicatedSplitSources.containsKey(planNodeId)) {
+                SplitSource splitSource = replicatedSplitSources.get(planNodeId);
+                sourceScheduler = new SourceReplicatedScheduler(
+                        stageExecution,
+                        planNodeId,
+                        splitSource,
+                        splitBatchSize,
+                        scheduledTasks);
+            }
+            else {
+                throw new IllegalArgumentException(format("Remote source %s not found in in neither partitionedSources nor replicatedSplitSources", planNodeId));
+            }
 
             sourceSchedulers.add(sourceScheduler);
         }
