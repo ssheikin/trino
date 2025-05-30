@@ -26,6 +26,7 @@ public class UnityMetastoreConfig
     private String catalogName;
     private String host;
     private String token;
+    private boolean catalogOwnedTableEnabled;
 
     @NotNull
     public String getCatalogName()
@@ -70,6 +71,19 @@ public class UnityMetastoreConfig
     public UnityMetastoreConfig setToken(String token)
     {
         this.token = token;
+        return this;
+    }
+
+    public boolean isCatalogOwnedTableEnabled()
+    {
+        return catalogOwnedTableEnabled;
+    }
+
+    @Config("hive.metastore.unity.catalog-owned-table-enabled")
+    @ConfigDescription("Unity metastore owned table enabled")
+    public UnityMetastoreConfig setCatalogOwnedTableEnabled(boolean catalogOwnedTableEnabled)
+    {
+        this.catalogOwnedTableEnabled = catalogOwnedTableEnabled;
         return this;
     }
 }
