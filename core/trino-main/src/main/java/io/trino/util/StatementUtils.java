@@ -44,6 +44,7 @@ import io.trino.execution.FastForwardBranchTask;
 import io.trino.execution.GrantRolesTask;
 import io.trino.execution.GrantTask;
 import io.trino.execution.PrepareTask;
+import io.trino.execution.RefreshViewTask;
 import io.trino.execution.RenameCatalogTask;
 import io.trino.execution.RenameColumnTask;
 import io.trino.execution.RenameMaterializedViewTask;
@@ -107,6 +108,7 @@ import io.trino.sql.tree.Merge;
 import io.trino.sql.tree.Prepare;
 import io.trino.sql.tree.Query;
 import io.trino.sql.tree.RefreshMaterializedView;
+import io.trino.sql.tree.RefreshView;
 import io.trino.sql.tree.RenameCatalog;
 import io.trino.sql.tree.RenameColumn;
 import io.trino.sql.tree.RenameMaterializedView;
@@ -235,6 +237,7 @@ public final class StatementUtils
             .add(dataDefinitionStatement(Grant.class, GrantTask.class))
             .add(dataDefinitionStatement(GrantRoles.class, GrantRolesTask.class))
             .add(dataDefinitionStatement(Prepare.class, PrepareTask.class))
+            .add(dataDefinitionStatement(RefreshView.class, RefreshViewTask.class))
             .add(dataDefinitionStatement(RenameColumn.class, RenameColumnTask.class))
             .add(dataDefinitionStatement(RenameMaterializedView.class, RenameMaterializedViewTask.class))
             .add(dataDefinitionStatement(RenameCatalog.class, RenameCatalogTask.class))

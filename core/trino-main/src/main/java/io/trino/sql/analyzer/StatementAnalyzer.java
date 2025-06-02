@@ -215,6 +215,7 @@ import io.trino.sql.tree.QueryColumn;
 import io.trino.sql.tree.QueryPeriod;
 import io.trino.sql.tree.QuerySpecification;
 import io.trino.sql.tree.RefreshMaterializedView;
+import io.trino.sql.tree.RefreshView;
 import io.trino.sql.tree.Relation;
 import io.trino.sql.tree.RenameCatalog;
 import io.trino.sql.tree.RenameColumn;
@@ -697,6 +698,12 @@ class StatementAnalyzer
                             .collect(toImmutableList())));
 
             return createAndAssignScope(insert, scope, Field.newUnqualified("rows", BIGINT));
+        }
+
+        @Override
+        protected Scope visitRefreshView(RefreshView node, Optional<Scope> scope)
+        {
+            return createAndAssignScope(node, scope);
         }
 
         @Override
