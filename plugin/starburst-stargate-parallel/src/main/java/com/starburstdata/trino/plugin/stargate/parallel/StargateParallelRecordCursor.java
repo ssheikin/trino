@@ -126,6 +126,7 @@ public class StargateParallelRecordCursor
         try {
             if (!resultSet.next()) {
                 closed = true;
+                internalClose();
                 return false;
             }
             return true;
@@ -225,6 +226,16 @@ public class StargateParallelRecordCursor
             return;
         }
         closed = true;
+        internalClose();
+    }
+
+    private void internalClose()
+    {
+        try {
+            resultSet.close();
+        }
+        catch (SQLException ignored) {
+        }
     }
 
     private RuntimeException handleSqlException(Exception e)
