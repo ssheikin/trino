@@ -122,6 +122,7 @@ import io.trino.sql.tree.QueryColumn;
 import io.trino.sql.tree.QueryPeriod;
 import io.trino.sql.tree.QuerySpecification;
 import io.trino.sql.tree.RefreshMaterializedView;
+import io.trino.sql.tree.RefreshView;
 import io.trino.sql.tree.Relation;
 import io.trino.sql.tree.RenameCatalog;
 import io.trino.sql.tree.RenameColumn;
@@ -1279,6 +1280,15 @@ public final class SqlFormatter
             builder.append("REFRESH MATERIALIZED VIEW ");
             builder.append(formatName(node.getName()));
 
+            return null;
+        }
+
+        @Override
+        protected Void visitRefreshView(RefreshView node, Integer indent)
+        {
+            builder.append("ALTER VIEW ");
+            builder.append(formatName(node.getName()));
+            builder.append(" REFRESH");
             return null;
         }
 
