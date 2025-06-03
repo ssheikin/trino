@@ -209,6 +209,11 @@
         <air.repository.release.id>starburst-domain-releases</air.repository.release.id>
         <air.repository.release.name>Starburstdata Releases</air.repository.release.name>
         <air.repository.release.url>https://starburst-domain-843985043183.d.codeartifact.us-east-1.amazonaws.com/maven/releases/</air.repository.release.url>
+
+        <!-- TODO remove us-east-2 -->
+        <air.repository.old-release.id>starburstdata-sep.releases</air.repository.old-release.id>
+        <air.repository.old-release.name>Starburstdata Releases</air.repository.old-release.name>
+        <air.repository.old-release.url>https://starburstdata-sep-cicd-843985043183.d.codeartifact.us-east-2.amazonaws.com/maven/releases/</air.repository.old-release.url>
         <extraJavaVectorArgs>--add-modules=jdk.incubator.vector</extraJavaVectorArgs>
 
         <dep.databricks.jdbc.version>2.7.1</dep.databricks.jdbc.version>
@@ -2624,6 +2629,16 @@
             </snapshots>
             <id>${air.repository.release.id}</id>
             <url>${air.repository.release.url}</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>${air.repository.old-release.id}</id>
+            <url>${air.repository.old-release.url}</url>
         </repository>
     </repositories>
 
