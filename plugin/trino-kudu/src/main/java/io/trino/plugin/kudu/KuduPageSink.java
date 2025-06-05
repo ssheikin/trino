@@ -68,7 +68,6 @@ import static org.apache.trino.kudu.util.DateUtil.epochDaysToSqlDate;
 public class KuduPageSink
         implements ConnectorPageSink, ConnectorMergeSink
 {
-    private final ConnectorSession connectorSession;
     private final KuduClientSession session;
     private final KuduTable table;
     private final List<Type> columnTypes;
@@ -83,7 +82,7 @@ public class KuduPageSink
             KuduClientSession clientSession,
             KuduInsertTableHandle tableHandle)
     {
-        this(connectorSession, clientSession, tableHandle.getTable(connectorSession, clientSession), tableHandle);
+        this(clientSession, tableHandle.getTable(connectorSession, clientSession), tableHandle);
     }
 
     public KuduPageSink(
@@ -91,7 +90,7 @@ public class KuduPageSink
             KuduClientSession clientSession,
             KuduOutputTableHandle tableHandle)
     {
-        this(connectorSession, clientSession, tableHandle.getTable(connectorSession, clientSession), tableHandle);
+        this(clientSession, tableHandle.getTable(connectorSession, clientSession), tableHandle);
     }
 
     public KuduPageSink(
@@ -99,17 +98,15 @@ public class KuduPageSink
             KuduClientSession clientSession,
             KuduMergeTableHandle tableHandle)
     {
-        this(connectorSession, clientSession, tableHandle.getOutputTableHandle().getTable(connectorSession, clientSession), tableHandle);
+        this(clientSession, tableHandle.getOutputTableHandle().getTable(connectorSession, clientSession), tableHandle);
     }
 
     private KuduPageSink(
-            ConnectorSession connectorSession,
             KuduClientSession clientSession,
             KuduTable table,
             KuduTableMapping mapping)
     {
         requireNonNull(clientSession, "clientSession is null");
-        this.connectorSession = connectorSession;
         this.columnTypes = mapping.getColumnTypes();
         this.originalColumnTypes = mapping.getOriginalColumnTypes();
         this.generateUUID = mapping.isGenerateUUID();
@@ -183,7 +180,7 @@ public class KuduPageSink
         else if (type instanceof VarcharType varcharType) {
             Type originalType = originalColumnTypes.get(destChannel);
             if (DATE.equals(originalType)) {
-                SqlDate date = (SqlDate) originalType.getObjectValue(connectorSession, block, position);
+                SqlDate date = (SqlDate) originalType.getObjectValue(block, position);
                 LocalDateTime ldt = LocalDateTime.ofEpochSecond(TimeUnit.DAYS.toSeconds(date.getDays()), 0, ZoneOffset.UTC);
                 byte[] bytes = ldt.format(DateTimeFormatter.ISO_LOCAL_DATE).getBytes(StandardCharsets.UTF_8);
                 row.addStringUtf8(destChannel, bytes);
@@ -196,7 +193,7 @@ public class KuduPageSink
             row.addBinary(destChannel, VARBINARY.getSlice(block, position).toByteBuffer());
         }
         else if (type instanceof DecimalType decimalType) {
-            SqlDecimal sqlDecimal = (SqlDecimal) decimalType.getObjectValue(connectorSession, block, position);
+            SqlDecimal sqlDecimal = (SqlDecimal) decimalType.getObjectValue(block, position);
             row.addDecimal(destChannel, sqlDecimal.toBigDecimal());
         }
         else {
