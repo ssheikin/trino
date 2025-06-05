@@ -1355,7 +1355,7 @@ public class IcebergMetadata
             }
             return newWritableTableHandle(tableMetadata.getTable(), transaction.table(), ImmutableList.of(), retryMode);
         }
-        catch (IOException e) {
+        catch (IOException | UncheckedIOException e) {
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed checking new table's location: " + location, e);
         }
     }
@@ -1671,7 +1671,7 @@ public class IcebergMetadata
                 log.info("Deleted failed attempt files %s from %s for query %s", deletedFiles, location, queryId);
             }
         }
-        catch (IOException e) {
+        catch (IOException | UncheckedIOException e) {
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR,
                     format("Could not clean up extraneous output files; remaining files: %s", filesToDelete), e);
         }
@@ -2548,7 +2548,7 @@ public class IcebergMetadata
                         validDataFileNames.add(fileName(contentFile.location()));
                     }
                 }
-                catch (IOException e) {
+                catch (IOException | UncheckedIOException e) {
                     throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
                 }
                 catch (NotFoundException e) {
@@ -2634,7 +2634,7 @@ public class IcebergMetadata
                 fileSystem.deleteFiles(filesToDelete);
             }
         }
-        catch (IOException e) {
+        catch (IOException | UncheckedIOException e) {
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed accessing data for table: " + schemaTableName, e);
         }
     }
