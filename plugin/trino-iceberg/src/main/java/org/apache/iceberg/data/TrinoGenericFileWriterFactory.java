@@ -11,18 +11,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.procedure;
+package org.apache.iceberg.data;
 
-public enum IcebergTableProcedureId
+import org.apache.iceberg.Table;
+import org.apache.iceberg.io.FileWriterFactory;
+
+public final class TrinoGenericFileWriterFactory
 {
-    OPTIMIZE,
-    OPTIMIZE_MANIFESTS,
-    OPTIMIZE_POSITION_DELETES,
-    DROP_EXTENDED_STATS,
-    ROLLBACK_TO_SNAPSHOT,
-    EXPIRE_SNAPSHOTS,
-    REMOVE_ORPHAN_FILES,
-    ADD_FILES,
-    ADD_FILES_FROM_TABLE,
-    GENERATE_EMBEDDINGS,
+    private TrinoGenericFileWriterFactory() {}
+
+    // Expose package-private GenericFileWriterFactory.builderFor method
+    public static FileWriterFactory<?> builderFor(Table table)
+    {
+        return GenericFileWriterFactory.builderFor(table).build();
+    }
 }
