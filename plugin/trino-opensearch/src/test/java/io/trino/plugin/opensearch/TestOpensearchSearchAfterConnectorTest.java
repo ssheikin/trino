@@ -14,14 +14,32 @@
 package io.trino.plugin.opensearch;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.jupiter.api.parallel.Isolated;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.net.HostAndPort;
+import io.trino.testing.QueryRunner;
+import org.apache.http.HttpHost;
+import org.opensearch.client.RestClient;
+import org.opensearch.client.RestHighLevelClient;
 
 import java.util.List;
 
-@Isolated
-public class TestOpenSearchLatestConnectorTest
+final class TestOpensearchSearchAfterConnectorTest
         extends BaseOpenSearchConnectorTest
 {
+    @Override
+    protected QueryRunner createQueryRunner()
+            throws Exception
+    {
+        opensearch = new OpenSearchServer(DEFAULT_LATEST_IMAGE, false, ImmutableMap.of());
+        HostAndPort address = opensearch.getAddress();
+        client = new RestHighLevelClient(RestClient.builder(new HttpHost(address.getHost(), address.getPort())));
+
+        return OpenSearchQueryRunner.builder(opensearch.getAddress())
+                .addConnectorProperties(ImmutableMap.of("opensearch.search-strategy", "SEARCH_AFTER"))
+                .setInitialTables(REQUIRED_TPCH_TABLES)
+                .build();
+    }
+
     @Override
     protected List<Integer> largeInValuesCountData()
     {
