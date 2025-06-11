@@ -16,8 +16,6 @@ package io.trino.plugin.kudu;
 import io.trino.testing.QueryRunner;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class BaseKuduWithStandardInferSchemaConnectorSmokeTest
@@ -32,7 +30,7 @@ public abstract class BaseKuduWithStandardInferSchemaConnectorSmokeTest
                 .build());
 
         return KuduQueryRunnerFactory.builder(kuduServer)
-                .setKuduSchemaEmulationPrefix(Optional.of("presto::"))
+                .withSchemaEmulationByTableName("presto::")
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();
     }

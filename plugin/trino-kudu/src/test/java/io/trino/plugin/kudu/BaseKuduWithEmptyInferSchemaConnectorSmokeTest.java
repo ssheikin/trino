@@ -15,8 +15,6 @@ package io.trino.plugin.kudu;
 
 import io.trino.testing.QueryRunner;
 
-import java.util.Optional;
-
 public abstract class BaseKuduWithEmptyInferSchemaConnectorSmokeTest
         extends BaseKuduInferSchemaConnectorSmokeTest
 {
@@ -29,7 +27,7 @@ public abstract class BaseKuduWithEmptyInferSchemaConnectorSmokeTest
                 .build());
 
         return KuduQueryRunnerFactory.builder(kuduServer)
-                .setKuduSchemaEmulationPrefix(Optional.of(""))
+                .withSchemaEmulationByTableName("")
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();
     }

@@ -35,16 +35,23 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Configuration read from etc/catalog/kudu.properties
  */
-@DefunctConfig("kudu.client.default-socket-read-timeout")
+@DefunctConfig({"kudu.client.default-socket-read-timeout", "kudu.schema-emulation.enabled"})
 public class KuduClientConfig
 {
     private static final Duration DEFAULT_OPERATION_TIMEOUT = new Duration(30, TimeUnit.SECONDS);
+
+    public enum SchemaEmulationType
+    {
+        NONE,
+        TABLE_NAME,
+        /**/
+    }
 
     private List<String> masterAddresses = ImmutableList.of();
     private Duration defaultAdminOperationTimeout = DEFAULT_OPERATION_TIMEOUT;
     private Duration defaultOperationTimeout = DEFAULT_OPERATION_TIMEOUT;
     private boolean disableStatistics;
-    private boolean schemaEmulationEnabled;
+    private SchemaEmulationType schemaEmulationType = SchemaEmulationType.NONE;
     private Duration dynamicFilteringWaitTimeout = new Duration(0, MINUTES);
     private boolean allowLocalScheduling;
     private DataSize scannerBatchSize = DataSize.of(1, MEGABYTE);
@@ -105,15 +112,15 @@ public class KuduClientConfig
         return this;
     }
 
-    public boolean isSchemaEmulationEnabled()
+    public SchemaEmulationType getSchemaEmulationType()
     {
-        return schemaEmulationEnabled;
+        return schemaEmulationType;
     }
 
-    @Config("kudu.schema-emulation.enabled")
-    public KuduClientConfig setSchemaEmulationEnabled(boolean enabled)
+    @Config("kudu.schema-emulation.type")
+    public KuduClientConfig setSchemaEmulationType(SchemaEmulationType schemaEmulationType)
     {
-        this.schemaEmulationEnabled = enabled;
+        this.schemaEmulationType = schemaEmulationType;
         return this;
     }
 

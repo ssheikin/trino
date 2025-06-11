@@ -26,6 +26,8 @@ import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDe
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
 import static io.airlift.units.DataSize.Unit.KILOBYTE;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
+import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.NONE;
+import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.TABLE_NAME;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -39,7 +41,7 @@ public class TestKuduClientConfig
                 .setDefaultAdminOperationTimeout(new Duration(30, SECONDS))
                 .setDefaultOperationTimeout(new Duration(30, SECONDS))
                 .setDisableStatistics(false)
-                .setSchemaEmulationEnabled(false)
+                .setSchemaEmulationType(NONE)
                 .setDynamicFilteringWaitTimeout(new Duration(0, MINUTES))
                 .setAllowLocalScheduling(false)
                 .setScannerBatchSize(DataSize.of(1, MEGABYTE))
@@ -55,7 +57,7 @@ public class TestKuduClientConfig
                 .put("kudu.client.default-admin-operation-timeout", "1m")
                 .put("kudu.client.default-operation-timeout", "5m")
                 .put("kudu.client.disable-statistics", "true")
-                .put("kudu.schema-emulation.enabled", "true")
+                .put("kudu.schema-emulation.type", "TABLE_NAME")
                 .put("kudu.dynamic-filtering.wait-timeout", "30m")
                 .put("kudu.allow-local-scheduling", "true")
                 .put("kudu.scanner.batch-size", "128kB")
@@ -68,7 +70,7 @@ public class TestKuduClientConfig
                 .setDefaultAdminOperationTimeout(new Duration(1, MINUTES))
                 .setDefaultOperationTimeout(new Duration(5, MINUTES))
                 .setDisableStatistics(true)
-                .setSchemaEmulationEnabled(true)
+                .setSchemaEmulationType(TABLE_NAME)
                 .setDynamicFilteringWaitTimeout(new Duration(30, MINUTES))
                 .setAllowLocalScheduling(true)
                 .setScannerBatchSize(DataSize.of(128, KILOBYTE))

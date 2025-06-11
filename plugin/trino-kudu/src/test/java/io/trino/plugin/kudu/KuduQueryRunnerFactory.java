@@ -29,8 +29,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.TABLE_NAME;
 import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
 import static io.trino.testing.QueryAssertions.copyTpchTables;
 import static io.trino.testing.TestingSession.testSessionBuilder;
@@ -50,8 +50,9 @@ public final class KuduQueryRunnerFactory
     {
         private final TestingKuduServer kuduServer;
         private final Map<String, String> connectorProperties = new HashMap<>();
-        private Optional<String> kuduSchemaEmulationPrefix = Optional.empty();
         private List<TpchTable<?>> initialTables = ImmutableList.of();
+        private String schemaName = "default";
+        private boolean createSchema;
 
         private Builder(TestingKuduServer kuduServer)
         {
@@ -62,10 +63,14 @@ public final class KuduQueryRunnerFactory
             this.kuduServer = requireNonNull(kuduServer, "kuduServer is null");
         }
 
-        @CanIgnoreReturnValue
-        public Builder setKuduSchemaEmulationPrefix(Optional<String> kuduSchemaEmulationPrefix)
+        public Builder withSchemaEmulationByTableName(String kuduSchemaEmulationPrefix)
         {
-            this.kuduSchemaEmulationPrefix = requireNonNull(kuduSchemaEmulationPrefix, "kuduSchemaEmulationPrefix is null");
+            addConnectorProperties(
+                    ImmutableMap.of(
+                            "kudu.schema-emulation.type", TABLE_NAME.toString(),
+                            "kudu.schema-emulation.prefix", kuduSchemaEmulationPrefix));
+            schemaName = "tpch";
+            createSchema = true;
             return this;
         }
 
@@ -104,28 +109,19 @@ public final class KuduQueryRunnerFactory
         public DistributedQueryRunner build()
                 throws Exception
         {
-            String kuduSchema = kuduSchemaEmulationPrefix.isPresent() ? "tpch" : "default";
-            amendSession(sessionBuilder -> sessionBuilder.setSchema(kuduSchema));
+            amendSession(sessionBuilder -> sessionBuilder.setSchema(schemaName));
             DistributedQueryRunner queryRunner = super.build();
             try {
                 queryRunner.installPlugin(new TpchPlugin());
                 queryRunner.createCatalog("tpch", "tpch");
                 addConnectorProperty("kudu.client.master-addresses", kuduServer.getMasterAddress().toString());
 
-                if (kuduSchemaEmulationPrefix.isPresent()) {
-                    addConnectorProperty("kudu.schema-emulation.enabled", "true");
-                    addConnectorProperty("kudu.schema-emulation.prefix", kuduSchemaEmulationPrefix.get());
-                }
-                else {
-                    addConnectorProperty("kudu.schema-emulation.enabled", "false");
-                }
-
                 queryRunner.installPlugin(new KuduPlugin());
                 queryRunner.createCatalog("kudu", "kudu", connectorProperties);
 
-                if (kuduSchemaEmulationPrefix.isPresent()) {
-                    queryRunner.execute("DROP SCHEMA IF EXISTS " + kuduSchema);
-                    queryRunner.execute("CREATE SCHEMA " + kuduSchema);
+                if (createSchema) {
+                    queryRunner.execute("DROP SCHEMA IF EXISTS " + schemaName);
+                    queryRunner.execute("CREATE SCHEMA " + schemaName);
                 }
 
                 copyTpchTables(queryRunner, "tpch", TINY_SCHEMA_NAME, initialTables);
