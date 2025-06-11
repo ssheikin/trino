@@ -44,6 +44,7 @@ public class KuduClientConfig
     {
         NONE,
         TABLE_NAME,
+        HIVE_METASTORE,
         /**/
     }
 

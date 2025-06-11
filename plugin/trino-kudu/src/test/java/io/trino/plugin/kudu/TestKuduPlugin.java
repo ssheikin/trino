@@ -24,6 +24,7 @@ import java.util.Set;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class TestKuduPlugin
 {
@@ -38,6 +39,22 @@ public class TestKuduPlugin
                         "kudu.client.master-addresses", "localhost:7051",
                         "bootstrap.quiet", "true"),
                 new TestingConnectorContext()).shutdown();
+    }
+
+    @Test
+    public void testKuduIdentifierMappingWithHiveSchemaEmulation()
+    {
+        Plugin plugin = new KuduPlugin();
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
+        assertThatThrownBy(() -> factory.create(
+                "test",
+                ImmutableMap.of(
+                        "kudu.client.master-addresses", "localhost:7051",
+                        "kudu.schema-emulation.type", "hive_metastore",
+                        "case-insensitive-name-matching", "true",
+                        "bootstrap.quiet", "true"),
+                new TestingConnectorContext()))
+                .hasMessageContaining("1) Error: Configuration property 'case-insensitive-name-matching' was not used");
     }
 
     @Test

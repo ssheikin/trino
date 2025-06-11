@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.HIVE_METASTORE;
 import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.TABLE_NAME;
 import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
 import static io.trino.testing.QueryAssertions.copyTpchTables;
@@ -71,6 +72,12 @@ public final class KuduQueryRunnerFactory
                             "kudu.schema-emulation.prefix", kuduSchemaEmulationPrefix));
             schemaName = "tpch";
             createSchema = true;
+            return this;
+        }
+
+        public Builder withSchemaEmulationByHiveMetastore()
+        {
+            addConnectorProperty("kudu.schema-emulation.type", HIVE_METASTORE.toString());
             return this;
         }
 

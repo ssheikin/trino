@@ -21,6 +21,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -47,14 +48,15 @@ public class TestingKuduServer
      * In order to workaround this, create a proxy to forward traffic from the host to the underlying tablets
      * Since the ToxiProxy container starts up *before* kudu, we know the mapped port when configuring the kudu tablets
      */
-    private TestingKuduServer(String kuduVersion, List<String> extraTServerArgs)
+    private TestingKuduServer(String kuduVersion, Optional<Network> externalNetwork, List<String> extraMasterArgs, List<String> extraTServerArgs)
     {
-        Network network = closer.register(Network.newNetwork());
+        Network network = externalNetwork.orElseGet(() -> closer.register(Network.newNetwork()));
         String masterContainerAlias = "kudu-master";
+
         this.master = closer.register(new GenericContainer<>(format("%s:%s", KUDU_IMAGE, kuduVersion))
                 .withExposedPorts(KUDU_MASTER_PORT)
                 .withCommand("master")
-                .withEnv("MASTER_ARGS", "--default_num_replicas=1 --unlock_unsafe_flags --use_hybrid_clock=false")
+                .withEnv("MASTER_ARGS", "--default_num_replicas=1 --unlock_unsafe_flags --use_hybrid_clock=false %s".formatted(String.join(" ", extraMasterArgs)))
                 .withNetwork(network)
                 .withNetworkAliases(masterContainerAlias));
 
@@ -105,6 +107,8 @@ public class TestingKuduServer
     public static class Builder
     {
         private String kuduVersion = LATEST_TAG;
+        private Optional<Network> externalNetwork = Optional.empty();
+        private List<String> extraMasterArgs = ImmutableList.of();
         private List<String> extraTServerArgs = ImmutableList.of();
 
         private Builder() {}
@@ -112,6 +116,18 @@ public class TestingKuduServer
         public Builder setKuduVersion(String kuduVersion)
         {
             this.kuduVersion = requireNonNull(kuduVersion, "kuduVersion is null");
+            return this;
+        }
+
+        public Builder setExternalNetwork(Network externalNetwork)
+        {
+            this.externalNetwork = Optional.of(externalNetwork);
+            return this;
+        }
+
+        public Builder withExtraMasterArgs(List<String> extraMasterArgs)
+        {
+            this.extraMasterArgs = ImmutableList.copyOf(requireNonNull(extraMasterArgs, "extraMasterArgs is null"));
             return this;
         }
 
@@ -123,7 +139,7 @@ public class TestingKuduServer
 
         public TestingKuduServer build()
         {
-            return new TestingKuduServer(kuduVersion, extraTServerArgs);
+            return new TestingKuduServer(kuduVersion, externalNetwork, extraMasterArgs, extraTServerArgs);
         }
     }
 }

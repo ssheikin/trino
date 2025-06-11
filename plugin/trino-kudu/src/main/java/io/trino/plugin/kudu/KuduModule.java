@@ -21,12 +21,15 @@ import com.google.inject.multibindings.ProvidesIntoSet;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.base.classloader.ClassLoaderSafeNodePartitioningProvider;
 import io.trino.plugin.base.classloader.ForClassLoaderSafe;
+import io.trino.plugin.base.mapping.DefaultIdentifierMapping;
+import io.trino.plugin.base.mapping.IdentifierMapping;
 import io.trino.plugin.base.mapping.IdentifierMappingModule;
 import io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType;
 import io.trino.plugin.kudu.procedures.RangePartitionProcedures;
 import io.trino.plugin.kudu.properties.AnalyzePropertiesProvider;
 import io.trino.plugin.kudu.properties.KuduColumnProperties;
 import io.trino.plugin.kudu.properties.KuduTableProperties;
+import io.trino.plugin.kudu.schema.HiveSchemaEmulation;
 import io.trino.plugin.kudu.schema.NoSchemaEmulation;
 import io.trino.plugin.kudu.schema.SchemaEmulation;
 import io.trino.plugin.kudu.schema.SchemaEmulationByTableNameConfig;
@@ -43,6 +46,7 @@ import io.trino.spi.type.TypeManager;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.HIVE_METASTORE;
 import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.NONE;
 import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.TABLE_NAME;
 import static java.util.Objects.requireNonNull;
@@ -85,17 +89,27 @@ public class KuduModule
         binder.bind(KuduScannerAliveKeeper.class).in(Scopes.SINGLETON);
 
         install(new KuduSecurityModule());
-        install(new IdentifierMappingModule());
 
         installSchemaEmulationModule(
                 NONE,
-                internalBinder -> internalBinder.bind(SchemaEmulation.class).to(NoSchemaEmulation.class).in(Scopes.SINGLETON));
+                internalBinder -> {
+                    internalBinder.bind(SchemaEmulation.class).to(NoSchemaEmulation.class).in(Scopes.SINGLETON);
+                    install(new IdentifierMappingModule());
+                });
 
         installSchemaEmulationModule(
                 TABLE_NAME,
                 internalBinder -> {
                     configBinder(internalBinder).bindConfig(SchemaEmulationByTableNameConfig.class);
                     internalBinder.bind(SchemaEmulation.class).to(SchemaEmulationByTableNameConvention.class).in(Scopes.SINGLETON);
+                    install(new IdentifierMappingModule());
+                });
+
+        installSchemaEmulationModule(
+                HIVE_METASTORE,
+                internalBinder -> {
+                    internalBinder.bind(SchemaEmulation.class).to(HiveSchemaEmulation.class).in(Scopes.SINGLETON);
+                    internalBinder.bind(IdentifierMapping.class).to(DefaultIdentifierMapping.class).in(Scopes.SINGLETON);
                 });
     }
 
