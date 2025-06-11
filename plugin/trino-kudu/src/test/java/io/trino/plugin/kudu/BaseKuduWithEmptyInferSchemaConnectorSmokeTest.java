@@ -13,22 +13,24 @@
  */
 package io.trino.plugin.kudu;
 
-import org.junit.jupiter.api.Test;
+import io.trino.testing.QueryRunner;
 
 import java.util.Optional;
 
 public abstract class BaseKuduWithEmptyInferSchemaConnectorSmokeTest
-        extends BaseKuduConnectorSmokeTest
+        extends BaseKuduInferSchemaConnectorSmokeTest
 {
     @Override
-    protected Optional<String> getKuduSchemaEmulationPrefix()
+    protected QueryRunner createQueryRunner()
+            throws Exception
     {
-        return Optional.of("");
-    }
+        TestingKuduServer kuduServer = closeAfterClass(TestingKuduServer.builder()
+                .setKuduVersion(getKuduServerVersion())
+                .build());
 
-    @Test
-    public void testListingOfTableForDefaultSchema()
-    {
-        assertQuery("SHOW TABLES FROM default", "VALUES '$schemas'");
+        return KuduQueryRunnerFactory.builder(kuduServer)
+                .setKuduSchemaEmulationPrefix(Optional.of(""))
+                .setInitialTables(REQUIRED_TPCH_TABLES)
+                .build();
     }
 }

@@ -110,15 +110,14 @@ public final class KuduQueryRunnerFactory
             try {
                 queryRunner.installPlugin(new TpchPlugin());
                 queryRunner.createCatalog("tpch", "tpch");
+                addConnectorProperty("kudu.client.master-addresses", kuduServer.getMasterAddress().toString());
 
                 if (kuduSchemaEmulationPrefix.isPresent()) {
                     addConnectorProperty("kudu.schema-emulation.enabled", "true");
                     addConnectorProperty("kudu.schema-emulation.prefix", kuduSchemaEmulationPrefix.get());
-                    addConnectorProperty("kudu.client.master-addresses", kuduServer.getMasterAddress().toString());
                 }
                 else {
                     addConnectorProperty("kudu.schema-emulation.enabled", "false");
-                    addConnectorProperty("kudu.client.master-addresses", kuduServer.getMasterAddress().toString());
                 }
 
                 queryRunner.installPlugin(new KuduPlugin());

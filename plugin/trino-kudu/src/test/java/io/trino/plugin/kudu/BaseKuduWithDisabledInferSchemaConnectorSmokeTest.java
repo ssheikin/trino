@@ -13,25 +13,34 @@
  */
 package io.trino.plugin.kudu;
 
+import io.trino.testing.QueryRunner;
 import io.trino.tpch.TpchTable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static io.trino.testing.TestingNames.randomNameSuffix;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.abort;
 
 public abstract class BaseKuduWithDisabledInferSchemaConnectorSmokeTest
         extends BaseKuduConnectorSmokeTest
 {
     @Override
-    protected Optional<String> getKuduSchemaEmulationPrefix()
+    protected QueryRunner createQueryRunner()
+            throws Exception
     {
-        return Optional.empty();
+        TestingKuduServer kuduServer = closeAfterClass(TestingKuduServer.builder()
+                .setKuduVersion(getKuduServerVersion())
+                .build());
+
+        return KuduQueryRunnerFactory.builder(kuduServer)
+                .setInitialTables(REQUIRED_TPCH_TABLES)
+                .build();
     }
 
     @Test
@@ -71,5 +80,15 @@ public abstract class BaseKuduWithDisabledInferSchemaConnectorSmokeTest
     {
         assertThatThrownBy(super::testRenameTableAcrossSchemas)
                 .hasMessage("Creating schema in Kudu connector not allowed if schema emulation is disabled.");
+    }
+
+    @Test
+    @Override
+    public void testDropSchemaCascade()
+    {
+        String schemaName = "test_drop_schema_cascade_" + randomNameSuffix();
+        assertThatThrownBy(() -> assertUpdate("CREATE SCHEMA " + schemaName))
+                .hasMessageContaining("Creating schema in Kudu connector not allowed if schema emulation is disabled.");
+        abort("Cannot test when schema emulation is disabled");
     }
 }

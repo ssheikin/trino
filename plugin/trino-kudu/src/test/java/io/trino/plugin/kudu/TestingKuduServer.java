@@ -14,8 +14,8 @@
 package io.trino.plugin.kudu;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.Closer;
 import com.google.common.net.HostAndPort;
+import io.trino.plugin.base.util.AutoCloseableCloser;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
@@ -38,10 +38,8 @@ public class TestingKuduServer
     private static final String TOXIPROXY_IMAGE = "ghcr.io/shopify/toxiproxy:2.4.0";
     private static final String TOXIPROXY_NETWORK_ALIAS = "toxiproxy";
 
-    private final Network network;
-    private final ToxiproxyContainer toxiProxy;
+    private final AutoCloseableCloser closer = AutoCloseableCloser.create();
     private final GenericContainer<?> master;
-    private final GenericContainer<?> tabletServer;
 
     /**
      * Kudu tablets needs to know the host/mapped port it will be bound to in order to configure --rpc_advertised_addresses
@@ -51,18 +49,18 @@ public class TestingKuduServer
      */
     private TestingKuduServer(String kuduVersion, List<String> extraTServerArgs)
     {
-        network = Network.newNetwork();
+        Network network = closer.register(Network.newNetwork());
         String masterContainerAlias = "kudu-master";
-        this.master = new GenericContainer<>(format("%s:%s", KUDU_IMAGE, kuduVersion))
+        this.master = closer.register(new GenericContainer<>(format("%s:%s", KUDU_IMAGE, kuduVersion))
                 .withExposedPorts(KUDU_MASTER_PORT)
                 .withCommand("master")
                 .withEnv("MASTER_ARGS", "--default_num_replicas=1 --unlock_unsafe_flags --use_hybrid_clock=false")
                 .withNetwork(network)
-                .withNetworkAliases(masterContainerAlias);
+                .withNetworkAliases(masterContainerAlias));
 
-        toxiProxy = new ToxiproxyContainer(TOXIPROXY_IMAGE)
+        ToxiproxyContainer toxiProxy = closer.register(new ToxiproxyContainer(TOXIPROXY_IMAGE)
                 .withNetwork(network)
-                .withNetworkAliases(TOXIPROXY_NETWORK_ALIAS);
+                .withNetworkAliases(TOXIPROXY_NETWORK_ALIAS));
         toxiProxy.start();
 
         String instanceName = "kudu-tserver";
@@ -70,7 +68,7 @@ public class TestingKuduServer
         ToxiproxyContainer.ContainerProxy proxy = toxiProxy.getProxy(instanceName, KUDU_TSERVER_PORT);
         String tServerArgs = "--fs_wal_dir=/var/lib/kudu/tserver --logtostderr --use_hybrid_clock=false --unlock_unsafe_flags --rpc_bind_addresses=%s:%s --rpc_advertised_addresses=%s:%s %s"
                 .formatted(instanceName, KUDU_TSERVER_PORT, TOXIPROXY_NETWORK_ALIAS, proxy.getOriginalProxyPort(), String.join(" ", extraTServerArgs));
-        tabletServer = new GenericContainer<>(format("%s:%s", KUDU_IMAGE, kuduVersion))
+        GenericContainer tabletServer = closer.register(new GenericContainer<>(format("%s:%s", KUDU_IMAGE, kuduVersion))
                 .withExposedPorts(KUDU_TSERVER_PORT)
                 .withCommand("tserver")
                 .withEnv("KUDU_MASTERS", format("%s:%s", masterContainerAlias, KUDU_MASTER_PORT))
@@ -78,7 +76,7 @@ public class TestingKuduServer
                 .withNetwork(network)
                 .withNetworkAliases(instanceName)
                 .waitingFor(new KuduTabletWaitStrategy(master))
-                .dependsOn(master);
+                .dependsOn(master));
 
         master.start();
         tabletServer.start();
@@ -96,12 +94,7 @@ public class TestingKuduServer
     public void close()
             throws Exception
     {
-        try (Closer closer = Closer.create()) {
-            closer.register(master::stop);
-            closer.register(tabletServer::stop);
-            closer.register(toxiProxy::stop);
-            closer.register(network::close);
-        }
+        closer.close();
     }
 
     public static Builder builder()

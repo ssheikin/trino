@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.kudu;
 
+import io.trino.testing.QueryRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -20,15 +21,24 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class BaseKuduWithStandardInferSchemaConnectorSmokeTest
-        extends BaseKuduConnectorSmokeTest
+        extends BaseKuduInferSchemaConnectorSmokeTest
 {
     @Override
-    protected Optional<String> getKuduSchemaEmulationPrefix()
+    protected QueryRunner createQueryRunner()
+            throws Exception
     {
-        return Optional.of("presto::");
+        TestingKuduServer kuduServer = closeAfterClass(TestingKuduServer.builder()
+                .setKuduVersion(getKuduServerVersion())
+                .build());
+
+        return KuduQueryRunnerFactory.builder(kuduServer)
+                .setKuduSchemaEmulationPrefix(Optional.of("presto::"))
+                .setInitialTables(REQUIRED_TPCH_TABLES)
+                .build();
     }
 
     @Test
+    @Override
     public void testListingOfTableForDefaultSchema()
     {
         // The special $schemas table is created when listing schema names with schema emulation enabled
