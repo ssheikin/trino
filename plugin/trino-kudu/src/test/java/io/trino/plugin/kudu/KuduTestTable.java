@@ -78,7 +78,8 @@ public abstract class KuduTestTable
             session.apply(insert);
             session.close();
         }
-        catch (KuduException ignore) {
+        catch (KuduException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -106,7 +107,8 @@ public abstract class KuduTestTable
             CreateTableOptions options = buildCreateTableOptions(schema, kuduTableProperties);
             kuduClient.createTable(tableName, schema, options);
         }
-        catch (KuduException ignore) {
+        catch (KuduException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
