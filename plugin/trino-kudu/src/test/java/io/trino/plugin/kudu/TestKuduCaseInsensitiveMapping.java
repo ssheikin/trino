@@ -14,6 +14,7 @@
 package io.trino.plugin.kudu;
 
 import com.google.common.collect.ImmutableList;
+import io.airlift.units.Duration;
 import io.trino.plugin.base.mapping.TableMappingRule;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
@@ -56,15 +57,10 @@ public class TestKuduCaseInsensitiveMapping
         kuduServer = TestingKuduServer.builder().build();
         kuduClient = new KuduClient.KuduClientBuilder(kuduServer.getMasterAddress().toString()).build();
         return KuduQueryRunnerFactory.builder(kuduServer)
-                .addConnectorProperty("kudu.schema-emulation.enabled", "false")
-                .addConnectorProperty("kudu.client.master-addresses", kuduServer.getMasterAddress().toString())
-                .addConnectorProperty("case-insensitive-name-matching", "true")
                 // disable remote identifiers cache,
                 // to prevent failures in case of clash names in cache,
                 // during tests runs
-                .addConnectorProperty("case-insensitive-name-matching.cache-ttl", "0ms")
-                .addConnectorProperty("case-insensitive-name-matching.config-file", mappingFile.toFile().getAbsolutePath())
-                .addConnectorProperty("case-insensitive-name-matching.config-file.refresh-period", REFRESH_PERIOD_DURATION.toString())
+                .withCaseInsensitiveTableMatching(Duration.ZERO, mappingFile.toFile(), REFRESH_PERIOD_DURATION)
                 .build();
     }
 

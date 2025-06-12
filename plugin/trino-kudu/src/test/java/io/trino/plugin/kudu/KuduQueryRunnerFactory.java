@@ -14,15 +14,18 @@
 package io.trino.plugin.kudu;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.airlift.log.Logger;
 import io.airlift.log.Logging;
+import io.airlift.units.Duration;
 import io.trino.plugin.base.util.Closables;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import io.trino.tpch.TpchTable;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,10 +69,27 @@ public final class KuduQueryRunnerFactory
             return this;
         }
 
+        public Builder withCaseInsensitiveTableMatching(Duration ttl, File configFile, Duration refreshPeriod)
+        {
+            return addConnectorProperties(
+                    ImmutableMap.of(
+                            "case-insensitive-name-matching", "true",
+                            "case-insensitive-name-matching.cache-ttl", ttl.toString(),
+                            "case-insensitive-name-matching.config-file", configFile.getAbsolutePath(),
+                            "case-insensitive-name-matching.config-file.refresh-period", refreshPeriod.toString()));
+        }
+
         @CanIgnoreReturnValue
         public Builder addConnectorProperty(String key, String value)
         {
             this.connectorProperties.put(key, value);
+            return this;
+        }
+
+        @CanIgnoreReturnValue
+        public Builder addConnectorProperties(Map<String, String> connectorProperties)
+        {
+            this.connectorProperties.putAll(connectorProperties);
             return this;
         }
 
