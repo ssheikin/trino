@@ -41,8 +41,6 @@ import io.trino.testing.TestingSession;
 import io.trino.testing.TestingTransactionHandle;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
-
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.sql.ir.Comparison.Operator.EQUAL;
 import static io.trino.sql.ir.Comparison.Operator.GREATER_THAN;
@@ -252,8 +250,6 @@ public class TestPushDownArraySubscriptRules
                                         p.symbol("array2", ARRAY_TYPE),
                                         p.symbol("filtering_array", ARRAY_TYPE),
                                         p.symbol("match"),
-                                        Optional.empty(),
-                                        Optional.empty(),
                                         p.values(p.symbol("array1", ARRAY_TYPE), p.symbol("array2", ARRAY_TYPE)),
                                         p.values(p.symbol("filtering_array", ARRAY_TYPE)))))
                 .matches(

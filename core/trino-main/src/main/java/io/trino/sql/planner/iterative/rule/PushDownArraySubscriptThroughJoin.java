@@ -175,8 +175,6 @@ public class PushDownArraySubscriptThroughJoin
                 joinNode.isMaySkipOutputDuplicates(),
                 // Use newly created symbols in filter
                 joinNode.getFilter().map(expression -> replaceExpression(expression, mappings)),
-                joinNode.getLeftHashSymbol(),
-                joinNode.getRightHashSymbol(),
                 joinNode.getDistributionType(),
                 joinNode.isSpillable(),
                 joinNode.getDynamicFilters(),
