@@ -123,7 +123,7 @@ public final class KuduQueryRunnerFactory
             throws Exception
     {
         Logging.initialize();
-        QueryRunner queryRunner = builder(new TestingKuduServer())
+        QueryRunner queryRunner = builder(TestingKuduServer.builder().build())
                 .addCoordinatorProperty("http-server.http.port", "8080")
                 .setInitialTables(TpchTable.getTables())
                 .build();

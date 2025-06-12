@@ -83,7 +83,7 @@ public class TestKuduIntegrationRangePartitioning
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        return KuduQueryRunnerFactory.builder(closeAfterClass(new TestingKuduServer())).build();
+        return KuduQueryRunnerFactory.builder(closeAfterClass(TestingKuduServer.builder().build())).build();
     }
 
     @Test

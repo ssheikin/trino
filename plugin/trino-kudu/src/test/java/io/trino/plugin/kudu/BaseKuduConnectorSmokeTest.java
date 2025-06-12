@@ -39,7 +39,11 @@ public abstract class BaseKuduConnectorSmokeTest
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        return KuduQueryRunnerFactory.builder(closeAfterClass(new TestingKuduServer(getKuduServerVersion())))
+        TestingKuduServer kuduServer = closeAfterClass(TestingKuduServer.builder()
+                .setKuduVersion(getKuduServerVersion())
+                .build());
+
+        return KuduQueryRunnerFactory.builder(kuduServer)
                 .setKuduSchemaEmulationPrefix(getKuduSchemaEmulationPrefix())
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .build();

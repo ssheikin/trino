@@ -60,7 +60,7 @@ public class TestKuduConnectorTest
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        TestingKuduServer kuduServer = closeAfterClass(new TestingKuduServer());
+        TestingKuduServer kuduServer = closeAfterClass(TestingKuduServer.builder().build());
         this.masterAddress = kuduServer.getMasterAddress();
         return KuduQueryRunnerFactory.builder(kuduServer)
                 .setInitialTables(REQUIRED_TPCH_TABLES)

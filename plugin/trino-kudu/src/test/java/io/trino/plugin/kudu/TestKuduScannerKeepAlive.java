@@ -48,7 +48,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
-import static io.trino.plugin.kudu.TestingKuduServer.LATEST_TAG;
 import static io.trino.spi.connector.Constraint.alwaysTrue;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.VarcharType.VARCHAR;
@@ -66,7 +65,9 @@ public class TestKuduScannerKeepAlive
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        kuduServer = closeAfterClass(new TestingKuduServer(LATEST_TAG, ImmutableList.of("--scanner_ttl_ms=10000", "--scanner_gc_check_interval_us=1000000")));
+        kuduServer = closeAfterClass(TestingKuduServer.builder()
+                .withExtraTServerArgs(ImmutableList.of("--scanner_ttl_ms=10000", "--scanner_gc_check_interval_us=1000000"))
+                .build());
         this.masterAddress = kuduServer.getMasterAddress();
         QueryRunner queryRunner = KuduQueryRunnerFactory.builder(kuduServer)
                 .addConnectorProperty("kudu.scanner.batch-size", "128kB")

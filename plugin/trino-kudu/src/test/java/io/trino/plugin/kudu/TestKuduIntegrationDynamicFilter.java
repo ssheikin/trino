@@ -65,7 +65,7 @@ public class TestKuduIntegrationDynamicFilter
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        return KuduQueryRunnerFactory.builder(closeAfterClass(new TestingKuduServer()))
+        return KuduQueryRunnerFactory.builder(closeAfterClass(TestingKuduServer.builder().build()))
                 .setKuduSchemaEmulationPrefix(Optional.of(""))
                 .addConnectorProperty("kudu.dynamic-filtering.wait-timeout", "1h")
                 .addExtraProperty("dynamic-filtering.small.max-distinct-values-per-driver", "100")

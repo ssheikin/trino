@@ -53,7 +53,7 @@ public class TestKuduCaseInsensitiveMapping
             throws Exception
     {
         mappingFile = createRuleBasedIdentifierMappingFile();
-        kuduServer = new TestingKuduServer();
+        kuduServer = TestingKuduServer.builder().build();
         kuduClient = new KuduClient.KuduClientBuilder(kuduServer.getMasterAddress().toString()).build();
         return KuduQueryRunnerFactory.builder(kuduServer)
                 .addConnectorProperty("kudu.schema-emulation.enabled", "false")

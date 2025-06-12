@@ -23,6 +23,7 @@ import org.testcontainers.containers.ToxiproxyContainer;
 import java.util.List;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 public class TestingKuduServer
         implements AutoCloseable
@@ -42,23 +43,13 @@ public class TestingKuduServer
     private final GenericContainer<?> master;
     private final GenericContainer<?> tabletServer;
 
-    public TestingKuduServer()
-    {
-        this(LATEST_TAG);
-    }
-
-    public TestingKuduServer(String kuduVersion)
-    {
-        this(kuduVersion, ImmutableList.of());
-    }
-
     /**
      * Kudu tablets needs to know the host/mapped port it will be bound to in order to configure --rpc_advertised_addresses
      * However when using non-fixed ports in testcontainers, we only know the mapped port after the container starts up
      * In order to workaround this, create a proxy to forward traffic from the host to the underlying tablets
      * Since the ToxiProxy container starts up *before* kudu, we know the mapped port when configuring the kudu tablets
      */
-    public TestingKuduServer(String kuduVersion, List<String> extraTServerArgs)
+    private TestingKuduServer(String kuduVersion, List<String> extraTServerArgs)
     {
         network = Network.newNetwork();
         String masterContainerAlias = "kudu-master";
@@ -110,6 +101,36 @@ public class TestingKuduServer
             closer.register(tabletServer::stop);
             closer.register(toxiProxy::stop);
             closer.register(network::close);
+        }
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private String kuduVersion = LATEST_TAG;
+        private List<String> extraTServerArgs = ImmutableList.of();
+
+        private Builder() {}
+
+        public Builder setKuduVersion(String kuduVersion)
+        {
+            this.kuduVersion = requireNonNull(kuduVersion, "kuduVersion is null");
+            return this;
+        }
+
+        public Builder withExtraTServerArgs(List<String> extraTServerArgs)
+        {
+            this.extraTServerArgs = ImmutableList.copyOf(requireNonNull(extraTServerArgs, "extraTServerArgs is null"));
+            return this;
+        }
+
+        public TestingKuduServer build()
+        {
+            return new TestingKuduServer(kuduVersion, extraTServerArgs);
         }
     }
 }
