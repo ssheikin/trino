@@ -69,6 +69,7 @@ import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 import static java.util.Locale.ENGLISH;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joda.time.DateTimeZone.UTC;
 
 public class TestTrinoGlueCatalog
         extends BaseTrinoCatalogTest
@@ -150,6 +151,7 @@ public class TestTrinoGlueCatalog
                     3,
                     false,
                     _ -> false,
+                    UTC,
                     newDirectExecutorService(),
                     directExecutor(),
                     newDirectExecutorService());

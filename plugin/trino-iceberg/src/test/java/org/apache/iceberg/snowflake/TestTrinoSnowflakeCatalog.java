@@ -82,6 +82,7 @@ import static java.util.Locale.ENGLISH;
 import static org.apache.iceberg.snowflake.TrinoIcebergSnowflakeCatalogFactory.getSnowflakeDriverProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joda.time.DateTimeZone.UTC;
 
 public class TestTrinoSnowflakeCatalog
         extends BaseTrinoCatalogTest
@@ -232,6 +233,7 @@ public class TestTrinoSnowflakeCatalog
                 3,
                 false,
                 _ -> false,
+                UTC,
                 newDirectExecutorService(),
                 directExecutor(),
                 newDirectExecutorService());

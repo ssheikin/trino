@@ -26,6 +26,7 @@ import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
+import org.joda.time.DateTimeZone;
 
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -49,6 +50,7 @@ public class IcebergMetadataFactory
     private final Optional<HiveMetastoreFactory> metastoreFactory;
     private final int maxFormatVersion;
     private final boolean addFilesProcedureEnabled;
+    private final DateTimeZone dateTimeZone;
     private final Predicate<String> allowedExtraProperties;
     private final ExecutorService icebergScanExecutor;
     private final Executor metadataFetchingExecutor;
@@ -82,6 +84,7 @@ public class IcebergMetadataFactory
         this.icebergScanExecutor = requireNonNull(icebergScanExecutor, "icebergScanExecutor is null");
         this.maxFormatVersion = config.getMaxFormatVersion();
         this.addFilesProcedureEnabled = config.isAddFilesProcedureEnabled();
+        this.dateTimeZone = config.getDateTimeZone();
         if (config.getAllowedExtraProperties().equals(ImmutableList.of("*"))) {
             this.allowedExtraProperties = _ -> true;
         }
@@ -114,6 +117,7 @@ public class IcebergMetadataFactory
                 maxFormatVersion,
                 addFilesProcedureEnabled,
                 allowedExtraProperties,
+                dateTimeZone,
                 icebergScanExecutor,
                 metadataFetchingExecutor,
                 icebergPlanningExecutor);
