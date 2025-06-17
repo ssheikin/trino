@@ -204,12 +204,12 @@
         <!-- starburst specific configuration -->
         <starburst-license.header-file>${air.main.basedir}/.mvn/license/starburst-header.txt</starburst-license.header-file>
 
-        <air.repository.public.id>starburst-domain-maven-public</air.repository.public.id>
-        <air.repository.public.name>Starburstdata Maven Public</air.repository.public.name>
-        <air.repository.public.url>https://starburst-domain-843985043183.d.codeartifact.us-east-1.amazonaws.com/maven/maven-public/</air.repository.public.url>
-        <air.repository.release.id>starburst-domain-releases</air.repository.release.id>
+        <air.repository.snapshot.id>starburstdata-sep.snapshots</air.repository.snapshot.id>
+        <air.repository.snapshot.name>Starburstdata Snapshots</air.repository.snapshot.name>
+        <air.repository.snapshot.url>https://starburstdata-sep-cicd-843985043183.d.codeartifact.us-east-2.amazonaws.com/maven/snapshots/</air.repository.snapshot.url>
+        <air.repository.release.id>starburstdata-sep.releases</air.repository.release.id>
         <air.repository.release.name>Starburstdata Releases</air.repository.release.name>
-        <air.repository.release.url>https://starburst-domain-843985043183.d.codeartifact.us-east-1.amazonaws.com/maven/releases/</air.repository.release.url>
+        <air.repository.release.url>https://starburstdata-sep-cicd-843985043183.d.codeartifact.us-east-2.amazonaws.com/maven/releases/</air.repository.release.url>
 
         <!-- TODO remove us-east-2 -->
         <air.repository.old-release.id>starburstdata-sep.releases</air.repository.old-release.id>
@@ -2611,6 +2611,7 @@
     </dependencyManagement>
 
     <repositories>
+        <!-- Allow the consumption of artifacts from our internal snapshot and release repositories for dynamodb, salesforce -->
         <repository>
             <releases>
                 <enabled>false</enabled>
@@ -2618,8 +2619,8 @@
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
-            <id>${air.repository.public.id}</id>
-            <url>${air.repository.public.url}</url>
+            <id>${air.repository.snapshot.id}</id>
+            <url>${air.repository.snapshot.url}</url>
         </repository>
         <repository>
             <releases>
