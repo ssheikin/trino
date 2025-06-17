@@ -166,13 +166,14 @@ import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ManifestFiles;
 import org.apache.iceberg.ManifestReader;
 import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.RowDelta;
+import org.apache.iceberg.RowLevelOperationMode;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.Snapshot;
@@ -417,6 +418,8 @@ import static org.apache.iceberg.MetadataTableType.ALL_ENTRIES;
 import static org.apache.iceberg.MetadataTableType.ENTRIES;
 import static org.apache.iceberg.ReachableFileUtil.metadataFileLocations;
 import static org.apache.iceberg.ReachableFileUtil.statisticsFilesLocations;
+import static org.apache.iceberg.RowLevelOperationMode.COPY_ON_WRITE;
+import static org.apache.iceberg.RowLevelOperationMode.MERGE_ON_READ;
 import static org.apache.iceberg.SnapshotSummary.DELETED_RECORDS_PROP;
 import static org.apache.iceberg.SnapshotSummary.REMOVED_EQ_DELETES_PROP;
 import static org.apache.iceberg.SnapshotSummary.REMOVED_POS_DELETES_PROP;
@@ -430,6 +433,7 @@ import static org.apache.iceberg.TableProperties.ENCRYPTION_TABLE_KEY;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 import static org.apache.iceberg.TableProperties.MANIFEST_TARGET_SIZE_BYTES;
 import static org.apache.iceberg.TableProperties.MANIFEST_TARGET_SIZE_BYTES_DEFAULT;
+import static org.apache.iceberg.TableProperties.MERGE_MODE;
 import static org.apache.iceberg.TableProperties.OBJECT_STORE_ENABLED;
 import static org.apache.iceberg.TableProperties.ORC_BLOOM_FILTER_COLUMNS;
 import static org.apache.iceberg.TableProperties.PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX;
@@ -496,6 +500,7 @@ public class IcebergMetadata
     private final Executor metadataFetchingExecutor;
     private final ExecutorService icebergPlanningExecutor;
     private final Map<IcebergTableHandle, AtomicReference<TableStatistics>> tableStatisticsCache = new ConcurrentHashMap<>();
+    private final Map<String, Metrics> fileMetrics = new HashMap<>();
 
     private Transaction transaction;
     private Optional<Long> fromSnapshotForRefresh = Optional.empty();
@@ -1499,7 +1504,8 @@ public class IcebergMetadata
                 getFileFormat(table),
                 table.properties(),
                 retryMode,
-                table.io().properties());
+                table.io().properties(),
+                rowLevelOperationMode(table));
     }
 
     private static List<TrinoSortField> getSupportedSortFields(Schema schema, SortOrder sortOrder)
@@ -3360,19 +3366,35 @@ public class IcebergMetadata
     {
         int formatVersion = formatVersion(icebergTable);
         validateFormatVersion(formatVersion, maxFormatVersion);
-        if (formatVersion < 3) {
+        RowLevelOperationMode operationMode = rowLevelOperationMode(icebergTable);
+        if (operationMode != COPY_ON_WRITE && formatVersion < 3) {
             return ImmutableList.of();
         }
 
         ImmutableList.Builder<PositionDeleteFiles> rewritableDeletes = ImmutableList.builder();
         try (CloseableIterable<FileScanTask> iterator = icebergTable.newScan().planFiles()) {
             for (FileScanTask task : iterator) {
+                DataFile file = task.file();
                 rewritableDeletes.add(new PositionDeleteFiles(
-                        task.file().location(),
-                        task.spec().specId(),
+                        file.location(),
+                        file.recordCount(),
+                        file.dataSequenceNumber(),
+                        file.specId(),
                         task.deletes().stream()
                                 .map(deleteFile -> ContentFileParsers.toJson(deleteFile, task.spec()))
-                                .collect(toImmutableList())));
+                                .collect(toImmutableList()),
+                        task.deletes().stream().collect(toImmutableMap(DeleteFile::location, DeleteFile::dataSequenceNumber))));
+
+                if (operationMode == COPY_ON_WRITE) {
+                    fileMetrics.put(file.location(), new Metrics(
+                            file.recordCount(),
+                            file.columnSizes(),
+                            file.valueCounts(),
+                            file.nullValueCounts(),
+                            file.nanValueCounts(),
+                            file.lowerBounds(),
+                            file.upperBounds()));
+                }
             }
         }
         catch (IOException e) {
@@ -3387,7 +3409,8 @@ public class IcebergMetadata
         IcebergMergeTableHandle mergeHandle = (IcebergMergeTableHandle) mergeTableHandle;
         IcebergTableHandle handle = mergeHandle.getTableHandle();
         RetryMode retryMode = mergeHandle.getInsertTableHandle().retryMode();
-        finishWrite(session, handle, fragments, retryMode);
+        RowLevelOperationMode operationMode = mergeHandle.getInsertTableHandle().operationMode();
+        finishWrite(session, handle, fragments, retryMode, operationMode);
     }
 
     private static void verifyTableVersionForUpdate(IcebergTableHandle table)
@@ -3404,7 +3427,7 @@ public class IcebergMetadata
         }
     }
 
-    private void finishWrite(ConnectorSession session, IcebergTableHandle table, Collection<Slice> fragments, RetryMode retryMode)
+    private void finishWrite(ConnectorSession session, IcebergTableHandle table, Collection<Slice> fragments, RetryMode retryMode, RowLevelOperationMode operationMode)
     {
         Table icebergTable = transaction.table();
 
@@ -3421,7 +3444,10 @@ public class IcebergMetadata
 
         Schema schema = SchemaParser.fromJson(table.getTableSchemaJson());
 
-        RowDelta rowDelta = transaction.newRowDelta();
+        UpdateSnapshot rowDelta = switch (operationMode) {
+            case MERGE_ON_READ -> new MergeOnRead(transaction.newRowDelta());
+            case COPY_ON_WRITE -> new CopyOnWrite(transaction.newOverwrite());
+        };
         table.getSnapshotId().map(icebergTable::snapshot).ifPresent(s -> rowDelta.validateFromSnapshot(s.snapshotId()));
         TupleDomain<IcebergColumnHandle> dataColumnPredicate = table.getEnforcedPredicate().filter((column, domain) -> !isMetadataColumnId(column.getId()));
         TupleDomain<IcebergColumnHandle> effectivePredicate = dataColumnPredicate.intersect(table.getUnenforcedPredicate());
@@ -3436,11 +3462,10 @@ public class IcebergMetadata
         }
         IsolationLevel isolationLevel = IsolationLevel.fromName(icebergTable.properties().getOrDefault(DELETE_ISOLATION_LEVEL, DELETE_ISOLATION_LEVEL_DEFAULT));
         if (isolationLevel == IsolationLevel.SERIALIZABLE) {
-            rowDelta.validateNoConflictingDataFiles();
+            rowDelta.validateNoConflicting();
         }
 
         // Ensure a row that is updated by this commit was not deleted by a separate commit
-        rowDelta.validateDeletedFiles();
         rowDelta.validateNoConflictingDeleteFiles();
 
         ImmutableSet.Builder<String> writtenFiles = ImmutableSet.builder();
@@ -3480,17 +3505,37 @@ public class IcebergMetadata
                     task.referencedDataFile().ifPresent(referencedDataFiles::add);
                 }
                 case DATA -> {
+                    Optional<PartitionData> partitionData = Optional.empty();
+                    if (!partitionSpec.fields().isEmpty()) {
+                        String partitionDataJson = task.partitionDataJson()
+                                .orElseThrow(() -> new VerifyException("No partition data for partitioned table"));
+                        partitionData = Optional.of(PartitionData.fromJson(partitionDataJson, partitionColumnTypes));
+                    }
+
+                    Optional<DataFile> rewrittenDataFile = Optional.empty();
+                    if (task.referencedDataFile().isPresent()) {
+                        checkArgument(operationMode == COPY_ON_WRITE, "Referenced data file is only supported in COPY_ON_WRITE mode");
+                        String referencedDataFile = task.referencedDataFile().get();
+                        checkArgument(fileMetrics.containsKey(referencedDataFile), "Unable to find metrics for referenced data file: %s", referencedDataFile);
+                        DataFiles.Builder rewrittenDataFileBuilder = DataFiles.builder(partitionSpec)
+                                .withInputFile(icebergTable.io().newInputFile(referencedDataFile))
+                                .withMetrics(fileMetrics.get(referencedDataFile))
+                                .withPath(referencedDataFile);
+                        partitionData.ifPresent(rewrittenDataFileBuilder::withPartition);
+                        rewrittenDataFile = Optional.of(rewrittenDataFileBuilder.build());
+                    }
+                    if (task.path().isEmpty()) {
+                        rowDelta.addRows(Optional.empty(), rewrittenDataFile);
+                        continue;
+                    }
                     DataFiles.Builder builder = DataFiles.builder(partitionSpec)
                             .withPath(task.path())
                             .withFormat(task.fileFormat())
                             .withFileSizeInBytes(task.fileSizeInBytes())
                             .withMetrics(task.metrics().metrics());
-                    if (!icebergTable.spec().fields().isEmpty()) {
-                        String partitionDataJson = task.partitionDataJson()
-                                .orElseThrow(() -> new VerifyException("No partition data for partitioned table"));
-                        builder.withPartition(PartitionData.fromJson(partitionDataJson, partitionColumnTypes));
-                    }
-                    rowDelta.addRows(builder.build());
+                    partitionData.ifPresent(builder::withPartition);
+
+                    rowDelta.addRows(Optional.of(builder.build()), rewrittenDataFile);
                     writtenFiles.add(task.path());
                 }
                 default -> throw new UnsupportedOperationException("Unsupported task content: " + task.content());
@@ -3503,7 +3548,7 @@ public class IcebergMetadata
         }
 
         rowDelta.validateDataFilesExist(referencedDataFiles.build());
-        commitUpdateAndTransaction(rowDelta, session, transaction, "write");
+        commitUpdateAndTransaction(rowDelta.unwrap(), session, transaction, "write");
     }
 
     static TupleDomain<IcebergColumnHandle> extractTupleDomainsFromCommitTasks(IcebergTableHandle table, Table icebergTable, List<CommitTaskData> commitTasks, TypeManager typeManager)
@@ -4629,5 +4674,11 @@ public class IcebergMetadata
         if (table.schema().columns().stream().anyMatch(column -> column.writeDefault() != null)) {
             throw new TrinoException(NOT_SUPPORTED, "The connector does not support default column values");
         }
+    }
+
+    private static RowLevelOperationMode rowLevelOperationMode(Table table)
+    {
+        // Trino uses MoR by default unlike Spark
+        return RowLevelOperationMode.fromName(table.properties().getOrDefault(MERGE_MODE, MERGE_ON_READ.modeName()));
     }
 }

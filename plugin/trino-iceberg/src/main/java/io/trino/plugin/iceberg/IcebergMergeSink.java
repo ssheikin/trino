@@ -52,6 +52,8 @@ public class IcebergMergeSink
             IcebergFileFormat fileFormat,
             Map<String, String> storageProperties,
             Schema schema,
+            String schemaName,
+            String tableName,
             Map<Integer, PartitionSpec> partitionsSpecs,
             ConnectorPageSink insertPageSink,
             int columnCount)
@@ -66,6 +68,8 @@ public class IcebergMergeSink
                 fileFormat,
                 storageProperties,
                 schema,
+                schemaName,
+                tableName,
                 partitionsSpecs,
                 insertPageSink,
                 columnCount);
