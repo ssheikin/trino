@@ -38,7 +38,9 @@ import software.amazon.awssdk.services.s3.model.RequestPayer;
 import software.amazon.awssdk.services.s3.model.S3Error;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.DeleteObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedDeleteObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
@@ -336,6 +338,40 @@ public final class S3FileSystem
             return TrinoFileSystem.super.preSignedUri(location, ttl);
         }
         return encryptedPreSignedUri(location, ttl, Optional.empty());
+    }
+
+    @Override
+    public Optional<UriLocation> preSignedDeleteUri(Location location, Duration ttl)
+            throws IOException
+    {
+        if (preSigner.isEmpty()) {
+            return TrinoFileSystem.super.preSignedDeleteUri(location, ttl);
+        }
+
+        location.verifyValidFileLocation();
+        S3Location s3Location = new S3Location(location);
+
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .overrideConfiguration(context::applyCredentialProviderOverride)
+                .requestPayer(requestPayer)
+                .key(s3Location.key())
+                .bucket(s3Location.bucket())
+                .build();
+
+        DeleteObjectPresignRequest preSignRequest = DeleteObjectPresignRequest.builder()
+                .signatureDuration(ttl.toJavaTime())
+                .deleteObjectRequest(request)
+                .build();
+        try {
+            PresignedDeleteObjectRequest preSigned = preSigner.get().presignDeleteObject(preSignRequest);
+            return Optional.of(new UriLocation(preSigned.url().toURI(), filterHeaders(preSigned.httpRequest().headers())));
+        }
+        catch (SdkException e) {
+            throw new IOException("Failed to generate pre-signed DELETE URI", e);
+        }
+        catch (URISyntaxException e) {
+            throw new TrinoFileSystemException("Failed to convert pre-signed DELETE URI to URI", e);
+        }
     }
 
     @Override

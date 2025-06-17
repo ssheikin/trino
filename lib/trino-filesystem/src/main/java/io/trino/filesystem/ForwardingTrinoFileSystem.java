@@ -166,6 +166,13 @@ public abstract class ForwardingTrinoFileSystem
     }
 
     @Override
+    public Optional<UriLocation> preSignedDeleteUri(Location location, Duration ttl)
+            throws IOException
+    {
+        return delegate().preSignedDeleteUri(location, ttl);
+    }
+
+    @Override
     public Optional<UriLocation> encryptedPreSignedUri(Location location, Duration ttl, EncryptionKey key)
             throws IOException
     {
