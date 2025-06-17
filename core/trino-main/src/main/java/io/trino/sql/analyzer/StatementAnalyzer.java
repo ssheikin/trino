@@ -4779,7 +4779,7 @@ class StatementAnalyzer
                     if (identifierChainBasis.getBasisType() == TABLE) {
                         RelationType relationType = identifierChainBasis.getRelationType().orElseThrow();
                         List<Field> requestedFields = relationType.resolveVisibleFieldsWithRelationPrefix(Optional.of(prefix));
-                        List<Field> fields = filterInaccessibleFields(requestedFields);
+                        List<Field> fields = filterNonSelectableColumns(requestedFields);
                         if (fields.isEmpty()) {
                             if (!requestedFields.isEmpty()) {
                                 throw semanticException(TABLE_NOT_FOUND, allColumns, "Relation not found or not allowed");
@@ -4809,7 +4809,7 @@ class StatementAnalyzer
                 }
 
                 List<Field> requestedFields = (List<Field>) scope.getRelationType().getVisibleFields();
-                List<Field> fields = filterInaccessibleFields(requestedFields);
+                List<Field> fields = filterNonSelectableColumns(requestedFields);
                 if (fields.isEmpty()) {
                     if (node.getFrom().isEmpty()) {
                         throw semanticException(COLUMN_NOT_FOUND, allColumns, "SELECT * not allowed in queries without FROM clause");
@@ -4824,7 +4824,7 @@ class StatementAnalyzer
             }
         }
 
-        private List<Field> filterInaccessibleFields(List<Field> fields)
+        private List<Field> filterNonSelectableColumns(List<Field> fields)
         {
             if (!SystemSessionProperties.isHideInaccessibleColumns(session)) {
                 return fields;
@@ -4846,7 +4846,7 @@ class StatementAnalyzer
             });
 
             tableFieldsMap.asMap().forEach((table, tableFields) -> {
-                Set<String> accessibleColumns = accessControl.filterColumns(
+                Set<String> accessibleColumns = accessControl.filterSelectableColumns(
                                 session.toSecurityContext(),
                                 table.catalogName(),
                                 ImmutableMap.of(
