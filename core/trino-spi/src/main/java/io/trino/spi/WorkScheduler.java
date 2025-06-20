@@ -14,8 +14,12 @@
 package io.trino.spi;
 
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.SchemaTableName;
 
+import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -37,12 +41,37 @@ public interface WorkScheduler
 
     boolean updateMaterializedViewName(ConnectorSession session, String jobId, String materializedViewName);
 
+    List<MaterializedViewRefreshRecord> listRefreshHistory(String catalogName, Collection<SchemaTableName> materializedViews);
+
     record RefreshSchedule(String cronExpression, Optional<ZoneId> timeZone)
     {
         public RefreshSchedule
         {
             requireNonNull(cronExpression, "cronExpression is null");
             requireNonNull(timeZone, "timeZone is null");
+        }
+    }
+
+    record MaterializedViewRefreshRecord(
+            SchemaTableName materializedView,
+            String status,
+            Optional<QueryId> queryId,
+            Instant scheduledAt,
+            Instant queuedAt,
+            Optional<Instant> startedAt,
+            Instant updatedAt,
+            Optional<String> errorMessage)
+    {
+        public MaterializedViewRefreshRecord
+        {
+            requireNonNull(materializedView, "materializedView is null");
+            requireNonNull(status, "status is null");
+            requireNonNull(queryId, "queryId is null");
+            requireNonNull(scheduledAt, "scheduledAt is null");
+            requireNonNull(queuedAt, "queuedAt is null");
+            requireNonNull(startedAt, "startedAt is null");
+            requireNonNull(updatedAt, "updatedAt is null");
+            requireNonNull(errorMessage, "errorMessage is null");
         }
     }
 }

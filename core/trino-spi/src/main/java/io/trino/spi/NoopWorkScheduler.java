@@ -14,7 +14,10 @@
 package io.trino.spi;
 
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.SchemaTableName;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public class NoopWorkScheduler
@@ -52,6 +55,12 @@ public class NoopWorkScheduler
 
     @Override
     public boolean updateMaterializedViewName(ConnectorSession session, String jobId, String materializedViewName)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<MaterializedViewRefreshRecord> listRefreshHistory(String catalogName, Collection<SchemaTableName> materializedViews)
     {
         throw new UnsupportedOperationException();
     }

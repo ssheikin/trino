@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.iceberg;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.Session;
 import io.trino.spi.NoopWorkScheduler;
@@ -164,7 +165,10 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
         assertThat(computeActual("SHOW CREATE MATERIALIZED VIEW " + materializedView).getOnlyValue().toString())
                 .contains("refresh_schedule = '0 0 * * *'")
                 .contains("storage_schema = '" + schemaName + "'");
+        assertThat(workScheduler.listRefreshHistory(TEST_CATALOG, ImmutableList.of(materializedView.getSchemaTableName()))).isEmpty();
         workScheduler.runScheduledRefreshesForJobId(workScheduler.getRequiredJobScheduleId(materializedView));
+        workScheduler.listRefreshHistory(TEST_CATALOG, ImmutableList.of(materializedView.getSchemaTableName()))
+                .forEach(record -> assertThat(record.materializedView()).isEqualTo(materializedView.getSchemaTableName()));
         assertThat(getExplainPlan("SELECT * FROM " + materializedView, ExplainType.Type.IO)).doesNotContain("tpch.tiny.nation");
 
         assertUpdate("DROP MATERIALIZED VIEW " + materializedView);
@@ -178,9 +182,14 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
                 new SchemaTableName(schemaName, "test_dropped_scheduled_refresh" + randomNameSuffix()));
 
         computeActual("CREATE MATERIALIZED VIEW " + materializedView + " WITH (refresh_schedule = '0 0 * * *') AS SELECT * FROM tpch.tiny.nation");
+        assertThat(workScheduler.listRefreshHistory(TEST_CATALOG, ImmutableList.of(materializedView.getSchemaTableName()))).isEmpty();
         workScheduler.runScheduledRefreshesForJobId(workScheduler.getRequiredJobScheduleId(materializedView));
+        workScheduler.listRefreshHistory(TEST_CATALOG, ImmutableList.of(materializedView.getSchemaTableName()))
+                .forEach(record -> assertThat(record.materializedView()).isEqualTo(materializedView.getSchemaTableName()));
 
         workScheduler.deleteJobSchedule(getSession().toConnectorSession(), workScheduler.getRequiredJobScheduleId(materializedView));
+        workScheduler.listRefreshHistory(TEST_CATALOG, ImmutableList.of(materializedView.getSchemaTableName()))
+                .forEach(record -> assertThat(record.materializedView()).isEqualTo(materializedView.getSchemaTableName()));
         assertThat(computeActual("SHOW CREATE MATERIALIZED VIEW " + materializedView).getOnlyValue().toString())
                 .doesNotContain("refresh_schedule")
                 .contains("storage_schema = '" + schemaName + "'");

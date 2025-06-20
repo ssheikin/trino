@@ -13,24 +13,32 @@
  */
 package io.trino.plugin.iceberg;
 
+import com.google.common.collect.ImmutableList;
+import io.trino.client.StatementStats;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.SchemaTableName;
 import io.trino.testing.MaterializedResult;
 import io.trino.testing.QueryRunner;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 public class TestingWorkScheduler
         implements WorkScheduler
 {
     private final Map<String, MaterializedViewRefresh> jobs = new HashMap<>();
+    private final Map<CatalogSchemaTableName, List<MaterializedViewRefreshRecord>> refreshHistory = new HashMap<>();
     private final Supplier<QueryRunner> queryRunner;
 
     public TestingWorkScheduler(Supplier<QueryRunner> queryRunner)
@@ -70,9 +78,43 @@ public class TestingWorkScheduler
         return jobs.computeIfPresent(jobId, (key, existing) -> existing.withMaterializedViewName(materializedViewName)) != null;
     }
 
+    @Override
+    public List<MaterializedViewRefreshRecord> listRefreshHistory(String catalogName, Collection<SchemaTableName> materializedViews)
+    {
+        ImmutableList.Builder<MaterializedViewRefreshRecord> results = ImmutableList.builder();
+        for (SchemaTableName materializedView : materializedViews) {
+            results.addAll(refreshHistory.getOrDefault(new CatalogSchemaTableName(catalogName, materializedView.getSchemaName(), materializedView.getTableName()), List.of())
+                    .stream()
+                    .filter(record -> record.materializedView().equals(materializedView))
+                    .collect(toImmutableList())); // should always be true, but just in case
+        }
+        return results.build();
+    }
+
     public synchronized void runScheduledRefreshesForJobId(String jobId)
     {
-        refreshMaterializedView(jobs.get(jobId));
+        Instant startedAt = Instant.now();
+        MaterializedResult result = refreshMaterializedView(jobs.get(jobId));
+        List<MaterializedViewRefreshRecord> refreshRecords = refreshHistory.get(jobs.get(jobId).table());
+        if (refreshRecords == null) {
+            refreshHistory.put(jobs.get(jobId).table(), List.of(getMaterializedViewRefreshRecord(jobId, result, startedAt)));
+        }
+        else {
+            refreshRecords.add(getMaterializedViewRefreshRecord(jobId, result, startedAt));
+        }
+    }
+
+    private MaterializedViewRefreshRecord getMaterializedViewRefreshRecord(String jobId, MaterializedResult result, Instant startedAt)
+    {
+        return new MaterializedViewRefreshRecord(
+                jobs.get(jobId).table().getSchemaTableName(),
+                result.getStatementStats().map(StatementStats::getState).orElse("COMPLETED"), // For testing purposes, we assume all jobs are completed without errors
+                Optional.of(result.getSession().getQueryId()),
+                startedAt,
+                startedAt,
+                Optional.of(startedAt),
+                startedAt.plusNanos(result.getStatementStats().map(StatementStats::getWallTimeMillis).orElse(0L)),
+                Optional.empty());
     }
 
     public synchronized String getRequiredJobScheduleId(CatalogSchemaTableName materializedView)
