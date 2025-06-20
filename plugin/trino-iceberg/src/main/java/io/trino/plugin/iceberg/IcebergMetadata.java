@@ -1332,6 +1332,7 @@ public class IcebergMetadata
                     throw new TrinoException(INVALID_TABLE_PROPERTY, format("The provided location '%s' does not match the existing table location '%s'", providedTableLocation.get(), icebergTable.location()));
                 }
                 validateNotModifyingOldSnapshot(table, icebergTable);
+                checkDefaultColumnValue(icebergTable);
                 tableLocation = icebergTable.location();
             }
         }
@@ -3602,6 +3603,7 @@ public class IcebergMetadata
         IcebergTableHandle handle = (IcebergTableHandle) tableHandle;
 
         Table icebergTable = catalog.loadTable(session, handle.getSchemaTableName());
+        checkDefaultColumnValue(icebergTable);
 
         DeleteFiles deleteFiles = icebergTable.newDelete()
                 .deleteFromRowFilter(toIcebergExpression(handle.getEnforcedPredicate()));
@@ -3624,6 +3626,7 @@ public class IcebergMetadata
     {
         IcebergTableHandle table = checkValidTableHandle(tableHandle);
         Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+        checkDefaultColumnValue(icebergTable);
         DeleteFiles deleteFiles = icebergTable.newDelete()
                 .deleteFromRowFilter(alwaysTrue());
         commitUpdate(deleteFiles, session, "truncate");
@@ -4531,6 +4534,7 @@ public class IcebergMetadata
     private void beginTransaction(Table icebergTable)
     {
         verify(transaction == null, "transaction already set");
+        checkDefaultColumnValue(icebergTable);
         transaction = catalog.newTransaction(icebergTable);
     }
 
@@ -4617,6 +4621,13 @@ public class IcebergMetadata
             catch (RuntimeException e) {
                 throw new TrinoException(CONFIGURATION_INVALID, "Refresh interval is not cron string", e);
             }
+        }
+    }
+
+    private static void checkDefaultColumnValue(Table table)
+    {
+        if (table.schema().columns().stream().anyMatch(column -> column.writeDefault() != null)) {
+            throw new TrinoException(NOT_SUPPORTED, "The connector does not support default column values");
         }
     }
 }
