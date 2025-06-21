@@ -3985,8 +3985,8 @@ public class DeltaLakeMetadata
         ImmutableList.Builder<Integer> dereferenceIndices = ImmutableList.builder();
 
         if (!column.isBaseColumn()) {
-            dereferenceNames.addAll(existingProjectionInfo.orElseThrow().getDereferencePhysicalNames());
-            dereferenceIndices.addAll(existingProjectionInfo.orElseThrow().getDereferenceIndices());
+            dereferenceNames.addAll(existingProjectionInfo.orElseThrow().dereferencePhysicalNames());
+            dereferenceIndices.addAll(existingProjectionInfo.orElseThrow().dereferenceIndices());
         }
 
         Type columnType = switch (columnMappingMode) {
@@ -4038,7 +4038,7 @@ public class DeltaLakeMetadata
         String baseColumnName = variableColumn.baseColumnName();
 
         List<Integer> variableColumnIndices = variableColumn.projectionInfo()
-                .map(DeltaLakeColumnProjectionInfo::getDereferenceIndices)
+                .map(DeltaLakeColumnProjectionInfo::dereferenceIndices)
                 .orElse(ImmutableList.of());
 
         List<Integer> projectionIndices = ImmutableList.<Integer>builder()
@@ -4050,7 +4050,7 @@ public class DeltaLakeMetadata
             DeltaLakeColumnHandle column = (DeltaLakeColumnHandle) entry.getValue();
             if (column.baseColumnName().equals(baseColumnName) &&
                     column.projectionInfo()
-                            .map(DeltaLakeColumnProjectionInfo::getDereferenceIndices)
+                            .map(DeltaLakeColumnProjectionInfo::dereferenceIndices)
                             .orElse(ImmutableList.of())
                             .equals(projectionIndices)) {
                 return Optional.of(entry.getKey());
@@ -4860,7 +4860,7 @@ public class DeltaLakeMetadata
         else {
             DeltaLakeColumnProjectionInfo projectionInfo = column.projectionInfo().orElseThrow();
             columnName = column.qualifiedPhysicalName();
-            columnType = projectionInfo.getType();
+            columnType = projectionInfo.type();
         }
         return ColumnMetadata.builder()
                 .setName(columnName)
