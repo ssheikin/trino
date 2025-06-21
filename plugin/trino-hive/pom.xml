@@ -736,7 +736,6 @@
                                 <exclude>**/TestUnloadGcs.java</exclude>
                                 <exclude>**/TestUnloadAbfs.java</exclude>
                                 <exclude>**/Test*FailureRecoveryTest.java</exclude>
-                                <exclude>**/TestUnityMetastore.java</exclude>
                                 <exclude>**/TestHiveAbfsPassthroughNativeFilesystem.java</exclude>
                                 <exclude>**/TestHiveAbfsPassthroughMultiIdp.java</exclude>
                                 <include>**/TestHiveAbfsPassthroughMultiIdpNativeFilesystem.java</include>
