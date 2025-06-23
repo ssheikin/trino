@@ -22,7 +22,6 @@ import io.trino.spi.security.Identity;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
 import io.trino.sql.parser.SqlParser;
-import io.trino.testing.NotImplementedQueryManager;
 import io.trino.transaction.TransactionManager;
 import io.trino.type.BlockTypeOperators;
 
@@ -114,7 +113,6 @@ public final class TestMetadataManager
                     languageFunctionManager,
                     tableFunctionRegistry,
                     typeManager,
-                    new NotImplementedQueryManager(),
                     NO_CATALOGS);
         }
     }
