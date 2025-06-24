@@ -341,6 +341,7 @@ import static io.trino.plugin.iceberg.IcebergTableProperties.EXTRA_PROPERTIES_PR
 import static io.trino.plugin.iceberg.IcebergTableProperties.FILE_FORMAT_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.FORMAT_VERSION_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.MAX_COMMIT_RETRY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.MERGE_MODE_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.OBJECT_STORE_LAYOUT_ENABLED_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.ORC_BLOOM_FILTER_COLUMNS_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.PARQUET_BLOOM_FILTER_COLUMNS_PROPERTY;
@@ -495,6 +496,7 @@ public class IcebergMetadata
             .add(PARQUET_BLOOM_FILTER_COLUMNS_PROPERTY)
             .add(PARTITIONING_PROPERTY)
             .add(SORTED_BY_PROPERTY)
+            .add(MERGE_MODE_PROPERTY)
             .build();
     public static final Set<String> UPDATABLE_MATERIALIZED_VIEW_PROPERTIES = ImmutableSet.of(REFRESH_SCHEDULE, REFRESH_SCHEDULE_TIMEZONE);
     private static final String SYSTEM_SCHEMA = "system";
@@ -2964,6 +2966,12 @@ public class IcebergMetadata
                 throw new TrinoException(INVALID_TABLE_PROPERTY, "Data location can only be set when object store layout is enabled");
             }
             updateProperties.set(WRITE_DATA_LOCATION, dataLocation);
+        }
+
+        if (properties.containsKey(MERGE_MODE_PROPERTY)) {
+            RowLevelOperationMode writeMergeMode = RowLevelOperationMode.fromName((String) properties.get(MERGE_MODE_PROPERTY)
+                    .orElseThrow(() -> new IllegalArgumentException("The merge_mode property cannot be empty")));
+            updateProperties.set(MERGE_MODE, writeMergeMode.modeName());
         }
 
         try {
