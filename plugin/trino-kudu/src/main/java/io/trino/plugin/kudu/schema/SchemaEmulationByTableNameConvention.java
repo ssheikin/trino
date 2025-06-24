@@ -14,6 +14,7 @@
 package io.trino.plugin.kudu.schema;
 
 import com.google.common.collect.ImmutableList;
+import io.trino.plugin.kudu.KuduClientConfig;
 import io.trino.plugin.kudu.KuduClientWrapper;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.SchemaNotFoundException;
@@ -50,9 +51,9 @@ public class SchemaEmulationByTableNameConvention
     private final String rawSchemasTableName;
     private KuduTable rawSchemasTable;
 
-    public SchemaEmulationByTableNameConvention(String commonPrefix)
+    public SchemaEmulationByTableNameConvention(KuduClientConfig config)
     {
-        this.commonPrefix = commonPrefix;
+        this.commonPrefix = config.getSchemaEmulationPrefix();
         this.rawSchemasTableName = commonPrefix + "$schemas";
     }
 

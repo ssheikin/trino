@@ -21,9 +21,7 @@ import io.trino.plugin.base.authentication.CachingKerberosAuthentication;
 import io.trino.plugin.base.authentication.KerberosAuthentication;
 import io.trino.plugin.base.authentication.KerberosConfiguration;
 import io.trino.plugin.base.mapping.IdentifierMapping;
-import io.trino.plugin.kudu.schema.NoSchemaEmulation;
 import io.trino.plugin.kudu.schema.SchemaEmulation;
-import io.trino.plugin.kudu.schema.SchemaEmulationByTableNameConvention;
 import org.apache.trino.kudu.client.KuduClient;
 
 import java.util.function.Function;
@@ -62,9 +60,11 @@ public class KuduSecurityModule
 
         @Provides
         @Singleton
-        public static KuduClientSession createKuduClientSession(KuduClientConfig config, IdentifierMapping identifierMapping)
+        public static KuduClientSession createKuduClientSession(KuduClientConfig config, SchemaEmulation schemaEmulation, IdentifierMapping identifierMapping)
         {
-            return KuduSecurityModule.createKuduClientSession(config,
+            return KuduSecurityModule.createKuduClientSession(
+                    config,
+                    schemaEmulation,
                     builder -> new PassthroughKuduClient(builder.build()), identifierMapping);
         }
     }
@@ -80,9 +80,11 @@ public class KuduSecurityModule
 
         @Provides
         @Singleton
-        public static KuduClientSession createKuduClientSession(KuduClientConfig config, KuduKerberosConfig kuduKerberosConfig, IdentifierMapping identifierMapping)
+        public static KuduClientSession createKuduClientSession(KuduClientConfig config, SchemaEmulation schemaEmulation, KuduKerberosConfig kuduKerberosConfig, IdentifierMapping identifierMapping)
         {
-            return KuduSecurityModule.createKuduClientSession(config,
+            return KuduSecurityModule.createKuduClientSession(
+                    config,
+                    schemaEmulation,
                     builder -> {
                         kuduKerberosConfig.getKuduPrincipalPrimary().ifPresent(builder::saslProtocolName);
                         setJavaSecurityKrb5Conf(kuduKerberosConfig.getConfig().getAbsolutePath());
@@ -98,7 +100,7 @@ public class KuduSecurityModule
         }
     }
 
-    private static KuduClientSession createKuduClientSession(KuduClientConfig config, Function<KuduClientBuilder, KuduClientWrapper> kuduClientFactory, IdentifierMapping identifierMapping)
+    private static KuduClientSession createKuduClientSession(KuduClientConfig config, SchemaEmulation schemaEmulation, Function<KuduClientBuilder, KuduClientWrapper> kuduClientFactory, IdentifierMapping identifierMapping)
     {
         KuduClient.KuduClientBuilder builder = new KuduClientBuilder(config.getMasterAddresses());
         builder.defaultAdminOperationTimeoutMs(config.getDefaultAdminOperationTimeout().toMillis());
@@ -108,16 +110,9 @@ public class KuduSecurityModule
         }
         KuduClientWrapper client = kuduClientFactory.apply(builder);
 
-        SchemaEmulation strategy;
-        if (config.isSchemaEmulationEnabled()) {
-            strategy = new SchemaEmulationByTableNameConvention(config.getSchemaEmulationPrefix());
-        }
-        else {
-            strategy = new NoSchemaEmulation();
-        }
         return new KuduClientSession(
                 client,
-                strategy,
+                schemaEmulation,
                 config.isAllowLocalScheduling(),
                 config.getScannerBatchSize(),
                 config.getScannerKeepAliveInterval(),

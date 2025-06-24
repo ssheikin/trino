@@ -25,6 +25,9 @@ import io.trino.plugin.kudu.procedures.RangePartitionProcedures;
 import io.trino.plugin.kudu.properties.AnalyzePropertiesProvider;
 import io.trino.plugin.kudu.properties.KuduColumnProperties;
 import io.trino.plugin.kudu.properties.KuduTableProperties;
+import io.trino.plugin.kudu.schema.NoSchemaEmulation;
+import io.trino.plugin.kudu.schema.SchemaEmulation;
+import io.trino.plugin.kudu.schema.SchemaEmulationByTableNameConvention;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
@@ -35,6 +38,7 @@ import io.trino.spi.procedure.Procedure;
 import io.trino.spi.type.TypeManager;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static java.util.Objects.requireNonNull;
 
@@ -77,6 +81,12 @@ public class KuduModule
 
         install(new KuduSecurityModule());
         install(new IdentifierMappingModule());
+
+        install(conditionalModule(
+                KuduClientConfig.class,
+                KuduClientConfig::isSchemaEmulationEnabled,
+                internalBinder -> internalBinder.bind(SchemaEmulation.class).to(SchemaEmulationByTableNameConvention.class).in(Scopes.SINGLETON),
+                internalBinder -> internalBinder.bind(SchemaEmulation.class).to(NoSchemaEmulation.class).in(Scopes.SINGLETON)));
     }
 
     @ProvidesIntoSet
