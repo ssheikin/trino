@@ -45,7 +45,6 @@ public class KuduClientConfig
     private Duration defaultOperationTimeout = DEFAULT_OPERATION_TIMEOUT;
     private boolean disableStatistics;
     private boolean schemaEmulationEnabled;
-    private String schemaEmulationPrefix = "presto::";
     private Duration dynamicFilteringWaitTimeout = new Duration(0, MINUTES);
     private boolean allowLocalScheduling;
     private DataSize scannerBatchSize = DataSize.of(1, MEGABYTE);
@@ -103,18 +102,6 @@ public class KuduClientConfig
     public KuduClientConfig setDisableStatistics(boolean disableStatistics)
     {
         this.disableStatistics = disableStatistics;
-        return this;
-    }
-
-    public String getSchemaEmulationPrefix()
-    {
-        return schemaEmulationPrefix;
-    }
-
-    @Config("kudu.schema-emulation.prefix")
-    public KuduClientConfig setSchemaEmulationPrefix(String prefix)
-    {
-        this.schemaEmulationPrefix = prefix;
         return this;
     }
 

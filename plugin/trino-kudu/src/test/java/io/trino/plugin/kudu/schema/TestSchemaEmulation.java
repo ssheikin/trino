@@ -13,7 +13,6 @@
  */
 package io.trino.plugin.kudu.schema;
 
-import io.trino.plugin.kudu.KuduClientConfig;
 import io.trino.spi.connector.SchemaTableName;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +62,7 @@ public class TestSchemaEmulation
     {
         for (Input input : testInputs) {
             SchemaEmulation emulation = input.tableNamePrefix != null
-                    ? new SchemaEmulationByTableNameConvention(new KuduClientConfig().setSchemaEmulationPrefix(input.tableNamePrefix)) : new NoSchemaEmulation();
+                    ? new SchemaEmulationByTableNameConvention(new SchemaEmulationByTableNameConfig().setSchemaEmulationPrefix(input.tableNamePrefix)) : new NoSchemaEmulation();
             SchemaTableName schemaTableName = emulation.fromRawName(input.kuduTableName);
             assertThat(input.valid).isEqualTo(schemaTableName != null);
             if (input.valid) {

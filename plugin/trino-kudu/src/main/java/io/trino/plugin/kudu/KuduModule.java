@@ -27,6 +27,7 @@ import io.trino.plugin.kudu.properties.KuduColumnProperties;
 import io.trino.plugin.kudu.properties.KuduTableProperties;
 import io.trino.plugin.kudu.schema.NoSchemaEmulation;
 import io.trino.plugin.kudu.schema.SchemaEmulation;
+import io.trino.plugin.kudu.schema.SchemaEmulationByTableNameConfig;
 import io.trino.plugin.kudu.schema.SchemaEmulationByTableNameConvention;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
@@ -85,7 +86,10 @@ public class KuduModule
         install(conditionalModule(
                 KuduClientConfig.class,
                 KuduClientConfig::isSchemaEmulationEnabled,
-                internalBinder -> internalBinder.bind(SchemaEmulation.class).to(SchemaEmulationByTableNameConvention.class).in(Scopes.SINGLETON),
+                internalBinder -> {
+                    configBinder(binder).bindConfig(SchemaEmulationByTableNameConfig.class);
+                    internalBinder.bind(SchemaEmulation.class).to(SchemaEmulationByTableNameConvention.class).in(Scopes.SINGLETON);
+                },
                 internalBinder -> internalBinder.bind(SchemaEmulation.class).to(NoSchemaEmulation.class).in(Scopes.SINGLETON)));
     }
 
