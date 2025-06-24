@@ -706,6 +706,12 @@ public abstract class BaseIcebergConnectorSmokeTest
         // try to drop table
         assertUpdate("DROP TABLE " + tableName);
         assertThat(getQueryRunner().tableExists(getSession(), tableName)).isFalse();
+        assertLocationNotExists(tableLocation);
+    }
+
+    protected void assertLocationNotExists(Location tableLocation)
+            throws IOException
+    {
         assertThat(fileSystem.listFiles(tableLocation).hasNext())
                 .describedAs("Table location should not exist")
                 .isFalse();
@@ -732,9 +738,7 @@ public abstract class BaseIcebergConnectorSmokeTest
         // try to drop table
         assertUpdate("DROP TABLE " + tableName);
         assertThat(getQueryRunner().tableExists(getSession(), tableName)).isFalse();
-        assertThat(fileSystem.listFiles(tableLocation).hasNext())
-                .describedAs("Table location should not exist")
-                .isFalse();
+        assertLocationNotExists(tableLocation);
     }
 
     @Test
@@ -759,9 +763,7 @@ public abstract class BaseIcebergConnectorSmokeTest
         // try to drop table
         assertUpdate("DROP TABLE " + tableName);
         assertThat(getQueryRunner().tableExists(getSession(), tableName)).isFalse();
-        assertThat(fileSystem.listFiles(tableLocation).hasNext())
-                .describedAs("Table location should not exist")
-                .isFalse();
+        assertLocationNotExists(tableLocation);
     }
 
     @Test
@@ -787,9 +789,7 @@ public abstract class BaseIcebergConnectorSmokeTest
         // try to drop table
         assertUpdate("DROP TABLE " + tableName);
         assertThat(getQueryRunner().tableExists(getSession(), tableName)).isFalse();
-        assertThat(fileSystem.listFiles(tableLocation).hasNext())
-                .describedAs("Table location should not exist")
-                .isFalse();
+        assertLocationNotExists(tableLocation);
     }
 
     @Test
@@ -804,9 +804,7 @@ public abstract class BaseIcebergConnectorSmokeTest
 
         // Delete table location
         fileSystem.deleteDirectory(tableLocation);
-        assertThat(fileSystem.listFiles(tableLocation).hasNext())
-                .describedAs("Table location should not exist")
-                .isFalse();
+        assertLocationNotExists(tableLocation);
 
         // try to drop table
         assertUpdate("DROP TABLE " + tableName);
