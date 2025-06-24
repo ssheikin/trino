@@ -20,14 +20,12 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
 
 import static java.lang.String.format;
 
 public class TestingKuduServer
-        implements Closeable
+        implements AutoCloseable
 {
     private static final String KUDU_IMAGE = "apache/kudu";
     public static final String EARLIEST_TAG = "1.13.0";
@@ -105,15 +103,13 @@ public class TestingKuduServer
 
     @Override
     public void close()
+            throws Exception
     {
         try (Closer closer = Closer.create()) {
             closer.register(master::stop);
             closer.register(tabletServer::stop);
             closer.register(toxiProxy::stop);
             closer.register(network::close);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 }

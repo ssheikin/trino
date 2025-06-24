@@ -53,6 +53,7 @@ public class TestKuduIntegrationDecimalColumns
 
     @AfterAll
     public final void destroy()
+            throws Exception
     {
         if (kuduServer != null) {
             kuduServer.close();
