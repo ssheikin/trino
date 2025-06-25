@@ -801,7 +801,7 @@ public class PipelinedQueryScheduler
             TaskFailureReporter failureReporter = new TaskFailureReporter(distributedStagesScheduler);
             queryStateMachine.addOutputTaskFailureListener(failureReporter);
 
-            InternalNode coordinator = nodeScheduler.createNodeSelector(queryStateMachine.getSession(), Optional.empty()).selectCurrentNode();
+            InternalNode coordinator = nodeScheduler.createNodeSelector(queryStateMachine.getSession()).selectCurrentNode();
             for (StageExecution stageExecution : stageExecutions) {
                 Optional<RemoteTask> remoteTask = stageExecution.scheduleTask(
                         coordinator,
@@ -1243,9 +1243,7 @@ public class PipelinedQueryScheduler
                     }
 
                     SplitSource splitSource = entry.getValue();
-                    Optional<CatalogHandle> catalogHandle = Optional.of(splitSource.getCatalogHandle())
-                            .filter(catalog -> !catalog.getType().isInternal());
-                    NodeSelector nodeSelector = nodeScheduler.createNodeSelector(session, catalogHandle);
+                    NodeSelector nodeSelector = nodeScheduler.createNodeSelector(session);
                     SplitPlacementPolicy placementPolicy = new DynamicSplitPlacementPolicy(nodeSelector, stageExecution::getAllTasks);
 
                     return newSourcePartitionedSchedulerAsStageScheduler(
@@ -1267,9 +1265,7 @@ public class PipelinedQueryScheduler
                         .filter(catalog -> catalog != REMOTE_CATALOG_HANDLE)
                         .collect(toImmutableSet());
                 checkState(allCatalogHandles.size() <= 1, "table scans that are within one stage should read from same catalog");
-                Optional<CatalogHandle> catalogHandle = allCatalogHandles.size() == 1 ? Optional.of(getOnlyElement(allCatalogHandles)) : Optional.empty();
-
-                NodeSelector nodeSelector = nodeScheduler.createNodeSelector(session, catalogHandle);
+                NodeSelector nodeSelector = nodeScheduler.createNodeSelector(session);
                 return new MultiSourcePartitionedScheduler(
                         stageExecution,
                         partitionedSplitSources,
@@ -1294,7 +1290,7 @@ public class PipelinedQueryScheduler
                         stageExecution,
                         sourceTasksProvider,
                         writerTasksProvider,
-                        nodeScheduler.createNodeSelector(session, Optional.empty()),
+                        nodeScheduler.createNodeSelector(session),
                         executor,
                         getWriterScalingMinDataProcessed(session),
                         partitionCount);
@@ -1345,13 +1341,12 @@ public class PipelinedQueryScheduler
                     fragment.getPartitionedSources(),
                     spoolingExchangeSources);
 
-            Optional<CatalogHandle> catalogHandle = partitioningHandle.getCatalogHandle();
             BucketNodeMap bucketNodeMap;
             List<InternalNode> stageNodeList;
             if (fragment.getRemoteSourceNodes().stream().allMatch(node -> node.getExchangeType() == REPLICATE)) {
                 // no remote source
                 bucketNodeMap = nodePartitioningManager.getBucketNodeMap(session, partitioningHandle, partitionCount);
-                stageNodeList = new ArrayList<>(nodeScheduler.createNodeSelector(session, catalogHandle).allNodes());
+                stageNodeList = new ArrayList<>(nodeScheduler.createNodeSelector(session).allNodes());
                 Collections.shuffle(stageNodeList);
             }
             else {
@@ -1369,7 +1364,7 @@ public class PipelinedQueryScheduler
                     stageNodeList,
                     bucketNodeMap,
                     splitBatchSize,
-                    nodeScheduler.createNodeSelector(session, catalogHandle),
+                    nodeScheduler.createNodeSelector(session),
                     dynamicFilterService,
                     tableExecuteContextManager,
                     planNodesToTableNames,
