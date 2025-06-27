@@ -530,8 +530,8 @@ public class TestQueryStateMachine
                 .build();
         stateMachine.resultsConsumed();
 
-        BasicStageInfo rootStage = createBasicStageInfo(stageCount, StageState.FINISHED, baseStatValue);
-        ResultQueryInfo queryInfo = stateMachine.getResultQueryInfo(Optional.of(rootStage));
+        BasicStagesInfo stages = createBasicStagesInfo(stageCount, StageState.FINISHED, baseStatValue);
+        ResultQueryInfo queryInfo = stateMachine.getResultQueryInfo(Optional.of(stages));
         BasicQueryStats stats = queryInfo.queryStats();
 
         assertThat(queryInfo.state()).isEqualTo(QUEUED);
@@ -539,7 +539,7 @@ public class TestQueryStateMachine
         assertThat(queryInfo.updateType()).isEqualTo("update type");
         assertThat(queryInfo.finalQueryInfo()).isFalse();
         assertThat(queryInfo.errorCode()).isNull();
-        assertThat(queryInfo.outputStage().get()).isEqualTo(rootStage);
+        assertThat(queryInfo.stages().get()).isEqualTo(stages);
         assertThat(queryInfo.failureInfo()).isNull();
         assertThat(queryInfo.setPath().get()).isEqualTo("path");
         assertThat(queryInfo.setCatalog().get()).isEqualTo("catalog");
@@ -558,7 +558,7 @@ public class TestQueryStateMachine
         assertStats(stats, baseStatValue * stageCount);
 
         stateMachine.transitionToFailed(new TrinoException(() -> new ErrorCode(0, "", ErrorType.EXTERNAL), "", new IOException()));
-        queryInfo = stateMachine.getResultQueryInfo(Optional.of(rootStage));
+        queryInfo = stateMachine.getResultQueryInfo(Optional.of(stages));
         assertThat(queryInfo.failureInfo()).isNotNull();
         assertThat(queryInfo.errorCode().getCode()).isEqualTo(0);
         assertThat(queryInfo.finalQueryInfo()).isTrue();
@@ -599,15 +599,21 @@ public class TestQueryStateMachine
         assertThat(stats.getRunningPercentage()).isEmpty();
     }
 
-    private BasicStageInfo createBasicStageInfo(int count, StageState state, int baseValue)
+    private BasicStagesInfo createBasicStagesInfo(int count, StageState state, int baseValue)
     {
-        return new BasicStageInfo(
+        ImmutableList.Builder<BasicStageInfo> stages = ImmutableList.builder();
+        for (int stageId = count; stageId >= 1; --stageId) {
+            stages.add(new BasicStageInfo(
+                    StageId.valueOf(ImmutableList.of("s", String.valueOf(stageId))),
+                    state,
+                    false,
+                    createBasicStageStats(baseValue),
+                    stageId == 1 ? ImmutableList.of() : ImmutableList.of(StageId.valueOf(ImmutableList.of("s", String.valueOf(stageId - 1)))),
+                    ImmutableList.of()));
+        }
+        return new BasicStagesInfo(
                 StageId.valueOf(ImmutableList.of("s", String.valueOf(count))),
-                state,
-                false,
-                createBasicStageStats(baseValue),
-                count == 1 ? ImmutableList.of() : ImmutableList.of(createBasicStageInfo(count - 1, state, baseValue)),
-                ImmutableList.of());
+                stages.build());
     }
 
     private BasicStageStats createBasicStageStats(int value)
@@ -691,7 +697,7 @@ public class TestQueryStateMachine
         QueryInfo queryInfo = stateMachine.getQueryInfo(Optional.empty());
         assertThat(queryInfo.getQueryId()).isEqualTo(TEST_SESSION.getQueryId());
         assertThat(queryInfo.getSelf()).isEqualTo(LOCATION);
-        assertThat(queryInfo.getOutputStage()).isEmpty();
+        assertThat(queryInfo.getStages()).isEmpty();
         assertThat(queryInfo.getQuery()).isEqualTo(QUERY);
         assertThat(queryInfo.getInputs()).containsExactlyElementsOf(INPUTS);
         assertThat(queryInfo.getOutput()).isEqualTo(OUTPUT);

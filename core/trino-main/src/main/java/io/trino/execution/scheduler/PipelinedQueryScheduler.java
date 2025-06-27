@@ -36,8 +36,8 @@ import io.trino.cache.SplitAdmissionControllerProvider;
 import io.trino.exchange.DirectExchangeInput;
 import io.trino.exchange.ExchangeContextInstance;
 import io.trino.exchange.ExchangeManagerRegistry;
-import io.trino.execution.BasicStageInfo;
 import io.trino.execution.BasicStageStats;
+import io.trino.execution.BasicStagesInfo;
 import io.trino.execution.ExecutionFailureInfo;
 import io.trino.execution.NodeTaskMap;
 import io.trino.execution.QueryState;
@@ -48,7 +48,7 @@ import io.trino.execution.ScheduledSplitsPerTableTracker;
 import io.trino.execution.SqlStage;
 import io.trino.execution.SqlTaskManager;
 import io.trino.execution.StageId;
-import io.trino.execution.StageInfo;
+import io.trino.execution.StagesInfo;
 import io.trino.execution.StateMachine;
 import io.trino.execution.StateMachine.StateChangeListener;
 import io.trino.execution.TableExecuteContextManager;
@@ -348,7 +348,7 @@ public class PipelinedQueryScheduler
             }
             schedulerSpan.end();
 
-            queryStateMachine.updateQueryInfo(Optional.ofNullable(getStageInfo()));
+            queryStateMachine.updateQueryInfo(Optional.of(getStagesInfo()));
         });
 
         Optional<DistributedStagesScheduler> distributedStagesScheduler = createDistributedStagesScheduler(currentAttempt.get());
@@ -512,15 +512,15 @@ public class PipelinedQueryScheduler
     }
 
     @Override
-    public StageInfo getStageInfo()
+    public BasicStagesInfo getBasicStagesInfo()
     {
-        return stageManager.getStageInfo();
+        return stageManager.getBasicStagesInfo();
     }
 
     @Override
-    public BasicStageInfo getBasicStageInfo()
+    public StagesInfo getStagesInfo()
     {
-        return stageManager.getBasicStageInfo();
+        return stageManager.getStagesInfo();
     }
 
     @Override
