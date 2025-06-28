@@ -22,7 +22,6 @@ import io.airlift.json.JsonModule;
 import io.trino.plugin.base.CatalogNameModule;
 import io.trino.plugin.base.TypeDeserializerModule;
 import io.trino.plugin.base.config.ConfigUtils;
-import io.trino.spi.NodeManager;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
@@ -89,7 +88,6 @@ public class KafkaConnectorFactory
                         .add(binder -> {
                             binder.bind(ClassLoader.class).toInstance(KafkaConnectorFactory.class.getClassLoader());
                             binder.bind(TypeManager.class).toInstance(context.getTypeManager());
-                            binder.bind(NodeManager.class).toInstance(context.getNodeManager());
                         })
                         .addAll(extensions)
                         .build());

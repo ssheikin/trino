@@ -22,6 +22,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
+import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
@@ -82,6 +83,7 @@ public class BigQueryConnectorFactory
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.bigquery", "trino.plugin.bigquery"),
                 binder -> {
                     binder.bind(TypeManager.class).toInstance(context.getTypeManager());
+                    binder.bind(Node.class).toInstance(context.getCurrentNode());
                     binder.bind(NodeManager.class).toInstance(context.getNodeManager());
                     binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
                     binder.bind(Tracer.class).toInstance(context.getTracer());

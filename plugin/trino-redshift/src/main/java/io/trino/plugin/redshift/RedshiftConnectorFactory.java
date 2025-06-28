@@ -21,7 +21,7 @@ import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.jdbc.ExtraCredentialsBasedIdentityCacheMappingModule;
 import io.trino.plugin.jdbc.JdbcModule;
 import io.trino.plugin.jdbc.credential.CredentialProviderModule;
-import io.trino.spi.NodeManager;
+import io.trino.spi.Node;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
@@ -73,8 +73,8 @@ public class RedshiftConnectorFactory
     private static Bootstrap createBootstrap(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
+                binder -> binder.bind(Node.class).toInstance(context.getCurrentNode()),
                 binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
-                binder -> binder.bind(NodeManager.class).toInstance(context.getNodeManager()),
                 binder -> binder.bind(VersionEmbedder.class).toInstance(context.getVersionEmbedder()),
                 binder -> binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry()),
                 binder -> binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName)),

@@ -29,7 +29,6 @@ import io.trino.hdfs.gcs.HiveGcsModule;
 import io.trino.hdfs.s3.HiveS3Module;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
-import io.trino.spi.NodeManager;
 import io.trino.spi.catalog.CatalogName;
 import org.weakref.jmx.guice.MBeanModule;
 
@@ -51,7 +50,6 @@ public final class HdfsFileSystemManager
             boolean gcsEnabled,
             boolean s3Enabled,
             String catalogName,
-            NodeManager nodeManager,
             OpenTelemetry openTelemetry,
             boolean quietBootstrap)
     {
@@ -66,7 +64,6 @@ public final class HdfsFileSystemManager
         modules.add(new HdfsAuthenticationModule());
         modules.add(new HiveCosModule());
         modules.add(binder -> {
-            binder.bind(NodeManager.class).toInstance(nodeManager);
             binder.bind(OpenTelemetry.class).toInstance(openTelemetry);
             binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
         });

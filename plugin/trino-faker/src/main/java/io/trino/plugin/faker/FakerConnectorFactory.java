@@ -73,10 +73,7 @@ public class FakerConnectorFactory
 
     private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = new Bootstrap(
-                new FakerModule(
-                        context.getNodeManager(),
-                        context.getTypeManager()));
+        Bootstrap app = new Bootstrap(new FakerModule(context.getTypeManager()));
 
         return app
                 .doNotInitializeLogging()

@@ -99,7 +99,7 @@ public class HdfsCloudStorageS3Test
             ConfigurationFactory configFactory = new ConfigurationFactory(properties);
             binder.bind(ConfigurationFactory.class).toInstance(configFactory);
 
-            FileSystemModule fileSystemModule = new FileSystemModule(catalogName, nodeManager, openTelemetry, false, false);
+            FileSystemModule fileSystemModule = new FileSystemModule(catalogName, nodeManager, true, openTelemetry, false, false);
             fileSystemModule.setConfigurationFactory(configFactory);
             binder.install(fileSystemModule);
 

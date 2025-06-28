@@ -68,7 +68,7 @@ public class MemoryConnectorFactory
         // A plugin is not required to use Guice; it is just very convenient
         Bootstrap app = new Bootstrap(
                 new JsonModule(),
-                new MemoryModule(context.getTypeManager(), context.getNodeManager()));
+                new MemoryModule(context.getTypeManager(), context.getCurrentNode(), context.getNodeManager()));
 
         return app
                 .doNotInitializeLogging()
