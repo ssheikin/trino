@@ -21,13 +21,13 @@ import io.trino.execution.StageId;
 import io.trino.execution.TaskId;
 import io.trino.memory.LocalMemoryManager;
 import io.trino.memory.NodeMemoryConfig;
+import io.trino.node.TestingInternalNodeManager;
 import io.trino.spi.block.TestingBlockEncodingSerde;
 import io.trino.spi.cache.CacheManager;
 import io.trino.spi.cache.CacheManagerContext;
 import io.trino.spi.cache.CacheManagerFactory;
 import io.trino.spi.cache.MemoryAllocator;
 import io.trino.spi.cache.PlanSignature;
-import io.trino.testing.TestingInternalNodeManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -38,6 +38,7 @@ import java.util.OptionalLong;
 
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
+import static io.trino.node.TestingInternalNodeManager.CURRENT_NODE;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -62,7 +63,7 @@ public class TestCacheManagerRegistry
                 .setMaxQueryMemoryPerNode(DataSize.of(100, MEGABYTE).toString());
 
         memoryManager = new LocalMemoryManager(config, DataSize.of(110, MEGABYTE).toBytes());
-        registry = new CacheManagerRegistry(new CacheConfig(), memoryManager, newDirectExecutorService(), new TestingBlockEncodingSerde(), new CacheStats(), new TestingInternalNodeManager(), new SecretsResolver(ImmutableMap.of()));
+        registry = new CacheManagerRegistry(new CacheConfig(), memoryManager, newDirectExecutorService(), new TestingBlockEncodingSerde(), new CacheStats(), CURRENT_NODE, new TestingInternalNodeManager(), new SecretsResolver(ImmutableMap.of()));
         registry.addCacheManagerFactory(new TestCacheManagerFactory());
         registry.loadCacheManager(TEST_CACHE_MANAGER, ImmutableMap.of());
     }

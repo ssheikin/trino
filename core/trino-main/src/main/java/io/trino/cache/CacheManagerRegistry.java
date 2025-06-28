@@ -25,6 +25,7 @@ import io.trino.memory.LocalMemoryManager;
 import io.trino.memory.MemoryPool;
 import io.trino.memory.context.LocalMemoryContext;
 import io.trino.memory.context.MemoryReservationHandler;
+import io.trino.node.InternalNode;
 import io.trino.node.InternalNodeManager;
 import io.trino.plugin.memory.MemoryCacheManagerFactory;
 import io.trino.spi.Node;
@@ -88,6 +89,7 @@ public class CacheManagerRegistry
     private final Distribution sizeOfRevokedMemoryDistribution = new Distribution();
     private final AtomicInteger nonEmptyRevokeCount = new AtomicInteger();
     private final CacheStats cacheStats;
+    private final InternalNode currentNode;
     private final InternalNodeManager internalNodeManager;
     private final SecretsResolver secretsResolver;
 
@@ -100,6 +102,7 @@ public class CacheManagerRegistry
             LocalMemoryManager localMemoryManager,
             BlockEncodingSerde blockEncodingSerde,
             CacheStats cacheStats,
+            InternalNode currentNode,
             InternalNodeManager internalNodeManager,
             SecretsResolver secretsResolver)
     {
@@ -109,6 +112,7 @@ public class CacheManagerRegistry
                 newSingleThreadExecutor(daemonThreadsNamed("cache-manager-registry")),
                 blockEncodingSerde,
                 cacheStats,
+                currentNode,
                 internalNodeManager,
                 secretsResolver);
     }
@@ -119,6 +123,7 @@ public class CacheManagerRegistry
             ExecutorService executor,
             BlockEncodingSerde blockEncodingSerde,
             CacheStats cacheStats,
+            InternalNode currentNode,
             InternalNodeManager internalNodeManager,
             SecretsResolver secretsResolver)
     {
@@ -133,6 +138,7 @@ public class CacheManagerRegistry
         this.executor = executor;
         this.blockEncodingSerde = blockEncodingSerde;
         this.cacheStats = cacheStats;
+        this.currentNode = requireNonNull(currentNode, "currentNode is null");
         this.internalNodeManager = requireNonNull(internalNodeManager, "internalNodeManager is null");
         this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
     }
@@ -224,7 +230,7 @@ public class CacheManagerRegistry
                     @Override
                     public Node getCurrentNode()
                     {
-                        return internalNodeManager.getCurrentNode();
+                        return currentNode;
                     }
                 };
             }
@@ -232,7 +238,7 @@ public class CacheManagerRegistry
             @Override
             public Node getCurrentNode()
             {
-                return internalNodeManager.getCurrentNode();
+                return currentNode;
             }
         };
         CacheManager cacheManager;
