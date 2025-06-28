@@ -60,7 +60,7 @@ public final class TestingConnectorContext
     public TestingConnectorContext()
     {
         pageIndexerFactory = new GroupByHashPageIndexerFactory(new FlatHashStrategyCompiler(new TypeOperators(), new NullSafeHashCompiler(new TypeOperators())));
-        nodeManager = new DefaultNodeManager(new InMemoryNodeManager(), "testenv", true);
+        nodeManager = new DefaultNodeManager(new InMemoryNodeManager(), true);
     }
 
     @Override

@@ -226,12 +226,6 @@ public class CacheManagerRegistry
                     {
                         return internalNodeManager.getCurrentNode();
                     }
-
-                    @Override
-                    public String getEnvironment()
-                    {
-                        return "";
-                    }
                 };
             }
 

@@ -448,7 +448,6 @@ public class PlanTester
                 pageSorter,
                 new NoopWorkScheduler(),
                 pageIndexerFactory,
-                nodeInfo,
                 testingVersionEmbedder(),
                 noop(),
                 transactionManager,
