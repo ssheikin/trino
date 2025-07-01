@@ -139,7 +139,7 @@ public class TestCacheDriverFactory
                 .setMaxQueryMemoryPerNode(DataSize.of(32, MEGABYTE).toString());
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setEnabled(true);
-        registry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(config, DataSize.of(1024, MEGABYTE).toBytes()), new TestingBlockEncodingSerde(), new CacheStats(), CURRENT_NODE, new TestingInternalNodeManager(), new SecretsResolver(ImmutableMap.of()));
+        registry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(config, DataSize.of(1024, MEGABYTE).toBytes()), new TestingBlockEncodingSerde(), new CacheStats(), CURRENT_NODE, TestingInternalNodeManager.createDefault(), new SecretsResolver(ImmutableMap.of()));
         cachePerformanceTracker = new CachePerformanceTracker();
         TestCacheManagerFactory cacheManagerFactory = new TestCacheManagerFactory();
         registry.loadCacheManager(cacheManagerFactory, ImmutableMap.of());

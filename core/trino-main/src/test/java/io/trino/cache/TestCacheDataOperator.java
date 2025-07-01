@@ -113,7 +113,7 @@ public class TestCacheDataOperator
         LocalMemoryManager memoryManager = new LocalMemoryManager(config, DataSize.of(110, MEGABYTE).toBytes());
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setEnabled(true);
-        registry = new CacheManagerRegistry(cacheConfig, memoryManager, new TestingBlockEncodingSerde(), new CacheStats(), CURRENT_NODE, new TestingInternalNodeManager(), new SecretsResolver(ImmutableMap.of()));
+        registry = new CacheManagerRegistry(cacheConfig, memoryManager, new TestingBlockEncodingSerde(), new CacheStats(), CURRENT_NODE, TestingInternalNodeManager.createDefault(), new SecretsResolver(ImmutableMap.of()));
         registry.loadCacheManager();
         TypeManager typeManager = new TestingTypeManager();
         tupleDomainCodec = getTupleDomainJsonCodec(new InternalBlockEncodingSerde(new BlockEncodingManager(new FeaturesConfig()), typeManager), typeManager);
