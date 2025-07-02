@@ -340,7 +340,7 @@ public final class S3FileSystem
         if (preSigner.isEmpty()) {
             return TrinoFileSystem.super.preSignedUri(location, ttl);
         }
-        return encryptedPreSignedUri(location, ttl, Optional.empty());
+        return encryptedPreSignedUri(location, ttl, Optional.empty(), preSigner.get());
     }
 
     @Override
@@ -425,10 +425,13 @@ public final class S3FileSystem
     public Optional<UriLocation> encryptedPreSignedUri(Location location, Duration ttl, EncryptionKey key)
             throws IOException
     {
-        return encryptedPreSignedUri(location, ttl, Optional.of(key));
+        if (preSigner.isEmpty()) {
+            return TrinoFileSystem.super.encryptedPreSignedUri(location, ttl, key);
+        }
+        return encryptedPreSignedUri(location, ttl, Optional.of(key), preSigner.get());
     }
 
-    public Optional<UriLocation> encryptedPreSignedUri(Location location, Duration ttl, Optional<EncryptionKey> key)
+    private Optional<UriLocation> encryptedPreSignedUri(Location location, Duration ttl, Optional<EncryptionKey> key, S3Presigner preSigner)
             throws IOException
     {
         location.verifyValidFileLocation();
@@ -455,7 +458,7 @@ public final class S3FileSystem
                 .getObjectRequest(request)
                 .build();
         try {
-            PresignedGetObjectRequest preSigned = preSigner.get().presignGetObject(preSignRequest);
+            PresignedGetObjectRequest preSigned = preSigner.presignGetObject(preSignRequest);
             return Optional.of(new UriLocation(preSigned.url().toURI(), filterHeaders(preSigned.httpRequest().headers())));
         }
         catch (SdkException e) {
