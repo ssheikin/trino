@@ -180,6 +180,7 @@ public class MockConnector
     private final BiFunction<ConnectorSession, ConnectorTableHandle, ConnectorTableProperties> getTableProperties;
     private final BiFunction<ConnectorSession, SchemaTablePrefix, List<GrantInfo>> listTablePrivileges;
     private final Collection<FunctionMetadata> functions;
+    private final Collection<String> branches;
     private final MockConnectorFactory.ListRoleGrants roleGrants;
     private final Optional<ConnectorNodePartitioningProvider> partitioningProvider;
     private final Optional<LocationAccessControl> locationAccessControl;
@@ -238,6 +239,7 @@ public class MockConnector
             BiFunction<ConnectorSession, ConnectorTableHandle, ConnectorTableProperties> getTableProperties,
             BiFunction<ConnectorSession, SchemaTablePrefix, List<GrantInfo>> listTablePrivileges,
             Collection<FunctionMetadata> functions,
+            Collection<String> branches,
             ListRoleGrants roleGrants,
             Optional<ConnectorNodePartitioningProvider> partitioningProvider,
             Optional<LocationAccessControl> locationAccessControl,
@@ -294,6 +296,7 @@ public class MockConnector
         this.getTableProperties = requireNonNull(getTableProperties, "getTableProperties is null");
         this.listTablePrivileges = requireNonNull(listTablePrivileges, "listTablePrivileges is null");
         this.functions = ImmutableList.copyOf(functions);
+        this.branches = ImmutableList.copyOf(branches);
         this.roleGrants = requireNonNull(roleGrants, "roleGrants is null");
         this.partitioningProvider = requireNonNull(partitioningProvider, "partitioningProvider is null");
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
@@ -565,7 +568,7 @@ public class MockConnector
         @Override
         public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName, Optional<ConnectorTableVersion> startVersion, Optional<ConnectorTableVersion> endVersion)
         {
-            if (startVersion.isPresent() || endVersion.isPresent()) {
+            if (endVersion.isPresent() || (branches.isEmpty() && startVersion.isPresent())) {
                 throw new TrinoException(NOT_SUPPORTED, "This connector does not support versioned tables");
             }
 
@@ -953,6 +956,12 @@ public class MockConnector
         public Set<String> listRoles(ConnectorSession session)
         {
             return roleGrants.apply(session, Optional.empty(), Optional.empty(), OptionalLong.empty()).stream().map(RoleGrant::getRoleName).collect(toImmutableSet());
+        }
+
+        @Override
+        public Collection<String> listBranches(ConnectorSession session, SchemaTableName tableName)
+        {
+            return branches;
         }
 
         @Override
