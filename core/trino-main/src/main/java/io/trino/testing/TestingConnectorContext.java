@@ -140,12 +140,6 @@ public final class TestingConnectorContext
     }
 
     @Override
-    public ClassLoader duplicatePluginClassLoader()
-    {
-        return getClass().getClassLoader();
-    }
-
-    @Override
     public Metastore getMetastore()
     {
         return new UnimplementedMetastore();

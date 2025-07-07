@@ -429,13 +429,10 @@ public class PlanTester
         accessControl.loadSystemAccessControl(AllowAllSystemAccessControl.NAME, ImmutableMap.of());
         accessControl.loadLocationAccessControl(LocationAccessControl.DEFAULT_NAME, ImmutableMap.of());
 
-        HandleResolver handleResolver = new HandleResolver();
-
         NodeInfo nodeInfo = new NodeInfo("test");
         catalogFactory.setCatalogFactory(new DefaultCatalogFactory(
                 metadata,
                 accessControl,
-                handleResolver,
                 nodeManager,
                 pageSorter,
                 new NoopWorkScheduler(),
@@ -542,7 +539,7 @@ public class PlanTester
                 new SessionPropertyDefaults(nodeInfo, accessControl, secretsResolver),
                 typeRegistry,
                 blockEncodingManager,
-                handleResolver,
+                new HandleResolver(),
                 exchangeManagerRegistry,
                 cacheManagerRegistry,
                 spoolingManagerRegistry);
@@ -703,13 +700,13 @@ public class PlanTester
 
     public void createCatalog(String catalogName, ConnectorFactory connectorFactory, Map<String, String> properties)
     {
-        catalogFactory.addConnectorFactory(connectorFactory, ignored -> connectorFactory.getClass().getClassLoader());
+        catalogFactory.addConnectorFactory(connectorFactory);
         catalogManager.createCatalog(new CatalogName(catalogName), new ConnectorName(connectorFactory.getName()), properties, false);
     }
 
     public void installPlugin(Plugin plugin)
     {
-        pluginManager.installPlugin(plugin, ignored -> plugin.getClass().getClassLoader());
+        pluginManager.installPlugin(plugin);
     }
 
     public void addFunctions(FunctionBundle functionBundle)

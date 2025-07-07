@@ -30,10 +30,7 @@ import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class ConnectorContextInstance
@@ -48,8 +45,6 @@ public class ConnectorContextInstance
     private final PageSorter pageSorter;
     private final WorkScheduler workScheduler;
     private final PageIndexerFactory pageIndexerFactory;
-    private final Supplier<ClassLoader> duplicatePluginClassLoaderFactory;
-    private final AtomicBoolean pluginClassLoaderDuplicated = new AtomicBoolean();
     private final LocationAccessControl locationAccessControl;
     private final AiModelAccessControl aiModelAccessControl;
     private final Metastore metastore;
@@ -70,8 +65,7 @@ public class ConnectorContextInstance
             PageSorter pageSorter,
             WorkScheduler workScheduler,
             PageIndexerFactory pageIndexerFactory,
-            Map<String, String> serverProperties,
-            Supplier<ClassLoader> duplicatePluginClassLoaderFactory)
+            Map<String, String> serverProperties)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -85,7 +79,6 @@ public class ConnectorContextInstance
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
-        this.duplicatePluginClassLoaderFactory = requireNonNull(duplicatePluginClassLoaderFactory, "duplicatePluginClassLoaderFactory is null");
         this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
         this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
     }
@@ -148,13 +141,6 @@ public class ConnectorContextInstance
     public PageIndexerFactory getPageIndexerFactory()
     {
         return pageIndexerFactory;
-    }
-
-    @Override
-    public ClassLoader duplicatePluginClassLoader()
-    {
-        checkState(!pluginClassLoaderDuplicated.getAndSet(true), "plugin class loader already duplicated");
-        return duplicatePluginClassLoaderFactory.get();
     }
 
     @Override

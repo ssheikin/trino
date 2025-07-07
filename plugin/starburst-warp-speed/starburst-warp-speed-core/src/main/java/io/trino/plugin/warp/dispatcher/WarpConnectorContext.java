@@ -128,13 +128,6 @@ public class WarpConnectorContext
         return connectorContext.getServerProperties();
     }
 
-    @SuppressWarnings("removal")
-    @Override
-    public ClassLoader duplicatePluginClassLoader()
-    {
-        return connectorContext.duplicatePluginClassLoader();
-    }
-
     @Override
     public LocationAccessControl getLocationAccessControl()
     {

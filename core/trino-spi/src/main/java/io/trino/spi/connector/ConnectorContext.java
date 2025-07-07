@@ -90,12 +90,6 @@ public interface ConnectorContext
         throw new UnsupportedOperationException();
     }
 
-    @Deprecated(forRemoval = true)
-    default ClassLoader duplicatePluginClassLoader()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     default Map<String, String> getServerProperties()
     {
         throw new UnsupportedOperationException();
