@@ -3334,6 +3334,7 @@
                                     -Xep:ErroneousBitwiseExpression:ERROR \
                                     -Xep:ErroneousThreadPoolConstructorChecker:ERROR \
                                     -Xep:EscapedEntity:ERROR \
+                                    -Xep:ExpensiveLenientFormatString:ERROR \
                                     -Xep:ExtendingJUnitAssert:ERROR \
                                     -Xep:ExtendsObject:ERROR \
                                     -Xep:FallThrough:ERROR \
