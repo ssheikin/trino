@@ -154,6 +154,7 @@ import static com.google.common.collect.Streams.stream;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.MoreFutures.toListenableFuture;
 import static io.trino.SystemSessionProperties.getRetryPolicy;
+import static io.trino.SystemSessionProperties.isIgnoreMetadataListingExceptions;
 import static io.trino.SystemSessionProperties.isJoinPushdownAcrossCatalogsEnabled;
 import static io.trino.metadata.CatalogMetadata.SecurityManagement.CONNECTOR;
 import static io.trino.metadata.CatalogMetadata.SecurityManagement.SYSTEM;
@@ -168,6 +169,7 @@ import static io.trino.plugin.base.expression.ConnectorExpressions.extractVariab
 import static io.trino.spi.ErrorType.EXTERNAL;
 import static io.trino.spi.StandardErrorCode.FUNCTION_IMPLEMENTATION_ERROR;
 import static io.trino.spi.StandardErrorCode.FUNCTION_IMPLEMENTATION_MISSING;
+import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static io.trino.spi.StandardErrorCode.INVALID_VIEW;
 import static io.trino.spi.StandardErrorCode.NOT_FOUND;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -708,13 +710,22 @@ public final class MetadataManager
                 }
                 ConnectorMetadata metadata = catalogMetadata.getMetadataFor(session, catalogHandle);
                 ConnectorSession connectorSession = session.toConnectorSession(catalogHandle);
-                metadata.streamRelationColumns(connectorSession, schemaName, relationFilter)
-                        .forEachRemaining(relationColumnsMetadata -> {
-                            if (!isExternalInformationSchema(catalogHandle, relationColumnsMetadata.name().getSchemaName())) {
-                                // putIfAbsent to resolve any potential conflicts between system tables and regular tables
-                                tableColumns.putIfAbsent(relationColumnsMetadata.name(), tableColumnsMetadata(catalogName, relationColumnsMetadata));
-                            }
-                        });
+                try {
+                    metadata.streamRelationColumns(connectorSession, schemaName, relationFilter)
+                            .forEachRemaining(relationColumnsMetadata -> {
+                                if (!isExternalInformationSchema(catalogHandle, relationColumnsMetadata.name().getSchemaName())) {
+                                    // putIfAbsent to resolve any potential conflicts between system tables and regular tables
+                                    tableColumns.putIfAbsent(relationColumnsMetadata.name(), tableColumnsMetadata(catalogName, relationColumnsMetadata));
+                                }
+                            });
+                }
+                catch (RuntimeException e) {
+                    if (!isIgnoreMetadataListingExceptions(session)) {
+                        throw new TrinoException(GENERIC_INTERNAL_ERROR, e.getMessage(), e);
+                    }
+                    handleListingError(e, prefix);
+                    // Empty in case of metadata error.
+                }
             }
         }
         return ImmutableList.copyOf(tableColumns.values());

@@ -13,6 +13,7 @@
  */
 package io.trino.tests;
 
+import io.trino.Session;
 import io.trino.connector.MockConnectorFactory;
 import io.trino.connector.MockConnectorPlugin;
 import io.trino.testing.AbstractTestQueryFramework;
@@ -20,7 +21,9 @@ import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import org.junit.jupiter.api.Test;
 
+import static io.trino.SystemSessionProperties.IGNORE_METADATA_LISTING_EXCEPTIONS;
 import static io.trino.testing.TestingSession.testSessionBuilder;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public final class TestMetadataListing
         extends AbstractTestQueryFramework
@@ -49,6 +52,8 @@ public final class TestMetadataListing
     void testFailingBulkListingOfColumns()
     {
         assertQueryFails("select * from %s.information_schema.columns".formatted(CATALOG_WITH_FAILING_METADATA), ".*" + EXCEPTION_MESSAGE);
+        assertThat(getQueryRunner().execute(ignoringExceptions(), "select * from %s.information_schema.columns".formatted(CATALOG_WITH_FAILING_METADATA)))
+                .hasSize(34);
     }
 
     @Test
@@ -57,5 +62,13 @@ public final class TestMetadataListing
         // TODO https://starburstdata.atlassian.net/browse/TRINO-10
         // query with predicate should also throw by default, like query without predicate
         assertQueryReturnsEmptyResult("select * from %s.information_schema.columns where table_name = '%s'".formatted(CATALOG_WITH_FAILING_METADATA, TABLE_WITH_FAILING_METADATA));
+        assertQueryReturnsEmptyResult(ignoringExceptions(), "select * from %s.information_schema.columns where table_name = '%s'".formatted(CATALOG_WITH_FAILING_METADATA, TABLE_WITH_FAILING_METADATA));
+    }
+
+    private Session ignoringExceptions()
+    {
+        return Session.builder(getQueryRunner().getDefaultSession())
+                .setSystemProperty(IGNORE_METADATA_LISTING_EXCEPTIONS, "true")
+                .build();
     }
 }

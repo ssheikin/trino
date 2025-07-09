@@ -248,6 +248,7 @@ public final class SystemSessionProperties
     public static final String DEBUG_CTE_REUSE = "debug_cte_reuse";
     public static final String SUPERSET_PREDICATE_PUSHDOWN_ENABLED = "superset_predicate_pushdown_enabled";
     public static final String REUSE_COMMON_SUBQUERIES = "reuse_common_subqueries";
+    public static final String IGNORE_METADATA_LISTING_EXCEPTIONS = "ignore_metadata_listing_exceptions";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -1306,6 +1307,11 @@ public final class SystemSessionProperties
                         SUPERSET_PREDICATE_PUSHDOWN_ENABLED,
                         "Enable superset predicate pushdown",
                         featuresConfig.isSuperSetPredicatePushdownEnabled(),
+                        true),
+                booleanProperty(
+                        IGNORE_METADATA_LISTING_EXCEPTIONS,
+                        "Ignore exceptions that may occur during metadata listing operations",
+                        false,
                         true));
     }
 
@@ -2354,5 +2360,10 @@ public final class SystemSessionProperties
     public static boolean isReuseCommonSubqueriesEnabled(Session session)
     {
         return session.getSystemProperty(REUSE_COMMON_SUBQUERIES, Boolean.class);
+    }
+
+    public static boolean isIgnoreMetadataListingExceptions(Session session)
+    {
+        return session.getSystemProperty(IGNORE_METADATA_LISTING_EXCEPTIONS, Boolean.class);
     }
 }
