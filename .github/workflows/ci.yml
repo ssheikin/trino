@@ -953,6 +953,8 @@ jobs:
         id: tests
         run: |
           $MAVEN test ${MAVEN_TEST} -pl '
+            !:starburst-buffer-testing,
+            !:starburst-buffer-exchange-tests,
             !:starburst-ai,
             !:starburst-ai-client,
             !:starburst-base-jdbc,
@@ -1025,6 +1027,7 @@ jobs:
             !:trino-thrift,
             !:trino-vertica,
             !:trino-web-ui'
+
       - name: Upload test results
         uses: ./.github/actions/process-test-results
         if: always()
@@ -1126,6 +1129,8 @@ jobs:
             - { modules: plugin/trino-druid }
             - { modules: plugin/trino-duckdb }
             - { modules: plugin/trino-elasticsearch }
+            - { modules: starburst-buffer-service/galaxy-buffer-exchange-tests, profile: test-buffer-exchange-failure-recovery }
+            - { modules: starburst-buffer-service/galaxy-buffer-exchange-tests }
             - { modules: plugin/trino-exasol }
             - { modules: plugin/trino-google-sheets }
             - { modules: plugin/trino-hive, runners: [ self-hosted, gha-fleet-ec2-16cpu-64gb-amd64, latest ] }

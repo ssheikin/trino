@@ -4,19 +4,18 @@
 
     <parent>
         <groupId>io.starburst.stargate.buffer</groupId>
-        <artifactId>galaxy-buffer-root</artifactId>
-        <version>${revision}</version>
+        <artifactId>starburst-buffer-root</artifactId>
+        <version>476-e.0.11-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>galaxy-buffer-exchange</artifactId>
-    <packaging>trino-plugin</packaging>
-    <description>Buffer Service base Trino Exchange</description>
+    <artifactId>starburst-buffer-discovery-server</artifactId>
+    <description>Buffer Service Discovery Server</description>
 
     <properties>
         <air.main.basedir>${project.parent.basedir}/..</air.main.basedir>
-        <!-- TODO enable @GuardedBy checks in galaxy-buffer-exchange https://github.com/starburstdata/galaxy-trino/issues/2081 -->
-        <trino.error-prone.guarded-by>WARN</trino.error-prone.guarded-by>
+        <air.readme.file>README.md</air.readme.file>
+        <main-class>io.starburst.stargate.buffer.discovery.server.DiscoveryServer</main-class>
     </properties>
 
     <dependencies>
@@ -38,11 +37,6 @@
         </dependency>
 
         <dependency>
-            <groupId>dev.failsafe</groupId>
-            <artifactId>failsafe</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>bootstrap</artifactId>
         </dependency>
@@ -59,7 +53,17 @@
 
         <dependency>
             <groupId>io.airlift</groupId>
-            <artifactId>http-client</artifactId>
+            <artifactId>http-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>jaxrs</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>jmx</artifactId>
         </dependency>
 
         <dependency>
@@ -70,6 +74,22 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>log</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>log-manager</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>node</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>openmetrics</artifactId>
+            <version>${dep.airlift.version}</version>
         </dependency>
 
         <dependency>
@@ -86,29 +106,15 @@
             <groupId>io.airlift</groupId>
             <artifactId>units</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.starburst.stargate.buffer</groupId>
-            <artifactId>galaxy-buffer-client-common</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>io.starburst.stargate.buffer</groupId>
-            <artifactId>galaxy-buffer-data-client</artifactId>
+            <artifactId>starburst-buffer-client-common</artifactId>
         </dependency>
 
         <dependency>
             <groupId>io.starburst.stargate.buffer</groupId>
-            <artifactId>galaxy-buffer-discovery-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.trino</groupId>
-            <artifactId>trino-cache</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.trino</groupId>
-            <artifactId>trino-plugin-toolkit</artifactId>
+            <artifactId>starburst-buffer-discovery-client</artifactId>
         </dependency>
 
         <dependency>
@@ -117,8 +123,8 @@
         </dependency>
 
         <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
 
         <dependency>
@@ -127,39 +133,16 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <scope>provided</scope>
+            <groupId>com.datadoghq</groupId>
+            <artifactId>dd-java-agent</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
+        <!-- used by tests but also needed transitively -->
         <dependency>
             <groupId>io.airlift</groupId>
-            <artifactId>slice</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-context</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.trino</groupId>
-            <artifactId>trino-spi</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.openjdk.jol</groupId>
-            <artifactId>jol-core</artifactId>
-            <scope>provided</scope>
+            <artifactId>http-client</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -174,6 +157,7 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- for testing -->
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>testing</artifactId>
@@ -187,12 +171,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-guava</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -201,12 +179,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
