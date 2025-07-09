@@ -154,11 +154,11 @@ public class FileSystemModule
         newOptionalBinder(binder, TrinoFileSystemCache.class);
         newOptionalBinder(binder, MemoryFileSystemCache.class);
 
-        boolean isCoordinator = nodeManager.getCurrentNode().isCoordinator();
         if (config.isCacheEnabled()) {
-            install(new AlluxioFileSystemCacheModule(isCoordinator));
+            install(new AlluxioFileSystemCacheModule(nodeManager));
         }
         if (coordinatorFileCaching) {
+            boolean isCoordinator = nodeManager.getCurrentNode().isCoordinator();
             install(new MemoryFileSystemCacheModule(isCoordinator));
         }
         newSetBinder(binder, TrinoFileSystemDecorator.class);
