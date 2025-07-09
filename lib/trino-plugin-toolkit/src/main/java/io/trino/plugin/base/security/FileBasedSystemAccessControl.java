@@ -864,10 +864,10 @@ public class FileBasedSystemAccessControl
     public void checkCanGrantSchemaPrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaName schema, TrinoPrincipal grantee, boolean grantOption)
     {
         if (!canAccessCatalog(context, schema.getCatalogName(), ALL)) {
-            denyGrantSchemaPrivilege(privilege.name(), schema.toString());
+            denyGrantSchemaPrivilege(privilege.toString(), schema.toString());
         }
         if (!isSchemaOwner(context, schema)) {
-            denyGrantSchemaPrivilege(privilege.name(), schema.toString());
+            denyGrantSchemaPrivilege(privilege.toString(), schema.toString());
         }
     }
 
@@ -875,10 +875,10 @@ public class FileBasedSystemAccessControl
     public void checkCanDenySchemaPrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaName schema, TrinoPrincipal grantee)
     {
         if (!canAccessCatalog(context, schema.getCatalogName(), ALL)) {
-            denyDenySchemaPrivilege(privilege.name(), schema.toString());
+            denyDenySchemaPrivilege(privilege.toString(), schema.toString());
         }
         if (!isSchemaOwner(context, schema)) {
-            denyDenySchemaPrivilege(privilege.name(), schema.toString());
+            denyDenySchemaPrivilege(privilege.toString(), schema.toString());
         }
     }
 
@@ -886,10 +886,10 @@ public class FileBasedSystemAccessControl
     public void checkCanRevokeSchemaPrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaName schema, TrinoPrincipal revokee, boolean grantOption)
     {
         if (!canAccessCatalog(context, schema.getCatalogName(), ALL)) {
-            denyRevokeSchemaPrivilege(privilege.name(), schema.toString());
+            denyRevokeSchemaPrivilege(privilege.toString(), schema.toString());
         }
         if (!isSchemaOwner(context, schema)) {
-            denyRevokeSchemaPrivilege(privilege.name(), schema.toString());
+            denyRevokeSchemaPrivilege(privilege.toString(), schema.toString());
         }
     }
 
@@ -1080,6 +1080,24 @@ public class FileBasedSystemAccessControl
 
     @Override
     public void checkCanFastForwardBranch(SystemSecurityContext systemSecurityContext, CatalogSchemaTableName tableName, String sourceBranchName, String targetBranchName)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void checkCanGrantTableBranchPrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaTableName table, String branchName, TrinoPrincipal grantee, boolean grantOption)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void checkCanDenyTableBranchPrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaTableName table, String branchName, TrinoPrincipal grantee)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void checkCanRevokeTableBranchPrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaTableName table, String branchName, TrinoPrincipal revokee, boolean grantOption)
     {
         throw new UnsupportedOperationException();
     }
