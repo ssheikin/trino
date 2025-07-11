@@ -11,15 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.connector.system;
+package io.trino.spi.connector;
 
-import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.ConnectorTableHandle;
-import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.TupleDomain;
 
-import static io.trino.metadata.MetadataUtil.checkSchemaName;
-import static io.trino.metadata.MetadataUtil.checkTableName;
+import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
 public record SystemTableHandle(String schemaName, String tableName, TupleDomain<ColumnHandle> constraint)
@@ -27,8 +23,14 @@ public record SystemTableHandle(String schemaName, String tableName, TupleDomain
 {
     public SystemTableHandle
     {
-        checkSchemaName(schemaName);
-        checkTableName(tableName);
+        requireNonNull(schemaName, "schemaName is null");
+        if (!schemaName.equals(schemaName.toLowerCase(ENGLISH))) {
+            throw new IllegalArgumentException("schemaName is not lowercase: %s".formatted(schemaName));
+        }
+        requireNonNull(tableName, "tableName is null");
+        if (!tableName.equals(tableName.toLowerCase(ENGLISH))) {
+            throw new IllegalArgumentException("tableName is not lowercase: %s".formatted(tableName));
+        }
         requireNonNull(constraint, "constraint is null");
     }
 

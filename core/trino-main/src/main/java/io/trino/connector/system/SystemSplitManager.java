@@ -30,6 +30,7 @@ import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.FixedSplitSource;
 import io.trino.spi.connector.SystemTable;
 import io.trino.spi.connector.SystemTable.Distribution;
+import io.trino.spi.connector.SystemTableHandle;
 import io.trino.spi.connector.TableNotFoundException;
 import io.trino.spi.predicate.TupleDomain;
 

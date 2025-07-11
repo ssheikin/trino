@@ -18,7 +18,7 @@ import com.google.inject.Inject;
 import io.trino.Session;
 import io.trino.connector.informationschema.InformationSchemaTableHandle;
 import io.trino.connector.system.GlobalSystemConnector;
-import io.trino.connector.system.SystemTableHandle;
+import io.trino.spi.connector.SystemTableHandle;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.sql.planner.optimizations.PlanNodeSearcher;
 import io.trino.sql.planner.plan.PlanFragmentId;
