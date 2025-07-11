@@ -117,6 +117,9 @@ import io.trino.metadata.LanguageFunctionProvider;
 import io.trino.metadata.Split;
 import io.trino.operator.ForScheduler;
 import io.trino.operator.OperatorStats;
+import io.trino.server.buffer.EmbeddedBufferServiceConfig;
+import io.trino.server.buffer.EmbeddedBufferServiceDataModule;
+import io.trino.server.buffer.EmbeddedBufferServiceDiscoveryModule;
 import io.trino.server.protocol.ExecutingStatementResource;
 import io.trino.server.protocol.QueryInfoUrlFactory;
 import io.trino.server.remotetask.RemoteTaskStats;
@@ -414,6 +417,20 @@ public class CoordinatorModule
 
         install(new ResultsCacheModule());
         install(new QueryExecutionFactoryModule());
+
+        // embedded buffer service
+        configBinder(binder).bindConfig(EmbeddedBufferServiceConfig.class);
+        install(conditionalModule(
+                EmbeddedBufferServiceConfig.class,
+                EmbeddedBufferServiceConfig::isEmbeddedBufferServiceEnabled,
+                new EmbeddedBufferServiceDiscoveryModule()));
+        if (buildConfigObject(NodeSchedulerConfig.class).isIncludeCoordinator()) {
+            // if coordinator is doing worker job start up data server too
+            install(conditionalModule(
+                    EmbeddedBufferServiceConfig.class,
+                    EmbeddedBufferServiceConfig::isEmbeddedBufferServiceEnabled,
+                    new EmbeddedBufferServiceDataModule()));
+        }
 
         // cleanup
         closingBinder(binder).registerExecutor(Key.get(ExecutorService.class, ForStatementResource.class));
