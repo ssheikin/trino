@@ -14,7 +14,7 @@
 
     <properties>
         <air.compiler.fail-warnings>true</air.compiler.fail-warnings>
-        <kudu.version>1.17.1</kudu.version>
+        <kudu.version>1.18.0</kudu.version>
     </properties>
 
     <dependencies>
@@ -140,6 +140,13 @@
         <dependency>
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.stumbleupon</groupId>
+            <artifactId>async</artifactId>
+            <version>1.4.1</version>
             <scope>runtime</scope>
         </dependency>
 
