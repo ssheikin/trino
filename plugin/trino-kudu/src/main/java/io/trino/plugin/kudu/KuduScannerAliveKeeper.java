@@ -17,8 +17,8 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import jakarta.annotation.PreDestroy;
-import org.apache.trino.kudu.client.KuduException;
-import org.apache.trino.kudu.client.KuduScanner;
+import org.apache.kudu.client.KuduException;
+import org.apache.kudu.client.KuduScanner;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

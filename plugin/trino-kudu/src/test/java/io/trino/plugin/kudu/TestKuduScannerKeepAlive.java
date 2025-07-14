@@ -33,7 +33,7 @@ import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
 import io.trino.transaction.TransactionId;
 import io.trino.transaction.TransactionManager;
-import org.apache.trino.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduClient;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -284,7 +284,7 @@ public class TestKuduScannerKeepAlive
             TimeUnit.SECONDS.sleep(sleep);
 
             Assertions.assertThatThrownBy(cursor::advanceNextPosition)
-                    .hasMessageMatching("org\\.apache\\.trino\\.kudu\\.client\\.NonRecoverableException: Scanner (.*) not found \\(it may have expired\\)");
+                    .hasMessageMatching("org\\.apache\\.kudu\\.client\\.NonRecoverableException: Scanner (.*) not found \\(it may have expired\\)");
         }
     }
 

@@ -17,8 +17,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.base.util.AutoCloseableCloser;
 import io.trino.plugin.hive.containers.HiveHadoop;
-import org.apache.trino.kudu.client.KuduClient;
-import org.apache.trino.kudu.client.KuduException;
+import org.apache.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduException;
 import org.testcontainers.containers.Network;
 
 import java.io.File;

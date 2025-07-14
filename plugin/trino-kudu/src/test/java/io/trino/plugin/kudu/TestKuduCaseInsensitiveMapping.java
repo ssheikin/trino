@@ -18,7 +18,7 @@ import io.airlift.units.Duration;
 import io.trino.plugin.base.mapping.TableMappingRule;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
-import org.apache.trino.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;

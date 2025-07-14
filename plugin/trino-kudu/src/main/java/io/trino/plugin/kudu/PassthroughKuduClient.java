@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.kudu;
 
-import org.apache.trino.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduClient;
 
 import static java.util.Objects.requireNonNull;
 

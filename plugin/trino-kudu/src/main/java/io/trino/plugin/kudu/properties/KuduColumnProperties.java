@@ -16,7 +16,7 @@ package io.trino.plugin.kudu.properties;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.trino.spi.session.PropertyMetadata;
-import org.apache.trino.kudu.ColumnSchema;
+import org.apache.kudu.ColumnSchema;
 
 import java.util.List;
 import java.util.Locale;

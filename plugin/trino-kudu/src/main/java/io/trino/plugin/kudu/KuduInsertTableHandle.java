@@ -20,7 +20,7 @@ import io.trino.spi.connector.ConnectorInsertTableHandle;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.Type;
-import org.apache.trino.kudu.client.KuduTable;
+import org.apache.kudu.client.KuduTable;
 
 import java.util.List;
 

@@ -13,18 +13,18 @@
  */
 package io.trino.plugin.kudu;
 
-import org.apache.trino.kudu.Schema;
-import org.apache.trino.kudu.client.AlterTableOptions;
-import org.apache.trino.kudu.client.AlterTableResponse;
-import org.apache.trino.kudu.client.CreateTableOptions;
-import org.apache.trino.kudu.client.DeleteTableResponse;
-import org.apache.trino.kudu.client.KuduClient;
-import org.apache.trino.kudu.client.KuduException;
-import org.apache.trino.kudu.client.KuduScanToken;
-import org.apache.trino.kudu.client.KuduScanner;
-import org.apache.trino.kudu.client.KuduSession;
-import org.apache.trino.kudu.client.KuduTable;
-import org.apache.trino.kudu.client.ListTablesResponse;
+import org.apache.kudu.Schema;
+import org.apache.kudu.client.AlterTableOptions;
+import org.apache.kudu.client.AlterTableResponse;
+import org.apache.kudu.client.CreateTableOptions;
+import org.apache.kudu.client.DeleteTableResponse;
+import org.apache.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduException;
+import org.apache.kudu.client.KuduScanToken;
+import org.apache.kudu.client.KuduScanner;
+import org.apache.kudu.client.KuduSession;
+import org.apache.kudu.client.KuduTable;
+import org.apache.kudu.client.ListTablesResponse;
 
 import java.io.IOException;
 

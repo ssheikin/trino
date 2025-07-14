@@ -26,15 +26,15 @@ import io.trino.spi.type.SqlDate;
 import io.trino.spi.type.SqlDecimal;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarcharType;
-import org.apache.trino.kudu.Schema;
-import org.apache.trino.kudu.client.Delete;
-import org.apache.trino.kudu.client.Insert;
-import org.apache.trino.kudu.client.KeyEncoderAccessor;
-import org.apache.trino.kudu.client.KuduException;
-import org.apache.trino.kudu.client.KuduOperationApplier;
-import org.apache.trino.kudu.client.KuduTable;
-import org.apache.trino.kudu.client.PartialRow;
-import org.apache.trino.kudu.client.Upsert;
+import org.apache.kudu.Schema;
+import org.apache.kudu.client.Delete;
+import org.apache.kudu.client.Insert;
+import org.apache.kudu.client.KeyEncoderAccessor;
+import org.apache.kudu.client.KuduException;
+import org.apache.kudu.client.KuduOperationApplier;
+import org.apache.kudu.client.KuduTable;
+import org.apache.kudu.client.PartialRow;
+import org.apache.kudu.client.Upsert;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -63,7 +63,7 @@ import static io.trino.spi.type.VarbinaryType.VARBINARY;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.apache.trino.kudu.util.DateUtil.epochDaysToSqlDate;
+import static org.apache.kudu.util.DateUtil.epochDaysToSqlDate;
 
 public class KuduPageSink
         implements ConnectorPageSink, ConnectorMergeSink

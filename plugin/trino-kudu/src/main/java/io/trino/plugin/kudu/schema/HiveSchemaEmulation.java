@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableSet;
 import io.trino.plugin.kudu.KuduClientWrapper;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.SchemaTableName;
-import org.apache.trino.kudu.client.KuduException;
+import org.apache.kudu.client.KuduException;
 
 import java.util.List;
 

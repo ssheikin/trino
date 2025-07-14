@@ -16,7 +16,7 @@ package io.trino.plugin.kudu;
 import com.google.common.collect.ImmutableList;
 import io.trino.testing.QueryRunner;
 import io.trino.tpch.TpchTable;
-import org.apache.trino.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduClient;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

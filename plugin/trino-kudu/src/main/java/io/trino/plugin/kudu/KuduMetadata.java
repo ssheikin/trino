@@ -54,10 +54,10 @@ import io.trino.spi.statistics.ComputedStatistics;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarbinaryType;
 import io.trino.spi.type.VarcharType;
-import org.apache.trino.kudu.ColumnSchema;
-import org.apache.trino.kudu.Schema;
-import org.apache.trino.kudu.client.KuduTable;
-import org.apache.trino.kudu.client.PartitionSchema.HashBucketSchema;
+import org.apache.kudu.ColumnSchema;
+import org.apache.kudu.Schema;
+import org.apache.kudu.client.KuduTable;
+import org.apache.kudu.client.PartitionSchema.HashBucketSchema;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -506,6 +506,36 @@ public class KuduMetadata
         return Optional.of(new ConstraintApplicationResult<>(handle, constraint.getSummary(), constraint.getExpression(), false));
     }
 
+    /**
+     * Only applies to the projection which selects a list of top-level columns.
+     * <p>
+     * Take this query "select col1, col2.field1 from test_table" as an example:
+     * <p>
+     * The optimizer calls with the following arguments:
+     * <p>
+     * handle = TH0 (col0, col1, col2, col3)
+     * projections = [
+     * col1,
+     * f(col2)
+     * ]
+     * assignments = [
+     * col1 = CH1
+     * col2 = CH2
+     * ]
+     * <p>
+     * <p>
+     * This method returns:
+     * <p>
+     * handle = TH1 (col1, col2)
+     * projections = [
+     * col1,
+     * f(col2)
+     * ]
+     * assignments = [
+     * col1 = CH1
+     * col2 = CH2
+     * ]
+     */
     @Override
     public Optional<ProjectionApplicationResult<ConnectorTableHandle>> applyProjection(ConnectorSession session, ConnectorTableHandle table, List<ConnectorExpression> projections, Map<String, ColumnHandle> assignments)
     {
