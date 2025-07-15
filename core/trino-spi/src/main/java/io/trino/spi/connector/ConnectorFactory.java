@@ -14,7 +14,6 @@
 package io.trino.spi.connector;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import io.trino.spi.Experimental;
 
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +35,6 @@ public interface ConnectorFactory
      * The engine uses the properties returned by this method to mask the corresponding
      * values, preventing the leakage of security-sensitive information.
      */
-    @Experimental(eta = "2025-12-31")
     default Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         return Set.copyOf(config.keySet());
