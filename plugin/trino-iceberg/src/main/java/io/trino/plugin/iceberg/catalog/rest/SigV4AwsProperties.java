@@ -16,6 +16,7 @@ package io.trino.plugin.iceberg.catalog.rest;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.trino.filesystem.s3.S3FileSystemConfig;
+import io.trino.spi.security.ConnectorIdentity;
 
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +37,7 @@ import static org.apache.iceberg.aws.AwsProperties.REST_SIGNER_REGION;
 import static org.apache.iceberg.aws.AwsProperties.REST_SIGNING_NAME;
 
 public class SigV4AwsProperties
-        implements AwsProperties
+        implements SecurityProperties
 {
     // Copy of `org.apache.iceberg.aws.AwsClientProperties.CLIENT_CREDENTIAL_PROVIDER_PREFIX` https://github.com/apache/iceberg/blob/ab6fc83ec0269736355a0a89c51e44e822264da8/aws/src/main/java/org/apache/iceberg/aws/AwsClientProperties.java#L69
     private static final String CLIENT_CREDENTIAL_PROVIDER_PREFIX = "client.credentials-provider.";
@@ -85,7 +86,7 @@ public class SigV4AwsProperties
     }
 
     @Override
-    public Map<String, String> get()
+    public Map<String, String> get(ConnectorIdentity identity)
     {
         return properties;
     }
