@@ -21,6 +21,7 @@ import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.node.NodeInfo;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
+import io.starburst.ai.model.ModelConnectionSpecsLoader;
 import io.trino.connector.informationschema.InformationSchemaConnector;
 import io.trino.connector.system.CoordinatorSystemTablesProvider;
 import io.trino.connector.system.StaticSystemTablesProvider;
@@ -82,6 +83,8 @@ public class DefaultCatalogFactory
     private final int maxPrefetchedInformationSchemaPrefixes;
     private final LocationAccessControl locationAccessControl;
     private final AiModelAccessControl aiModelAccessControl;
+    private final ModelConnectionSpecsLoader modelConnectionSpecsLoader;
+
     private final Map<String, String> serverProperties;
     private final ConcurrentMap<ConnectorName, ConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
     private final LocalMemoryManager localMemoryManager;
@@ -104,6 +107,7 @@ public class DefaultCatalogFactory
             NodeSchedulerConfig nodeSchedulerConfig,
             LocationAccessControl locationAccessControl,
             AiModelAccessControl aiModelAccessControl,
+            ModelConnectionSpecsLoader modelConnectionSpecsLoader,
             OptimizerConfig optimizerConfig,
             ConfigurationFactory configurationFactory,
             LocalMemoryManager localMemoryManager,
@@ -124,6 +128,7 @@ public class DefaultCatalogFactory
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
+        this.modelConnectionSpecsLoader = requireNonNull(modelConnectionSpecsLoader, "modelConnectionSpecsLoader is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
         this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
@@ -257,6 +262,7 @@ public class DefaultCatalogFactory
                 new InternalMetadataProvider(metadata, typeManager),
                 locationAccessControl,
                 aiModelAccessControl,
+                modelConnectionSpecsLoader,
                 metastore,
                 pageSorter,
                 workScheduler,

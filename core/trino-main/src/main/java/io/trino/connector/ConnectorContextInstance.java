@@ -16,6 +16,7 @@ package io.trino.connector;
 import com.google.common.collect.ImmutableMap;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
+import io.starburst.ai.model.ModelConnectionSpecsLoader;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
@@ -47,6 +48,7 @@ public class ConnectorContextInstance
     private final PageIndexerFactory pageIndexerFactory;
     private final LocationAccessControl locationAccessControl;
     private final AiModelAccessControl aiModelAccessControl;
+    private final ModelConnectionSpecsLoader modelConnectionSpecsLoader;
     private final Metastore metastore;
     private final CatalogHandle catalogHandle;
     private final Map<String, String> serverProperties;
@@ -61,6 +63,7 @@ public class ConnectorContextInstance
             MetadataProvider metadataProvider,
             LocationAccessControl locationAccessControl,
             AiModelAccessControl aiModelAccessControl,
+            ModelConnectionSpecsLoader modelConnectionSpecsLoader,
             Metastore metastore,
             PageSorter pageSorter,
             WorkScheduler workScheduler,
@@ -75,6 +78,7 @@ public class ConnectorContextInstance
         this.metadataProvider = requireNonNull(metadataProvider, "metadataProvider is null");
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
+        this.modelConnectionSpecsLoader = requireNonNull(modelConnectionSpecsLoader, "modelConnectionSpecsLoader is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
@@ -159,6 +163,12 @@ public class ConnectorContextInstance
     public AiModelAccessControl getAiModelAccessControl()
     {
         return aiModelAccessControl;
+    }
+
+    @Override
+    public ModelConnectionSpecsLoader getModelConnectionSpecsLoader()
+    {
+        return modelConnectionSpecsLoader;
     }
 
     @Override

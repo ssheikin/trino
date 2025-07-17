@@ -254,6 +254,7 @@ import static io.airlift.concurrent.MoreFutures.getFutureValue;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.tracing.Tracing.noopTracer;
 import static io.opentelemetry.api.OpenTelemetry.noop;
+import static io.starburst.ai.model.ModelConnectionSpecsLoader.EMPTY_LOADER;
 import static io.trino.connector.CatalogServiceProviderModule.createAccessControlProvider;
 import static io.trino.connector.CatalogServiceProviderModule.createAlternativeChooser;
 import static io.trino.connector.CatalogServiceProviderModule.createAnalyzePropertyManager;
@@ -446,6 +447,7 @@ public class PlanTester
                 nodeSchedulerConfig,
                 accessControlManager,
                 AiModelAccessControl.ALLOW_ALL,
+                EMPTY_LOADER,
                 optimizerConfig,
                 new ConfigurationFactory(ImmutableMap.of()),
                 new LocalMemoryManager(new NodeMemoryConfig()),
