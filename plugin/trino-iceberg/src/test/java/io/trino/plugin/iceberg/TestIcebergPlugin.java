@@ -20,9 +20,11 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.testing.TestingConnectorContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 
@@ -236,6 +238,24 @@ public class TestIcebergPlugin
                                 "iceberg.catalog.type", "rest",
                                 "iceberg.rest-catalog.uri", "https://foo:1234",
                                 "bootstrap.quiet", "true"),
+                        new TestingConnectorContext())
+                .shutdown();
+    }
+
+    @Test
+    void testRestCatalogWithBigLakeMetastore(@TempDir Path jsonKeyFilePath)
+    {
+        ConnectorFactory factory = getConnectorFactory();
+        factory.create(
+                        "test",
+                        ImmutableMap.<String, String>builder()
+                                .put("iceberg.catalog.type", "rest")
+                                .put("iceberg.rest-catalog.uri", "https://foo:1234")
+                                .put("iceberg.rest-catalog.security", "GOOGLE")
+                                .put("iceberg.rest-catalog.google-project-id", "dev")
+                                .put("gcs.json-key-file-path", jsonKeyFilePath.toString())
+                                .put("bootstrap.quiet", "true")
+                                .buildOrThrow(),
                         new TestingConnectorContext())
                 .shutdown();
     }

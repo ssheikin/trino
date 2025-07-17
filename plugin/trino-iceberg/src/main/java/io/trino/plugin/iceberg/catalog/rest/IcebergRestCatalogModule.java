@@ -37,6 +37,7 @@ public class IcebergRestCatalogModule
             case NONE -> install(new NoneSecurityModule());
             case SIGV4 -> install(new SigV4SecurityModule());
             case OAUTH2 -> install(new OAuth2SecurityModule());
+            case GOOGLE -> install(new GoogleSecurityModule());
             case OAUTH2_PASSTHROUGH -> {
                 // handled in SEP
             }
