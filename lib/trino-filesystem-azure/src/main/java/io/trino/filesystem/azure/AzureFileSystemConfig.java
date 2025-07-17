@@ -40,6 +40,7 @@ public class AzureFileSystemConfig
     private boolean useOauthPassthroughToken;
     private Integer maxHttpRequests = 2 * Runtime.getRuntime().availableProcessors();
     private String applicationId = "Trino";
+    private boolean multipartWriteEnabled;
 
     @NotNull
     public AuthType getAuthType()
@@ -157,5 +158,18 @@ public class AzureFileSystemConfig
     {
         this.applicationId = applicationId;
         return this;
+    }
+
+    @Config("azure.multipart-write-enabled")
+    @ConfigDescription("Enable multipart writes for large files")
+    public AzureFileSystemConfig setMultipartWriteEnabled(boolean multipartWriteEnabled)
+    {
+        this.multipartWriteEnabled = multipartWriteEnabled;
+        return this;
+    }
+
+    public boolean isMultipartWriteEnabled()
+    {
+        return multipartWriteEnabled;
     }
 }

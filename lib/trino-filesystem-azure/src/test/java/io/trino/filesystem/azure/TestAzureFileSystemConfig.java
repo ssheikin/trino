@@ -39,7 +39,8 @@ class TestAzureFileSystemConfig
                 .setMaxSingleUploadSize(DataSize.of(4, Unit.MEGABYTE))
                 .setUseOauthPassthroughToken(false)
                 .setMaxHttpRequests(2 * Runtime.getRuntime().availableProcessors())
-                .setApplicationId("Trino"));
+                .setApplicationId("Trino")
+                .setMultipartWriteEnabled(false));
     }
 
     @Test
@@ -55,6 +56,7 @@ class TestAzureFileSystemConfig
                 .put("azure.use-oauth-passthrough-token", "true")
                 .put("azure.max-http-requests", "128")
                 .put("azure.application-id", "application id")
+                .put("azure.multipart-write-enabled", "true")
                 .buildOrThrow();
 
         AzureFileSystemConfig expected = new AzureFileSystemConfig()
@@ -66,7 +68,8 @@ class TestAzureFileSystemConfig
                 .setMaxSingleUploadSize(DataSize.of(7, Unit.MEGABYTE))
                 .setUseOauthPassthroughToken(true)
                 .setMaxHttpRequests(128)
-                .setApplicationId("application id");
+                .setApplicationId("application id")
+                .setMultipartWriteEnabled(true);
 
         assertFullMapping(properties, expected);
     }

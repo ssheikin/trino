@@ -31,15 +31,20 @@ import jakarta.annotation.PreDestroy;
 import reactor.netty.resources.ConnectionProvider;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.nullToEmpty;
+import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.trino.filesystem.azure.AzureFileSystemConstants.OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class AzureFileSystemFactory
         implements TrinoFileSystemFactory
 {
+    private final ExecutorService uploadExecutor = newCachedThreadPool(daemonThreadsNamed("azure-upload-%s"));
+
     private final AzureAuth auth;
     private final boolean useOauthPassthroughToken;
     private final AzureFileSystemConfig.AuthType authType;
@@ -52,6 +57,7 @@ public class AzureFileSystemFactory
     private final HttpClient httpClient;
     private final ConnectionProvider connectionProvider;
     private final EventLoopGroup eventLoopGroup;
+    private final boolean multipart;
 
     @Inject
     public AzureFileSystemFactory(OpenTelemetry openTelemetry, AzureAuth azureAuth, AzureFileSystemConfig config)
@@ -66,7 +72,8 @@ public class AzureFileSystemFactory
                 config.getMaxWriteConcurrency(),
                 config.getMaxSingleUploadSize(),
                 config.getMaxHttpRequests(),
-                config.getApplicationId());
+                config.getApplicationId(),
+                config.isMultipartWriteEnabled());
     }
 
     public AzureFileSystemFactory(
@@ -80,7 +87,8 @@ public class AzureFileSystemFactory
             int maxWriteConcurrency,
             DataSize maxSingleUploadSize,
             int maxHttpRequests,
-            String applicationId)
+            String applicationId,
+            boolean multipart)
     {
         this.auth = requireNonNull(azureAuth, "azureAuth is null");
         this.useOauthPassthroughToken = useOauthPassthroughToken;
@@ -98,11 +106,14 @@ public class AzureFileSystemFactory
         clientOptions.setTracingOptions(tracingOptions);
         clientOptions.setApplicationId(applicationId);
         httpClient = createAzureHttpClient(connectionProvider, eventLoopGroup, clientOptions);
+        this.multipart = multipart;
     }
 
     @PreDestroy
     public void destroy()
     {
+        uploadExecutor.shutdown();
+
         if (connectionProvider != null) {
             connectionProvider.dispose();
         }
@@ -126,13 +137,15 @@ public class AzureFileSystemFactory
         String accessToken = nullToEmpty(identity.getExtraCredentials().get(OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL));
         return new AzureFileSystem(
                 httpClient,
+                uploadExecutor,
                 tracingOptions,
                 useOauthPassthroughToken ? new AzureAuthCustomToken(new AzureCustomTokenCredential(accessToken), authType) : auth,
                 endpoint,
                 readBlockSize,
                 writeBlockSize,
                 maxWriteConcurrency,
-                maxSingleUploadSize);
+                maxSingleUploadSize,
+                multipart);
     }
 
     public static HttpClient createAzureHttpClient(ConnectionProvider connectionProvider, EventLoopGroup eventLoopGroup, HttpClientOptions clientOptions)
