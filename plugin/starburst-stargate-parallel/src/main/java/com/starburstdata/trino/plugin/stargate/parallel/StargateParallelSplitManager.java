@@ -84,7 +84,7 @@ public class StargateParallelSplitManager
                 Map.of());
 
         String query = getExecuteStatement(session, preparedQuery);
-        return new StargateParallelSplitSource(executor, clientFactory.createFactory(query));
+        return new StargateParallelSplitSource(executor, clientFactory.createFactory(session.getIdentity(), query));
     }
 
     private String getExecuteStatement(ConnectorSession session, PreparedQuery preparedQuery)

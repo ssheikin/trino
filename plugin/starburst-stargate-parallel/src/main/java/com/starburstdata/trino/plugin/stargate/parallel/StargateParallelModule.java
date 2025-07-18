@@ -18,6 +18,7 @@ import io.trino.client.OkHttpSegmentLoader;
 import io.trino.client.spooling.SegmentLoader;
 import io.trino.plugin.jdbc.ForJdbcDynamicFiltering;
 import io.trino.plugin.jdbc.JdbcSplitManager;
+import io.trino.plugin.jdbc.credential.CredentialPropertiesProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
 
@@ -42,6 +43,10 @@ public class StargateParallelModule
 
         configBinder(binder).bindConfig(StargateParallelConfig.class);
         binder.bind(StargateClientFactory.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, CredentialPropertiesProvider.class)
+                .setDefault()
+                .to(StaticCredentialPropertiesProvider.class)
+                .in(Scopes.SINGLETON);
         install(new StargateAuthenticationModule());
     }
 }
