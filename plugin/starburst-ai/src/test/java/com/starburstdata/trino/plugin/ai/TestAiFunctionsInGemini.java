@@ -13,46 +13,42 @@ import io.trino.plugin.memory.MemoryQueryRunner;
 import io.trino.testing.QueryRunner;
 
 import static com.starburstdata.trino.plugin.ai.AiQueryRunner.addStarburstAiCatalog;
-import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 
-class TestAiFunctionsInAzureOpenAi
+class TestAiFunctionsInGemini
         extends BaseAiFunctionsSmokeTest
 {
-    private static final String AZURE_OPEN_AI_LANGUAGE_ENDPOINT = requireEnv("AZURE_OPEN_AI_LANGUAGE_ENDPOINT");
-    private static final String AZURE_OPEN_AI_EMBED_ENDPOINT = requireEnv("AZURE_OPEN_AI_EMBED_ENDPOINT");
-
-    private static final String AZURE_OPEN_AI_MODEL_PROVIDERS = """
+    private static final String GEMINI_MODEL_PROVIDERS = """
                 {
                   "models": [
                      {
                         "id": "%s",
-                        "modelName": "gpt-4o-mini",
+                        "modelName": "gemini-2.0-flash",
                         "kind": "GENERATE",
                         "connectionInfo": {
                             "provider": "OPENAI",
-                            "endpoint": "%s",
-                            "apiKey": "${ENV:AZURE_OPEN_AI_API_KEY}"
+                            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/",
+                            "apiKey": "${ENV:GEMINI_API_KEY}"
                         }
                     },
                     {
                       "id": "%s",
-                      "modelName": "text-embedding-3-small",
+                      "modelName": "gemini-embedding-001",
                       "kind": "EMBED",
                       "connectionInfo": {
                         "provider": "OPENAI",
-                        "endpoint": "%s",
-                        "apiKey": "${ENV:AZURE_OPEN_AI_API_KEY}"
+                        "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/",
+                        "apiKey": "${ENV:GEMINI_API_KEY}"
                       }
                     }
                   ]
-                }""".formatted(LANGUAGE_MODEL_ID, AZURE_OPEN_AI_LANGUAGE_ENDPOINT, EMBED_MODEL_ID, AZURE_OPEN_AI_EMBED_ENDPOINT);
+                }""".formatted(LANGUAGE_MODEL_ID, EMBED_MODEL_ID);
 
     @Override
     public QueryRunner createQueryRunner()
             throws Exception
     {
         return MemoryQueryRunner.builder()
-                .setAdditionalSetup(runner -> addStarburstAiCatalog(AZURE_OPEN_AI_MODEL_PROVIDERS, runner))
+                .setAdditionalSetup(runner -> addStarburstAiCatalog(GEMINI_MODEL_PROVIDERS, runner))
                 .build();
     }
 }
