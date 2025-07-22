@@ -13,31 +13,32 @@
  */
 package io.trino.plugin.deltalake.metastore;
 
-import io.trino.spi.connector.SchemaTableName;
-
-import java.util.Optional;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-public record DeltaMetastoreTable(
-        SchemaTableName schemaTableName,
-        boolean managed,
+public record VendedCredentialsHandle(
         boolean catalogOwned,
-        String location,
-        Optional<String> tableId,
-        Optional<VendedCredentials> vendedCredentials)
+        boolean managed,
+        String tableLocation,
+        VendedCredentials vendedCredentials)
 {
-    public DeltaMetastoreTable
+    public VendedCredentialsHandle
     {
-        requireNonNull(schemaTableName, "schemaTableName is null");
-        requireNonNull(location, "location is null");
-        requireNonNull(tableId, "tableId is null");
+        requireNonNull(tableLocation, "tableLocation is null");
         requireNonNull(vendedCredentials, "vendedCredentials is null");
 
         if (catalogOwned) {
-            checkArgument(managed, "catalog owned tables must be managed");
-            checkArgument(tableId.isPresent(), "tableId must be present for catalog owned tables");
+            checkArgument(managed, "catalog-owned table must be managed");
         }
+    }
+
+    public static VendedCredentialsHandle empty(String tableLocation)
+    {
+        return new VendedCredentialsHandle(false, false, tableLocation, VendedCredentials.empty());
+    }
+
+    public static VendedCredentialsHandle of(DeltaMetastoreTable table)
+    {
+        return new VendedCredentialsHandle(table.catalogOwned(), table.managed(), table.location(), table.vendedCredentials().orElse(VendedCredentials.empty()));
     }
 }

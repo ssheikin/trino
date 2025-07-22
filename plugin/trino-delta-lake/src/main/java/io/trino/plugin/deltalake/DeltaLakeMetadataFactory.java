@@ -16,12 +16,12 @@ package io.trino.plugin.deltalake;
 import com.google.inject.Inject;
 import io.airlift.concurrent.BoundedExecutor;
 import io.airlift.json.JsonCodec;
-import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.metastore.HiveMetastore;
 import io.trino.metastore.HiveMetastoreFactory;
 import io.trino.metastore.cache.CachingHiveMetastore;
 import io.trino.plugin.deltalake.metastore.DeltaLakeTableMetadataScheduler;
 import io.trino.plugin.deltalake.metastore.HiveMetastoreBackedDeltaLakeMetastore;
+import io.trino.plugin.deltalake.metastore.VendedCredentialsProvider;
 import io.trino.plugin.deltalake.statistics.CachingExtendedStatisticsAccess;
 import io.trino.plugin.deltalake.statistics.FileBasedTableStatisticsProvider;
 import io.trino.plugin.deltalake.transactionlog.TransactionLogAccess;
@@ -50,7 +50,7 @@ import static java.util.Objects.requireNonNull;
 public class DeltaLakeMetadataFactory
 {
     private final HiveMetastoreFactory hiveMetastoreFactory;
-    private final TrinoFileSystemFactory fileSystemFactory;
+    private final DeltaLakeFileSystemFactory fileSystemFactory;
     private final LocationAccessControl locationAccessControl;
     private final TransactionLogAccess transactionLogAccess;
     private final TypeManager typeManager;
@@ -75,11 +75,12 @@ public class DeltaLakeMetadataFactory
     private final boolean isOperateOnUnityMetastore;
     private final String trinoVersion;
     private final TransactionLogReaderFactory transactionLogReaderFactory;
+    private final VendedCredentialsProvider vendedCredentialsProvider;
 
     @Inject
     public DeltaLakeMetadataFactory(
             HiveMetastoreFactory hiveMetastoreFactory,
-            TrinoFileSystemFactory fileSystemFactory,
+            DeltaLakeFileSystemFactory fileSystemFactory,
             LocationAccessControl locationAccessControl,
             TransactionLogAccess transactionLogAccess,
             TypeManager typeManager,
@@ -98,7 +99,8 @@ public class DeltaLakeMetadataFactory
             DeltaLakeTableMetadataScheduler metadataScheduler,
             @ForDeltaLakeMetadata ExecutorService executorService,
             MetastoreTypeConfig metastoreTypeConfig,
-            TransactionLogReaderFactory transactionLogReaderFactory)
+            TransactionLogReaderFactory transactionLogReaderFactory,
+            VendedCredentialsProvider vendedCredentialsProvider)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.hiveMetastoreFactory = requireNonNull(hiveMetastoreFactory, "hiveMetastore is null");
@@ -131,6 +133,7 @@ public class DeltaLakeMetadataFactory
         }
         this.isOperateOnUnityMetastore = metastoreTypeConfig.getMetastoreType() == UNITY;
         this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory is null");
+        this.vendedCredentialsProvider = requireNonNull(vendedCredentialsProvider, "vendedCredentialsProvider is null");
     }
 
     public DeltaLakeMetadata create(ConnectorIdentity identity)
@@ -176,7 +179,8 @@ public class DeltaLakeMetadataFactory
                 allowManagedTableRename,
                 isOperateOnUnityMetastore,
                 metadataFetchingExecutor,
-                transactionLogReaderFactory);
+                transactionLogReaderFactory,
+                vendedCredentialsProvider);
     }
 
     public CachingHiveMetastore createTransactionMetastore(ConnectorIdentity identity)

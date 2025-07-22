@@ -17,10 +17,12 @@ import com.google.inject.Binder;
 import com.google.inject.Scopes;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.deltalake.DataFileInfo;
+import io.trino.plugin.deltalake.DefaultDeltaLakeFileSystemFactory;
 import io.trino.plugin.deltalake.DeltaLakeAccessControlMetadataFactory;
 import io.trino.plugin.deltalake.DeltaLakeCacheSplitId;
 import io.trino.plugin.deltalake.DeltaLakeConfig;
 import io.trino.plugin.deltalake.DeltaLakeExecutorModule;
+import io.trino.plugin.deltalake.DeltaLakeFileSystemFactory;
 import io.trino.plugin.deltalake.DeltaLakeMergeResult;
 import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
 import io.trino.plugin.deltalake.DeltaLakeNodePartitioningProvider;
@@ -35,6 +37,8 @@ import io.trino.plugin.deltalake.DeltaLakeTransactionManager;
 import io.trino.plugin.deltalake.DeltaLakeWriterStats;
 import io.trino.plugin.deltalake.metastore.DeltaLakeMetastoreModule;
 import io.trino.plugin.deltalake.metastore.DeltaLakeTableMetadataScheduler;
+import io.trino.plugin.deltalake.metastore.NoOpVendedCredentialsProvider;
+import io.trino.plugin.deltalake.metastore.VendedCredentialsProvider;
 import io.trino.plugin.deltalake.metastore.file.DeltaLakeFileMetastoreModule;
 import io.trino.plugin.deltalake.metastore.glue.DeltaLakeGlueMetastoreModule;
 import io.trino.plugin.deltalake.metastore.thrift.DeltaLakeThriftMetastoreModule;
@@ -94,6 +98,9 @@ public class LakehouseDeltaModule
         binder.bind(CachingExtendedStatisticsAccess.class).in(Scopes.SINGLETON);
         binder.bind(ExtendedStatisticsAccess.class).to(CachingExtendedStatisticsAccess.class).in(Scopes.SINGLETON);
         binder.bind(ExtendedStatisticsAccess.class).annotatedWith(ForCachingExtendedStatisticsAccess.class).to(MetaDirStatisticsAccess.class).in(Scopes.SINGLETON);
+
+        newOptionalBinder(binder, DeltaLakeFileSystemFactory.class).setDefault().to(DefaultDeltaLakeFileSystemFactory.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, VendedCredentialsProvider.class).setDefault().to(NoOpVendedCredentialsProvider.class).in(Scopes.SINGLETON);
 
         binder.bind(TransactionLogAccess.class).in(Scopes.SINGLETON);
         newExporter(binder).export(TransactionLogAccess.class).withGeneratedName();

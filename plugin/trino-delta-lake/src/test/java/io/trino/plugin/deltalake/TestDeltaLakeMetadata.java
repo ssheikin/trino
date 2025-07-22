@@ -518,7 +518,8 @@ public class TestDeltaLakeMetadata
                 Optional.of(ImmutableList.of(DOUBLE_COLUMN_HANDLE)),
                 Optional.empty(),
                 0,
-                false);
+                false,
+                Optional.empty());
     }
 
     private static TupleDomain<DeltaLakeColumnHandle> createConstrainedColumnsTuple(
