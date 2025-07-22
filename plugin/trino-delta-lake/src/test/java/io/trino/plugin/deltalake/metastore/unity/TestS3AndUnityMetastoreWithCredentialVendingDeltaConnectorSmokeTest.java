@@ -19,24 +19,19 @@ import org.junit.jupiter.api.parallel.Execution;
 
 import java.util.Map;
 
-import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
 @TestInstance(PER_CLASS)
 @Execution(CONCURRENT)
-class TestS3AndUnityMetastoreDeltaConnectorSmokeTest
+class TestS3AndUnityMetastoreWithCredentialVendingDeltaConnectorSmokeTest
         extends BaseS3AndUnityMetastoreDeltaConnectorSmokeTest
 {
-    private static final String DATABRICKS_AWS_ACCESS_KEY_ID = requireEnv("DATABRICKS_AWS_ACCESS_KEY_ID");
-    private static final String DATABRICKS_AWS_SECRET_ACCESS_KEY = requireEnv("DATABRICKS_AWS_SECRET_ACCESS_KEY");
-
     @Override
     protected Map<String, String> getAdditionalDeltaLakeProperties()
     {
         return ImmutableMap.<String, String>builder()
-                .put("s3.aws-access-key", DATABRICKS_AWS_ACCESS_KEY_ID)
-                .put("s3.aws-secret-key", DATABRICKS_AWS_SECRET_ACCESS_KEY)
+                .put("hive.metastore.unity.vended-credentials-enabled", "true")
                 .buildOrThrow();
     }
 }

@@ -17,26 +17,26 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.parallel.Execution;
 
+import java.util.Base64;
 import java.util.Map;
 
 import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
 @TestInstance(PER_CLASS)
 @Execution(CONCURRENT)
-class TestS3AndUnityMetastoreDeltaConnectorSmokeTest
-        extends BaseS3AndUnityMetastoreDeltaConnectorSmokeTest
+class TestGcsAndUnityMetastoreDeltaConnectorSmokeTest
+        extends BaseGcsAndUnityMetastoreDeltaConnectorSmokeTest
 {
-    private static final String DATABRICKS_AWS_ACCESS_KEY_ID = requireEnv("DATABRICKS_AWS_ACCESS_KEY_ID");
-    private static final String DATABRICKS_AWS_SECRET_ACCESS_KEY = requireEnv("DATABRICKS_AWS_SECRET_ACCESS_KEY");
+    private static final String GCP_CREDENTIALS_KEY = new String(Base64.getDecoder().decode(requireEnv("DATABRICKS_UNITY_GCP_GCS_JSON_KEY")), UTF_8);
 
     @Override
     protected Map<String, String> getAdditionalDeltaLakeProperties()
     {
         return ImmutableMap.<String, String>builder()
-                .put("s3.aws-access-key", DATABRICKS_AWS_ACCESS_KEY_ID)
-                .put("s3.aws-secret-key", DATABRICKS_AWS_SECRET_ACCESS_KEY)
+                .put("gcs.json-key", GCP_CREDENTIALS_KEY)
                 .buildOrThrow();
     }
 }
