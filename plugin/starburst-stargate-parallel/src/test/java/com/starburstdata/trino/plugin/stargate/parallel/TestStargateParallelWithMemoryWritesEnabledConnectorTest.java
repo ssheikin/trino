@@ -17,6 +17,7 @@ import io.trino.testing.sql.TestTable;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,13 +40,12 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
                    "connection-url" = '%s',
                    "connection-user" = 'p2p'
                 )""";
-    private LocalStackContainer localstack;
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        localstack = closeAfterClass(new LocalStackContainer("s3-latest"));
+        LocalStackContainer localstack = closeAfterClass(new LocalStackContainer(DockerImageName.parse("localstack/localstack:s3-latest")));
         localstack.start();
         remoteStarburst = closeAfterClass(createRemoteStarburstQueryRunnerWithMemory(REQUIRED_TPCH_TABLES, localstack, Optional.empty()));
 
@@ -64,34 +64,20 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
     @Override
     protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
     {
-        switch (connectorBehavior) {
-            case SUPPORTS_ADD_COLUMN_WITH_COMMENT:
-            case SUPPORTS_DROP_COLUMN:
-            case SUPPORTS_SET_COLUMN_TYPE:
-            case SUPPORTS_UPDATE:
-                // not supported in memory connector
-                return false;
-
-            case SUPPORTS_RENAME_COLUMN:
-            case SUPPORTS_RENAME_SCHEMA:
-                return true;
-
-            case SUPPORTS_DELETE:
-                // memory connector does not support deletes
-                return false;
-
-            case SUPPORTS_NOT_NULL_CONSTRAINT:
-                // memory connector does not support not-null in create-table
-                return true;
-
-            case SUPPORTS_TRUNCATE:
-                return false;
-            case SUPPORTS_COMMENT_ON_COLUMN:
-                return true;
-
-            default:
-                return super.hasBehavior(connectorBehavior);
-        }
+        // memory connector does not support deletes or updates
+        return switch (connectorBehavior) {
+            case SUPPORTS_COMMENT_ON_COLUMN,
+                 SUPPORTS_NOT_NULL_CONSTRAINT,
+                 SUPPORTS_RENAME_COLUMN,
+                 SUPPORTS_RENAME_SCHEMA -> true;
+            case SUPPORTS_ADD_COLUMN_WITH_COMMENT,
+                 SUPPORTS_DELETE,
+                 SUPPORTS_DROP_COLUMN,
+                 SUPPORTS_SET_COLUMN_TYPE,
+                 SUPPORTS_TRUNCATE,
+                 SUPPORTS_UPDATE -> false;
+            default -> super.hasBehavior(connectorBehavior);
+        };
     }
 
     @Test
