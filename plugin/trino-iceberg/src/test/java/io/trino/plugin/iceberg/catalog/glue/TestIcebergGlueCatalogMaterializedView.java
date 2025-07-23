@@ -47,9 +47,9 @@ import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_
 public class TestIcebergGlueCatalogMaterializedView
         extends BaseIcebergMaterializedViewTest
 {
-    private final String schemaName = "test_iceberg_materialized_view_" + randomNameSuffix();
+    protected final String schemaName = "test_iceberg_materialized_view_" + randomNameSuffix();
 
-    private File schemaDirectory;
+    protected File schemaDirectory;
 
     @Override
     protected QueryRunner createQueryRunner()

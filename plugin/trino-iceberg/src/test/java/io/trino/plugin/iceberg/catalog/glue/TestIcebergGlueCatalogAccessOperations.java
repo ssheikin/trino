@@ -84,9 +84,9 @@ public class TestIcebergGlueCatalogAccessOperations
     private static final Logger log = Logger.get(TestIcebergGlueCatalogAccessOperations.class);
 
     private static final int MAX_PREFIXES_COUNT = 5;
-    private final String testSchema = "test_schema_" + randomNameSuffix();
+    protected final String testSchema = "test_schema_" + randomNameSuffix();
 
-    private GlueMetastoreStats glueStats;
+    protected GlueMetastoreStats glueStats;
 
     @Override
     protected QueryRunner createQueryRunner()

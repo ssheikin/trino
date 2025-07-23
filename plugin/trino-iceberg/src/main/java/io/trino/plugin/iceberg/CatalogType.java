@@ -18,6 +18,7 @@ public enum CatalogType
     TESTING_FILE_METASTORE,
     HIVE_METASTORE,
     GLUE,
+    GLUE_V2,
     REST,
     JDBC,
     EMBEDDED,

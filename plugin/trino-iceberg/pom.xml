@@ -362,6 +362,11 @@
 
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
+            <artifactId>glue</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
             <artifactId>identity-spi</artifactId>
         </dependency>
 
@@ -510,12 +515,6 @@
             <!-- Docs promise that PostgreSQL driver will be on the classpath, for JDBC catalog's sake-->
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>glue</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -852,15 +851,23 @@
                                 <exclude>**/Test*Avro*.java</exclude>
                                 <exclude>**/Test*Minio*.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogConnectorSmokeTest.java</exclude>
+                                <exclude>**/TestIcebergGlueCatalogV2ConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestTrinoGlueCatalog.java</exclude>
+                                <exclude>**/TestTrinoGlueCatalogV2.java</exclude>
                                 <exclude>**/TestSharedGlueMetastore.java</exclude>
+                                <exclude>**/TestSharedGlueMetastoreV2.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogAccessOperations.java</exclude>
+                                <exclude>**/TestIcebergGlueCatalogAccessOperationsV2.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogMaterializedView.java</exclude>
+                                <exclude>**/TestIcebergGlueCatalogMaterializedViewV2.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTest.java</exclude>
+                                <exclude>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV2.java</exclude>
                                 <exclude>**/TestIcebergGlueCreateTableFailure.java</exclude>
                                 <exclude>**/TestIcebergGlueTableOperationsInsertFailure.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogSkipArchive.java</exclude>
+                                <exclude>**/TestIcebergGlueCatalogSkipArchiveV2.java</exclude>
                                 <exclude>**/TestIcebergS3AndGlueMetastoreTest.java</exclude>
+                                <exclude>**/TestIcebergS3AndGlueMetastoreTestV2.java</exclude>
                                 <exclude>**/TestIcebergS3TablesConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestIcebergGcsConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestIcebergAbfsConnectorSmokeTest.java</exclude>
@@ -920,15 +927,23 @@
                         <configuration>
                             <includes>
                                 <include>**/TestIcebergGlueCatalogConnectorSmokeTest.java</include>
+                                <include>**/TestIcebergGlueCatalogV2ConnectorSmokeTest.java</include>
                                 <include>**/TestTrinoGlueCatalog.java</include>
+                                <include>**/TestTrinoGlueCatalogV2.java</include>
                                 <include>**/TestSharedGlueMetastore.java</include>
+                                <include>**/TestSharedGlueMetastoreV2.java</include>
                                 <include>**/TestIcebergGlueCatalogAccessOperations.java</include>
+                                <include>**/TestIcebergGlueCatalogAccessOperationsV2.java</include>
                                 <include>**/TestIcebergGlueCatalogMaterializedView.java</include>
+                                <include>**/TestIcebergGlueCatalogMaterializedViewV2.java</include>
                                 <include>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTest.java</include>
+                                <include>**/TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV2.java</include>
                                 <include>**/TestIcebergGlueCreateTableFailure.java</include>
                                 <include>**/TestIcebergGlueTableOperationsInsertFailure.java</include>
                                 <include>**/TestIcebergGlueCatalogSkipArchive.java</include>
+                                <include>**/TestIcebergGlueCatalogSkipArchiveV2.java</include>
                                 <include>**/TestIcebergS3AndGlueMetastoreTest.java</include>
+                                <include>**/TestIcebergS3AndGlueMetastoreTestV2.java</include>
                                 <include>**/TestIcebergS3TablesConnectorSmokeTest.java</include>
                                 <include>**/TestIcebergGcsConnectorSmokeTest.java</include>
                                 <include>**/TestIcebergAbfsConnectorSmokeTest.java</include>

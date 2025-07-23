@@ -11,52 +11,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.catalog.glue;
+package io.trino.plugin.iceberg.catalog.glue.v2;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.airlift.log.Logger;
 import io.trino.Session;
 import io.trino.plugin.hive.TestingHivePlugin;
-import io.trino.plugin.hive.metastore.glue.GlueHiveMetastore;
-import io.trino.plugin.iceberg.BaseSharedMetastoreTest;
 import io.trino.plugin.iceberg.IcebergPlugin;
+import io.trino.plugin.iceberg.catalog.glue.TestSharedGlueMetastore;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import io.trino.tpch.TpchTable;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.parallel.Execution;
-
-import java.nio.file.Path;
 
 import static io.trino.plugin.hive.metastore.glue.TestingGlueHiveMetastore.createTestingGlueHiveMetastore;
 import static io.trino.plugin.iceberg.IcebergQueryRunner.ICEBERG_CATALOG;
 import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
 import static io.trino.testing.QueryAssertions.copyTpchTables;
 import static io.trino.testing.TestingSession.testSessionBuilder;
-import static java.lang.String.format;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
-import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
-/**
- * Tests metadata operations on a schema which has a mix of Hive and Iceberg tables.
- * <p>
- * Requires AWS credentials, which can be provided any way supported by the DefaultProviderChain
- * See https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default
- */
-@TestInstance(PER_CLASS)
-@Execution(CONCURRENT)
-public class TestSharedGlueMetastore
-        extends BaseSharedMetastoreTest
+public class TestSharedGlueMetastoreV2
+        extends TestSharedGlueMetastore
 {
-    private static final Logger LOG = Logger.get(TestSharedGlueMetastore.class);
-    protected static final String HIVE_CATALOG = "hive";
-
-    protected Path dataDirectory;
-    protected GlueHiveMetastore glueMetastore;
-
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
@@ -83,14 +59,14 @@ public class TestSharedGlueMetastore
                 ICEBERG_CATALOG,
                 "iceberg",
                 ImmutableMap.of(
-                        "iceberg.catalog.type", "glue",
+                        "iceberg.catalog.type", "glue_v2",
                         "hive.metastore.glue.default-warehouse-dir", dataDirectory.toString(),
                         "fs.hadoop.enabled", "true"));
         queryRunner.createCatalog(
                 "iceberg_with_redirections",
                 "iceberg",
                 ImmutableMap.of(
-                        "iceberg.catalog.type", "glue",
+                        "iceberg.catalog.type", "glue_v2",
                         "hive.metastore.glue.default-warehouse-dir", dataDirectory.toString(),
                         "iceberg.hive-catalog-name", "hive",
                         "fs.hadoop.enabled", "true"));
@@ -109,42 +85,5 @@ public class TestSharedGlueMetastore
         queryRunner.execute("CREATE SCHEMA " + testSchema + " WITH (location = '" + dataDirectory.toUri() + "')");
 
         return queryRunner;
-    }
-
-    @AfterAll
-    public void cleanup()
-    {
-        try {
-            if (glueMetastore != null) {
-                // Data is on the local disk and will be deleted by the deleteOnExit hook
-                glueMetastore.dropDatabase(tpchSchema, false);
-                glueMetastore.dropDatabase(testSchema, false);
-                glueMetastore.shutdown();
-            }
-        }
-        catch (Exception e) {
-            LOG.error(e, "Failed to clean up Glue database: %s or %s", tpchSchema, testSchema);
-        }
-    }
-
-    @Override
-    protected String getExpectedHiveCreateSchema(String catalogName)
-    {
-        String expectedHiveCreateSchema = "CREATE SCHEMA %s.%s\n" +
-                "WITH (\n" +
-                "   location = '%s'\n" +
-                ")";
-
-        return format(expectedHiveCreateSchema, catalogName, tpchSchema, dataDirectory.toUri());
-    }
-
-    @Override
-    protected String getExpectedIcebergCreateSchema(String catalogName)
-    {
-        String expectedIcebergCreateSchema = "CREATE SCHEMA %s.%s\n" +
-                "WITH (\n" +
-                "   location = '%s'\n" +
-                ")";
-        return format(expectedIcebergCreateSchema, catalogName, tpchSchema, dataDirectory.toUri());
     }
 }
