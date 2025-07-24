@@ -541,7 +541,7 @@ public class PlanTester
         cacheManagerRegistry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(new NodeMemoryConfig()), plannerContext.getBlockEncodingSerde(), new CacheStats(), node, TestingInternalNodeManager.createDefault(), new SecretsResolver(ImmutableMap.of()));
         cachePerformanceTracker = new CachePerformanceTracker();
         tupleDomainCodec = getTupleDomainJsonCodec(blockEncodingSerde, typeManager);
-        exchangeManagerRegistry = new ExchangeManagerRegistry(noop(), noopTracer(), secretsResolver);
+        exchangeManagerRegistry = new ExchangeManagerRegistry(noop(), nodeManager.getTestingInternalCoordinatorLocator(), noopTracer(), secretsResolver);
         spoolingManagerRegistry = new SpoolingManagerRegistry(
                 node,
                 new ServerConfig(),
