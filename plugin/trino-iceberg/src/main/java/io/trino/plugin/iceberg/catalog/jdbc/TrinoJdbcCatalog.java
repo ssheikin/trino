@@ -24,6 +24,7 @@ import io.trino.metastore.TableInfo;
 import io.trino.plugin.iceberg.IcebergUtil;
 import io.trino.plugin.iceberg.catalog.AbstractTrinoCatalog;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
+import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.spi.TrinoException;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.WorkScheduler.RefreshSchedule;
@@ -99,7 +100,6 @@ public class TrinoJdbcCatalog
 
     private final JdbcCatalog jdbcCatalog;
     private final IcebergJdbcClient jdbcClient;
-    private final TrinoFileSystemFactory fileSystemFactory;
     private final String defaultWarehouseDir;
 
     private final Cache<SchemaTableName, TableMetadata> tableMetadataCache = EvictableCacheBuilder.newBuilder()
@@ -114,13 +114,13 @@ public class TrinoJdbcCatalog
             JdbcCatalog jdbcCatalog,
             IcebergJdbcClient jdbcClient,
             TrinoFileSystemFactory fileSystemFactory,
+            ForwardingFileIoFactory fileIoFactory,
             boolean useUniqueTableLocation,
             String defaultWarehouseDir)
     {
-        super(catalogName, workScheduler, typeManager, tableOperationsProvider, fileSystemFactory, useUniqueTableLocation);
+        super(catalogName, useUniqueTableLocation, typeManager, tableOperationsProvider, workScheduler, fileSystemFactory, fileIoFactory);
         this.jdbcCatalog = requireNonNull(jdbcCatalog, "jdbcCatalog is null");
         this.jdbcClient = requireNonNull(jdbcClient, "jdbcClient is null");
-        this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.defaultWarehouseDir = requireNonNull(defaultWarehouseDir, "defaultWarehouseDir is null");
     }
 

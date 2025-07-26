@@ -23,7 +23,7 @@ import io.trino.plugin.hive.metastore.glue.v1.GlueHiveMetastoreConfig;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperations;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
-import io.trino.plugin.iceberg.fileio.ForwardingFileIo;
+import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.type.TypeManager;
 
@@ -39,6 +39,7 @@ public class TestingGlueIcebergTableOperationsProvider
     private final boolean cacheTableMetadata;
     private final TrinoFileSystemFactory fileSystemFactory;
     private final AWSGlueAsync glueClient;
+    private final ForwardingFileIoFactory forwardingFileIoFactory;
     private final GlueMetastoreStats stats;
 
     @Inject
@@ -46,6 +47,7 @@ public class TestingGlueIcebergTableOperationsProvider
             TypeManager typeManager,
             IcebergGlueCatalogConfig catalogConfig,
             TrinoFileSystemFactory fileSystemFactory,
+            ForwardingFileIoFactory forwardingFileIoFactory,
             GlueMetastoreStats stats,
             GlueHiveMetastoreConfig glueConfig,
             AWSCredentialsProvider credentialsProvider,
@@ -54,6 +56,7 @@ public class TestingGlueIcebergTableOperationsProvider
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.cacheTableMetadata = catalogConfig.isCacheTableMetadata();
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.forwardingFileIoFactory = forwardingFileIoFactory;
         this.stats = requireNonNull(stats, "stats is null");
         requireNonNull(glueConfig, "glueConfig is null");
         requireNonNull(credentialsProvider, "credentialsProvider is null");
@@ -77,7 +80,7 @@ public class TestingGlueIcebergTableOperationsProvider
                 glueClient,
                 stats,
                 ((TrinoGlueCatalog) catalog)::getTable,
-                new ForwardingFileIo(fileSystemFactory.create(session)),
+                forwardingFileIoFactory.create(fileSystemFactory.create(session)),
                 session,
                 database,
                 table,

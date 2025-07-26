@@ -27,6 +27,7 @@ import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogConfig;
+import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.security.ConnectorIdentity;
@@ -48,6 +49,7 @@ public class TrinoGlueCatalogFactoryV2
     private final CatalogName catalogName;
     private final WorkScheduler workScheduler;
     private final TrinoFileSystemFactory fileSystemFactory;
+    private final ForwardingFileIoFactory fileIoFactory;
     private final TypeManager typeManager;
     private final boolean cacheTableMetadata;
     private final IcebergTableOperationsProvider tableOperationsProvider;
@@ -66,6 +68,7 @@ public class TrinoGlueCatalogFactoryV2
             CatalogName catalogName,
             WorkScheduler workScheduler,
             TrinoFileSystemFactory fileSystemFactory,
+            ForwardingFileIoFactory fileIoFactory,
             TypeManager typeManager,
             IcebergTableOperationsProvider tableOperationsProvider,
             NodeVersion nodeVersion,
@@ -81,6 +84,7 @@ public class TrinoGlueCatalogFactoryV2
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.fileIoFactory = requireNonNull(fileIoFactory, "fileIoFactory is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.cacheTableMetadata = catalogConfig.isCacheTableMetadata();
         this.tableOperationsProvider = requireNonNull(tableOperationsProvider, "tableOperationsProvider is null");
@@ -114,6 +118,7 @@ public class TrinoGlueCatalogFactoryV2
                 catalogName,
                 workScheduler,
                 fileSystemFactory,
+                fileIoFactory,
                 typeManager,
                 cacheTableMetadata,
                 tableOperationsProvider,

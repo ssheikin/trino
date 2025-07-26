@@ -42,6 +42,7 @@ import io.trino.plugin.iceberg.catalog.file.IcebergFileMetastoreCatalogModule;
 import io.trino.plugin.iceberg.catalog.glue.v2.IcebergGlueCatalogModuleV2;
 import io.trino.plugin.iceberg.catalog.hms.IcebergHiveMetastoreCatalogModule;
 import io.trino.plugin.iceberg.catalog.rest.DefaultIcebergFileSystemFactory;
+import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.WorkScheduler;
 
@@ -76,6 +77,8 @@ public class LakehouseIcebergModule
         newOptionalBinder(binder, Key.get(HiveMetastoreFactory.class, RawHiveMetastoreFactory.class));
 
         jsonCodecBinder(binder).bindJsonCodec(CommitTaskData.class);
+
+        binder.bind(ForwardingFileIoFactory.class).in(Scopes.SINGLETON);
 
         install(switch (buildConfigObject(MetastoreTypeConfig.class).getMetastoreType()) {
             case THRIFT -> new IcebergHiveMetastoreCatalogModule();

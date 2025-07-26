@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_FACTORY;
+import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 
 public class TestTrinoGlueCatalogV2
@@ -47,12 +48,14 @@ public class TestTrinoGlueCatalogV2
                 new CatalogName("catalog_name"),
                 new NoopWorkScheduler(),
                 HDFS_FILE_SYSTEM_FACTORY,
+                FILE_IO_FACTORY,
                 new TestingTypeManager(),
                 catalogConfig.isCacheTableMetadata(),
                 new GlueIcebergTableOperationsProviderV2(
+                        HDFS_FILE_SYSTEM_FACTORY,
+                        FILE_IO_FACTORY,
                         TESTING_TYPE_MANAGER,
                         catalogConfig,
-                        HDFS_FILE_SYSTEM_FACTORY,
                         new GlueMetastoreStats(),
                         glueClient),
                 "test",

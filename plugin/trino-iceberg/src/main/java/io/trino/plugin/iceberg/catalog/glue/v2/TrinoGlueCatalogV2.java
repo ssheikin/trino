@@ -38,6 +38,7 @@ import io.trino.plugin.iceberg.catalog.AbstractTrinoCatalog;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperations;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIo;
+import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.spi.TrinoException;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.WorkScheduler.RefreshSchedule;
@@ -174,7 +175,6 @@ public class TrinoGlueCatalogV2
 
     private final String trinoVersion;
     private final boolean cacheTableMetadata;
-    private final TrinoFileSystemFactory fileSystemFactory;
     private final Optional<String> defaultSchemaLocation;
     private final GlueClient glueClient;
     protected final GlueMetastoreStats stats;
@@ -202,6 +202,7 @@ public class TrinoGlueCatalogV2
             CatalogName catalogName,
             WorkScheduler workScheduler,
             TrinoFileSystemFactory fileSystemFactory,
+            ForwardingFileIoFactory fileIoFactory,
             TypeManager typeManager,
             boolean cacheTableMetadata,
             IcebergTableOperationsProvider tableOperationsProvider,
@@ -215,10 +216,9 @@ public class TrinoGlueCatalogV2
             boolean scheduledMaterializedViewRefreshEnabled,
             Executor metadataFetchingExecutor)
     {
-        super(catalogName, workScheduler, typeManager, tableOperationsProvider, fileSystemFactory, useUniqueTableLocation);
+        super(catalogName, useUniqueTableLocation, typeManager, tableOperationsProvider, workScheduler, fileSystemFactory, fileIoFactory);
         this.trinoVersion = requireNonNull(trinoVersion, "trinoVersion is null");
         this.cacheTableMetadata = cacheTableMetadata;
-        this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.glueClient = requireNonNull(glueClient, "glueClient is null");
         this.stats = requireNonNull(stats, "stats is null");
         this.isUsingSystemSecurity = isUsingSystemSecurity;

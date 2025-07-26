@@ -73,6 +73,7 @@ import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_FACTORY;
 import static io.trino.plugin.iceberg.ColumnIdentity.primitiveColumnIdentity;
+import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.spi.predicate.Domain.singleValue;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
@@ -103,7 +104,7 @@ public class TestIcebergCacheIds
             throws IOException
     {
         tempDir = Files.createTempDirectory(null).toFile();
-        FileMetastoreTableOperationsProvider tableOperationsProvider = new FileMetastoreTableOperationsProvider(HDFS_FILE_SYSTEM_FACTORY);
+        FileMetastoreTableOperationsProvider tableOperationsProvider = new FileMetastoreTableOperationsProvider(HDFS_FILE_SYSTEM_FACTORY, FILE_IO_FACTORY);
         IcebergConfig icebergConfig = new IcebergConfig();
         FileHiveMetastoreFactory metastoreFactory = new FileHiveMetastoreFactory(
                 new NodeVersion("test_version"),
@@ -124,6 +125,7 @@ public class TestIcebergCacheIds
                         new CatalogName("iceberg"),
                         metastoreFactory,
                         HDFS_FILE_SYSTEM_FACTORY,
+                        FILE_IO_FACTORY,
                         TESTING_TYPE_MANAGER,
                         tableOperationsProvider,
                         new IcebergScheduledMvRefreshConfig(),
