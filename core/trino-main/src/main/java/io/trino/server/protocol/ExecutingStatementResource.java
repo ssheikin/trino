@@ -235,13 +235,12 @@ public class ExecutingStatementResource
     {
         ListenableFuture<QueryResultsResponse> queryResultsFuture = query.waitForResults(token, externalUriInfo, MAX_WAIT_TIME);
 
-        ListenableFuture<Response> response = Futures.transform(queryResultsFuture, results ->
-                toResponse(results, query.getQueryInfo().getSession().getQueryDataEncoding()), directExecutor());
+        ListenableFuture<Response> response = Futures.transform(queryResultsFuture, this::toResponse, directExecutor());
 
         bindAsyncResponse(asyncResponse, response, responseExecutor);
     }
 
-    private Response toResponse(QueryResultsResponse resultsResponse, Optional<String> queryDataEncoding)
+    private Response toResponse(QueryResultsResponse resultsResponse)
     {
         ResponseBuilder response = Response.ok(resultsResponse.queryResults());
 
@@ -295,7 +294,7 @@ public class ExecutingStatementResource
             response.encoding("identity");
         }
 
-        queryDataEncoding
+        resultsResponse.queryDataEncoding()
                 .ifPresent(encoding -> response.header(TRINO_HEADERS.responseQueryDataEncoding(), encoding));
 
         return response.build();
