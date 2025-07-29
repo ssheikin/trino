@@ -880,6 +880,7 @@ public final class ShowQueriesRewrite
                 case AGGREGATE -> "aggregate";
                 case WINDOW -> "window";
                 case SCALAR -> "scalar";
+                case BATCH -> "batch";
                 case TABLE -> "table";
             };
         }

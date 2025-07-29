@@ -13,11 +13,14 @@
  */
 package io.trino.spi.function;
 
-public enum FunctionKind
+import java.lang.invoke.MethodHandle;
+
+import static java.util.Objects.requireNonNull;
+
+public record BatchFunctionImplementation(MethodHandle methodHandle)
 {
-    SCALAR,
-    AGGREGATE,
-    WINDOW,
-    TABLE,
-    BATCH,
+    public BatchFunctionImplementation
+    {
+        requireNonNull(methodHandle, "methodHandle is null");
+    }
 }
