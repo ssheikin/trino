@@ -1683,6 +1683,16 @@ public class TestSqlParser
                         location(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(location(1, 26), "t", false))),
                         new Identifier(location(1, 15), "b", false),
+                        Optional.empty(),
+                        FAIL,
+                        List.of()));
+
+        assertThat(statement("CREATE BRANCH b IN TABLE t FROM other"))
+                .isEqualTo(new CreateBranch(
+                        location(1, 1),
+                        QualifiedName.of(ImmutableList.of(new Identifier(location(1, 26), "t", false))),
+                        new Identifier(location(1, 15), "b", false),
+                        Optional.of(new Identifier(location(1, 33), "other", false)),
                         FAIL,
                         List.of()));
 
@@ -1691,6 +1701,7 @@ public class TestSqlParser
                         location(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(location(1, 56), "t", false))),
                         new Identifier(location(1, 15), "b", false),
+                        Optional.empty(),
                         FAIL,
                         List.of(new Property(
                                 location(1, 23),
@@ -1702,6 +1713,7 @@ public class TestSqlParser
                         location(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(location(1, 67), "t", false))),
                         new Identifier(location(1, 26), "b", false),
+                        Optional.empty(),
                         REPLACE,
                         List.of(new Property(
                                 location(1, 34),
@@ -1713,6 +1725,7 @@ public class TestSqlParser
                         location(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(location(1, 37), "t", false))),
                         new Identifier(location(1, 26), "b", false),
+                        Optional.empty(),
                         REPLACE,
                         List.of()));
 
@@ -1721,6 +1734,7 @@ public class TestSqlParser
                         location(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(location(1, 40), "t", false))),
                         new Identifier(location(1, 29), "b", false),
+                        Optional.empty(),
                         IGNORE,
                         List.of()));
 
@@ -1729,6 +1743,7 @@ public class TestSqlParser
                         location(1, 1),
                         QualifiedName.of(ImmutableList.of(new Identifier(location(1, 70), "t", false))),
                         new Identifier(location(1, 29), "b", false),
+                        Optional.empty(),
                         IGNORE,
                         List.of(new Property(
                                 location(1, 37),
