@@ -140,6 +140,7 @@ public class TestIcebergCacheIds
                 newDirectExecutorService(),
                 newDirectExecutorService(),
                 newDirectExecutorService(),
+                newDirectExecutorService(),
                 icebergConfig);
         icebergMetadata = new IcebergCacheMetadata(
                 createJsonCodec(IcebergCacheTableId.class),

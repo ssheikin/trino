@@ -56,6 +56,7 @@ public class IcebergMetadataFactory
     private final ExecutorService icebergScanExecutor;
     private final Executor metadataFetchingExecutor;
     private final ExecutorService icebergPlanningExecutor;
+    private final ExecutorService icebergFileDeleteExecutor;
 
     @Inject
     public IcebergMetadataFactory(
@@ -72,6 +73,7 @@ public class IcebergMetadataFactory
             @ForIcebergSplitManager ExecutorService icebergScanExecutor,
             @ForIcebergMetadata ExecutorService metadataExecutorService,
             @ForIcebergPlanning ExecutorService icebergPlanningExecutor,
+            @ForIcebergFileDelete ExecutorService icebergFileDeleteExecutor,
             IcebergConfig config)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
@@ -102,6 +104,7 @@ public class IcebergMetadataFactory
             this.metadataFetchingExecutor = new BoundedExecutor(metadataExecutorService, config.getMetadataParallelism());
         }
         this.icebergPlanningExecutor = requireNonNull(icebergPlanningExecutor, "icebergPlanningExecutor is null");
+        this.icebergFileDeleteExecutor = requireNonNull(icebergFileDeleteExecutor, "icebergFileDeleteExecutor is null");
     }
 
     @Override
@@ -124,6 +127,7 @@ public class IcebergMetadataFactory
                 dateTimeZone,
                 icebergScanExecutor,
                 metadataFetchingExecutor,
-                icebergPlanningExecutor);
+                icebergPlanningExecutor,
+                icebergFileDeleteExecutor);
     }
 }
