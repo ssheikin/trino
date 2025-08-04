@@ -5477,7 +5477,7 @@ public abstract class BaseHiveConnectorTest
                 queryStats -> {
                     assertThat(queryStats.getProcessedInputDataSize().toBytes()).isGreaterThan(0);
                 },
-                results -> { });
+                results -> {});
     }
 
     @Test
@@ -5524,7 +5524,7 @@ public abstract class BaseHiveConnectorTest
                 queryStats -> {
                     assertThat(queryStats.getProcessedInputDataSize().toBytes()).isGreaterThan(0);
                 },
-                results -> { });
+                results -> {});
     }
 
     private static String formatTimestamp(LocalDateTime timestamp)
