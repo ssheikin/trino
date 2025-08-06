@@ -17,18 +17,18 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
-public class TestArrowSpooledDistributedQueries
+public class TestArrowZstdSpooledDistributedQueries
         extends AbstractSpooledQueryDataDistributedQueries
 {
     @Override
     protected Map<String, String> spoolingConfig()
     {
-        return ImmutableMap.of("protocol.spooling.encoding.arrow.enabled", "true");
+        return ImmutableMap.of("protocol.spooling.encoding.arrow+zstd.enabled", "true");
     }
 
     @Override
     protected String encoding()
     {
-        return "arrow";
+        return "arrow+zstd";
     }
 }
