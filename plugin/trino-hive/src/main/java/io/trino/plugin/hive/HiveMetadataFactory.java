@@ -80,6 +80,7 @@ public class HiveMetadataFactory
     private final boolean partitionProjectionEnabled;
     private final boolean allowTableRename;
     private final Executor metadataFetchingExecutor;
+    private final boolean reuseCommonSubqueriesEnabled;
 
     @Inject
     public HiveMetadataFactory(
@@ -143,7 +144,8 @@ public class HiveMetadataFactory
                 usingSystemSecurity,
                 hiveConfig.isPartitionProjectionEnabled(),
                 allowTableRename,
-                hiveConfig.getMetadataParallelism());
+                hiveConfig.getMetadataParallelism(),
+                hiveConfig.isReuseCommonSubqueriesEnabled());
     }
 
     public HiveMetadataFactory(
@@ -182,7 +184,8 @@ public class HiveMetadataFactory
             boolean usingSystemSecurity,
             boolean partitionProjectionEnabled,
             boolean allowTableRename,
-            int metadataParallelism)
+            int metadataParallelism,
+            boolean reuseCommonSubqueriesEnabled)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
@@ -232,6 +235,7 @@ public class HiveMetadataFactory
         else {
             this.metadataFetchingExecutor = new BoundedExecutor(executorService, metadataParallelism);
         }
+        this.reuseCommonSubqueriesEnabled = reuseCommonSubqueriesEnabled;
     }
 
     @Override
@@ -282,6 +286,7 @@ public class HiveMetadataFactory
                 partitionProjectionEnabled,
                 allowTableRename,
                 maxPartitionDropsPerQuery,
-                metadataFetchingExecutor);
+                metadataFetchingExecutor,
+                reuseCommonSubqueriesEnabled);
     }
 }
