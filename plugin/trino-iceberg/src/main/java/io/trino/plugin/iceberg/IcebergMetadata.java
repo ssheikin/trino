@@ -304,8 +304,10 @@ import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_ROW_ID_NAME;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.lastUpdatedSequenceNumberColumnColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.partitionColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.rowIdColumnHandle;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_CATALOG_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
@@ -316,7 +318,9 @@ import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE_TIMEZONE;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.LAST_UPDATED_SEQUENCE_NUMBER;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.PARTITION;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.ROW_ID;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
 import static io.trino.plugin.iceberg.IcebergPartitionFunction.Transform.BUCKET;
 import static io.trino.plugin.iceberg.IcebergSchemaProperties.LOCATION_PROPERTY;
@@ -374,6 +378,7 @@ import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
 import static io.trino.plugin.iceberg.IcebergUtil.getTopLevelColumns;
 import static io.trino.plugin.iceberg.IcebergUtil.newCreateTableTransaction;
 import static io.trino.plugin.iceberg.IcebergUtil.schemaFromMetadata;
+import static io.trino.plugin.iceberg.IcebergUtil.supportsRowLineage;
 import static io.trino.plugin.iceberg.IcebergUtil.validateOrcBloomFilterColumns;
 import static io.trino.plugin.iceberg.IcebergUtil.validateParquetBloomFilterColumns;
 import static io.trino.plugin.iceberg.IcebergUtil.verifyExtraProperties;
@@ -1050,7 +1055,7 @@ public class IcebergMetadata
         // This method does not calculate column metadata for the projected columns
         checkArgument(tableHandle.getProjectedColumns().isEmpty(), "Unexpected projected columns");
         BaseTable icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
-        List<ColumnMetadata> columns = getColumnMetadatas(SchemaParser.fromJson(tableHandle.getTableSchemaJson()), typeManager);
+        List<ColumnMetadata> columns = getColumnMetadatas(SchemaParser.fromJson(tableHandle.getTableSchemaJson()), typeManager, tableHandle.getFormatVersion());
         return new ConnectorTableMetadata(tableHandle.getSchemaTableName(), columns, getIcebergTableProperties(icebergTable), getTableComment(icebergTable));
     }
 
@@ -1077,13 +1082,28 @@ public class IcebergMetadata
     {
         IcebergTableHandle table = checkValidTableHandle(tableHandle);
         ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
-        for (IcebergColumnHandle columnHandle : getTopLevelColumns(SchemaParser.fromJson(table.getTableSchemaJson()), typeManager)) {
+        List<IcebergColumnHandle> topLevelColumns = getTopLevelColumns(SchemaParser.fromJson(table.getTableSchemaJson()), typeManager);
+        for (IcebergColumnHandle columnHandle : topLevelColumns) {
             columnHandles.put(columnHandle.getName(), columnHandle);
         }
         columnHandles.put(PARTITION.getColumnName(), partitionColumnHandle());
         columnHandles.put(FILE_PATH.getColumnName(), pathColumnHandle());
         columnHandles.put(FILE_MODIFIED_TIME.getColumnName(), fileModifiedTimeColumnHandle());
+        if (supportsRowLineage(table.getFormatVersion())) {
+            if (!containsColumnHandle(topLevelColumns, ROW_ID.getColumnName())) {
+                columnHandles.put(ROW_ID.getColumnName(), rowIdColumnHandle());
+            }
+            if (!containsColumnHandle(topLevelColumns, LAST_UPDATED_SEQUENCE_NUMBER.getColumnName())) {
+                columnHandles.put(LAST_UPDATED_SEQUENCE_NUMBER.getColumnName(), lastUpdatedSequenceNumberColumnColumnHandle());
+            }
+        }
         return columnHandles.buildOrThrow();
+    }
+
+    private static boolean containsColumnHandle(List<IcebergColumnHandle> columnHandles, String columnName)
+    {
+        return columnHandles.stream()
+                .anyMatch(columnHandle -> columnHandle.getName().equals(columnName));
     }
 
     @Override
@@ -1096,6 +1116,7 @@ public class IcebergMetadata
                 .setDefaultValue(column.getDefaultValue())
                 .setNullable(column.isNullable())
                 .setComment(column.getComment())
+                .setHidden(isMetadataColumnId(column.getId()))
                 .build();
     }
 
@@ -1184,8 +1205,8 @@ public class IcebergMetadata
                     List<Callable<Optional<TableColumnsMetadata>>> tasks = remainingTables.stream()
                             .map(tableName -> (Callable<Optional<TableColumnsMetadata>>) () -> {
                                 try {
-                                    Table icebergTable = catalog.loadTable(session, tableName);
-                                    List<ColumnMetadata> columns = getColumnMetadatas(icebergTable.schema(), typeManager);
+                                    BaseTable icebergTable = catalog.loadTable(session, tableName);
+                                    List<ColumnMetadata> columns = getColumnMetadatas(icebergTable.schema(), typeManager, formatVersion(icebergTable));
                                     return Optional.of(TableColumnsMetadata.forTable(tableName, columns));
                                 }
                                 catch (TableNotFoundException e) {
@@ -1836,7 +1857,8 @@ public class IcebergMetadata
                         maxScannedFileSize,
                         retryMode != NO_RETRIES),
                 tableHandle.getTableLocation(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForOptimizeManifests(ConnectorSession session, IcebergTableHandle tableHandle)
@@ -1848,7 +1870,8 @@ public class IcebergMetadata
                 OPTIMIZE_MANIFESTS,
                 new IcebergOptimizeManifestsHandle(),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForOptimizePositionDeletes(ConnectorSession session, IcebergTableHandle tableHandle)
@@ -1860,7 +1883,8 @@ public class IcebergMetadata
                 OPTIMIZE_POSITION_DELETES,
                 new IcebergOptimizePositionDeletesHandle(),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForDropExtendedStats(ConnectorSession session, IcebergTableHandle tableHandle)
@@ -1872,7 +1896,8 @@ public class IcebergMetadata
                 DROP_EXTENDED_STATS,
                 new IcebergDropExtendedStatsHandle(),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForExpireSnapshots(ConnectorSession session, IcebergTableHandle tableHandle, Map<String, Object> executeProperties)
@@ -1885,7 +1910,8 @@ public class IcebergMetadata
                 EXPIRE_SNAPSHOTS,
                 new IcebergExpireSnapshotsHandle(retentionThreshold),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForRemoveOrphanFiles(ConnectorSession session, IcebergTableHandle tableHandle, Map<String, Object> executeProperties)
@@ -1898,7 +1924,8 @@ public class IcebergMetadata
                 REMOVE_ORPHAN_FILES,
                 new IcebergRemoveOrphanFilesHandle(retentionThreshold),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForAddFiles(ConnectorSession session, ConnectorAccessControl accessControl, IcebergTableHandle tableHandle, Map<String, Object> executeProperties)
@@ -1917,12 +1944,18 @@ public class IcebergMetadata
 
         Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
 
+        if (supportsRowLineage(tableHandle.getFormatVersion()) && icebergTable.schema().findField("_row_id") != null) {
+            // https://github.com/apache/iceberg/issues/13232
+            throw new TrinoException(NOT_SUPPORTED, "Cannot execute add_files procedure when the table contains _row_id column");
+        }
+
         return Optional.of(new IcebergTableExecuteHandle(
                 tableHandle.getSchemaTableName(),
                 ADD_FILES,
                 new IcebergAddFilesHandle(location, format, recursiveDirectory),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForAddFilesFromTable(ConnectorSession session, ConnectorAccessControl accessControl, IcebergTableHandle tableHandle, Map<String, Object> executeProperties)
@@ -1944,6 +1977,11 @@ public class IcebergMetadata
                 .collect(toImmutableSet()));
 
         Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+
+        if (supportsRowLineage(tableHandle.getFormatVersion()) && icebergTable.schema().findField("_row_id") != null) {
+            // https://github.com/apache/iceberg/issues/13232
+            throw new TrinoException(NOT_SUPPORTED, "Cannot execute add_files_from_table procedure when the table contains _row_id column");
+        }
 
         checkProcedureArgument(
                 icebergTable.schemas().size() >= sourceTable.getDataColumns().size(),
@@ -1998,7 +2036,8 @@ public class IcebergMetadata
                 ADD_FILES_FROM_TABLE,
                 new IcebergAddFilesFromTableHandle(sourceTable, partitionFilter, recursiveDirectory),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForRollbackToSnapshot(ConnectorSession session, IcebergTableHandle tableHandle, Map<String, Object> executeProperties)
@@ -2011,7 +2050,8 @@ public class IcebergMetadata
                 ROLLBACK_TO_SNAPSHOT,
                 new IcebergRollbackToSnapshotHandle(snapshotId),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForGenerateEmbeddings(
@@ -2074,7 +2114,8 @@ public class IcebergMetadata
                         tableHandle.getStorageProperties(),
                         retryMode != NO_RETRIES),
                 icebergTable.location(),
-                icebergTable.io().properties()));
+                icebergTable.io().properties(),
+                tableHandle.getFormatVersion()));
     }
 
     private static Object requireProcedureArgument(Map<String, Object> properties, String name)
@@ -2922,7 +2963,7 @@ public class IcebergMetadata
             //noinspection unchecked
             List<String> parquetBloomFilterColumns = (List<String>) properties.get(PARQUET_BLOOM_FILTER_COLUMNS_PROPERTY)
                     .orElseThrow(() -> new IllegalArgumentException("The parquet_bloom_filter_columns property cannot be empty"));
-            validateParquetBloomFilterColumns(getColumnMetadatas(SchemaParser.fromJson(table.getTableSchemaJson()), typeManager), parquetBloomFilterColumns);
+            validateParquetBloomFilterColumns(getColumnMetadatas(SchemaParser.fromJson(table.getTableSchemaJson()), typeManager, table.getFormatVersion()), parquetBloomFilterColumns);
 
             Set<String> existingParquetBloomFilterColumns = icebergTable.properties().keySet().stream()
                     .filter(key -> key.startsWith(PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX))
@@ -2942,7 +2983,7 @@ public class IcebergMetadata
                 updateProperties.remove(ORC_BLOOM_FILTER_COLUMNS);
             }
             else {
-                validateOrcBloomFilterColumns(getColumnMetadatas(SchemaParser.fromJson(table.getTableSchemaJson()), typeManager), orcBloomFilterColumns);
+                validateOrcBloomFilterColumns(getColumnMetadatas(SchemaParser.fromJson(table.getTableSchemaJson()), typeManager, table.getFormatVersion()), orcBloomFilterColumns);
                 updateProperties.set(ORC_BLOOM_FILTER_COLUMNS, Joiner.on(",").join(orcBloomFilterColumns));
             }
         }
@@ -3612,15 +3653,43 @@ public class IcebergMetadata
     @Override
     public ColumnHandle getMergeRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
-        StructType type = StructType.of(ImmutableList.<NestedField>builder()
-                .add(MetadataColumns.FILE_PATH)
+        ImmutableList.Builder<NestedField> fields = ImmutableList.builder();
+        fields.add(MetadataColumns.FILE_PATH)
                 .add(MetadataColumns.ROW_POSITION)
                 .add(NestedField.required(TRINO_MERGE_PARTITION_SPEC_ID, "partition_spec_id", IntegerType.get()))
-                .add(NestedField.required(TRINO_MERGE_PARTITION_DATA, "partition_data", StringType.get()))
-                .build());
+                .add(NestedField.required(TRINO_MERGE_PARTITION_DATA, "partition_data", StringType.get()));
 
-        NestedField field = NestedField.required(TRINO_MERGE_ROW_ID, TRINO_ROW_ID_NAME, type);
+        if (supportsRowLineage(((IcebergTableHandle) tableHandle).getFormatVersion())) {
+            fields.add(MetadataColumns.ROW_ID);
+            fields.add(MetadataColumns.LAST_UPDATED_SEQUENCE_NUMBER);
+        }
+        NestedField field = NestedField.required(TRINO_MERGE_ROW_ID, TRINO_ROW_ID_NAME, StructType.of(fields.build()));
         return getColumnHandle(field, typeManager);
+    }
+
+    @Override
+    public Optional<List<ColumnHandle>> getColumnHandlesForExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle, ConnectorTableHandle tableHandle)
+    {
+        IcebergTableExecuteHandle executeHandle = (IcebergTableExecuteHandle) tableExecuteHandle;
+        IcebergTableHandle table = (IcebergTableHandle) tableHandle;
+        return switch (executeHandle.procedureId()) {
+            case OPTIMIZE ->
+            {
+                ImmutableList.Builder<ColumnHandle> columnHandles = ImmutableList.builder();
+                for (IcebergColumnHandle columnHandle : getTopLevelColumns(SchemaParser.fromJson(table.getTableSchemaJson()), typeManager)) {
+                    columnHandles.add(columnHandle);
+                }
+
+                if (supportsRowLineage(((IcebergTableHandle) tableHandle).getFormatVersion())) {
+                    columnHandles
+                            .add(rowIdColumnHandle())
+                            .add(lastUpdatedSequenceNumberColumnColumnHandle());
+                }
+
+                yield Optional.of(columnHandles.build());
+            }
+            default -> Optional.empty();
+        };
     }
 
     @Override
@@ -3678,6 +3747,7 @@ public class IcebergMetadata
                         file.location(),
                         file.recordCount(),
                         file.dataSequenceNumber(),
+                        file.firstRowId(),
                         file.specId(),
                         task.deletes().stream()
                                 .map(deleteFile -> ContentFileParsers.toJson(deleteFile, task.spec()))
@@ -4399,6 +4469,11 @@ public class IcebergMetadata
         // If this changes, the caching logic may here may need to be revised.
         checkArgument(!originalHandle.isRecordScannedFiles(), "Unexpected scanned files recording set");
         checkArgument(originalHandle.getMaxScannedFileSize().isEmpty(), "Unexpected max scanned file size set");
+
+        if (originalHandle.getProjectedColumns().contains(rowIdColumnHandle()) || originalHandle.getProjectedColumns().contains(lastUpdatedSequenceNumberColumnColumnHandle())) {
+            log.warn("Statistics for $row_id and $last_updated_sequence_number columns are not supported");
+            return TableStatistics.empty();
+        }
 
         IcebergTableHandle cacheKey = new IcebergTableHandle(
                 originalHandle.getCatalog(),
