@@ -102,6 +102,7 @@ import io.trino.metadata.HandleResolver;
 import io.trino.metadata.InMemoryNodeManager;
 import io.trino.metadata.InternalBlockEncodingSerde;
 import io.trino.metadata.InternalFunctionBundle;
+import io.trino.metadata.InternalNode;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.LanguageFunctionEngineManager;
 import io.trino.metadata.LanguageFunctionManager;
@@ -236,6 +237,7 @@ import org.intellij.lang.annotations.Language;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -524,7 +526,12 @@ public class PlanTester
         cachePerformanceTracker = new CachePerformanceTracker();
         tupleDomainCodec = getTupleDomainJsonCodec(blockEncodingSerde, typeManager);
         exchangeManagerRegistry = new ExchangeManagerRegistry(noop(), noopTracer(), secretsResolver);
-        spoolingManagerRegistry = new SpoolingManagerRegistry(new ServerConfig(), new SpoolingEnabledConfig(), noop(), noopTracer());
+        spoolingManagerRegistry = new SpoolingManagerRegistry(
+                new InMemoryNodeManager(new InternalNode("nodeId", URI.create("http://localhost:8080"), NodeVersion.UNKNOWN, false)),
+                new ServerConfig(),
+                new SpoolingEnabledConfig(),
+                noop(),
+                noopTracer());
         this.pluginManager = new PluginManager(
                 (loader, createClassLoader) -> {},
                 Optional.empty(),
