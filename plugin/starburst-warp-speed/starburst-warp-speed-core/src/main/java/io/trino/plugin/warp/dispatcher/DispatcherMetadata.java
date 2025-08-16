@@ -1511,7 +1511,7 @@ public class DispatcherMetadata
             ConnectorSession session,
             ConnectorTableHandle proxiedConnectorTableHandle)
     {
-        if (schemaTableName == null) {
+        if (schemaTableName == null || globalConfig.getEnableFSCacheMode()) {
             return Set.of();
         }
 
