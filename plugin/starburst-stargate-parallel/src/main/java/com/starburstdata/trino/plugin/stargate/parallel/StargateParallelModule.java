@@ -12,7 +12,6 @@ package com.starburstdata.trino.plugin.stargate.parallel;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Scopes;
-import com.starburstdata.trino.plugin.stargate.StargateAuthenticationModule;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.client.OkHttpSegmentLoader;
 import io.trino.client.spooling.SegmentLoader;
@@ -47,6 +46,5 @@ public class StargateParallelModule
                 .setDefault()
                 .to(StaticCredentialPropertiesProvider.class)
                 .in(Scopes.SINGLETON);
-        install(new StargateAuthenticationModule());
     }
 }

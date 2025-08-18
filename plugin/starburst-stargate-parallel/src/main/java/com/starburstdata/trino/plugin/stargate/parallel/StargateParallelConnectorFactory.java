@@ -12,6 +12,7 @@ package com.starburstdata.trino.plugin.stargate.parallel;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.starburstdata.trino.plugin.stargate.EnableWrites;
+import com.starburstdata.trino.plugin.stargate.StargateAuthenticationModule;
 import com.starburstdata.trino.plugin.stargate.StargateMetadataFactory;
 import com.starburstdata.trino.plugin.stargate.StargateModule;
 import io.airlift.bootstrap.Bootstrap;
@@ -92,6 +93,7 @@ public class StargateParallelConnectorFactory
                 binder -> newOptionalBinder(binder, JdbcMetadataFactory.class).setBinding().to(StargateMetadataFactory.class).in(Scopes.SINGLETON),
                 new JdbcModule(),
                 new StargateModule(),
+                new StargateAuthenticationModule(),
                 new StargateParallelModule());
 
         return app
