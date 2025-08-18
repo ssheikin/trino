@@ -2755,7 +2755,7 @@ public class IcebergMetadata
             deleteFutures.forEach(MoreFutures::getFutureValue);
         }
         catch (IOException | UncheckedIOException e) {
-            throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed accessing data for table: " + schemaTableName, e);
+            throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed removing orphan files for table: " + schemaTableName, e);
         }
         finally {
             deleteFutures.forEach(future -> future.cancel(true));
@@ -2769,7 +2769,7 @@ public class IcebergMetadata
             fileSystem.deleteFiles(files);
         }
         catch (IOException | UncheckedIOException e) {
-            throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed accessing data for table: " + schemaTableName, e);
+            throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed removing orphan files for table: " + schemaTableName, e);
         }
     }
 
