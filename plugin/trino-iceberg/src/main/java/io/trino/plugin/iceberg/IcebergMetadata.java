@@ -2777,7 +2777,8 @@ public class IcebergMetadata
                 executeHandle.schemaTableName(),
                 addFilesHandle.location(),
                 addFilesHandle.format(),
-                addFilesHandle.recursiveDirectory());
+                addFilesHandle.recursiveDirectory(),
+                icebergScanExecutor);
     }
 
     public void executeAddFilesFromTable(ConnectorSession session, IcebergTableExecuteHandle executeHandle)
@@ -2792,7 +2793,8 @@ public class IcebergMetadata
                 table,
                 addFilesHandle.table(),
                 addFilesHandle.partitionFilter(),
-                addFilesHandle.recursiveDirectory());
+                addFilesHandle.recursiveDirectory(),
+                icebergScanExecutor);
     }
 
     private static ManifestReader<? extends ContentFile<?>> readerForManifest(Table table, ManifestFile manifest)
@@ -4625,6 +4627,7 @@ public class IcebergMetadata
         appendFiles.set(DEPENDS_ON_TABLES, tableDependencies);
         appendFiles.set(DEPENDS_ON_TABLE_FUNCTIONS, Boolean.toString(!sourceTableFunctions.isEmpty()));
         appendFiles.set(TRINO_QUERY_START_TIME, session.getStart().toString());
+        appendFiles.scanManifestsWith(icebergScanExecutor);
         commitUpdateAndTransaction(appendFiles, session, transaction, "refresh materialized view");
         transaction = null;
         fromSnapshotForRefresh = Optional.empty();
