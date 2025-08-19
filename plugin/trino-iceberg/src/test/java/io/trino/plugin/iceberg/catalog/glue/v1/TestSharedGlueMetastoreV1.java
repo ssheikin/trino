@@ -48,10 +48,10 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
  */
 @TestInstance(PER_CLASS)
 @Execution(CONCURRENT)
-public class TestSharedGlueMetastore
+public class TestSharedGlueMetastoreV1
         extends BaseSharedMetastoreTest
 {
-    private static final Logger LOG = Logger.get(TestSharedGlueMetastore.class);
+    private static final Logger LOG = Logger.get(TestSharedGlueMetastoreV1.class);
     protected static final String HIVE_CATALOG = "hive";
 
     protected Path dataDirectory;

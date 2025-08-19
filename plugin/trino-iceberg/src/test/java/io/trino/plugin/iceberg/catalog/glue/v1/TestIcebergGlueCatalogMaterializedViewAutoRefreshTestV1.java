@@ -18,7 +18,7 @@ import io.trino.plugin.iceberg.TestIcebergHiveCatalogMaterializedViewAutoRefresh
 
 import java.util.Map;
 
-public class TestIcebergGlueCatalogMaterializedViewAutoRefreshTest
+public class TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV1
         extends TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
 {
     @Override

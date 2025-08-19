@@ -18,7 +18,7 @@ import io.trino.plugin.hive.metastore.glue.AwsApiCallStats;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
 import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogConfig;
-import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogSkipArchive;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogSkipArchiveV1;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.sql.TestTable;
 import org.apache.iceberg.TableMetadata;
@@ -55,7 +55,7 @@ import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestIcebergGlueCatalogSkipArchiveV2
-        extends TestIcebergGlueCatalogSkipArchive
+        extends TestIcebergGlueCatalogSkipArchiveV1
 {
     private final String schemaName = "test_iceberg_skip_archive_" + randomNameSuffix();
     private GlueClient glueClient;

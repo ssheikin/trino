@@ -17,12 +17,12 @@ import io.trino.plugin.hive.metastore.glue.GlueMetastoreStats;
 import io.trino.plugin.iceberg.IcebergConnector;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
-import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogAccessOperations;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogAccessOperationsV1;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 
 public class TestIcebergGlueCatalogAccessOperationsV2
-        extends TestIcebergGlueCatalogAccessOperations
+        extends TestIcebergGlueCatalogAccessOperationsV1
 {
     private static final int MAX_PREFIXES_COUNT = 5;
 

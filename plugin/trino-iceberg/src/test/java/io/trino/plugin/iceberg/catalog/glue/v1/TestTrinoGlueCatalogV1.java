@@ -73,10 +73,10 @@ import static java.util.Locale.ENGLISH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
-public class TestTrinoGlueCatalog
+public class TestTrinoGlueCatalogV1
         extends BaseTrinoCatalogTest
 {
-    private static final Logger LOG = Logger.get(TestTrinoGlueCatalog.class);
+    private static final Logger LOG = Logger.get(TestTrinoGlueCatalogV1.class);
 
     @Override
     protected TrinoCatalog createTrinoCatalog(boolean useUniqueTableLocations)
@@ -88,14 +88,14 @@ public class TestTrinoGlueCatalog
     {
         AWSGlueAsync glueClient = AWSGlueAsyncClientBuilder.defaultClient();
         IcebergGlueCatalogConfig catalogConfig = new IcebergGlueCatalogConfig();
-        return new TrinoGlueCatalog(
+        return new TrinoGlueCatalogV1(
                 new CatalogName("catalog_name"),
                 new NoopWorkScheduler(),
                 HDFS_FILE_SYSTEM_FACTORY,
                 FILE_IO_FACTORY,
                 new TestingTypeManager(),
                 catalogConfig.isCacheTableMetadata(),
-                new GlueIcebergTableOperationsProvider(
+                new GlueIcebergTableOperationsProviderV1(
                         HDFS_FILE_SYSTEM_FACTORY,
                         FILE_IO_FACTORY,
                         TESTING_TYPE_MANAGER,
@@ -235,14 +235,14 @@ public class TestTrinoGlueCatalog
         TrinoFileSystemFactory fileSystemFactory = HDFS_FILE_SYSTEM_FACTORY;
         AWSGlueAsync glueClient = AWSGlueAsyncClientBuilder.defaultClient();
         IcebergGlueCatalogConfig catalogConfig = new IcebergGlueCatalogConfig();
-        TrinoCatalog catalogWithDefaultLocation = new TrinoGlueCatalog(
+        TrinoCatalog catalogWithDefaultLocation = new TrinoGlueCatalogV1(
                 new CatalogName("catalog_name"),
                 new NoopWorkScheduler(),
                 fileSystemFactory,
                 FILE_IO_FACTORY,
                 new TestingTypeManager(),
                 catalogConfig.isCacheTableMetadata(),
-                new GlueIcebergTableOperationsProvider(
+                new GlueIcebergTableOperationsProviderV1(
                         fileSystemFactory,
                         FILE_IO_FACTORY,
                         TESTING_TYPE_MANAGER,

@@ -76,12 +76,12 @@ public class TestingGlueIcebergTableOperationsProvider
             Optional<String> owner,
             Optional<String> location)
     {
-        return new GlueIcebergTableOperations(
+        return new GlueIcebergTableOperationsV1(
                 typeManager,
                 cacheTableMetadata,
                 glueClient,
                 stats,
-                ((TrinoGlueCatalog) catalog)::getTable,
+                ((TrinoGlueCatalogV1) catalog)::getTable,
                 forwardingFileIoFactory.create(fileSystemFactory.create(session)),
                 session,
                 database,

@@ -78,10 +78,10 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
  * on ways to set your AWS credentials which will be needed to run this test.
  */
 @Execution(SAME_THREAD)
-public class TestIcebergGlueCatalogAccessOperations
+public class TestIcebergGlueCatalogAccessOperationsV1
         extends AbstractTestQueryFramework
 {
-    private static final Logger log = Logger.get(TestIcebergGlueCatalogAccessOperations.class);
+    private static final Logger log = Logger.get(TestIcebergGlueCatalogAccessOperationsV1.class);
 
     private static final int MAX_PREFIXES_COUNT = 5;
     protected final String testSchema = "test_schema_" + randomNameSuffix();

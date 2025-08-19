@@ -75,7 +75,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
  * on ways to set your AWS credentials which will be needed to run this test.
  */
 @TestInstance(PER_CLASS)
-public class TestIcebergGlueCatalogConnectorSmokeTest
+public class TestIcebergGlueCatalogV1ConnectorSmokeTest
         extends BaseIcebergConnectorSmokeTest
 {
     private final String bucketName;
@@ -83,7 +83,7 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
     private final AWSGlueAsync glueClient;
     private final TrinoFileSystemFactory fileSystemFactory;
 
-    public TestIcebergGlueCatalogConnectorSmokeTest()
+    public TestIcebergGlueCatalogV1ConnectorSmokeTest()
     {
         super(FileFormat.PARQUET);
         this.bucketName = requireEnv("S3_BUCKET");

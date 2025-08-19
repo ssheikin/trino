@@ -16,7 +16,7 @@ package io.trino.plugin.iceberg.catalog.glue.v2;
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
-import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergS3AndGlueMetastoreTest;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergS3AndGlueMetastoreTestV1;
 import io.trino.testing.QueryRunner;
 
 import java.net.URI;
@@ -25,7 +25,7 @@ import java.util.Map;
 import static io.trino.plugin.hive.metastore.glue.TestingGlueHiveMetastore.createTestingGlueHiveMetastore;
 
 public class TestIcebergS3AndGlueMetastoreTestV2
-        extends TestIcebergS3AndGlueMetastoreTest
+        extends TestIcebergS3AndGlueMetastoreTestV1
 {
     @Override
     protected QueryRunner createQueryRunner()

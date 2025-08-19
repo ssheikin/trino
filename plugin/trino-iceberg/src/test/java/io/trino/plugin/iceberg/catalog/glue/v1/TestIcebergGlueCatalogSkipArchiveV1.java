@@ -51,7 +51,7 @@ import static io.trino.plugin.hive.metastore.glue.v1.AwsSdkUtil.getPaginatedResu
 import static io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter.getTableParameters;
 import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getFileSystemFactory;
-import static io.trino.plugin.iceberg.catalog.glue.v1.GlueIcebergUtil.getTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.v1.GlueIcebergUtilV1.getTableInput;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
  * on ways to set your AWS credentials which will be needed to run this test.
  */
 @TestInstance(PER_CLASS)
-public class TestIcebergGlueCatalogSkipArchive
+public class TestIcebergGlueCatalogSkipArchiveV1
         extends AbstractTestQueryFramework
 {
     private final String schemaName = "test_iceberg_skip_archive_" + randomNameSuffix();

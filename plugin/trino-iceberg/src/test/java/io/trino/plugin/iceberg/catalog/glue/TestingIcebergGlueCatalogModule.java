@@ -29,7 +29,7 @@ import io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.plugin.iceberg.catalog.glue.v1.TestingGlueIcebergTableOperationsProvider;
-import io.trino.plugin.iceberg.catalog.glue.v1.TrinoGlueCatalogFactory;
+import io.trino.plugin.iceberg.catalog.glue.v1.TrinoGlueCatalogFactoryV1;
 
 import java.util.function.Predicate;
 
@@ -58,7 +58,7 @@ public class TestingIcebergGlueCatalogModule
         newExporter(binder).export(GlueMetastoreStats.class).withGeneratedName();
         binder.bind(AWSCredentialsProvider.class).toProvider(GlueCredentialsProvider.class).in(Scopes.SINGLETON);
         binder.bind(IcebergTableOperationsProvider.class).to(TestingGlueIcebergTableOperationsProvider.class).in(Scopes.SINGLETON);
-        binder.bind(TrinoCatalogFactory.class).to(TrinoGlueCatalogFactory.class).in(Scopes.SINGLETON);
+        binder.bind(TrinoCatalogFactory.class).to(TrinoGlueCatalogFactoryV1.class).in(Scopes.SINGLETON);
         newExporter(binder).export(TrinoCatalogFactory.class).withGeneratedName();
         binder.bind(AWSGlueAsyncAdapterProvider.class).toInstance(awsGlueAsyncAdapterProvider);
 

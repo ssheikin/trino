@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
-import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogMaterializedView;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogMaterializedViewV1;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 
@@ -27,7 +27,7 @@ import java.util.Map;
 import static io.trino.plugin.base.util.Closables.closeAllSuppress;
 
 public class TestIcebergGlueCatalogMaterializedViewV2
-        extends TestIcebergGlueCatalogMaterializedView
+        extends TestIcebergGlueCatalogMaterializedViewV1
 {
     @Override
     protected QueryRunner createQueryRunner()

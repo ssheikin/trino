@@ -33,10 +33,10 @@ import static io.trino.testing.TestingNames.randomNameSuffix;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class TestIcebergS3AndGlueMetastoreTest
+public class TestIcebergS3AndGlueMetastoreTestV1
         extends BaseS3AndGlueMetastoreTest
 {
-    public TestIcebergS3AndGlueMetastoreTest()
+    public TestIcebergS3AndGlueMetastoreTestV1()
     {
         super("partitioning", "location", requireEnv("S3_BUCKET"));
     }

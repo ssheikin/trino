@@ -18,7 +18,7 @@ import io.trino.plugin.iceberg.IcebergConfig;
 import io.trino.plugin.iceberg.IcebergScheduledMvRefreshConfig;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogConfig;
-import io.trino.plugin.iceberg.catalog.glue.v1.TestTrinoGlueCatalog;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestTrinoGlueCatalogV1;
 import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.type.TestingTypeManager;
@@ -32,7 +32,7 @@ import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 
 public class TestTrinoGlueCatalogV2
-        extends TestTrinoGlueCatalog
+        extends TestTrinoGlueCatalogV1
 {
     @Override
     protected TrinoCatalog createTrinoCatalog(boolean useUniqueTableLocations)
