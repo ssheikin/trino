@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.catalog.glue.v2;
+package io.trino.plugin.iceberg.catalog.glue;
 
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.hive.metastore.glue.GlueMetastoreStats;
@@ -56,8 +56,8 @@ import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
 import static io.trino.plugin.iceberg.IcebergTableName.isMaterializedViewStorage;
 import static io.trino.plugin.iceberg.IcebergTableName.tableNameFrom;
 import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
-import static io.trino.plugin.iceberg.catalog.glue.v2.GlueIcebergUtilV2.getMaterializedViewTableInput;
-import static io.trino.plugin.iceberg.catalog.glue.v2.GlueIcebergUtilV2.getTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getMaterializedViewTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getTableInput;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;

@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.catalog.glue.v2;
+package io.trino.plugin.iceberg.catalog.glue;
 
 import com.google.common.cache.Cache;
 import com.google.common.collect.AbstractIterator;
@@ -149,9 +149,9 @@ import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
 import static io.trino.plugin.iceberg.IcebergUtil.quotedTableName;
 import static io.trino.plugin.iceberg.TableType.MATERIALIZED_VIEW_STORAGE;
 import static io.trino.plugin.iceberg.TrinoMetricsReporter.TRINO_METRICS_REPORTER;
-import static io.trino.plugin.iceberg.catalog.glue.v2.GlueIcebergUtilV2.getMaterializedViewTableInput;
-import static io.trino.plugin.iceberg.catalog.glue.v2.GlueIcebergUtilV2.getTableInput;
-import static io.trino.plugin.iceberg.catalog.glue.v2.GlueIcebergUtilV2.getViewTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getMaterializedViewTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getViewTableInput;
 import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
