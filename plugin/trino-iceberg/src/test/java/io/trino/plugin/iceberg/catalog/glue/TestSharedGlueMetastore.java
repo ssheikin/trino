@@ -30,7 +30,7 @@ import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
 import static io.trino.testing.QueryAssertions.copyTpchTables;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 
-public class TestSharedGlueMetastoreV2
+public class TestSharedGlueMetastore
         extends TestSharedGlueMetastoreV1
 {
     @Override

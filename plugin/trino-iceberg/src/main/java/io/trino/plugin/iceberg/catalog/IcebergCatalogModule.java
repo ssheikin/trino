@@ -19,7 +19,7 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.iceberg.CatalogType;
 import io.trino.plugin.iceberg.IcebergConfig;
 import io.trino.plugin.iceberg.catalog.file.IcebergFileMetastoreCatalogModule;
-import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogModuleV2;
+import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogModule;
 import io.trino.plugin.iceberg.catalog.glue.v1.IcebergGlueCatalogModuleV1;
 import io.trino.plugin.iceberg.catalog.hms.IcebergHiveMetastoreCatalogModule;
 import io.trino.plugin.iceberg.catalog.jdbc.IcebergJdbcCatalogModule;
@@ -46,7 +46,7 @@ public class IcebergCatalogModule
         bindCatalogModule(HIVE_METASTORE, new IcebergHiveMetastoreCatalogModule());
         bindCatalogModule(TESTING_FILE_METASTORE, new IcebergFileMetastoreCatalogModule());
         bindCatalogModule(GLUE, new IcebergGlueCatalogModuleV1());
-        bindCatalogModule(GLUE_V2, new IcebergGlueCatalogModuleV2());
+        bindCatalogModule(GLUE_V2, new IcebergGlueCatalogModule());
         bindCatalogModule(REST, new IcebergRestCatalogModule());
         bindCatalogModule(JDBC, new IcebergJdbcCatalogModule());
         bindCatalogModule(NESSIE, new IcebergNessieCatalogModule());

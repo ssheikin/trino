@@ -42,7 +42,7 @@ import java.util.concurrent.ExecutorService;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.util.Objects.requireNonNull;
 
-public class TrinoGlueCatalogFactoryV2
+public class TrinoGlueCatalogFactory
         implements TrinoCatalogFactory
 {
     private final CatalogName catalogName;
@@ -63,7 +63,7 @@ public class TrinoGlueCatalogFactoryV2
     private final Executor metadataFetchingExecutor;
 
     @Inject
-    public TrinoGlueCatalogFactoryV2(
+    public TrinoGlueCatalogFactory(
             CatalogName catalogName,
             WorkScheduler workScheduler,
             TrinoFileSystemFactory fileSystemFactory,
@@ -113,7 +113,7 @@ public class TrinoGlueCatalogFactoryV2
     @Override
     public TrinoCatalog create(ConnectorIdentity identity)
     {
-        return new TrinoGlueCatalogV2(
+        return new TrinoGlueCatalog(
                 catalogName,
                 workScheduler,
                 fileSystemFactory,

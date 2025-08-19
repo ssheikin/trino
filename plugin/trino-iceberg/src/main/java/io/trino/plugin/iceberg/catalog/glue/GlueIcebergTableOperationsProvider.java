@@ -29,7 +29,7 @@ import java.util.Optional;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isUseFileSizeFromMetadata;
 import static java.util.Objects.requireNonNull;
 
-public class GlueIcebergTableOperationsProviderV2
+public class GlueIcebergTableOperationsProvider
         implements IcebergTableOperationsProvider
 {
     private final TrinoFileSystemFactory fileSystemFactory;
@@ -40,7 +40,7 @@ public class GlueIcebergTableOperationsProviderV2
     private final GlueMetastoreStats stats;
 
     @Inject
-    public GlueIcebergTableOperationsProviderV2(
+    public GlueIcebergTableOperationsProvider(
             TrinoFileSystemFactory fileSystemFactory,
             ForwardingFileIoFactory fileIoFactory,
             TypeManager typeManager,
@@ -65,14 +65,14 @@ public class GlueIcebergTableOperationsProviderV2
             Optional<String> owner,
             Optional<String> location)
     {
-        return new GlueIcebergTableOperationsV2(
+        return new GlueIcebergTableOperations(
                 typeManager,
                 cacheTableMetadata,
                 glueClient,
                 stats,
                 // Share Glue Table cache between Catalog and TableOperations so that, when doing metadata queries (e.g. information_schema.columns)
                 // the GetTableRequest is issued once per table.
-                ((TrinoGlueCatalogV2) catalog)::getTable,
+                ((TrinoGlueCatalog) catalog)::getTable,
                 fileIoFactory.create(fileSystemFactory.create(session), isUseFileSizeFromMetadata(session)),
                 session,
                 database,

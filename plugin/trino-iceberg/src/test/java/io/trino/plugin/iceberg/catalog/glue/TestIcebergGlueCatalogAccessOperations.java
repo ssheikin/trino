@@ -21,7 +21,7 @@ import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogAccessOpera
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 
-public class TestIcebergGlueCatalogAccessOperationsV2
+public class TestIcebergGlueCatalogAccessOperations
         extends TestIcebergGlueCatalogAccessOperationsV1
 {
     private static final int MAX_PREFIXES_COUNT = 5;

@@ -26,7 +26,7 @@ import java.util.Map;
 
 import static io.trino.plugin.base.util.Closables.closeAllSuppress;
 
-public class TestIcebergGlueCatalogMaterializedViewV2
+public class TestIcebergGlueCatalogMaterializedView
         extends TestIcebergGlueCatalogMaterializedViewV1
 {
     @Override

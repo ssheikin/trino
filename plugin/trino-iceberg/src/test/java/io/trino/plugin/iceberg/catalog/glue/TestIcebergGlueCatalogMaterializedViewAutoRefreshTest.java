@@ -18,7 +18,7 @@ import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogMaterialize
 
 import java.util.Map;
 
-public class TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV2
+public class TestIcebergGlueCatalogMaterializedViewAutoRefreshTest
         extends TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV1
 {
     @Override

@@ -46,14 +46,14 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.plugin.hive.metastore.glue.v1.AwsSdkUtil.getPaginatedResults;
 import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getFileSystemFactory;
-import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getTableInput;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestIcebergGlueCatalogSkipArchiveV2
+public class TestIcebergGlueCatalogSkipArchive
         extends TestIcebergGlueCatalogSkipArchiveV1
 {
     private final String schemaName = "test_iceberg_skip_archive_" + randomNameSuffix();

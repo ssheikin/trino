@@ -56,14 +56,14 @@ import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
 import static io.trino.plugin.iceberg.IcebergTableName.isMaterializedViewStorage;
 import static io.trino.plugin.iceberg.IcebergTableName.tableNameFrom;
 import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
-import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getMaterializedViewTableInput;
-import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getMaterializedViewTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getTableInput;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
 import static org.apache.iceberg.BaseMetastoreTableOperations.PREVIOUS_METADATA_LOCATION_PROP;
 
-public class GlueIcebergTableOperationsV2
+public class GlueIcebergTableOperations
         extends AbstractIcebergTableOperations
 {
     private final TypeManager typeManager;
@@ -75,7 +75,7 @@ public class GlueIcebergTableOperationsV2
     @Nullable
     private String glueVersionId;
 
-    protected GlueIcebergTableOperationsV2(
+    protected GlueIcebergTableOperations(
             TypeManager typeManager,
             boolean cacheTableMetadata,
             GlueClient glueClient,

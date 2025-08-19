@@ -24,7 +24,7 @@ import java.util.Map;
 
 import static io.trino.plugin.hive.metastore.glue.TestingGlueHiveMetastore.createTestingGlueHiveMetastore;
 
-public class TestIcebergS3AndGlueMetastoreTestV2
+public class TestIcebergS3AndGlueMetastoreTest
         extends TestIcebergS3AndGlueMetastoreTestV1
 {
     @Override

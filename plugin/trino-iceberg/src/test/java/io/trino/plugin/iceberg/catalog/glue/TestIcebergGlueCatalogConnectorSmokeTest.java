@@ -66,7 +66,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 @TestInstance(PER_CLASS)
-public class TestIcebergGlueCatalogV2ConnectorSmokeTest
+public class TestIcebergGlueCatalogConnectorSmokeTest
         extends BaseIcebergConnectorSmokeTest
 {
     private final String bucketName;
@@ -74,7 +74,7 @@ public class TestIcebergGlueCatalogV2ConnectorSmokeTest
     private final GlueClient glueClient;
     private final TrinoFileSystemFactory fileSystemFactory;
 
-    public TestIcebergGlueCatalogV2ConnectorSmokeTest()
+    public TestIcebergGlueCatalogConnectorSmokeTest()
     {
         super(FileFormat.PARQUET);
         this.bucketName = requireEnv("S3_BUCKET");

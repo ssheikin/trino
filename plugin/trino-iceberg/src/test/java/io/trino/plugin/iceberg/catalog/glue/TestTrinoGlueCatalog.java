@@ -30,7 +30,7 @@ import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_FACTORY;
 import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 
-public class TestTrinoGlueCatalogV2
+public class TestTrinoGlueCatalog
         extends TestTrinoGlueCatalogV1
 {
     @Override
@@ -43,14 +43,14 @@ public class TestTrinoGlueCatalogV2
     {
         GlueClient glueClient = GlueClient.create();
         IcebergGlueCatalogConfig catalogConfig = new IcebergGlueCatalogConfig();
-        return new TrinoGlueCatalogV2(
+        return new TrinoGlueCatalog(
                 new CatalogName("catalog_name"),
                 new NoopWorkScheduler(),
                 HDFS_FILE_SYSTEM_FACTORY,
                 FILE_IO_FACTORY,
                 new TestingTypeManager(),
                 catalogConfig.isCacheTableMetadata(),
-                new GlueIcebergTableOperationsProviderV2(
+                new GlueIcebergTableOperationsProvider(
                         HDFS_FILE_SYSTEM_FACTORY,
                         FILE_IO_FACTORY,
                         TESTING_TYPE_MANAGER,

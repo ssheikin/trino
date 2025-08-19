@@ -51,9 +51,9 @@ import static org.apache.iceberg.BaseMetastoreTableOperations.ICEBERG_TABLE_TYPE
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
 import static org.apache.iceberg.BaseMetastoreTableOperations.TABLE_TYPE_PROP;
 
-public final class GlueIcebergUtilV2
+public final class GlueIcebergUtil
 {
-    private GlueIcebergUtilV2() {}
+    private GlueIcebergUtil() {}
 
     // Limit per Glue API docs (https://docs.aws.amazon.com/glue/latest/webapi/API_TableInput.html#Glue-Type-TableInput-Parameters as of this writing)
     private static final int GLUE_TABLE_PARAMETER_LENGTH_LIMIT = 512000;

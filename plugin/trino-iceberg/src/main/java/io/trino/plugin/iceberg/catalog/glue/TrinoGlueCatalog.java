@@ -149,9 +149,9 @@ import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
 import static io.trino.plugin.iceberg.IcebergUtil.quotedTableName;
 import static io.trino.plugin.iceberg.TableType.MATERIALIZED_VIEW_STORAGE;
 import static io.trino.plugin.iceberg.TrinoMetricsReporter.TRINO_METRICS_REPORTER;
-import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getMaterializedViewTableInput;
-import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getTableInput;
-import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtilV2.getViewTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getMaterializedViewTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getViewTableInput;
 import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -165,10 +165,10 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
 import static org.apache.iceberg.CatalogUtil.dropTableData;
 
-public class TrinoGlueCatalogV2
+public class TrinoGlueCatalog
         extends AbstractTrinoCatalog
 {
-    private static final Logger LOG = Logger.get(TrinoGlueCatalogV2.class);
+    private static final Logger LOG = Logger.get(TrinoGlueCatalog.class);
 
     private static final int PER_QUERY_CACHES_SIZE = 1000;
 
@@ -197,7 +197,7 @@ public class TrinoGlueCatalogV2
             .maximumSize(PER_QUERY_CACHES_SIZE)
             .build();
 
-    public TrinoGlueCatalogV2(
+    public TrinoGlueCatalog(
             CatalogName catalogName,
             WorkScheduler workScheduler,
             TrinoFileSystemFactory fileSystemFactory,

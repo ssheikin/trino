@@ -33,7 +33,7 @@ import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
-public class IcebergGlueCatalogModuleV2
+public class IcebergGlueCatalogModule
         extends AbstractConfigurationAwareModule
 {
     @Override
@@ -41,8 +41,8 @@ public class IcebergGlueCatalogModuleV2
     {
         configBinder(binder).bindConfigDefaults(GlueHiveMetastoreConfig.class, config -> config.setSkipArchive(true));
         configBinder(binder).bindConfig(IcebergGlueCatalogConfig.class);
-        binder.bind(IcebergTableOperationsProvider.class).to(GlueIcebergTableOperationsProviderV2.class).in(Scopes.SINGLETON);
-        binder.bind(TrinoCatalogFactory.class).to(TrinoGlueCatalogFactoryV2.class).in(Scopes.SINGLETON);
+        binder.bind(IcebergTableOperationsProvider.class).to(GlueIcebergTableOperationsProvider.class).in(Scopes.SINGLETON);
+        binder.bind(TrinoCatalogFactory.class).to(TrinoGlueCatalogFactory.class).in(Scopes.SINGLETON);
         newExporter(binder).export(TrinoCatalogFactory.class).withGeneratedName();
 
         // Required to inject HiveMetastoreFactory for migrate procedure
