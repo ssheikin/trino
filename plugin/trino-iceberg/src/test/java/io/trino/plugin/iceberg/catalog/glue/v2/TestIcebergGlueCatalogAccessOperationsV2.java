@@ -17,7 +17,7 @@ import io.trino.plugin.hive.metastore.glue.GlueMetastoreStats;
 import io.trino.plugin.iceberg.IcebergConnector;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
-import io.trino.plugin.iceberg.catalog.glue.TestIcebergGlueCatalogAccessOperations;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogAccessOperations;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 

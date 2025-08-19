@@ -18,7 +18,7 @@ import io.trino.plugin.hive.metastore.glue.AwsApiCallStats;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
 import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogConfig;
-import io.trino.plugin.iceberg.catalog.glue.TestIcebergGlueCatalogSkipArchive;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogSkipArchive;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.sql.TestTable;
 import org.apache.iceberg.TableMetadata;

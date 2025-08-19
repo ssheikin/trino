@@ -16,7 +16,7 @@ package io.trino.plugin.iceberg.catalog.glue.v2;
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
-import io.trino.plugin.iceberg.catalog.glue.TestIcebergS3AndGlueMetastoreTest;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergS3AndGlueMetastoreTest;
 import io.trino.testing.QueryRunner;
 
 import java.net.URI;

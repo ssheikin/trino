@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.catalog.glue;
+package io.trino.plugin.iceberg.catalog.glue.v1;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.glue.model.Table;
@@ -29,6 +29,7 @@ import io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule;
 import io.trino.plugin.iceberg.catalog.IcebergHiveMetastoreModule;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
+import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogConfig;
 
 import java.util.function.Predicate;
 

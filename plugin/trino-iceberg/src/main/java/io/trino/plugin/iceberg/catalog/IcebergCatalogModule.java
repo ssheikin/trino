@@ -19,7 +19,7 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.iceberg.CatalogType;
 import io.trino.plugin.iceberg.IcebergConfig;
 import io.trino.plugin.iceberg.catalog.file.IcebergFileMetastoreCatalogModule;
-import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogModule;
+import io.trino.plugin.iceberg.catalog.glue.v1.IcebergGlueCatalogModule;
 import io.trino.plugin.iceberg.catalog.glue.v2.IcebergGlueCatalogModuleV2;
 import io.trino.plugin.iceberg.catalog.hms.IcebergHiveMetastoreCatalogModule;
 import io.trino.plugin.iceberg.catalog.jdbc.IcebergJdbcCatalogModule;

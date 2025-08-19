@@ -28,6 +28,8 @@ import io.trino.plugin.hive.metastore.glue.v1.GlueHiveMetastoreConfig;
 import io.trino.plugin.hive.metastore.glue.v1.GlueMetastoreModule;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestingGlueIcebergTableOperationsProvider;
+import io.trino.plugin.iceberg.catalog.glue.v1.TrinoGlueCatalogFactory;
 
 import java.util.function.Predicate;
 

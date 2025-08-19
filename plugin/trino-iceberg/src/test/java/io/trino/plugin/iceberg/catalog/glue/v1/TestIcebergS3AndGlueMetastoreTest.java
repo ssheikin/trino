@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.catalog.glue;
+package io.trino.plugin.iceberg.catalog.glue.v1;
 
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.base.util.UncheckedCloseable;

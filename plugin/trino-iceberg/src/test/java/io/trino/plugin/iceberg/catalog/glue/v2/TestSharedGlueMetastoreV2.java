@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.Session;
 import io.trino.plugin.hive.TestingHivePlugin;
 import io.trino.plugin.iceberg.IcebergPlugin;
-import io.trino.plugin.iceberg.catalog.glue.TestSharedGlueMetastore;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestSharedGlueMetastore;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;

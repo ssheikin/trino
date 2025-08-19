@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.catalog.glue;
+package io.trino.plugin.iceberg.catalog.glue.v1;
 
 import com.amazonaws.services.glue.AWSGlueAsync;
 import com.amazonaws.services.glue.AWSGlueAsyncClientBuilder;
@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.hive.metastore.glue.AwsApiCallStats;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
+import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogConfig;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.sql.TestTable;
@@ -50,7 +51,7 @@ import static io.trino.plugin.hive.metastore.glue.v1.AwsSdkUtil.getPaginatedResu
 import static io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter.getTableParameters;
 import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getFileSystemFactory;
-import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.v1.GlueIcebergUtil.getTableInput;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;

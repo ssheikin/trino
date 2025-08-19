@@ -18,7 +18,7 @@ import io.trino.plugin.iceberg.IcebergConfig;
 import io.trino.plugin.iceberg.IcebergScheduledMvRefreshConfig;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogConfig;
-import io.trino.plugin.iceberg.catalog.glue.TestTrinoGlueCatalog;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestTrinoGlueCatalog;
 import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.type.TestingTypeManager;

@@ -14,7 +14,7 @@
 package io.trino.plugin.iceberg.catalog.glue.v2;
 
 import com.google.common.collect.ImmutableMap;
-import io.trino.plugin.iceberg.catalog.glue.TestIcebergGlueCatalogMaterializedViewAutoRefreshTest;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogMaterializedViewAutoRefreshTest;
 
 import java.util.Map;
 

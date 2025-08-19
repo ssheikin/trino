@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
-import io.trino.plugin.iceberg.catalog.glue.TestIcebergGlueCatalogMaterializedView;
+import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogMaterializedView;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 
