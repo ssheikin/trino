@@ -14,12 +14,12 @@
 package io.trino.plugin.iceberg.catalog.glue;
 
 import com.google.common.collect.ImmutableMap;
-import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV1;
+import io.trino.plugin.iceberg.TestIcebergHiveCatalogMaterializedViewAutoRefreshTest;
 
 import java.util.Map;
 
 public class TestIcebergGlueCatalogMaterializedViewAutoRefreshTest
-        extends TestIcebergGlueCatalogMaterializedViewAutoRefreshTestV1
+        extends TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
 {
     @Override
     protected Map<String, String> getIcebergCatalogProperties()

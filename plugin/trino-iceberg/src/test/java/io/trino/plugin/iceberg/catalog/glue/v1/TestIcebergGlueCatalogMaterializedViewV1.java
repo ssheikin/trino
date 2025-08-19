@@ -13,44 +13,22 @@
  */
 package io.trino.plugin.iceberg.catalog.glue.v1;
 
-import com.amazonaws.services.glue.AWSGlueAsync;
-import com.amazonaws.services.glue.AWSGlueAsyncClientBuilder;
-import com.amazonaws.services.glue.model.BatchDeleteTableRequest;
-import com.amazonaws.services.glue.model.DeleteDatabaseRequest;
-import com.amazonaws.services.glue.model.GetTableRequest;
-import com.amazonaws.services.glue.model.GetTablesRequest;
-import com.amazonaws.services.glue.model.GetTablesResult;
-import com.amazonaws.services.glue.model.Table;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.trino.plugin.hive.metastore.glue.AwsApiCallStats;
-import io.trino.plugin.iceberg.BaseIcebergMaterializedViewTest;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
+import io.trino.plugin.iceberg.catalog.glue.TestIcebergGlueCatalogMaterializedView;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
-import org.junit.jupiter.api.AfterAll;
 
-import java.io.File;
 import java.nio.file.Files;
-import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.plugin.base.util.Closables.closeAllSuppress;
-import static io.trino.plugin.hive.metastore.glue.v1.AwsSdkUtil.getPaginatedResults;
-import static io.trino.plugin.hive.metastore.glue.v1.GlueToTrinoConverter.getTableParameters;
-import static io.trino.testing.TestingNames.randomNameSuffix;
-import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
 
 public class TestIcebergGlueCatalogMaterializedViewV1
-        extends BaseIcebergMaterializedViewTest
+        extends TestIcebergGlueCatalogMaterializedView
 {
-    protected final String schemaName = "test_iceberg_materialized_view_" + randomNameSuffix();
-
-    protected File schemaDirectory;
-
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
@@ -85,48 +63,5 @@ public class TestIcebergGlueCatalogMaterializedViewV1
             closeAllSuppress(e, queryRunner);
             throw e;
         }
-    }
-
-    @Override
-    protected String getSchemaDirectory()
-    {
-        return new File(schemaDirectory, schemaName + ".db").getPath();
-    }
-
-    @Override
-    protected String getStorageMetadataLocation(String materializedViewName)
-    {
-        AWSGlueAsync glueClient = AWSGlueAsyncClientBuilder.defaultClient();
-        Table table = glueClient.getTable(new GetTableRequest()
-                        .withDatabaseName(schemaName)
-                        .withName(materializedViewName))
-                .getTable();
-        return getTableParameters(table).get(METADATA_LOCATION_PROP);
-    }
-
-    @AfterAll
-    public void cleanup()
-    {
-        cleanUpSchema(schemaName);
-    }
-
-    private static void cleanUpSchema(String schema)
-    {
-        AWSGlueAsync glueClient = AWSGlueAsyncClientBuilder.defaultClient();
-        Set<String> tableNames = getPaginatedResults(
-                glueClient::getTables,
-                new GetTablesRequest().withDatabaseName(schema),
-                GetTablesRequest::setNextToken,
-                GetTablesResult::getNextToken,
-                new AwsApiCallStats())
-                .map(GetTablesResult::getTableList)
-                .flatMap(Collection::stream)
-                .map(Table::getName)
-                .collect(toImmutableSet());
-        glueClient.batchDeleteTable(new BatchDeleteTableRequest()
-                .withDatabaseName(schema)
-                .withTablesToDelete(tableNames));
-        glueClient.deleteDatabase(new DeleteDatabaseRequest()
-                .withName(schema));
     }
 }

@@ -1199,10 +1199,10 @@ public class TrinoGlueCatalog
     private List<Column> toGlueColumns(List<ConnectorMaterializedViewDefinition.Column> columns)
     {
         return columns.stream().map(column -> Column.builder()
-                        .name(column.getName())
-                        .type(typeManager.getType(column.getType()).getBaseName())
-                        .comment(column.getComment().orElse(""))
-                        .build())
+                .name(column.getName())
+                .type(typeManager.getType(column.getType()).getBaseName())
+                .comment(column.getComment().orElse(""))
+                .build())
                 .collect(toImmutableList());
     }
 
@@ -1331,7 +1331,7 @@ public class TrinoGlueCatalog
         refreshJobId.ifPresent(jobId -> workScheduler.deleteJobSchedule(session, jobId));
     }
 
-    private void dropMaterializedViewStorage(ConnectorSession session, software.amazon.awssdk.services.glue.model.Table view)
+    private void dropMaterializedViewStorage(ConnectorSession session, Table view)
     {
         Map<String, String> parameters = view.parameters();
         String storageTableName = parameters.get(STORAGE_TABLE);
@@ -1375,7 +1375,7 @@ public class TrinoGlueCatalog
             return Optional.empty();
         }
 
-        software.amazon.awssdk.services.glue.model.Table table = maybeTable.get();
+        Table table = maybeTable.get();
         if (!isTrinoMaterializedView(getTableType(table), table.parameters())) {
             return Optional.empty();
         }

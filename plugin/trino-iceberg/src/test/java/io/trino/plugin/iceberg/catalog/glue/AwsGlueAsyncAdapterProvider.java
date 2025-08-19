@@ -13,9 +13,9 @@
  */
 package io.trino.plugin.iceberg.catalog.glue;
 
-import com.amazonaws.services.glue.AWSGlueAsync;
+import software.amazon.awssdk.services.glue.GlueClient;
 
-public interface AWSGlueAsyncAdapterProvider
+public interface AwsGlueAsyncAdapterProvider
 {
-    AWSGlueAsync createAWSGlueAsyncAdapter(AWSGlueAsync delegate);
+    GlueClient createAWSGlueAsyncAdapter(GlueClient delegate);
 }

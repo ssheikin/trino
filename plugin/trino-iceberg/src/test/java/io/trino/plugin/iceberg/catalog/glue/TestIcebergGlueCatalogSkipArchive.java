@@ -14,24 +14,22 @@
 package io.trino.plugin.iceberg.catalog.glue;
 
 import com.google.common.collect.ImmutableMap;
-import io.trino.plugin.hive.metastore.glue.AwsApiCallStats;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
-import io.trino.plugin.iceberg.catalog.glue.v1.TestIcebergGlueCatalogSkipArchiveV1;
+import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.sql.TestTable;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.io.FileIO;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import software.amazon.awssdk.services.glue.GlueClient;
-import software.amazon.awssdk.services.glue.model.GetTableRequest;
-import software.amazon.awssdk.services.glue.model.GetTableVersionsRequest;
 import software.amazon.awssdk.services.glue.model.GetTableVersionsResponse;
 import software.amazon.awssdk.services.glue.model.Table;
 import software.amazon.awssdk.services.glue.model.TableInput;
 import software.amazon.awssdk.services.glue.model.TableVersion;
-import software.amazon.awssdk.services.glue.model.UpdateTableRequest;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -41,9 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static io.trino.plugin.hive.metastore.glue.v1.AwsSdkUtil.getPaginatedResults;
 import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getFileSystemFactory;
 import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getTableInput;
@@ -52,18 +48,19 @@ import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
+@TestInstance(PER_CLASS)
 public class TestIcebergGlueCatalogSkipArchive
-        extends TestIcebergGlueCatalogSkipArchiveV1
+        extends AbstractTestQueryFramework
 {
-    private final String schemaName = "test_iceberg_skip_archive_" + randomNameSuffix();
-    private GlueClient glueClient;
+    protected final String schemaName = "test_iceberg_skip_archive_" + randomNameSuffix();
+    private GlueClient glueClient = GlueClient.create();
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        glueClient = GlueClient.create();
         File schemaDirectory = Files.createTempDirectory("test_iceberg").toFile();
         schemaDirectory.deleteOnExit();
 
@@ -80,7 +77,12 @@ public class TestIcebergGlueCatalogSkipArchive
                 .build();
     }
 
-    @Override
+    @AfterAll
+    public void cleanup()
+    {
+        assertUpdate("DROP SCHEMA IF EXISTS " + schemaName);
+    }
+
     @Test
     public void testSkipArchive()
     {
@@ -99,7 +101,6 @@ public class TestIcebergGlueCatalogSkipArchive
         }
     }
 
-    @Override
     @Test
     public void testNotRemoveExistingArchive()
     {
@@ -109,14 +110,14 @@ public class TestIcebergGlueCatalogSkipArchive
             TableVersion initialVersion = getOnlyElement(tableVersionsBeforeInsert);
 
             // Add a new archive using Glue client
-            Table glueTable = glueClient.getTable(GetTableRequest.builder().databaseName(schemaName).name(table.getName()).build()).table();
+            Table glueTable = glueClient.getTable(builder -> builder.databaseName(schemaName).name(table.getName())).table();
             Map<String, String> tableParameters = new HashMap<>(glueTable.parameters());
             String metadataLocation = tableParameters.remove(METADATA_LOCATION_PROP);
             FileIO io = FILE_IO_FACTORY.create(getFileSystemFactory(getDistributedQueryRunner()).create(SESSION));
             TableMetadata metadata = TableMetadataParser.read(io, io.newInputFile(metadataLocation));
             boolean cacheTableMetadata = new IcebergGlueCatalogConfig().isCacheTableMetadata();
             TableInput tableInput = getTableInput(TESTING_TYPE_MANAGER, table.getName(), Optional.empty(), metadata, metadata.location(), metadataLocation, tableParameters, cacheTableMetadata);
-            glueClient.updateTable(UpdateTableRequest.builder().databaseName(schemaName).tableInput(tableInput).build());
+            glueClient.updateTable(builder -> builder.databaseName(schemaName).tableInput(tableInput));
             assertThat(getTableVersions(schemaName, table.getName())).hasSize(2);
 
             assertUpdate("INSERT INTO " + table.getName() + " VALUES 1", 1);
@@ -127,16 +128,15 @@ public class TestIcebergGlueCatalogSkipArchive
         }
     }
 
-    protected List<TableVersion> getTableVersions(String databaseName, String tableName)
+    private List<TableVersion> getTableVersions(String databaseName, String tableName)
     {
-        return getPaginatedResults(
-                glueClient::getTableVersions,
-                GetTableVersionsRequest.builder().databaseName(databaseName).tableName(tableName).build(),
-                (request, token) -> request.toBuilder().nextToken(token).build(),
-                response -> response.nextToken(),
-                new AwsApiCallStats())
+        return glueClient
+                .getTableVersionsPaginator(x -> x
+                        .databaseName(databaseName)
+                        .tableName(tableName))
+                .stream()
                 .map(GetTableVersionsResponse::tableVersions)
                 .flatMap(Collection::stream)
-                .collect(toImmutableList());
+                .toList();
     }
 }

@@ -38,12 +38,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import software.amazon.awssdk.services.glue.GlueClient;
 import software.amazon.awssdk.services.glue.model.Column;
-import software.amazon.awssdk.services.glue.model.DeleteTableRequest;
 import software.amazon.awssdk.services.glue.model.EntityNotFoundException;
-import software.amazon.awssdk.services.glue.model.GetTableRequest;
+import software.amazon.awssdk.services.glue.model.StorageDescriptor;
 import software.amazon.awssdk.services.glue.model.Table;
-import software.amazon.awssdk.services.glue.model.TableInput;
-import software.amazon.awssdk.services.glue.model.UpdateTableRequest;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
@@ -55,12 +52,13 @@ import java.util.List;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.MoreCollectors.onlyElement;
-import static io.trino.plugin.hive.metastore.glue.GlueConverter.getTableType;
+import static io.trino.plugin.hive.metastore.glue.GlueConverter.getTableTypeNullable;
 import static io.trino.plugin.iceberg.IcebergTestUtils.checkParquetFileSorting;
 import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -171,25 +169,25 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
     void testGlueTableLocation()
     {
         try (TestTable table = newTrinoTable("test_table_location", "AS SELECT 1 x")) {
-            String initialLocation = getGlueTable(table.getName()).storageDescriptor().location();
-            assertThat(getGlueTable(table.getName()).storageDescriptor().location())
+            String initialLocation = getStorageDescriptor(getGlueTable(table.getName())).location();
+            assertThat(getStorageDescriptor(getGlueTable(table.getName())).location())
                     // Using startsWith because the location has UUID suffix
                     .startsWith("%s/%s.db/%s".formatted(schemaPath(), schemaName, table.getName()));
 
             assertUpdate("INSERT INTO " + table.getName() + " VALUES 2", 1);
             Table glueTable = getGlueTable(table.getName());
-            assertThat(glueTable.storageDescriptor().location())
+            assertThat(getStorageDescriptor(glueTable).location())
                     .isEqualTo(initialLocation);
 
             String newTableLocation = initialLocation + "_new";
             updateTableLocation(glueTable, newTableLocation);
             assertUpdate("INSERT INTO " + table.getName() + " VALUES 3", 1);
-            assertThat(getGlueTable(table.getName()).storageDescriptor().location())
+            assertThat(getStorageDescriptor(getGlueTable(table.getName())).location())
                     .isEqualTo(newTableLocation);
 
             assertUpdate("CALL system.unregister_table(CURRENT_SCHEMA, '" + table.getName() + "')");
             assertUpdate("CALL system.register_table(CURRENT_SCHEMA, '" + table.getName() + "', '" + initialLocation + "')");
-            assertThat(getGlueTable(table.getName()).storageDescriptor().location())
+            assertThat(getStorageDescriptor(getGlueTable(table.getName())).location())
                     .isEqualTo(initialLocation);
         }
     }
@@ -216,50 +214,32 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
 
     private Table getGlueTable(String tableName)
     {
-        GetTableRequest request = GetTableRequest.builder().databaseName(schemaName).name(tableName).build();
-        return glueClient.getTable(request).table();
+        return glueClient.getTable(x -> x.databaseName(schemaName).name(tableName)).table();
     }
 
     private void updateTableLocation(Table table, String newLocation)
     {
-        TableInput tableInput = TableInput.builder()
-                .name(table.name())
-                .tableType(getTableType(table))
-                .storageDescriptor(table.storageDescriptor().toBuilder().location(newLocation).build())
-                .parameters(table.parameters())
-                .build();
-        UpdateTableRequest updateTableRequest = UpdateTableRequest.builder()
+        glueClient.updateTable(update -> update
                 .databaseName(schemaName)
-                .tableInput(tableInput)
-                .build();
-        glueClient.updateTable(updateTableRequest);
+                .tableInput(input -> input
+                        .name(table.name())
+                        .tableType(getTableTypeNullable(table))
+                        .storageDescriptor(getStorageDescriptor(table).toBuilder().location(newLocation).build())
+                        .parameters(table.parameters())));
     }
 
     @Override
     protected void dropTableFromMetastore(String tableName)
     {
-        DeleteTableRequest deleteTableRequest = DeleteTableRequest.builder()
-                .databaseName(schemaName)
-                .name(tableName)
-                .build();
-        glueClient.deleteTable(deleteTableRequest);
-        GetTableRequest getTableRequest = GetTableRequest.builder()
-                .databaseName(schemaName)
-                .name(tableName)
-                .build();
-        assertThatThrownBy(() -> glueClient.getTable(getTableRequest))
+        glueClient.deleteTable(x -> x.databaseName(schemaName).name(tableName));
+        assertThatThrownBy(() -> getGlueTable(tableName))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Override
     protected String getMetadataLocation(String tableName)
     {
-        GetTableRequest getTableRequest = GetTableRequest.builder()
-                .databaseName(schemaName)
-                .name(tableName)
-                .build();
-        return glueClient.getTable(getTableRequest).table().parameters()
-                .get("metadata_location");
+        return getGlueTable(tableName).parameters().get("metadata_location");
     }
 
     @Override
@@ -312,5 +292,10 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
                     .build();
             return !s3.listObjectsV2(request).contents().isEmpty();
         }
+    }
+
+    private static StorageDescriptor getStorageDescriptor(Table table)
+    {
+        return requireNonNull(table.storageDescriptor());
     }
 }
