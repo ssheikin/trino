@@ -1276,10 +1276,17 @@ public final class MetadataManager
         ConnectorTransactionHandle transactionHandle = catalogMetadata.getTransactionHandleFor(catalogHandle);
 
         List<ConnectorTableHandle> sourceConnectorHandles = sourceTableHandles.stream()
+                .filter(handle -> handle.catalogHandle().equals(catalogHandle))
                 .map(TableHandle::connectorHandle)
                 .collect(Collectors.toList());
 
-        ConnectorInsertTableHandle handle = metadata.beginRefreshMaterializedView(session.toConnectorSession(catalogHandle), tableHandle.connectorHandle(), sourceConnectorHandles, getRetryPolicy(session).getRetryMode(), refreshType);
+        ConnectorInsertTableHandle handle = metadata.beginRefreshMaterializedView(
+                session.toConnectorSession(catalogHandle),
+                tableHandle.connectorHandle(),
+                sourceConnectorHandles,
+                sourceConnectorHandles.size() < sourceTableHandles.size(),
+                getRetryPolicy(session).getRetryMode(),
+                refreshType);
 
         return new InsertTableHandle(tableHandle.catalogHandle(), transactionHandle, handle);
     }
@@ -1298,8 +1305,10 @@ public final class MetadataManager
         ConnectorMetadata metadata = getMetadata(session, catalogHandle);
 
         List<ConnectorTableHandle> sourceConnectorHandles = sourceTableHandles.stream()
+                .filter(handle -> handle.catalogHandle().equals(catalogHandle))
                 .map(TableHandle::connectorHandle)
                 .collect(toImmutableList());
+
         return metadata.finishRefreshMaterializedView(
                 session.toConnectorSession(catalogHandle),
                 tableHandle.connectorHandle(),
@@ -1307,7 +1316,8 @@ public final class MetadataManager
                 fragments,
                 computedStatistics,
                 sourceConnectorHandles,
-                sourceTableFunctions);
+                sourceConnectorHandles.size() < sourceTableHandles.size(),
+                !sourceTableFunctions.isEmpty());
     }
 
     @Override

@@ -21,7 +21,6 @@ import io.airlift.json.JsonCodec;
 import io.trino.metastore.HiveMetastoreFactory;
 import io.trino.metastore.RawHiveMetastoreFactory;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
-import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.security.LocationAccessControl;
@@ -42,7 +41,6 @@ public class IcebergMetadataFactory
     private final LocationAccessControl locationAccessControl;
     private final AiModelAccessControl aiModelAccessControl;
     private final TypeManager typeManager;
-    private final CatalogHandle trinoCatalogHandle;
     private final JsonCodec<CommitTaskData> commitTaskCodec;
     private final TrinoCatalogFactory catalogFactory;
     private final IcebergFileSystemFactory fileSystemFactory;
@@ -63,7 +61,6 @@ public class IcebergMetadataFactory
             LocationAccessControl locationAccessControl,
             AiModelAccessControl aiModelAccessControl,
             TypeManager typeManager,
-            CatalogHandle trinoCatalogHandle,
             JsonCodec<CommitTaskData> commitTaskCodec,
             TrinoCatalogFactory catalogFactory,
             IcebergFileSystemFactory fileSystemFactory,
@@ -79,7 +76,6 @@ public class IcebergMetadataFactory
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
-        this.trinoCatalogHandle = requireNonNull(trinoCatalogHandle, "trinoCatalogHandle is null");
         this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
@@ -114,7 +110,6 @@ public class IcebergMetadataFactory
                 locationAccessControl,
                 aiModelAccessControl,
                 typeManager,
-                trinoCatalogHandle,
                 commitTaskCodec,
                 catalogFactory.create(identity),
                 fileSystemFactory,
