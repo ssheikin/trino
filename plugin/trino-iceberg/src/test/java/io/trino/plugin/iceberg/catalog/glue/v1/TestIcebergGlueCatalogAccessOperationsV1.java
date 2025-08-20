@@ -37,7 +37,7 @@ public class TestIcebergGlueCatalogAccessOperationsV1
     {
         DistributedQueryRunner queryRunner = IcebergQueryRunner.builder(testSchema)
                 .addCoordinatorProperty("optimizer.experimental-max-prefetched-information-schema-prefixes", Integer.toString(MAX_PREFIXES_COUNT))
-                .addIcebergProperty("iceberg.catalog.type", "glue")
+                .addIcebergProperty("iceberg.catalog.type", "glue_v1")
                 .addIcebergProperty("hive.metastore.glue.default-warehouse-dir", "local:///glue")
                 .setSchemaInitializer(SchemaInitializer.builder().withSchemaName(testSchema).build())
                 .build();

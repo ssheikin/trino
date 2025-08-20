@@ -103,7 +103,7 @@ public class TestIcebergGlueCatalogV1ConnectorSmokeTest
                 .setIcebergProperties(
                         ImmutableMap.of(
                                 "iceberg.file-format", format.name(),
-                                "iceberg.catalog.type", "glue",
+                                "iceberg.catalog.type", "glue_v1",
                                 "hive.metastore.glue.default-warehouse-dir", schemaPath(),
                                 "iceberg.register-table-procedure.enabled", "true",
                                 "iceberg.writer-sort-buffer-size", "1MB",

@@ -34,7 +34,7 @@ public class TestIcebergS3AndGlueMetastoreTestV1
         metastore = createTestingGlueHiveMetastore(URI.create(schemaPath()), this::closeAfterClass);
         return IcebergQueryRunner.builder()
                 .setIcebergProperties(ImmutableMap.<String, String>builder()
-                        .put("iceberg.catalog.type", "glue")
+                        .put("iceberg.catalog.type", "glue_v1")
                         .put("hive.metastore.glue.default-warehouse-dir", schemaPath())
                         .put("fs.native-s3.enabled", "true")
                         .buildOrThrow())

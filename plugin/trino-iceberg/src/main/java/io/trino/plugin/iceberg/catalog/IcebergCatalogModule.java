@@ -29,6 +29,7 @@ import io.trino.plugin.iceberg.catalog.snowflake.IcebergSnowflakeCatalogModule;
 
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.trino.plugin.iceberg.CatalogType.GLUE;
+import static io.trino.plugin.iceberg.CatalogType.GLUE_V1;
 import static io.trino.plugin.iceberg.CatalogType.GLUE_V2;
 import static io.trino.plugin.iceberg.CatalogType.HIVE_METASTORE;
 import static io.trino.plugin.iceberg.CatalogType.JDBC;
@@ -45,8 +46,9 @@ public class IcebergCatalogModule
     {
         bindCatalogModule(HIVE_METASTORE, new IcebergHiveMetastoreCatalogModule());
         bindCatalogModule(TESTING_FILE_METASTORE, new IcebergFileMetastoreCatalogModule());
-        bindCatalogModule(GLUE, new IcebergGlueCatalogModuleV1());
-        bindCatalogModule(GLUE_V2, new IcebergGlueCatalogModule());
+        bindCatalogModule(GLUE, new IcebergGlueCatalogModule());
+        bindCatalogModule(GLUE_V2, new IcebergGlueCatalogModule()); // for simpler migration
+        bindCatalogModule(GLUE_V1, new IcebergGlueCatalogModuleV1());
         bindCatalogModule(REST, new IcebergRestCatalogModule());
         bindCatalogModule(JDBC, new IcebergJdbcCatalogModule());
         bindCatalogModule(NESSIE, new IcebergNessieCatalogModule());

@@ -39,7 +39,7 @@ public class TestIcebergGlueCatalogMaterializedViewV1
         DistributedQueryRunner queryRunner = IcebergQueryRunner.builder()
                 .setIcebergProperties(
                         ImmutableMap.of(
-                                "iceberg.catalog.type", "glue",
+                                "iceberg.catalog.type", "glue_v1",
                                 "hive.metastore.glue.default-warehouse-dir", schemaDirectory.getAbsolutePath(),
                                 "fs.hadoop.enabled", "true"))
                 .setSchemaInitializer(

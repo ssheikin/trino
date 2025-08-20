@@ -25,7 +25,7 @@ public class TestIcebergGlueCatalogMaterializedViewAutoRefreshTest
     protected Map<String, String> getIcebergCatalogProperties()
     {
         return ImmutableMap.of(
-                "iceberg.catalog.type", "glue_v2",
+                "iceberg.catalog.type", "glue",
                 "hive.metastore.glue.default-warehouse-dir", "local:///glue");
     }
 }

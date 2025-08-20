@@ -65,14 +65,14 @@ public class TestSharedGlueMetastoreV1
                 ICEBERG_CATALOG,
                 "iceberg",
                 ImmutableMap.of(
-                        "iceberg.catalog.type", "glue",
+                        "iceberg.catalog.type", "glue_v1",
                         "hive.metastore.glue.default-warehouse-dir", dataDirectory.toString(),
                         "fs.hadoop.enabled", "true"));
         queryRunner.createCatalog(
                 "iceberg_with_redirections",
                 "iceberg",
                 ImmutableMap.of(
-                        "iceberg.catalog.type", "glue",
+                        "iceberg.catalog.type", "glue_v1",
                         "hive.metastore.glue.default-warehouse-dir", dataDirectory.toString(),
                         "iceberg.hive-catalog-name", "hive",
                         "fs.hadoop.enabled", "true"));
