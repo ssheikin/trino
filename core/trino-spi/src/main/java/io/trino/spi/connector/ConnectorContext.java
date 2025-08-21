@@ -32,11 +32,6 @@ import java.util.Map;
 
 public interface ConnectorContext
 {
-    default CatalogHandle getCatalogHandle()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     default OpenTelemetry getOpenTelemetry()
     {
         throw new UnsupportedOperationException();

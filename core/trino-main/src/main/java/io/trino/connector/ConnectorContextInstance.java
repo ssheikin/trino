@@ -22,7 +22,6 @@ import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
-import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
@@ -52,11 +51,9 @@ public class ConnectorContextInstance
     private final ModelConnectionSpecsLoader modelConnectionSpecsLoader;
     private final Metastore metastore;
     private final CoordinatorLocator coordinatorLocator;
-    private final CatalogHandle catalogHandle;
     private final Map<String, String> serverProperties;
 
     public ConnectorContextInstance(
-            CatalogHandle catalogHandle,
             OpenTelemetry openTelemetry,
             Tracer tracer,
             NodeManager nodeManager,
@@ -87,7 +84,6 @@ public class ConnectorContextInstance
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
-        this.catalogHandle = requireNonNull(catalogHandle, "catalogHandle is null");
         this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
     }
 
@@ -101,12 +97,6 @@ public class ConnectorContextInstance
     public Tracer getTracer()
     {
         return tracer;
-    }
-
-    @Override
-    public CatalogHandle getCatalogHandle()
-    {
-        return catalogHandle;
     }
 
     @Override

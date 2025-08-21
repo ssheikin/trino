@@ -35,6 +35,7 @@ import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.catalog.CatalogProperties;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.CatalogHandle;
@@ -155,8 +156,7 @@ public class DefaultCatalogFactory
         checkArgument(connectorFactory != null, "No factory for connector '%s'. Available factories: %s", catalogProperties.connectorName(), connectorFactories.keySet());
 
         Connector connector = createConnector(
-                catalogProperties.catalogHandle().getCatalogName().toString(),
-                catalogProperties.catalogHandle(),
+                catalogProperties.catalogHandle().getCatalogName(),
                 connectorFactory,
                 secretsResolver.getResolvedConfiguration(catalogProperties.properties()));
 
@@ -183,7 +183,7 @@ public class DefaultCatalogFactory
             return ImmutableSet.copyOf(catalogProperties.properties().keySet());
         }
 
-        ConnectorContext context = createConnectorContext(catalogProperties.catalogHandle());
+        ConnectorContext context = createConnectorContext(catalogProperties.catalogHandle().getCatalogName());
         String catalogName = catalogProperties.catalogHandle().getCatalogName().toString();
         Map<String, String> config = secretsResolver.getResolvedConfiguration(catalogProperties.properties());
 
@@ -194,7 +194,7 @@ public class DefaultCatalogFactory
 
     private CatalogConnector createCatalog(CatalogHandle catalogHandle, ConnectorName connectorName, Connector connector, Optional<CatalogProperties> catalogProperties)
     {
-        Tracer tracer = createTracer(catalogHandle);
+        Tracer tracer = createTracer(catalogHandle.getCatalogName());
 
         ConnectorServices catalogConnector = new ConnectorServices(tracer, catalogHandle, connector);
 
@@ -236,25 +236,21 @@ public class DefaultCatalogFactory
                 catalogProperties);
     }
 
-    private Connector createConnector(
-            String catalogName,
-            CatalogHandle catalogHandle,
-            ConnectorFactory connectorFactory,
-            Map<String, String> properties)
+    private Connector createConnector(CatalogName catalogName, ConnectorFactory connectorFactory, Map<String, String> properties)
     {
-        ConnectorContext context = createConnectorContext(catalogHandle);
+        ConnectorContext context = createConnectorContext(catalogName);
 
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
-            return connectorFactory.create(catalogName, secretsResolver.getResolvedConfiguration(properties), context);
+            // TODO: connector factory should take CatalogName
+            return connectorFactory.create(catalogName.toString(), secretsResolver.getResolvedConfiguration(properties), context);
         }
     }
 
-    private ConnectorContext createConnectorContext(CatalogHandle catalogHandle)
+    private ConnectorContext createConnectorContext(CatalogName catalogName)
     {
         return new ConnectorContextInstance(
-                catalogHandle,
                 openTelemetry,
-                createTracer(catalogHandle),
+                createTracer(catalogName),
                 new DefaultNodeManager(currentNode, nodeManager, schedulerIncludeCoordinator),
                 versionEmbedder,
                 typeManager,
@@ -270,8 +266,8 @@ public class DefaultCatalogFactory
                 serverProperties);
     }
 
-    private Tracer createTracer(CatalogHandle catalogHandle)
+    private Tracer createTracer(CatalogName catalogName)
     {
-        return openTelemetry.getTracer("trino.catalog." + catalogHandle.getCatalogName());
+        return openTelemetry.getTracer("trino.catalog." + catalogName);
     }
 }
