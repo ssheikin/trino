@@ -19,7 +19,7 @@ import io.trino.connector.TestDynamicCatalogs;
 import io.trino.plugin.memory.MemoryPlugin;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.catalog.CatalogProperties;
-import io.trino.spi.connector.CatalogHandle.CatalogVersion;
+import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;

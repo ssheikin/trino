@@ -176,7 +176,7 @@ import io.trino.spi.block.RowBlock;
 import io.trino.spi.block.SqlRow;
 import io.trino.spi.cache.CacheColumnId;
 import io.trino.spi.catalog.CatalogName;
-import io.trino.spi.connector.CatalogHandle;
+import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorIndex;
 import io.trino.spi.connector.ConnectorSession;
@@ -4509,7 +4509,7 @@ public class LocalExecutionPlanner
     private TableHandle createCacheTableHandle()
     {
         return new TableHandle(
-                createRootCatalogHandle(new CatalogName("cache"), new CatalogHandle.CatalogVersion("cache")),
+                createRootCatalogHandle(new CatalogName("cache"), new CatalogVersion("cache")),
                 new ConnectorTableHandle() {},
                 new ConnectorTransactionHandle() {});
     }

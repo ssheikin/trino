@@ -22,7 +22,7 @@ import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.catalog.CatalogProperties;
 import io.trino.spi.catalog.CatalogStore;
-import io.trino.spi.connector.CatalogHandle;
+import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
@@ -65,7 +65,7 @@ public class TestBuiltInCatalogs
                                                     public CatalogProperties loadProperties()
                                                     {
                                                         return new CatalogProperties(
-                                                                createRootCatalogHandle(name(), new CatalogHandle.CatalogVersion("version")),
+                                                                createRootCatalogHandle(name(), new CatalogVersion("version")),
                                                                 new ConnectorName("tpch"),
                                                                 ImmutableMap.of());
                                                     }

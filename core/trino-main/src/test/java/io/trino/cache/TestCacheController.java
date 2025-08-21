@@ -26,7 +26,7 @@ import io.trino.metadata.TableHandle;
 import io.trino.spi.cache.CacheColumnId;
 import io.trino.spi.cache.CacheTableId;
 import io.trino.spi.catalog.CatalogName;
-import io.trino.spi.connector.CatalogHandle.CatalogVersion;
+import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.SortOrder;
