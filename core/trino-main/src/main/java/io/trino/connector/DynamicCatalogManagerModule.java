@@ -17,6 +17,7 @@ import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Scopes;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
+import io.trino.connector.WorkerDynamicCatalogManager.NoOpWorkerCatalogManager;
 import io.trino.connector.system.GlobalSystemConnector;
 import io.trino.metadata.CatalogManager;
 import io.trino.server.ServerConfig;
@@ -45,6 +46,7 @@ public class DynamicCatalogManagerModule
             binder.bind(CatalogPruneTask.class).in(Scopes.SINGLETON);
         }
         else {
+            binder.bind(CatalogManager.class).to(NoOpWorkerCatalogManager.class).in(Scopes.SINGLETON);
             binder.bind(WorkerDynamicCatalogManager.class).in(Scopes.SINGLETON);
             binder.bind(ConnectorServicesProvider.class).to(WorkerDynamicCatalogManager.class).in(Scopes.SINGLETON);
             // catalog manager is not registered on worker

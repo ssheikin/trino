@@ -29,6 +29,7 @@ import io.trino.type.BlockTypeOperators;
 import java.util.Set;
 
 import static io.trino.client.NodeVersion.UNKNOWN;
+import static io.trino.metadata.CatalogManager.NO_CATALOGS;
 import static io.trino.transaction.InMemoryTransactionManager.createTestTransactionManager;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 import static java.util.Objects.requireNonNull;
@@ -113,7 +114,8 @@ public final class TestMetadataManager
                     languageFunctionManager,
                     tableFunctionRegistry,
                     typeManager,
-                    new NotImplementedQueryManager());
+                    new NotImplementedQueryManager(),
+                    NO_CATALOGS);
         }
     }
 
