@@ -450,6 +450,17 @@ public class IcebergPageSourceProvider
         return doNotUseDirectlyFileSystemFactory.create(session.getIdentity(), fileIoProperties);
     }
 
+    protected DeleteManager.DeletePageSourceProvider deletePageSourceProvider(ConnectorSession session, TrinoFileSystem fileSystem, int formatVersion)
+    {
+        return (deleteFile, deleteColumns, tupleDomain) -> openDeletes(
+                session,
+                fileSystem,
+                deleteFile,
+                deleteColumns,
+                tupleDomain,
+                formatVersion);
+    }
+
     private DeleteManager getDeleteManager(PartitionSpec partitionSpec, PartitionData partitionData)
     {
         if (partitionSpec.isUnpartitioned()) {
