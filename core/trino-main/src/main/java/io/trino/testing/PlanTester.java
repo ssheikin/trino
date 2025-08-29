@@ -187,7 +187,6 @@ import io.trino.sql.analyzer.QueryExplainerFactory;
 import io.trino.sql.analyzer.SessionTimeProvider;
 import io.trino.sql.analyzer.StatementAnalyzerFactory;
 import io.trino.sql.dialect.trino.TrinoDialect;
-import io.trino.sql.gen.CursorProcessorCompiler;
 import io.trino.sql.gen.ExpressionCompiler;
 import io.trino.sql.gen.JoinCompiler;
 import io.trino.sql.gen.JoinFilterFunctionCompiler;
@@ -489,7 +488,7 @@ public class PlanTester
         this.plannerContext = new PlannerContext(metadata, cacheMetadata, typeOperators, blockEncodingSerde, typeManager, functionManager, languageFunctionManager, BuiltinFunctionsChecker.NOOP_CHECKER, tracer);
         this.pageFunctionCompiler = new PageFunctionCompiler(functionManager, 0);
         this.filterCompiler = new ColumnarFilterCompiler(functionManager, 0);
-        this.expressionCompiler = new ExpressionCompiler(new CursorProcessorCompiler(functionManager), pageFunctionCompiler, filterCompiler);
+        this.expressionCompiler = new ExpressionCompiler(pageFunctionCompiler, filterCompiler);
         this.joinFilterFunctionCompiler = new JoinFilterFunctionCompiler(functionManager);
 
         this.statementAnalyzerFactory = new StatementAnalyzerFactory(
