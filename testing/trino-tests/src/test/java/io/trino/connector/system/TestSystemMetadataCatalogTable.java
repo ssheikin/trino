@@ -27,7 +27,6 @@ import io.trino.testing.QueryRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
@@ -45,7 +44,8 @@ public class TestSystemMetadataCatalogTable
         ImmutableMap<String, String> properties = ImmutableMap.of("non_existing", "false");
         QueryRunner queryRunner = DistributedQueryRunner.builder(session)
                 .setAdditionalModule(new TestDynamicCatalogs.TestCatalogStoreModule(ImmutableMap.of(new CatalogName(BROKEN_CATALOG), new CatalogProperties(
-                        createRootCatalogHandle(new CatalogName(BROKEN_CATALOG), new CatalogVersion("abc123")),
+                        new CatalogName(BROKEN_CATALOG),
+                        new CatalogVersion("abc123"),
                         new ConnectorName("memory"),
                         properties))))
                 .setCoordinatorProperties(ImmutableMap.of("catalog.store", "prepopulated_memory"))

@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 
 public class TestBuiltInCatalogs
         extends AbstractTestQueryFramework
@@ -65,7 +64,8 @@ public class TestBuiltInCatalogs
                                                     public CatalogProperties loadProperties()
                                                     {
                                                         return new CatalogProperties(
-                                                                createRootCatalogHandle(name(), new CatalogVersion("version")),
+                                                                name(),
+                                                                new CatalogVersion("version"),
                                                                 new ConnectorName("tpch"),
                                                                 ImmutableMap.of());
                                                     }

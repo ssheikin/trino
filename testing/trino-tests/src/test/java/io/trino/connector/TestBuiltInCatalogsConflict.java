@@ -35,7 +35,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -80,7 +79,8 @@ public class TestBuiltInCatalogsConflict
                                         public CatalogProperties loadProperties()
                                         {
                                             return new CatalogProperties(
-                                                    createRootCatalogHandle(name(), new CatalogVersion("version")),
+                                                    name(),
+                                                    new CatalogVersion("version"),
                                                     new ConnectorName("tpch"),
                                                     ImmutableMap.of());
                                         }

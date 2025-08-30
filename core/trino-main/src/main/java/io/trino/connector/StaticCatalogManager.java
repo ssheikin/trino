@@ -59,7 +59,6 @@ import static io.airlift.configuration.ConfigurationLoader.loadPropertiesFrom;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_AVAILABLE;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_FOUND;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.util.Executors.executeUntilFailure;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
@@ -73,7 +72,7 @@ public class StaticCatalogManager
     private enum State { CREATED, INITIALIZED, STOPPED }
 
     private final CatalogFactory catalogFactory;
-    private final Map<CatalogHandle, CatalogProperties> catalogProperties;
+    private final Map<CatalogName, CatalogProperties> catalogProperties;
     private final Executor executor;
 
     private final ConcurrentMap<CatalogName, CatalogConnector> catalogs = new ConcurrentHashMap<>();
@@ -87,12 +86,12 @@ public class StaticCatalogManager
         requireNonNull(builtInCatalogsProvider, "builtInCatalogsProvider is null");
         List<String> disabledCatalogs = firstNonNull(config.getDisabledCatalogs(), ImmutableList.of());
 
-        ImmutableMap.Builder<CatalogHandle, CatalogProperties> catalogProperties = ImmutableMap.builder();
+        ImmutableMap.Builder<CatalogName, CatalogProperties> catalogProperties = ImmutableMap.builder();
         HashSet<String> builtInCatalogNames = new HashSet<>();
 
         for (CatalogStore.StoredCatalog catalog : builtInCatalogsProvider.getBuiltInCatalogs()) {
             CatalogProperties properties = catalog.loadProperties();
-            catalogProperties.put(properties.catalogHandle(), properties);
+            catalogProperties.put(properties.name(), properties);
             builtInCatalogNames.add(catalog.name().toString().toLowerCase(Locale.ROOT));
         }
 
@@ -121,9 +120,9 @@ public class StaticCatalogManager
                 log.warn("Catalog '%s' is using the deprecated connector name '%s'. The correct connector name is '%s'", catalogName, deprecatedConnectorName, connectorName);
             }
 
-            CatalogHandle catalogHandle = createRootCatalogHandle(new CatalogName(catalogName), new CatalogVersion("default"));
-            catalogProperties.put(catalogHandle, new CatalogProperties(
-                    catalogHandle,
+            catalogProperties.put(new CatalogName(catalogName), new CatalogProperties(
+                    new CatalogName(catalogName),
+                    new CatalogVersion("default"),
                     new ConnectorName(connectorName),
                     ImmutableMap.copyOf(properties)));
         }
@@ -171,7 +170,7 @@ public class StaticCatalogManager
                 executor,
                 catalogProperties.values().stream()
                         .map(catalog -> (Callable<?>) () -> {
-                            CatalogName catalogName = catalog.catalogHandle().getCatalogName();
+                            CatalogName catalogName = catalog.name();
                             log.info("-- Loading catalog %s --", catalogName);
                             CatalogConnector newCatalog = catalogFactory.createCatalog(catalog);
                             catalogs.put(catalogName, newCatalog);
@@ -198,8 +197,7 @@ public class StaticCatalogManager
     public void ensureCatalogsLoaded(Session session, List<CatalogProperties> catalogs)
     {
         List<CatalogName> missingCatalogs = catalogs.stream()
-                .map(CatalogProperties::catalogHandle)
-                .map(CatalogHandle::getCatalogName)
+                .map(CatalogProperties::name)
                 .filter(not(this.catalogs::containsKey))
                 .collect(toImmutableList());
 
@@ -217,7 +215,7 @@ public class StaticCatalogManager
     @Override
     public Optional<CatalogProperties> getCatalogProperties(CatalogHandle catalogHandle)
     {
-        return Optional.ofNullable(catalogProperties.get(catalogHandle));
+        return Optional.ofNullable(catalogProperties.get(catalogHandle.getCatalogName()));
     }
 
     @Override

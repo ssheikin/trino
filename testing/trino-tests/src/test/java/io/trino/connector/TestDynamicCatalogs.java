@@ -40,7 +40,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 import static io.trino.connector.FileCatalogStore.computeCatalogVersion;
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.testing.QueryAssertions.assertQuery;
 import static io.trino.testing.QueryAssertions.assertQueryFails;
 import static io.trino.testing.QueryAssertions.assertQueryReturnsEmptyResult;
@@ -93,7 +92,8 @@ public class TestDynamicCatalogs
         ImmutableMap<String, String> properties = ImmutableMap.of("non_existing", "false");
         QueryRunner queryRunner = DistributedQueryRunner.builder(session)
                 .setAdditionalModule(new TestCatalogStoreModule(ImmutableMap.of(BROKEN_CATALOG_NAME, new CatalogProperties(
-                        createRootCatalogHandle(BROKEN_CATALOG_NAME, computeCatalogVersion(BROKEN_CATALOG_NAME, MEMORY_CONNECTOR_NAME, properties)),
+                        BROKEN_CATALOG_NAME,
+                        computeCatalogVersion(BROKEN_CATALOG_NAME, MEMORY_CONNECTOR_NAME, properties),
                         MEMORY_CONNECTOR_NAME,
                         properties))))
                 .setAdditionalSetup(runner -> runner.installPlugin(new MemoryPlugin()))
@@ -120,7 +120,8 @@ public class TestDynamicCatalogs
         ImmutableMap<String, String> properties = ImmutableMap.of("memory.max-data-per-node", "128MB");
         QueryRunner queryRunner = DistributedQueryRunner.builder(session)
                 .setAdditionalModule(new TestCatalogStoreModule(ImmutableMap.of(PREPOPULATED_CATALOG_NAME, new CatalogProperties(
-                        createRootCatalogHandle(PREPOPULATED_CATALOG_NAME, computeCatalogVersion(PREPOPULATED_CATALOG_NAME, MEMORY_CONNECTOR_NAME, properties)),
+                        PREPOPULATED_CATALOG_NAME,
+                        computeCatalogVersion(PREPOPULATED_CATALOG_NAME, MEMORY_CONNECTOR_NAME, properties),
                         MEMORY_CONNECTOR_NAME,
                         properties))))
                 .setAdditionalSetup(runner -> runner.installPlugin(new MemoryPlugin()))
