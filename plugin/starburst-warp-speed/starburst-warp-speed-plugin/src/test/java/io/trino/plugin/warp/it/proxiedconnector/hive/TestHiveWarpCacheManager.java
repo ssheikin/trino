@@ -25,7 +25,6 @@ import io.trino.operator.OperatorStats;
 import io.trino.operator.ScanFilterAndProjectOperator;
 import io.trino.operator.TableScanOperator;
 import io.trino.plugin.warp.WarpPlugin;
-import io.trino.plugin.warp.WarpSessionProperties;
 import io.trino.plugin.warp.api.warmup.WarmUpType;
 import io.trino.plugin.warp.api.warmup.WarmupPropertiesData;
 import io.trino.plugin.warp.config.CacheManagerConfig;
@@ -173,11 +172,6 @@ public class TestHiveWarpCacheManager
         demoteAll(Target.CACHE_MGR);
         super.afterMethod(testInfo);
     }
-
-    @Override
-    @Test
-    @Disabled
-    public void testGoAllProxyOnlyWhenHavePushDowns() {}
 
     @Test
     public void testWithoutRules()
@@ -466,7 +460,6 @@ public class TestHiveWarpCacheManager
 
         Session session = Session.builder(getSession())
                 .setSystemProperty("cache_enabled", "false")
-                .setSystemProperty(catalog + "." + WarpSessionProperties.ENABLE_DEFAULT_WARMING, "true")
                 .build();
 
         //warm int_1 (DATA, BASIC), v1 (DATA, BASIC, LUCENE)
