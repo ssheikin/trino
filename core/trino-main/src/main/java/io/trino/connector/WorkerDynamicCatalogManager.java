@@ -27,7 +27,6 @@ import io.trino.plugin.base.util.AutoCloseableCloser;
 import io.trino.spi.TrinoException;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.catalog.CatalogProperties;
-import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorName;
 import jakarta.annotation.PreDestroy;
 
@@ -51,8 +50,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
+import static io.trino.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 

@@ -42,7 +42,7 @@ import java.util.Set;
 import static io.trino.SystemSessionProperties.CACHE_AGGREGATIONS_ENABLED;
 import static io.trino.SystemSessionProperties.CACHE_COMMON_SUBQUERIES_ENABLED;
 import static io.trino.SystemSessionProperties.CACHE_PROJECTIONS_ENABLED;
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
+import static io.trino.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.spi.predicate.Domain.multipleValues;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.sql.planner.plan.TopNRankingNode.RankingType;

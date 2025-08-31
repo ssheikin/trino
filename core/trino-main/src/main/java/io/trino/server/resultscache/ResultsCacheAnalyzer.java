@@ -15,10 +15,10 @@
 package io.trino.server.resultscache;
 
 import io.airlift.log.Logger;
+import io.trino.connector.CatalogHandle.CatalogHandleType;
 import io.trino.execution.QueryPreparer.PreparedQuery;
 import io.trino.metadata.TableHandle;
 import io.trino.spi.QueryId;
-import io.trino.spi.connector.CatalogHandle.CatalogHandleType;
 import io.trino.spi.connector.UncacheableConnectorTableHandle;
 import io.trino.sql.analyzer.Analysis;
 import io.trino.sql.tree.Query;

@@ -353,6 +353,7 @@ import static io.trino.cache.CacheUtils.uncheckedCacheGet;
 import static io.trino.cache.SafeCaches.buildNonEvictableCache;
 import static io.trino.cache.StaticDynamicFilter.createStaticDynamicFilter;
 import static io.trino.cache.StaticDynamicFilter.createStaticDynamicFilterSupplier;
+import static io.trino.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.execution.buffer.PagesSerdes.createExchangePagesSerdeFactory;
 import static io.trino.metadata.GlobalFunctionCatalog.builtinFunctionName;
 import static io.trino.operator.DistinctLimitOperator.DistinctLimitOperatorFactory;
@@ -381,7 +382,6 @@ import static io.trino.operator.window.pattern.PhysicalValuePointer.MATCH_NUMBER
 import static io.trino.spi.StandardErrorCode.COMPILER_ERROR;
 import static io.trino.spi.StandardErrorCode.QUERY_EXCEEDED_COMPILER_LIMIT;
 import static io.trino.spi.StandardErrorCode.SERIALIZATION_ERROR;
-import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.TypeUtils.readNativeValue;
 import static io.trino.spi.type.TypeUtils.writeNativeValue;
