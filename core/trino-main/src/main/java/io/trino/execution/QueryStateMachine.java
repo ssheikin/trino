@@ -567,8 +567,7 @@ public class QueryStateMachine
                 stageStats.getCompletedDrivers(),
                 stageStats.getBlockedDrivers(),
 
-                stageStats.getRawInputDataSize(),
-                stageStats.getRawInputPositions(),
+                stageStats.getProcessedInputPositions(),
                 stageStats.getSpilledDataSize(),
                 stageStats.getPhysicalInputDataSize(),
                 stageStats.getPhysicalWrittenDataSize(),
@@ -704,11 +703,6 @@ public class QueryStateMachine
         long internalNetworkInputPositions = 0;
         long failedInternalNetworkInputPositions = 0;
 
-        long rawInputDataSize = 0;
-        long failedRawInputDataSize = 0;
-        long rawInputPositions = 0;
-        long failedRawInputPositions = 0;
-
         long processedInputDataSize = 0;
         long failedProcessedInputDataSize = 0;
         long processedInputPositions = 0;
@@ -777,11 +771,6 @@ public class QueryStateMachine
 
             PlanFragment plan = stageInfo.getPlan();
             if (plan != null && plan.containsTableScanNode()) {
-                rawInputDataSize += stageStats.getRawInputDataSize().toBytes();
-                failedRawInputDataSize += stageStats.getFailedRawInputDataSize().toBytes();
-                rawInputPositions += stageStats.getRawInputPositions();
-                failedRawInputPositions += stageStats.getFailedRawInputPositions();
-
                 processedInputDataSize += stageStats.getProcessedInputDataSize().toBytes();
                 failedProcessedInputDataSize += stageStats.getFailedProcessedInputDataSize().toBytes();
                 processedInputPositions += stageStats.getProcessedInputPositions();
@@ -935,10 +924,6 @@ public class QueryStateMachine
                 succinctBytes(failedInternalNetworkInputDataSize),
                 internalNetworkInputPositions,
                 failedInternalNetworkInputPositions,
-                succinctBytes(rawInputDataSize),
-                succinctBytes(failedRawInputDataSize),
-                rawInputPositions,
-                failedRawInputPositions,
                 succinctBytes(processedInputDataSize),
                 succinctBytes(failedProcessedInputDataSize),
                 processedInputPositions,
@@ -1583,10 +1568,6 @@ public class QueryStateMachine
                 queryStats.getFailedInternalNetworkInputDataSize(),
                 queryStats.getInternalNetworkInputPositions(),
                 queryStats.getFailedInternalNetworkInputPositions(),
-                queryStats.getRawInputDataSize(),
-                queryStats.getFailedRawInputDataSize(),
-                queryStats.getRawInputPositions(),
-                queryStats.getFailedRawInputPositions(),
                 queryStats.getProcessedInputDataSize(),
                 queryStats.getFailedProcessedInputDataSize(),
                 queryStats.getProcessedInputPositions(),
