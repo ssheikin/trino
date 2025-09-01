@@ -16,7 +16,6 @@ package io.trino.plugin.kudu;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import io.airlift.log.Logger;
-import io.trino.sql.planner.plan.LimitNode;
 import io.trino.testing.BaseConnectorTest;
 import io.trino.testing.MaterializedResult;
 import io.trino.testing.QueryFailedException;
@@ -81,6 +80,7 @@ public class TestKuduConnectorTest
                  SUPPORTS_CREATE_TABLE_WITH_COLUMN_COMMENT,
                  SUPPORTS_CREATE_VIEW,
                  SUPPORTS_DEFAULT_COLUMN_VALUE,
+                 SUPPORTS_LIMIT_PUSHDOWN,
                  SUPPORTS_MAP_TYPE,
                  SUPPORTS_NEGATIVE_DATE,
                  SUPPORTS_NOT_NULL_CONSTRAINT,
@@ -821,12 +821,6 @@ public class TestKuduConnectorTest
                 .hasMessageContaining("Expected rows");
 
         abort("TODO");
-    }
-
-    @Test
-    public void testLimitPushdown()
-    {
-        assertThat(query("SELECT name FROM nation LIMIT 30")).isNotFullyPushedDown(LimitNode.class); // Use high limit for result determinism
     }
 
     @Test
