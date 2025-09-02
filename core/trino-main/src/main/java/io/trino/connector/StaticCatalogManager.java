@@ -28,6 +28,7 @@ import io.trino.server.ForStartup;
 import io.trino.spi.TrinoException;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.catalog.CatalogProperties;
+import io.trino.spi.catalog.CatalogStore;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.CatalogHandle.CatalogVersion;
 import io.trino.spi.connector.ConnectorName;
@@ -38,7 +39,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -78,15 +81,25 @@ public class StaticCatalogManager
     private final AtomicReference<State> state = new AtomicReference<>(State.CREATED);
 
     @Inject
-    public StaticCatalogManager(CatalogFactory catalogFactory, StaticCatalogManagerConfig config, @ForStartup Executor executor)
+    public StaticCatalogManager(CatalogFactory catalogFactory, StaticCatalogManagerConfig config, BuiltInCatalogsProvider builtInCatalogsProvider, @ForStartup Executor executor)
     {
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
+        requireNonNull(builtInCatalogsProvider, "builtInCatalogsProvider is null");
         List<String> disabledCatalogs = firstNonNull(config.getDisabledCatalogs(), ImmutableList.of());
 
         ImmutableMap.Builder<CatalogHandle, CatalogProperties> catalogProperties = ImmutableMap.builder();
+        HashSet<String> builtInCatalogNames = new HashSet<>();
+
+        for (CatalogStore.StoredCatalog catalog : builtInCatalogsProvider.getBuiltInCatalogs()) {
+            CatalogProperties properties = catalog.loadProperties();
+            catalogProperties.put(properties.catalogHandle(), properties);
+            builtInCatalogNames.add(catalog.name().toString().toLowerCase(Locale.ROOT));
+        }
+
         for (File file : listCatalogFiles(config.getCatalogConfigurationDir())) {
             String catalogName = Files.getNameWithoutExtension(file.getName());
             checkArgument(!catalogName.equals(GlobalSystemConnector.NAME), "Catalog name SYSTEM is reserved for internal usage");
+            checkArgument(!builtInCatalogNames.contains(catalogName.toLowerCase(Locale.ROOT)), "Catalog name %s is reserved by Starburst", catalogName);
             if (disabledCatalogs.contains(catalogName)) {
                 log.info("Skipping disabled catalog %s", catalogName);
                 continue;

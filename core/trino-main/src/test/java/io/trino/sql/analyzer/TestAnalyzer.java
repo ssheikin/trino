@@ -120,6 +120,7 @@ import java.util.function.Consumer;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.trino.SessionTestUtils.TEST_SESSION;
+import static io.trino.connector.BuiltInCatalogsProvider.NO_BUILTIN_CATALOGS;
 import static io.trino.execution.querystats.PlanOptimizersStatsCollector.createPlanOptimizersStatsCollector;
 import static io.trino.operator.scalar.ApplyFunction.APPLY_FUNCTION;
 import static io.trino.spi.StandardErrorCode.AMBIGUOUS_NAME;
@@ -7827,7 +7828,7 @@ public class TestAnalyzer
                 plannerContext.getMetadata(),
                 SQL_PARSER,
                 accessControl,
-                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), directExecutor()),
+                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, directExecutor()),
                 new SessionPropertyManager(),
                 new SchemaPropertyManager(CatalogServiceProvider.fail()),
                 new ColumnPropertyManager(CatalogServiceProvider.fail()),

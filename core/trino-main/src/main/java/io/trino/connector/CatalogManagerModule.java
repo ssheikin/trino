@@ -22,6 +22,7 @@ import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static io.trino.connector.BuiltInCatalogsProvider.NO_BUILTIN_CATALOGS;
 
 public class CatalogManagerModule
         extends AbstractConfigurationAwareModule
@@ -35,6 +36,7 @@ public class CatalogManagerModule
         binder.bind(LazyCatalogFactory.class).in(Scopes.SINGLETON);
         binder.bind(CatalogFactory.class).to(LazyCatalogFactory.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, CatalogStoreManager.class);
+        newOptionalBinder(binder, BuiltInCatalogsProvider.class).setDefault().toInstance(NO_BUILTIN_CATALOGS);
 
         CatalogManagerConfig config = buildConfigObject(CatalogManagerConfig.class);
         switch (config.getCatalogMangerKind()) {

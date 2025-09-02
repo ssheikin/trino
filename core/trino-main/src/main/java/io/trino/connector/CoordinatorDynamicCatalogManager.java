@@ -16,6 +16,7 @@ package io.trino.connector;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
@@ -36,8 +37,10 @@ import io.trino.spi.connector.ConnectorName;
 import jakarta.annotation.PreDestroy;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -53,12 +56,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.metadata.Catalog.failedCatalog;
 import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_AVAILABLE;
 import static io.trino.spi.StandardErrorCode.CATALOG_NOT_FOUND;
 import static io.trino.spi.StandardErrorCode.NOT_FOUND;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.util.Executors.executeUntilFailure;
 import static java.lang.String.format;
@@ -73,7 +78,7 @@ public class CoordinatorDynamicCatalogManager
 
     private enum State { CREATED, INITIALIZED, STOPPED }
 
-    private final CatalogStore catalogStore;
+    private final CatalogStoreWithBuiltInCatalogs catalogStore;
     private final CatalogFactory catalogFactory;
     private final Executor executor;
 
@@ -93,9 +98,11 @@ public class CoordinatorDynamicCatalogManager
     private State state = State.CREATED;
 
     @Inject
-    public CoordinatorDynamicCatalogManager(CatalogStore catalogStore, CatalogFactory catalogFactory, @ForStartup Executor executor)
+    public CoordinatorDynamicCatalogManager(CatalogStore catalogStore, CatalogFactory catalogFactory, BuiltInCatalogsProvider builtInCatalogsProvider, @ForStartup Executor executor)
     {
-        this.catalogStore = requireNonNull(catalogStore, "catalogStore is null");
+        this.catalogStore = new CatalogStoreWithBuiltInCatalogs(
+                requireNonNull(catalogStore, "catalogStore is null"),
+                requireNonNull(builtInCatalogsProvider, "builtInCatalogsProvider is null"));
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
         this.executor = requireNonNull(executor, "executor is null");
     }
@@ -296,6 +303,7 @@ public class CoordinatorDynamicCatalogManager
     public void renameCatalog(CatalogName catalogName, CatalogName newCatalogName)
     {
         requireNonNull(catalogName, "catalogName is null");
+        catalogStore.verifyBuiltInCatalog(catalogName, "Renaming");
 
         catalogsUpdateLock.lock();
         try {
@@ -323,6 +331,7 @@ public class CoordinatorDynamicCatalogManager
     public void alterCatalog(CatalogName catalogName, Map<String, Optional<String>> properties)
     {
         requireNonNull(catalogName, "catalogName is null");
+        catalogStore.verifyBuiltInCatalog(catalogName, "Altering");
 
         catalogsUpdateLock.lock();
         try {
@@ -404,6 +413,7 @@ public class CoordinatorDynamicCatalogManager
     public void dropCatalog(CatalogName catalogName, boolean exists)
     {
         requireNonNull(catalogName, "catalogName is null");
+        catalogStore.verifyBuiltInCatalog(catalogName, "Dropping");
 
         boolean removed;
         catalogsUpdateLock.lock();
@@ -422,5 +432,82 @@ public class CoordinatorDynamicCatalogManager
         }
         // Do not shut down the catalog, because there may still be running queries using this catalog.
         // Catalog shutdown logic will be added later.
+    }
+
+    /*
+     * A catalog store that is aware of buil-in catalogs (catalogs that do not exist in the underlying catalog store
+     * and cannot be dropped or altered).
+     */
+    private static class CatalogStoreWithBuiltInCatalogs
+            implements CatalogStore
+    {
+        private final CatalogStore catalogStore;
+        private final Map<String, CatalogStore.StoredCatalog> builtInCatalogs;
+
+        CatalogStoreWithBuiltInCatalogs(CatalogStore catalogStore, BuiltInCatalogsProvider builtInCatalogsProvider)
+        {
+            this.catalogStore = requireNonNull(catalogStore, "catalogStore is null");
+            this.builtInCatalogs = requireNonNull(builtInCatalogsProvider, "builtInCatalogsProvider is null")
+                    .getBuiltInCatalogs()
+                    .stream()
+                    .collect(toImmutableMap(
+                            storedCatalog -> normalizedName(storedCatalog.name()),
+                            catalog -> catalog));
+        }
+
+        @Override
+        public Collection<StoredCatalog> getCatalogs()
+        {
+            List<String> duplicateCatalogNames = catalogStore.getCatalogs().stream()
+                    .map(StoredCatalog::name)
+                    .map(CatalogStoreWithBuiltInCatalogs::normalizedName)
+                    .filter(builtInCatalogs::containsKey)
+                    .collect(toImmutableList());
+            if (!duplicateCatalogNames.isEmpty()) {
+                String message;
+                if (duplicateCatalogNames.size() > 1) {
+                    message = "Catalog names %s are reserved by Starburst".formatted(duplicateCatalogNames);
+                }
+                else {
+                    message = "Catalog name %s is reserved by Starburst".formatted(duplicateCatalogNames.getFirst());
+                }
+                throw new TrinoException(ALREADY_EXISTS, message);
+            }
+
+            return ImmutableList.copyOf(Iterables.concat(builtInCatalogs.values(), catalogStore.getCatalogs()));
+        }
+
+        @Override
+        public CatalogProperties createCatalogProperties(CatalogName catalogName, ConnectorName connectorName, Map<String, String> properties)
+        {
+            return catalogStore.createCatalogProperties(catalogName, connectorName, properties);
+        }
+
+        @Override
+        public void addOrReplaceCatalog(CatalogProperties catalogProperties)
+        {
+            verifyBuiltInCatalog(catalogProperties.catalogHandle().getCatalogName(), "Creating or replacing");
+            catalogStore.addOrReplaceCatalog(catalogProperties);
+        }
+
+        @Override
+        public void removeCatalog(CatalogName catalogName)
+        {
+            verifyBuiltInCatalog(catalogName, "Dropping");
+            catalogStore.removeCatalog(catalogName);
+        }
+
+        private static String normalizedName(CatalogName catalogName)
+        {
+            return catalogName.toString().toLowerCase(Locale.ROOT);
+        }
+
+        private void verifyBuiltInCatalog(CatalogName catalogName, String operation)
+        {
+            String normalizedName = normalizedName(catalogName);
+            if (builtInCatalogs.containsKey(normalizedName)) {
+                throw new TrinoException(NOT_SUPPORTED, operation + " built-in catalog " + normalizedName + " is not allowed");
+            }
+        }
     }
 }

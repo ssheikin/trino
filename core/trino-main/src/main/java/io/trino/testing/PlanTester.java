@@ -257,6 +257,7 @@ import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.tracing.Tracing.noopTracer;
 import static io.opentelemetry.api.OpenTelemetry.noop;
 import static io.starburst.ai.model.ModelConnectionSpecsLoader.EMPTY_LOADER;
+import static io.trino.connector.BuiltInCatalogsProvider.NO_BUILTIN_CATALOGS;
 import static io.trino.connector.CatalogServiceProviderModule.createAccessControlProvider;
 import static io.trino.connector.CatalogServiceProviderModule.createAlternativeChooser;
 import static io.trino.connector.CatalogServiceProviderModule.createAnalyzePropertyManager;
@@ -387,7 +388,7 @@ public class PlanTester
         this.optimizerConfig = new OptimizerConfig();
         LazyCatalogFactory catalogFactory = new LazyCatalogFactory();
         this.catalogFactory = catalogFactory;
-        this.catalogManager = new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), catalogFactory, directExecutor());
+        this.catalogManager = new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), catalogFactory, NO_BUILTIN_CATALOGS, directExecutor());
         this.transactionManager = InMemoryTransactionManager.create(
                 new TransactionManagerConfig().setIdleTimeout(new Duration(1, TimeUnit.DAYS)),
                 yieldExecutor,
