@@ -15,11 +15,11 @@ package io.trino.server.ai;
 
 import com.google.inject.Binder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
-import io.starburst.ai.model.ModelConnectionSpecsLoader;
 import io.trino.server.ServerConfig;
+import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
-import static io.starburst.ai.model.ModelConnectionSpecsLoader.EMPTY_LOADER;
+import static io.trino.spi.connector.ai.ModelConnectionSpecsLoader.EMPTY_LOADER;
 
 public class AiModelConnectionSpecsLoaderModule
         extends AbstractConfigurationAwareModule

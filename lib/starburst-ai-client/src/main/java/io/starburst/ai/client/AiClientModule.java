@@ -19,7 +19,7 @@ import io.starburst.ai.client.AiClientConfig.StorageType;
 import io.starburst.ai.client.bedrock.AwsBedrockClientFactory;
 import io.starburst.ai.client.bedrock.AwsBedrockEmbeddingCodecsModule;
 import io.starburst.ai.client.openai.OpenAiClientFactory;
-import io.starburst.ai.model.ModelConnectionSpecsLoader;
+import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 
 import java.util.concurrent.ScheduledExecutorService;
 

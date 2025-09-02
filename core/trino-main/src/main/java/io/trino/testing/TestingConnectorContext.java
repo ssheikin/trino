@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableSet;
 import io.airlift.tracing.Tracing;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
-import io.starburst.ai.model.ModelConnectionSpecsLoader;
 import io.trino.client.NodeVersion;
 import io.trino.operator.FlatHashStrategyCompiler;
 import io.trino.operator.GroupByHashPageIndexerFactory;
@@ -35,6 +34,7 @@ import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
 import io.trino.spi.security.AiModelAccessControl;
@@ -45,9 +45,9 @@ import io.trino.util.EmbedVersion;
 
 import java.util.Map;
 
-import static io.starburst.ai.model.ModelConnectionSpecsLoader.EMPTY_LOADER;
 import static io.trino.node.TestingInternalNodeManager.CURRENT_NODE;
 import static io.trino.spi.connector.MetadataProvider.NOOP_METADATA_PROVIDER;
+import static io.trino.spi.connector.ai.ModelConnectionSpecsLoader.EMPTY_LOADER;
 import static io.trino.testing.TestingHandles.TEST_CATALOG_HANDLE;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 

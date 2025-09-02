@@ -12,7 +12,7 @@ package com.starburstdata.trino.plugin.functions.ai;
 import com.google.common.collect.ImmutableMap;
 import io.starburst.ai.client.AiFileStorageConfig;
 import io.starburst.ai.client.FileBackedModelConnectionSpecsLoader;
-import io.starburst.ai.model.ModelConnectionSpecsLoader;
+import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
