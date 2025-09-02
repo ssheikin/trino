@@ -44,6 +44,7 @@ import io.trino.plugin.iceberg.catalog.MetastoreCacheInvalidator;
 import io.trino.plugin.iceberg.catalog.NoopMetastoreCacheInvalidator;
 import io.trino.plugin.iceberg.delete.DefaultDeletionVectorWriter;
 import io.trino.plugin.iceberg.delete.DeletionVectorWriter;
+import io.trino.plugin.iceberg.delete.OptimizePositionDeletes;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.plugin.iceberg.functions.IcebergFunctionProvider;
 import io.trino.plugin.iceberg.functions.tablechanges.TableChangesFunctionProcessorProviderFactory;
@@ -55,6 +56,7 @@ import io.trino.plugin.iceberg.procedure.ExpireSnapshotsTableProcedure;
 import io.trino.plugin.iceberg.procedure.FlushMetadataCacheProcedure;
 import io.trino.plugin.iceberg.procedure.IcebergGenerateEmbeddingsProcedure;
 import io.trino.plugin.iceberg.procedure.OptimizeManifestsTableProcedure;
+import io.trino.plugin.iceberg.procedure.OptimizePositionDeletesTableProcedure;
 import io.trino.plugin.iceberg.procedure.OptimizeTableProcedure;
 import io.trino.plugin.iceberg.procedure.RegisterTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveOrphanFilesTableProcedure;
@@ -124,6 +126,7 @@ public class IcebergModule
         binder.bind(PartitionStatisticsReader.class).in(Scopes.SINGLETON);
         binder.bind(PartitionStatisticsWriter.class).in(Scopes.SINGLETON);
         binder.bind(DeletionVectorWriter.class).to(DefaultDeletionVectorWriter.class).in(Scopes.SINGLETON);
+        binder.bind(OptimizePositionDeletes.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, Key.get(HiveMetastoreFactory.class, RawHiveMetastoreFactory.class));
         newOptionalBinder(binder, IcebergMetadataFactoryInterface.class)
                 .setDefault().to(IcebergMetadataFactory.class).in(Scopes.SINGLETON);
@@ -159,8 +162,7 @@ public class IcebergModule
         Multibinder<TableProcedureMetadata> tableProcedures = newSetBinder(binder, TableProcedureMetadata.class);
         tableProcedures.addBinding().toProvider(OptimizeTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(OptimizeManifestsTableProcedure.class).in(Scopes.SINGLETON);
-        // TODO enable after https://starburstdata.atlassian.net/browse/SEP-18156
-//        tableProcedures.addBinding().toProvider(OptimizePositionDeletesTableProcedure.class).in(Scopes.SINGLETON);
+        tableProcedures.addBinding().toProvider(OptimizePositionDeletesTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(DropExtendedStatsTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(RollbackToSnapshotTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(ExpireSnapshotsTableProcedure.class).in(Scopes.SINGLETON);
