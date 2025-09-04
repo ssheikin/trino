@@ -32,12 +32,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
-import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -47,18 +43,12 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import javax.net.ssl.SSLContext;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -77,12 +67,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.json.JsonCodec.jsonCodec;
-import static io.trino.plugin.base.ssl.SslUtils.createSSLContext;
 import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH_CONNECTION_ERROR;
 import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH_INVALID_METADATA;
 import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH_INVALID_RESPONSE;
 import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH_QUERY_FAILURE;
-import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH_SSL_INITIALIZATION_FAILURE;
 import static java.lang.StrictMath.toIntExact;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -118,11 +106,10 @@ public class ElasticsearchClient
     @Inject
     public ElasticsearchClient(
             ElasticsearchConfig config,
-            Set<ElasticRestClientConfigurator> clientConfigurators,
+            BackpressureRestHighLevelClient client,
             ElasticsearchClientStats elasticsearchClientStats)
     {
-        client = createClient(config, clientConfigurators, elasticsearchClientStats);
-
+        this.client = requireNonNull(client, "client is null");
         this.ignorePublishAddress = config.isIgnorePublishAddress();
         this.scrollSize = config.getScrollSize();
         this.scrollTimeout = config.getScrollTimeout();
@@ -144,10 +131,8 @@ public class ElasticsearchClient
 
     @PreDestroy
     public void close()
-            throws IOException
     {
         executor.shutdownNow();
-        client.close();
     }
 
     private void refreshNodes()
@@ -173,68 +158,6 @@ public class ElasticsearchClient
             // Catch all exceptions here since throwing an exception from executor#scheduleWithFixedDelay method
             // suppresses all future scheduled invocations
             LOG.error(e, "Error refreshing nodes");
-        }
-    }
-
-    private static BackpressureRestHighLevelClient createClient(
-            ElasticsearchConfig config,
-            Set<ElasticRestClientConfigurator> clientConfigurators,
-            ElasticsearchClientStats elasticsearchClientStats)
-    {
-        RestClientBuilder builder = RestClient.builder(
-                config.getHosts().stream()
-                        .map(httpHost -> new HttpHost(httpHost, config.getPort(), config.isTlsEnabled() ? "https" : "http"))
-                        .toArray(HttpHost[]::new));
-
-        builder.setHttpClientConfigCallback(_ -> {
-            RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout(toIntExact(config.getConnectTimeout().toMillis()))
-                    .setSocketTimeout(toIntExact(config.getRequestTimeout().toMillis()))
-                    .build();
-
-            IOReactorConfig reactorConfig = IOReactorConfig.custom()
-                    .setIoThreadCount(config.getHttpThreadCount())
-                    .build();
-
-            // the client builder passed to the call-back is configured to use system properties, which makes it
-            // impossible to configure concurrency settings, so we need to build a new one from scratch
-            HttpAsyncClientBuilder clientBuilder = HttpAsyncClientBuilder.create()
-                    .setDefaultRequestConfig(requestConfig)
-                    .setDefaultIOReactorConfig(reactorConfig)
-                    .setMaxConnPerRoute(config.getMaxHttpConnections())
-                    .setMaxConnTotal(config.getMaxHttpConnections());
-            if (config.isTlsEnabled()) {
-                buildSslContext(config.getKeystorePath(), config.getKeystorePassword(), config.getTrustStorePath(), config.getTruststorePassword())
-                        .ifPresent(clientBuilder::setSSLContext);
-
-                if (!config.isVerifyHostnames()) {
-                    clientBuilder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
-                }
-            }
-
-            clientConfigurators.forEach(configurator -> configurator.configure(clientBuilder));
-
-            return clientBuilder;
-        });
-
-        return new BackpressureRestHighLevelClient(builder, config, elasticsearchClientStats);
-    }
-
-    private static Optional<SSLContext> buildSslContext(
-            Optional<File> keyStorePath,
-            Optional<String> keyStorePassword,
-            Optional<File> trustStorePath,
-            Optional<String> trustStorePassword)
-    {
-        if (keyStorePath.isEmpty() && trustStorePath.isEmpty()) {
-            return Optional.empty();
-        }
-
-        try {
-            return Optional.of(createSSLContext(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword));
-        }
-        catch (GeneralSecurityException | IOException e) {
-            throw new TrinoException(ELASTICSEARCH_SSL_INITIALIZATION_FAILURE, e);
         }
     }
 
