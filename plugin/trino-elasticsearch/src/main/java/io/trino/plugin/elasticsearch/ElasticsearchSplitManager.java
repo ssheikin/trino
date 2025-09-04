@@ -15,6 +15,7 @@ package io.trino.plugin.elasticsearch;
 
 import com.google.inject.Inject;
 import io.trino.plugin.elasticsearch.client.ElasticsearchClient;
+import io.trino.plugin.elasticsearch.client.ElasticsearchClientFactory;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -34,12 +35,12 @@ import static java.util.Objects.requireNonNull;
 public class ElasticsearchSplitManager
         implements ConnectorSplitManager
 {
-    private final ElasticsearchClient client;
+    private final ElasticsearchClientFactory clientFactory;
 
     @Inject
-    public ElasticsearchSplitManager(ElasticsearchClient client)
+    public ElasticsearchSplitManager(ElasticsearchClientFactory clientFactory)
     {
-        this.client = requireNonNull(client, "client is null");
+        this.clientFactory = requireNonNull(clientFactory, "clientFactory is null");
     }
 
     @Override
@@ -50,6 +51,7 @@ public class ElasticsearchSplitManager
             DynamicFilter dynamicFilter,
             Constraint constraint)
     {
+        ElasticsearchClient client = clientFactory.createClient(session);
         ElasticsearchTableHandle tableHandle = (ElasticsearchTableHandle) table;
 
         if (tableHandle.type().equals(QUERY)) {

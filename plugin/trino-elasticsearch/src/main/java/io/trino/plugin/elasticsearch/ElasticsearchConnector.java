@@ -36,7 +36,7 @@ public class ElasticsearchConnector
         implements Connector
 {
     private final LifeCycleManager lifeCycleManager;
-    private final ElasticsearchMetadata metadata;
+    private final ElasticsearchMetadataFactory metadataFactory;
     private final ElasticsearchSplitManager splitManager;
     private final ElasticsearchPageSourceProvider pageSourceProvider;
     private final NodesSystemTable nodesSystemTable;
@@ -45,14 +45,14 @@ public class ElasticsearchConnector
     @Inject
     public ElasticsearchConnector(
             LifeCycleManager lifeCycleManager,
-            ElasticsearchMetadata metadata,
+            ElasticsearchMetadataFactory metadataFactory,
             ElasticsearchSplitManager splitManager,
             ElasticsearchPageSourceProvider pageSourceProvider,
             NodesSystemTable nodesSystemTable,
             Set<ConnectorTableFunction> connectorTableFunctions)
     {
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
-        this.metadata = requireNonNull(metadata, "metadata is null");
+        this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
         this.nodesSystemTable = requireNonNull(nodesSystemTable, "nodesSystemTable is null");
@@ -69,7 +69,7 @@ public class ElasticsearchConnector
     @Override
     public ConnectorMetadata getMetadata(ConnectorSession session, ConnectorTransactionHandle transactionHandle)
     {
-        return metadata;
+        return metadataFactory.create(session);
     }
 
     @Override

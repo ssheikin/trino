@@ -21,15 +21,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import io.airlift.json.JsonCodec;
 import io.airlift.json.ObjectMapperProvider;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.plugin.elasticsearch.ElasticsearchConfig;
 import io.trino.spi.TrinoException;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.entity.ByteArrayEntity;
@@ -41,6 +40,7 @@ import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.core.TimeValue;
@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -65,7 +66,6 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.json.JsonCodec.jsonCodec;
 import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH_CONNECTION_ERROR;
 import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH_INVALID_METADATA;
@@ -75,7 +75,6 @@ import static java.lang.StrictMath.toIntExact;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.elasticsearch.action.search.SearchType.QUERY_THEN_FETCH;
 
@@ -96,18 +95,20 @@ public class ElasticsearchClient
     private final Duration scrollTimeout;
 
     private final AtomicReference<Set<ElasticsearchNode>> nodes = new AtomicReference<>(ImmutableSet.of());
-    private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor(daemonThreadsNamed("NodeRefresher"));
+    private final Optional<ScheduledExecutorService> executor;
+    private final List<Header> additionalHeaders;
     private final AtomicBoolean started = new AtomicBoolean();
     private final Duration refreshInterval;
     private final boolean tlsEnabled;
     private final boolean ignorePublishAddress;
     private final ElasticsearchClientStats elasticsearchClientStats;
 
-    @Inject
     public ElasticsearchClient(
             ElasticsearchConfig config,
             BackpressureRestHighLevelClient client,
-            ElasticsearchClientStats elasticsearchClientStats)
+            List<Header> additionalHeaders,
+            ElasticsearchClientStats elasticsearchClientStats,
+            Optional<ScheduledExecutorService> executor)
     {
         this.client = requireNonNull(client, "client is null");
         this.ignorePublishAddress = config.isIgnorePublishAddress();
@@ -116,23 +117,33 @@ public class ElasticsearchClient
         this.refreshInterval = config.getNodeRefreshInterval();
         this.tlsEnabled = config.isTlsEnabled();
         this.elasticsearchClientStats = requireNonNull(elasticsearchClientStats, "elasticsearchClientStats is null");
+        this.additionalHeaders = ImmutableList.copyOf(requireNonNull(additionalHeaders, "additionalHeaders are null"));
+        this.executor = requireNonNull(executor, "executor is null");
+        if (executor.isPresent()) {
+            // if not support async refresh, refresh nodes on every request
+            initialize();
+        }
+        else {
+            refreshNodes();
+        }
     }
 
-    @PostConstruct
     public void initialize()
     {
-        if (!started.getAndSet(true)) {
-            // do the first refresh eagerly
-            refreshNodes();
+        if (executor.isPresent()) {
+            if (!started.getAndSet(true)) {
+                // do the first refresh eagerly
+                refreshNodes();
 
-            executor.scheduleWithFixedDelay(this::refreshNodes, refreshInterval.toMillis(), refreshInterval.toMillis(), MILLISECONDS);
+                executor.get().scheduleWithFixedDelay(this::refreshNodes, refreshInterval.toMillis(), refreshInterval.toMillis(), MILLISECONDS);
+            }
         }
     }
 
     @PreDestroy
     public void close()
     {
-        executor.shutdownNow();
+        executor.ifPresent(ExecutorService::shutdownNow);
     }
 
     private void refreshNodes()
@@ -237,7 +248,7 @@ public class ElasticsearchClient
 
         try {
             Response response = client.getLowLevelClient()
-                    .performRequest("GET", path);
+                    .performRequest("GET", path, additionalHeaders.toArray(new Header[0]));
 
             return response.getStatusLine().getStatusCode() == 200;
         }
@@ -432,8 +443,12 @@ public class ElasticsearchClient
                             path,
                             ImmutableMap.of(),
                             new ByteArrayEntity(query.getBytes(UTF_8)),
-                            new BasicHeader("Content-Type", "application/json"),
-                            new BasicHeader("Accept-Encoding", "application/json"));
+                            ImmutableList.<Header>builder()
+                                    .addAll(additionalHeaders)
+                                    .add(new BasicHeader("Content-Type", "application/json"))
+                                    .add(new BasicHeader("Accept-Encoding", "application/json"))
+                                    .build()
+                                    .toArray(new Header[0]));
         }
         catch (IOException e) {
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
@@ -485,7 +500,9 @@ public class ElasticsearchClient
 
         long start = System.nanoTime();
         try {
-            return client.search(request);
+            RequestOptions.Builder requestBuilder = RequestOptions.DEFAULT.toBuilder();
+            additionalHeaders.forEach(header -> requestBuilder.addHeader(header.getName(), header.getValue()));
+            return client.search(request, requestBuilder.build());
         }
         catch (IOException e) {
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
@@ -515,7 +532,9 @@ public class ElasticsearchClient
 
         long start = System.nanoTime();
         try {
-            return client.searchScroll(request);
+            RequestOptions.Builder requestBuilder = RequestOptions.DEFAULT.toBuilder();
+            additionalHeaders.forEach(header -> requestBuilder.addHeader(header.getName(), header.getValue()));
+            return client.searchScroll(request, requestBuilder.build());
         }
         catch (IOException e) {
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
@@ -542,7 +561,11 @@ public class ElasticsearchClient
                                 format("/%s/_count?preference=_shards:%s", index, shard),
                                 ImmutableMap.of(),
                                 new StringEntity(sourceBuilder.toString(), UTF_8),
-                                new BasicHeader("Content-Type", "application/json"));
+                                ImmutableList.<Header>builder()
+                                        .addAll(additionalHeaders)
+                                        .add(new BasicHeader("Content-Type", "application/json"))
+                                        .build()
+                                        .toArray(new Header[0]));
             }
             catch (ResponseException e) {
                 throw propagate(e);
@@ -569,7 +592,9 @@ public class ElasticsearchClient
         ClearScrollRequest request = new ClearScrollRequest();
         request.addScrollId(scrollId);
         try {
-            client.clearScroll(request);
+            RequestOptions.Builder requestBuilder = RequestOptions.DEFAULT.toBuilder();
+            additionalHeaders.forEach(header -> requestBuilder.addHeader(header.getName(), header.getValue()));
+            client.clearScroll(request, requestBuilder.build());
         }
         catch (IOException e) {
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
@@ -583,7 +608,7 @@ public class ElasticsearchClient
         Response response;
         try {
             response = client.getLowLevelClient()
-                    .performRequest("GET", path);
+                    .performRequest("GET", path, additionalHeaders.toArray(new Header[0]));
         }
         catch (IOException e) {
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);

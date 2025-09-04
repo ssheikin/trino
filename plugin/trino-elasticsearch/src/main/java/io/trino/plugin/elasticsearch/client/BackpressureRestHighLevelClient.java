@@ -89,22 +89,22 @@ public class BackpressureRestHighLevelClient
         delegate.close();
     }
 
-    public SearchResponse search(SearchRequest searchRequest)
+    public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions)
             throws IOException
     {
-        return executeWithRetries(() -> delegate.search(searchRequest, RequestOptions.DEFAULT));
+        return executeWithRetries(() -> delegate.search(searchRequest, requestOptions));
     }
 
-    public SearchResponse searchScroll(SearchScrollRequest searchScrollRequest)
+    public SearchResponse searchScroll(SearchScrollRequest searchScrollRequest, RequestOptions requestOptions)
             throws IOException
     {
-        return executeWithRetries(() -> delegate.scroll(searchScrollRequest, RequestOptions.DEFAULT));
+        return executeWithRetries(() -> delegate.scroll(searchScrollRequest, requestOptions));
     }
 
-    public ClearScrollResponse clearScroll(ClearScrollRequest clearScrollRequest)
+    public ClearScrollResponse clearScroll(ClearScrollRequest clearScrollRequest, RequestOptions requestOptions)
             throws IOException
     {
-        return executeWithRetries(() -> delegate.clearScroll(clearScrollRequest, RequestOptions.DEFAULT));
+        return executeWithRetries(() -> delegate.clearScroll(clearScrollRequest, requestOptions));
     }
 
     private static boolean isBackpressure(Throwable throwable)
