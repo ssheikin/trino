@@ -108,6 +108,6 @@ public class TestOracleConnectorTest
     protected void assertAlteredCatalogBehavior(String catalogName)
     {
         assertQueryFails(format("SHOW TABLES FROM %s.%s", catalogName, "tiny"),
-                "(?s)ORA-01017: invalid username/password; logon denied.*");
+                "(?s)ORA-01017: invalid credential or not authorized; logon denied.*");
     }
 }
