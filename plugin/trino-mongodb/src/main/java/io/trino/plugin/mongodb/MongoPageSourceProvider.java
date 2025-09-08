@@ -37,11 +37,13 @@ public class MongoPageSourceProvider
     private static final int MONGO_DOMAIN_COMPACTION_THRESHOLD = 1000;
 
     private final MongoSessionProvider mongoSessionProvider;
+    private final String implicitPrefix;
 
     @Inject
-    public MongoPageSourceProvider(MongoSessionProvider mongoSessionProvider)
+    public MongoPageSourceProvider(MongoSessionProvider mongoSessionProvider, MongoClientConfig config)
     {
         this.mongoSessionProvider = requireNonNull(mongoSessionProvider, "mongoSessionProvider is null");
+        this.implicitPrefix = config.getImplicitRowFieldPrefix();
     }
 
     @Override
@@ -81,6 +83,6 @@ public class MongoPageSourceProvider
             return new EmptyPageSource();
         }
 
-        return new MongoPageSource(mongoSession, newTableHandle, handles.build());
+        return new MongoPageSource(mongoSession, newTableHandle, handles.build(), implicitPrefix);
     }
 }
