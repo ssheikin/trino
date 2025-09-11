@@ -17,7 +17,7 @@ More info at https://trino.io/development/process#release-note -->
 
 ```markdown
 ## Section
-* When using X the user is now able to Y ({issue}`issuenumber`)
+* When using X the user is now able to Y.
 ```
 ---@#$---
 
