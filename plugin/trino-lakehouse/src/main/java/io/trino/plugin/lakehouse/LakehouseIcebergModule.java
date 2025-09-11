@@ -38,6 +38,7 @@ import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.plugin.iceberg.IcebergSplitManager;
 import io.trino.plugin.iceberg.IcebergTableProperties;
 import io.trino.plugin.iceberg.IcebergTransactionManager;
+import io.trino.plugin.iceberg.TableStatisticsReader;
 import io.trino.plugin.iceberg.TableStatisticsWriter;
 import io.trino.plugin.iceberg.catalog.file.IcebergFileMetastoreCatalogModule;
 import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogModule;
@@ -71,6 +72,7 @@ public class LakehouseIcebergModule
         newOptionalBinder(binder, IcebergMetadataFactoryInterface.class)
                 .setBinding().to(IcebergMetadataFactory.class).in(Scopes.SINGLETON);
         binder.bind(IcebergFileWriterFactory.class).in(Scopes.SINGLETON);
+        binder.bind(TableStatisticsReader.class).in(Scopes.SINGLETON);
         binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
         binder.bind(IcebergFileSystemFactory.class).to(DefaultIcebergFileSystemFactory.class).in(Scopes.SINGLETON);
 
