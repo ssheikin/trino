@@ -73,6 +73,7 @@ import io.trino.cost.StatsNormalizer;
 import io.trino.cost.TaskCountEstimator;
 import io.trino.eventlistener.EventListenerConfig;
 import io.trino.eventlistener.EventListenerManager;
+import io.trino.exchange.ExchangeManagerConfig;
 import io.trino.exchange.ExchangeManagerRegistry;
 import io.trino.execution.DynamicFilterConfig;
 import io.trino.execution.NodeTaskMap;
@@ -543,7 +544,7 @@ public class PlanTester
         cacheManagerRegistry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(new NodeMemoryConfig()), plannerContext.getBlockEncodingSerde(), new CacheStats(), node, TestingInternalNodeManager.createDefault(), new SecretsResolver(ImmutableMap.of()));
         cachePerformanceTracker = new CachePerformanceTracker();
         tupleDomainCodec = getTupleDomainJsonCodec(blockEncodingSerde, typeManager);
-        exchangeManagerRegistry = new ExchangeManagerRegistry(noop(), nodeManager.getTestingInternalCoordinatorLocator(), noopTracer(), secretsResolver);
+        exchangeManagerRegistry = new ExchangeManagerRegistry(noop(), nodeManager.getTestingInternalCoordinatorLocator(), noopTracer(), secretsResolver, new ExchangeManagerConfig());
         spoolingManagerRegistry = new SpoolingManagerRegistry(
                 node,
                 new ServerConfig(),
