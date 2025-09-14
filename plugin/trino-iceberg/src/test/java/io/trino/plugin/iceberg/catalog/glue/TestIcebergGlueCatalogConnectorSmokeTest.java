@@ -137,6 +137,20 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
     public void testDeleteRowsConcurrently() {}
 
     @Test
+    void testCreateSchemaDefaultLocation()
+    {
+        String schemaName = "test_create_schema_default_location_" + randomNameSuffix();
+        try {
+            assertUpdate("CREATE SCHEMA " + schemaName);
+            assertThat((String) computeScalar("SHOW CREATE SCHEMA " + schemaName))
+                    .contains("location = '%s/%s.db'".formatted(schemaPath(), schemaName));
+        }
+        finally {
+            assertUpdate("DROP SCHEMA IF EXISTS " + schemaName);
+        }
+    }
+
+    @Test
     @Override
     public void testShowCreateTable()
     {
