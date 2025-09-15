@@ -9213,6 +9213,9 @@ public abstract class BaseHiveConnectorTest
         assertExplainAnalyze(
                 "EXPLAIN ANALYZE VERBOSE SELECT * FROM nation WHERE nationkey > 1",
                 "Physical input time: .*s");
+        assertExplainAnalyze(
+                "EXPLAIN ANALYZE VERBOSE SELECT * FROM nation WHERE nationkey > 1000",
+                "Physical input time: .*s");
     }
 
     @Test
