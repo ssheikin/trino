@@ -101,7 +101,7 @@ public class IcebergConnectorFactory
             Bootstrap app = createBootstrap(catalogName, config, context, module, icebergCatalogModule, false);
 
             Injector injector = app
-                    .loadSecretsPlugins() // starburst-ai-client requires access to secrets.
+                    .loadSecretsPlugins() // starburst-functions-client requires access to secrets.
                     .initialize();
 
             verify(!injector.getBindings().containsKey(Key.get(HiveConfig.class)), "HiveConfig should not be bound");
