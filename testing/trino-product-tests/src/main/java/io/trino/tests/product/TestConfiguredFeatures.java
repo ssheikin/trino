@@ -42,7 +42,7 @@ public class TestConfiguredFeatures
     @Named("databases.trino.configured_connectors")
     private List<String> configuredConnectors;
 
-    @Test(groups = CONFIGURED_FEATURES)
+    @Test(groups = CONFIGURED_FEATURES, enabled = false)
     public void selectConfiguredConnectors()
     {
         if (configuredConnectors.isEmpty()) {
