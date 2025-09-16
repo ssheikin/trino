@@ -81,6 +81,7 @@ public class CoordinatorDynamicCatalogManager
     private final CatalogStoreWithBuiltInCatalogs catalogStore;
     private final CatalogFactory catalogFactory;
     private final Executor executor;
+    private final CatalogMetricsService catalogMetricsService;
 
     private final Lock catalogsUpdateLock = new ReentrantLock();
 
@@ -98,13 +99,19 @@ public class CoordinatorDynamicCatalogManager
     private State state = State.CREATED;
 
     @Inject
-    public CoordinatorDynamicCatalogManager(CatalogStore catalogStore, CatalogFactory catalogFactory, BuiltInCatalogsProvider builtInCatalogsProvider, @ForStartup Executor executor)
+    public CoordinatorDynamicCatalogManager(
+            CatalogStore catalogStore,
+            CatalogFactory catalogFactory,
+            BuiltInCatalogsProvider builtInCatalogsProvider,
+            @ForStartup Executor executor,
+            CatalogMetricsService catalogMetricsService)
     {
         this.catalogStore = new CatalogStoreWithBuiltInCatalogs(
                 requireNonNull(catalogStore, "catalogStore is null"),
                 requireNonNull(builtInCatalogsProvider, "builtInCatalogsProvider is null"));
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
         this.executor = requireNonNull(executor, "executor is null");
+        this.catalogMetricsService = requireNonNull(catalogMetricsService, "catalogMetricsService is null");
     }
 
     @PreDestroy
@@ -155,6 +162,7 @@ public class CoordinatorDynamicCatalogManager
                                     activeCatalogs.put(storedCatalog.name(), newCatalog.getCatalog());
                                     allCatalogs.put(catalog.catalogHandle(), newCatalog);
                                     log.debug("-- Added catalog %s using connector %s --", storedCatalog.name(), catalog.connectorName());
+                                    catalogMetricsService.addCatalog();
                                 }
                                 catch (Throwable e) {
                                     CatalogHandle catalogHandle = catalog != null ? catalog.catalogHandle() : createRootCatalogHandle(storedCatalog.name(), new CatalogVersion("failed"));
@@ -293,6 +301,7 @@ public class CoordinatorDynamicCatalogManager
             activeCatalogs.put(catalogName, catalog.getCatalog());
 
             log.debug("Added catalog: %s", catalog.getCatalogHandle());
+            catalogMetricsService.catalogCreated(catalog.getConnectorName().toString());
         }
         finally {
             catalogsUpdateLock.unlock();
@@ -321,6 +330,7 @@ public class CoordinatorDynamicCatalogManager
             activeCatalogs.remove(catalogName);
 
             log.info("Renamed catalog from: '%s' to: '%s'", catalogName, newCatalogName);
+            catalogMetricsService.catalogRenamed(activeCatalogs.get(newCatalogName).getConnectorName().toString());
         }
         finally {
             catalogsUpdateLock.unlock();
@@ -343,6 +353,7 @@ public class CoordinatorDynamicCatalogManager
 
             createCatalogLikeInternal(catalogName, catalogName, properties);
             log.info("Updated catalog: " + catalogName);
+            catalogMetricsService.catalogAltered(activeCatalogs.get(catalogName).getConnectorName().toString());
         }
         finally {
             catalogsUpdateLock.unlock();
@@ -421,7 +432,11 @@ public class CoordinatorDynamicCatalogManager
             checkState(state != State.STOPPED, "ConnectorManager is stopped");
 
             catalogStore.removeCatalog(catalogName);
-            removed = activeCatalogs.remove(catalogName) != null;
+            Catalog removedCatalog = activeCatalogs.remove(catalogName);
+            removed = removedCatalog != null;
+            if (removed) {
+                catalogMetricsService.catalogDropped(removedCatalog.getConnectorName().toString());
+            }
         }
         finally {
             catalogsUpdateLock.unlock();

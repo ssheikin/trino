@@ -22,8 +22,10 @@ import com.starburstdata.dataframe.type.LongType;
 import com.starburstdata.dataframe.type.StringType;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.metrics.MeterProvider;
 import io.trino.Session;
 import io.trino.client.NodeVersion;
+import io.trino.connector.CatalogMetricsService;
 import io.trino.connector.CatalogServiceProvider;
 import io.trino.connector.CoordinatorDynamicCatalogManager;
 import io.trino.connector.InMemoryCatalogStore;
@@ -123,7 +125,7 @@ public class TestDataframeMetadataProvider
                 plannerContext.getMetadata(),
                 SQL_PARSER,
                 accessControl,
-                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, directExecutor()),
+                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop()))),
                 new SessionPropertyManager(),
                 new SchemaPropertyManager(CatalogServiceProvider.fail()),
                 new ColumnPropertyManager(CatalogServiceProvider.fail()),

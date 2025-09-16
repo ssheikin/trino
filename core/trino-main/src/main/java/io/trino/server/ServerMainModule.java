@@ -30,6 +30,7 @@ import io.airlift.stats.JmxGcMonitor;
 import io.airlift.stats.PauseMeter;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
+import io.opentelemetry.api.metrics.MeterProvider;
 import io.trino.FeaturesConfig;
 import io.trino.SystemSessionProperties;
 import io.trino.SystemSessionPropertiesProvider;
@@ -255,6 +256,7 @@ public class ServerMainModule
         binder.bind(StatementAnalyzerFactory.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, SessionTimeProvider.class)
                 .setDefault().toInstance(SessionTimeProvider.DEFAULT);
+        newOptionalBinder(binder, MeterProvider.class).setDefault().toInstance(MeterProvider.noop());
 
         // GC Monitor
         binder.bind(GcMonitor.class).to(JmxGcMonitor.class).in(Scopes.SINGLETON);

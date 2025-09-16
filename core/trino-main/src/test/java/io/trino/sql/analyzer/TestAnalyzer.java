@@ -20,11 +20,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closer;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.metrics.MeterProvider;
 import io.trino.FeaturesConfig;
 import io.trino.Session;
 import io.trino.SystemSessionProperties;
 import io.trino.cache.CacheConfig;
 import io.trino.client.NodeVersion;
+import io.trino.connector.CatalogMetricsService;
 import io.trino.connector.CatalogServiceProvider;
 import io.trino.connector.CoordinatorDynamicCatalogManager;
 import io.trino.connector.InMemoryCatalogStore;
@@ -7828,7 +7830,7 @@ public class TestAnalyzer
                 plannerContext.getMetadata(),
                 SQL_PARSER,
                 accessControl,
-                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, directExecutor()),
+                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop()))),
                 new SessionPropertyManager(),
                 new SchemaPropertyManager(CatalogServiceProvider.fail()),
                 new ColumnPropertyManager(CatalogServiceProvider.fail()),

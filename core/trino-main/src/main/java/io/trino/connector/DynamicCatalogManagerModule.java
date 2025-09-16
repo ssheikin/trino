@@ -31,8 +31,10 @@ public class DynamicCatalogManagerModule
     protected void setup(Binder binder)
     {
         if (buildConfigObject(ServerConfig.class).isCoordinator()) {
+            configBinder(binder).bindConfig(StaticCatalogManagerConfig.class);
             binder.bind(CoordinatorDynamicCatalogManager.class).in(Scopes.SINGLETON);
             configBinder(binder).bindConfig(CatalogStoreConfig.class);
+            binder.bind(CatalogMetricsService.class).in(Scopes.SINGLETON);
             binder.bind(CatalogStoreManager.class).in(Scopes.SINGLETON);
             binder.bind(CatalogStore.class).to(CatalogStoreManager.class).in(Scopes.SINGLETON);
             binder.bind(ConnectorServicesProvider.class).to(CoordinatorDynamicCatalogManager.class).in(Scopes.SINGLETON);

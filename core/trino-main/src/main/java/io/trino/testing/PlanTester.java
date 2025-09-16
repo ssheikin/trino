@@ -24,6 +24,7 @@ import io.airlift.json.JsonCodecFactory;
 import io.airlift.json.ObjectMapperProvider;
 import io.airlift.node.NodeInfo;
 import io.airlift.units.Duration;
+import io.opentelemetry.api.metrics.MeterProvider;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.trino.FeaturesConfig;
@@ -38,6 +39,7 @@ import io.trino.cache.CachePerformanceTracker;
 import io.trino.cache.CacheStats;
 import io.trino.client.NodeVersion;
 import io.trino.connector.CatalogFactory;
+import io.trino.connector.CatalogMetricsService;
 import io.trino.connector.CatalogServiceProviderModule;
 import io.trino.connector.ConnectorServicesProvider;
 import io.trino.connector.CoordinatorDynamicCatalogManager;
@@ -388,7 +390,7 @@ public class PlanTester
         this.optimizerConfig = new OptimizerConfig();
         LazyCatalogFactory catalogFactory = new LazyCatalogFactory();
         this.catalogFactory = catalogFactory;
-        this.catalogManager = new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), catalogFactory, NO_BUILTIN_CATALOGS, directExecutor());
+        this.catalogManager = new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), catalogFactory, NO_BUILTIN_CATALOGS, directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop())));
         this.transactionManager = InMemoryTransactionManager.create(
                 new TransactionManagerConfig().setIdleTimeout(new Duration(1, TimeUnit.DAYS)),
                 yieldExecutor,
