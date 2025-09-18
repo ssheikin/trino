@@ -186,6 +186,7 @@ import static io.trino.metastore.PrincipalPrivileges.fromHivePrivilegeInfos;
 import static io.trino.metastore.StatisticsUpdateMode.MERGE_INCREMENTAL;
 import static io.trino.metastore.StorageFormat.VIEW_STORAGE_FORMAT;
 import static io.trino.metastore.type.Category.PRIMITIVE;
+import static io.trino.metastore.type.VarcharTypeInfo.MAX_VARCHAR_LENGTH;
 import static io.trino.parquet.writer.ParquetWriter.SUPPORTED_BLOOM_FILTER_TYPES;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.extractSupportedProjectedColumns;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.replaceWithNewVariables;
@@ -349,6 +350,7 @@ import static io.trino.spi.statistics.TableStatisticType.ROW_COUNT;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.TimestampType.createTimestampType;
 import static io.trino.spi.type.TypeUtils.isFloatingPointNaN;
+import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.spi.type.VarcharType.createUnboundedVarcharType;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -3566,8 +3568,14 @@ public class HiveMetadata
         if (type instanceof TimestampType) {
             return Optional.of(createTimestampType(getTimestampPrecision(session).getPrecision()));
         }
-        if (type instanceof VarcharType varcharType && !varcharType.isUnbounded() && varcharType.getBoundedLength() == 0) {
-            return Optional.of(VarcharType.createVarcharType(1));
+        if (type instanceof VarcharType varcharType && !varcharType.isUnbounded()) {
+            int length = varcharType.getBoundedLength();
+            if (length == 0) {
+                return Optional.of(VarcharType.createVarcharType(1));
+            }
+            if (length > MAX_VARCHAR_LENGTH) {
+                return Optional.of(VARCHAR);
+            }
         }
         return Optional.empty();
     }
