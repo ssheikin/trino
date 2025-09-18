@@ -16,6 +16,7 @@ package io.trino.spi.connector;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.starburst.ai.model.ModelConnectionSpecsLoader;
+import io.trino.spi.CoordinatorLocator;
 import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
@@ -119,6 +120,11 @@ public interface ConnectorContext
     }
 
     default Metastore getMetastore()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default CoordinatorLocator getCoordinatorLocator()
     {
         throw new UnsupportedOperationException();
     }

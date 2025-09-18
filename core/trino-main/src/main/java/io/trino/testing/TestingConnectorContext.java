@@ -14,6 +14,7 @@
 package io.trino.testing;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.airlift.tracing.Tracing;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
@@ -24,6 +25,7 @@ import io.trino.operator.GroupByHashPageIndexerFactory;
 import io.trino.operator.NullSafeHashCompiler;
 import io.trino.operator.PagesIndex;
 import io.trino.operator.PagesIndexPageSorter;
+import io.trino.spi.CoordinatorLocator;
 import io.trino.spi.NodeManager;
 import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.PageIndexerFactory;
@@ -44,6 +46,7 @@ import io.trino.util.EmbedVersion;
 import java.util.Map;
 
 import static io.starburst.ai.model.ModelConnectionSpecsLoader.EMPTY_LOADER;
+import static io.trino.node.TestingInternalNodeManager.CURRENT_NODE;
 import static io.trino.spi.connector.MetadataProvider.NOOP_METADATA_PROVIDER;
 import static io.trino.testing.TestingHandles.TEST_CATALOG_HANDLE;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
@@ -144,5 +147,11 @@ public final class TestingConnectorContext
     public Metastore getMetastore()
     {
         return new UnimplementedMetastore();
+    }
+
+    @Override
+    public CoordinatorLocator getCoordinatorLocator()
+    {
+        return () -> ImmutableSet.of(CURRENT_NODE.getInternalUri());
     }
 }

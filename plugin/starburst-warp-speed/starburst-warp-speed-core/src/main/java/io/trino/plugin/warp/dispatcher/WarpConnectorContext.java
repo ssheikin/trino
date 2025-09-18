@@ -16,6 +16,7 @@ package io.trino.plugin.warp.dispatcher;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.starburst.ai.model.ModelConnectionSpecsLoader;
+import io.trino.spi.CoordinatorLocator;
 import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
@@ -152,5 +153,11 @@ public class WarpConnectorContext
     public ModelConnectionSpecsLoader getModelConnectionSpecsLoader()
     {
         return connectorContext.getModelConnectionSpecsLoader();
+    }
+
+    @Override
+    public CoordinatorLocator getCoordinatorLocator()
+    {
+        return connectorContext.getCoordinatorLocator();
     }
 }

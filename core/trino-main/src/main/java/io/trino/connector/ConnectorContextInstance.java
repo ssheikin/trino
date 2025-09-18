@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.starburst.ai.model.ModelConnectionSpecsLoader;
+import io.trino.spi.CoordinatorLocator;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
@@ -50,6 +51,7 @@ public class ConnectorContextInstance
     private final AiModelAccessControl aiModelAccessControl;
     private final ModelConnectionSpecsLoader modelConnectionSpecsLoader;
     private final Metastore metastore;
+    private final CoordinatorLocator coordinatorLocator;
     private final CatalogHandle catalogHandle;
     private final Map<String, String> serverProperties;
 
@@ -65,6 +67,7 @@ public class ConnectorContextInstance
             AiModelAccessControl aiModelAccessControl,
             ModelConnectionSpecsLoader modelConnectionSpecsLoader,
             Metastore metastore,
+            CoordinatorLocator coordinatorLocator,
             PageSorter pageSorter,
             WorkScheduler workScheduler,
             PageIndexerFactory pageIndexerFactory,
@@ -80,6 +83,7 @@ public class ConnectorContextInstance
         this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
         this.modelConnectionSpecsLoader = requireNonNull(modelConnectionSpecsLoader, "modelConnectionSpecsLoader is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
+        this.coordinatorLocator = requireNonNull(coordinatorLocator, "coordinatorLocator is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
@@ -175,5 +179,11 @@ public class ConnectorContextInstance
     public Metastore getMetastore()
     {
         return metastore;
+    }
+
+    @Override
+    public CoordinatorLocator getCoordinatorLocator()
+    {
+        return coordinatorLocator;
     }
 }

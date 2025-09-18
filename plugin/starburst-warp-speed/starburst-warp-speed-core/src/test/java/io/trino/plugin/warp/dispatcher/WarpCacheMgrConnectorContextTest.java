@@ -41,6 +41,7 @@ public class WarpCacheMgrConnectorContextTest
                         ConnectorContext.class.getMethod("getMetastore"),
                         ConnectorContext.class.getMethod("getWorkScheduler"),
                         ConnectorContext.class.getMethod("getServerProperties"),
+                        ConnectorContext.class.getMethod("getCoordinatorLocator"),
                         ConnectorContext.class.getMethod("getLocationAccessControl")));
 
         InterfaceTestUtils.assertAllMethodsOverridden(

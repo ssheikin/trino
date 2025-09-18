@@ -29,6 +29,8 @@ import io.trino.connector.system.SystemTablesProvider;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.memory.LocalMemoryManager;
 import io.trino.metadata.Metadata;
+import io.trino.node.DefaultCoordinatorLocator;
+import io.trino.node.InternalCoordinatorLocator;
 import io.trino.node.InternalNode;
 import io.trino.node.InternalNodeManager;
 import io.trino.security.AccessControl;
@@ -78,6 +80,7 @@ public class DefaultCatalogFactory
     private final TransactionManager transactionManager;
     private final TypeManager typeManager;
     private final Metastore metastore;
+    private final InternalCoordinatorLocator coordinatorLocator;
 
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
@@ -104,6 +107,7 @@ public class DefaultCatalogFactory
             TransactionManager transactionManager,
             TypeManager typeManager,
             Metastore metastore,
+            InternalCoordinatorLocator coordinatorLocator,
             NodeSchedulerConfig nodeSchedulerConfig,
             LocationAccessControl locationAccessControl,
             AiModelAccessControl aiModelAccessControl,
@@ -125,6 +129,7 @@ public class DefaultCatalogFactory
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
+        this.coordinatorLocator = requireNonNull(coordinatorLocator, "coordinatorLocator is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
@@ -265,6 +270,7 @@ public class DefaultCatalogFactory
                 aiModelAccessControl,
                 modelConnectionSpecsLoader,
                 metastore,
+                new DefaultCoordinatorLocator(coordinatorLocator),
                 pageSorter,
                 workScheduler,
                 pageIndexerFactory,
