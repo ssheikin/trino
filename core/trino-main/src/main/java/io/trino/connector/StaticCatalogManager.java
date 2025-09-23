@@ -131,7 +131,7 @@ public class StaticCatalogManager
         this.executor = requireNonNull(executor, "executor is null");
     }
 
-    private static List<File> listCatalogFiles(File catalogsDirectory)
+    public static List<File> listCatalogFiles(File catalogsDirectory)
     {
         if (catalogsDirectory == null || !catalogsDirectory.isDirectory()) {
             return ImmutableList.of();
