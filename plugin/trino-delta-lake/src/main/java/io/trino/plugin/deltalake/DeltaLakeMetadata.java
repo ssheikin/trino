@@ -54,7 +54,6 @@ import io.trino.plugin.deltalake.metastore.DeltaMetastoreTable;
 import io.trino.plugin.deltalake.metastore.HiveMetastoreBackedDeltaLakeMetastore;
 import io.trino.plugin.deltalake.metastore.NotADeltaLakeTableException;
 import io.trino.plugin.deltalake.metastore.VendedCredentialsHandle;
-import io.trino.plugin.deltalake.metastore.VendedCredentialsProvider;
 import io.trino.plugin.deltalake.procedure.DeltaLakeTableExecuteHandle;
 import io.trino.plugin.deltalake.procedure.DeltaLakeTableProcedureId;
 import io.trino.plugin.deltalake.procedure.DeltaTableOptimizeHandle;
@@ -498,7 +497,6 @@ public class DeltaLakeMetadata
     private final Map<QueriedTable, TableSnapshot> queriedSnapshots = new ConcurrentHashMap<>();
     private final Executor metadataFetchingExecutor;
     private final TransactionLogReaderFactory transactionLogReaderFactory;
-    private final VendedCredentialsProvider vendedCredentialsProvider;
 
     private record QueriedTable(SchemaTableName schemaTableName, long version)
     {
@@ -533,8 +531,7 @@ public class DeltaLakeMetadata
             boolean allowManagedTableRename,
             boolean isOperateOnUnityMetastore,
             Executor metadataFetchingExecutor,
-            TransactionLogReaderFactory transactionLogReaderFactory,
-            VendedCredentialsProvider vendedCredentialsProvider)
+            TransactionLogReaderFactory transactionLogReaderFactory)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
@@ -562,7 +559,6 @@ public class DeltaLakeMetadata
         this.isOperateOnUnityMetastore = isOperateOnUnityMetastore;
         this.metadataFetchingExecutor = requireNonNull(metadataFetchingExecutor, "metadataFetchingExecutor is null");
         this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory");
-        this.vendedCredentialsProvider = requireNonNull(vendedCredentialsProvider, "vendedCredentialsProvider is null");
     }
 
     public static boolean isCatalogOwnedTable(ProtocolEntry protocolEntry)
@@ -804,18 +800,18 @@ public class DeltaLakeMetadata
         }
         catch (TrinoException e) {
             if (e.getErrorCode().equals(DELTA_LAKE_INVALID_SCHEMA.toErrorCode())) {
-                return new CorruptedDeltaLakeTableHandle(tableName, table.catalogOwned(), managed, tableLocation, table.vendedCredentials(), e);
+                return new CorruptedDeltaLakeTableHandle(tableName, table.catalogOwned(), managed, table.tableId(), tableLocation, e);
             }
             throw e;
         }
         MetadataEntry metadataEntry = logEntries.metadata().orElse(null);
         if (metadataEntry == null) {
-            return new CorruptedDeltaLakeTableHandle(tableName, table.catalogOwned(), managed, tableLocation, table.vendedCredentials(), new TrinoException(DELTA_LAKE_INVALID_SCHEMA, "Metadata not found in transaction log for " + tableSnapshot.getTable()));
+            return new CorruptedDeltaLakeTableHandle(tableName, table.catalogOwned(), managed, table.tableId(), tableLocation, new TrinoException(DELTA_LAKE_INVALID_SCHEMA, "Metadata not found in transaction log for " + tableSnapshot.getTable()));
         }
 
         ProtocolEntry protocolEntry = logEntries.protocol().orElse(null);
         if (protocolEntry == null) {
-            return new CorruptedDeltaLakeTableHandle(tableName, table.catalogOwned(), managed, tableLocation, table.vendedCredentials(), new TrinoException(DELTA_LAKE_INVALID_SCHEMA, "Protocol not found in transaction log for " + tableSnapshot.getTable()));
+            return new CorruptedDeltaLakeTableHandle(tableName, table.catalogOwned(), managed, table.tableId(), tableLocation, new TrinoException(DELTA_LAKE_INVALID_SCHEMA, "Protocol not found in transaction log for " + tableSnapshot.getTable()));
         }
         if (protocolEntry.minReaderVersion() > MAX_READER_VERSION) {
             LOG.debug("Skip %s because the reader version is unsupported: %d", tableName, protocolEntry.minReaderVersion());
@@ -836,6 +832,7 @@ public class DeltaLakeMetadata
                 tableName.getSchemaName(),
                 tableName.getTableName(),
                 managed,
+                table.tableId(),
                 tableLocation,
                 metadataEntry,
                 protocolEntry,
@@ -847,8 +844,7 @@ public class DeltaLakeMetadata
                 Optional.empty(),
                 Optional.empty(),
                 tableSnapshot.getVersion(),
-                endVersion.isPresent(),
-                table.vendedCredentials());
+                endVersion.isPresent());
     }
 
     @Override
@@ -1429,7 +1425,7 @@ public class DeltaLakeMetadata
                         "Using CREATE [OR REPLACE] TABLE with an existing table content is disallowed, instead use the system.register_table() procedure.");
             }
             else {
-                TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriterWithoutTransactionIsolation(session, location, fetchCredentialsForLocation(location));
+                TransactionLogWriter transactionLogWriter = transactionLogWriterFactory.newWriterWithoutTransactionIsolation(session, location, VendedCredentialsHandle.empty(location));
                 ProtocolEntry protocolEntry;
                 if (replaceExistingTable) {
                     commitVersion = getMandatoryCurrentVersion(fileSystem, location, tableHandle.getReadVersion()) + 1;
@@ -1575,12 +1571,6 @@ public class DeltaLakeMetadata
             }
         }
         return buildTable(session, schemaTableName, location, handle.external(), handle.comment(), version, handle.schemaString(), dataColumns.build(), partitionedColumns.build());
-    }
-
-    private VendedCredentialsHandle fetchCredentialsForLocation(String tableLocation)
-    {
-        // TODO: update once we support creating managed table https://starburstdata.atlassian.net/browse/ENG-385
-        return vendedCredentialsProvider.getFreshCredentials(VendedCredentialsHandle.empty(tableLocation));
     }
 
     public Table buildTable(ConnectorSession session, SchemaTableName schemaTableName, String location, boolean isExternal, Optional<String> tableComment, long version, String schemaString)
@@ -1766,8 +1756,7 @@ public class DeltaLakeMetadata
                 maxFieldId,
                 replace,
                 readVersion,
-                protocolEntry,
-                fetchCredentialsForLocation(location));
+                protocolEntry);
     }
 
     private Optional<String> getSchemaLocation(Database database)
@@ -1916,7 +1905,7 @@ public class DeltaLakeMetadata
             if (handle.readVersion().isEmpty()) {
                 // For CTAS there is no risk of multiple writers racing. Using writer without transaction isolation so we are not limiting support for CTAS to
                 // filesystems for which we have proper implementations of TransactionLogSynchronizers.
-                transactionLogWriter = transactionLogWriterFactory.newWriterWithoutTransactionIsolation(session, handle.location(), fetchCredentialsForLocation(handle.location()));
+                transactionLogWriter = transactionLogWriterFactory.newWriterWithoutTransactionIsolation(session, handle.location(), VendedCredentialsHandle.empty(handle.location()));
             }
             else {
                 TrinoFileSystem fileSystem = fileSystemFactory.create(session, location);
@@ -1926,7 +1915,7 @@ public class DeltaLakeMetadata
                             handle.readVersion().getAsLong(),
                             commitVersion - 1));
                 }
-                transactionLogWriter = transactionLogWriterFactory.createFileSystemWriter(session, location, fetchCredentialsForLocation(location));
+                transactionLogWriter = transactionLogWriterFactory.createFileSystemWriter(session, location, VendedCredentialsHandle.empty(location));
             }
             appendTableEntries(
                     commitVersion,
@@ -1957,9 +1946,9 @@ public class DeltaLakeMetadata
 
             if (handle.replace() && handle.readVersion().isPresent()) {
                 long lastKnownBackfilledVersion = isCatalogOwnedTable(handle.protocolEntry())
-                        ? getMandatoryCurrentVersion(fileSystemFactory.create(session, handle.credentialsHandle()), handle.location(), handle.readVersion().getAsLong())
+                        ? getMandatoryCurrentVersion(fileSystemFactory.create(session, handle.toCredentialsHandle()), handle.location(), handle.readVersion().getAsLong())
                         : commitVersion;
-                writeCheckpointIfNeeded(session, schemaTableName, handle.location(), handle.credentialsHandle(), handle.readVersion().getAsLong(), handle.checkpointInterval(), lastKnownBackfilledVersion);
+                writeCheckpointIfNeeded(session, schemaTableName, handle.location(), handle.toCredentialsHandle(), handle.readVersion().getAsLong(), handle.checkpointInterval(), lastKnownBackfilledVersion);
             }
 
             if (isCollectExtendedStatisticsColumnStatisticsOnWrite(session) && !computedStatistics.isEmpty()) {
@@ -1976,7 +1965,7 @@ public class DeltaLakeMetadata
                         Optional.empty(),
                         schemaTableName,
                         location,
-                        handle.credentialsHandle(),
+                        handle.toCredentialsHandle(),
                         maxFileModificationTime,
                         computedStatistics,
                         columnNames,
@@ -2009,7 +1998,7 @@ public class DeltaLakeMetadata
             // Remove the transaction log entry if the table creation fails
             if (!writeCommitted) {
                 // TODO perhaps it should happen in a background thread (https://github.com/trinodb/trino/issues/12011)
-                cleanupFailedWrite(session, handle.credentialsHandle(), dataFileInfos);
+                cleanupFailedWrite(session, handle.toCredentialsHandle(), dataFileInfos);
             }
             if (handle.readVersion().isEmpty()) {
                 Location transactionLogDir = Location.of(getTransactionLogDir(location));
@@ -3871,6 +3860,7 @@ public class DeltaLakeMetadata
                 tableName.getSchemaName(),
                 tableName.getTableName(),
                 tableHandle.isManaged(),
+                tableHandle.getTableId(),
                 tableHandle.getLocation(),
                 tableHandle.getMetadataEntry(),
                 tableHandle.getProtocolEntry(),
@@ -3891,8 +3881,7 @@ public class DeltaLakeMetadata
                 false,
                 Optional.empty(),
                 tableHandle.getReadVersion(),
-                tableHandle.isTimeTravel(),
-                tableHandle.getVendedCredentials());
+                tableHandle.isTimeTravel());
 
         if (tableHandle.getEnforcedPartitionConstraint().equals(newHandle.getEnforcedPartitionConstraint()) &&
                 tableHandle.getNonPartitionConstraint().equals(newHandle.getNonPartitionConstraint()) &&
@@ -4179,6 +4168,7 @@ public class DeltaLakeMetadata
                 handle.getSchemaTableName().getSchemaName(),
                 handle.getSchemaTableName().getTableName(),
                 handle.isManaged(),
+                handle.getTableId(),
                 handle.getLocation(),
                 metadata,
                 handle.getProtocolEntry(),
@@ -4190,8 +4180,7 @@ public class DeltaLakeMetadata
                 Optional.empty(),
                 Optional.of(analyzeHandle),
                 handle.getReadVersion(),
-                handle.isTimeTravel(),
-                handle.getVendedCredentials());
+                handle.isTimeTravel());
         TableStatisticsMetadata statisticsMetadata = getStatisticsCollectionMetadata(
                 columnsMetadata.stream().map(DeltaLakeColumnMetadata::columnMetadata).collect(toImmutableList()),
                 analyzeColumnNames.orElse(allColumnNames),

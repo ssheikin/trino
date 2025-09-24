@@ -19,6 +19,7 @@ import io.airlift.configuration.ConfigPropertyMetadata;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.local.LocalFileSystemFactory;
 import io.trino.plugin.base.config.ConfigUtils;
+import io.trino.plugin.deltalake.metastore.NoOpVendedCredentialsProvider;
 import io.trino.plugin.deltalake.transactionlog.writer.LocalTransactionLogSynchronizer;
 import io.trino.plugin.deltalake.transactionlog.writer.TransactionLogSynchronizer;
 import io.trino.plugin.hive.metastore.MetastoreTypeConfig;
@@ -109,7 +110,7 @@ public class TestingDeltaLakePlugin
                     newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
                             .addBinding("local").toInstance(localFileSystemFactory);
                     newMapBinder(binder, String.class, TransactionLogSynchronizer.class)
-                            .addBinding("local").toInstance(new LocalTransactionLogSynchronizer(new DefaultDeltaLakeFileSystemFactory(localFileSystemFactory)));
+                            .addBinding("local").toInstance(new LocalTransactionLogSynchronizer(new DefaultDeltaLakeFileSystemFactory(localFileSystemFactory, new NoOpVendedCredentialsProvider())));
                     configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, defaults -> defaults.setCatalogDirectory("local:///"));
                     configBinder(binder).bindConfig(MetastoreTypeConfig.class);
                 };
