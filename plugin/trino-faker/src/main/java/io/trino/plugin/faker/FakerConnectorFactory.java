@@ -51,7 +51,7 @@ public class FakerConnectorFactory
         requireNonNull(context, "context is null");
         checkStrictSpiVersionMatch(context, this);
 
-        Bootstrap app = createBootstrap(requiredConfig, context);
+        Bootstrap app = createBootstrap(catalogName, requiredConfig, context);
 
         Injector injector = app.initialize();
 
@@ -61,7 +61,7 @@ public class FakerConnectorFactory
     @Override
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Set<ConfigPropertyMetadata> usedProperties = app
                 .quiet()
@@ -71,9 +71,9 @@ public class FakerConnectorFactory
         return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
     }
 
-    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = new Bootstrap(new FakerModule(context.getTypeManager()));
+        Bootstrap app = new Bootstrap("io.trino.bootstrap.catalog." + catalogName, new FakerModule(context.getTypeManager()));
 
         return app
                 .doNotInitializeLogging()

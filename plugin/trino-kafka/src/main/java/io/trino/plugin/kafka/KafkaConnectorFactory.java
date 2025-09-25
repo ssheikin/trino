@@ -80,6 +80,7 @@ public class KafkaConnectorFactory
     private Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 ImmutableList.<Module>builder()
                         .add(new CatalogNameModule(catalogName))
                         .add(new JsonModule())

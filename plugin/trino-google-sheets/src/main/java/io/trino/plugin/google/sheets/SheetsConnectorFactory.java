@@ -44,7 +44,7 @@ public class SheetsConnectorFactory
         requireNonNull(config, "config is null");
         checkStrictSpiVersionMatch(context, this);
 
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Injector injector = app.initialize();
 
@@ -54,7 +54,7 @@ public class SheetsConnectorFactory
     @Override
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Set<ConfigPropertyMetadata> usedProperties = app
                 .quiet()
@@ -64,9 +64,10 @@ public class SheetsConnectorFactory
         return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
     }
 
-    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
                 new TypeDeserializerModule(context.getTypeManager()),
                 new SheetsModule());

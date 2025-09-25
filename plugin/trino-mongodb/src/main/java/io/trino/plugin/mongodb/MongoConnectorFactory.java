@@ -55,7 +55,7 @@ public class MongoConnectorFactory
         requireNonNull(config, "config is null");
         checkStrictSpiVersionMatch(context, this);
 
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Injector injector = app.initialize();
 
@@ -65,7 +65,7 @@ public class MongoConnectorFactory
     @Override
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Set<ConfigPropertyMetadata> usedProperties = app
                 .quiet()
@@ -75,9 +75,10 @@ public class MongoConnectorFactory
         return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
     }
 
-    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
                 new MongoClientModule(),
                 binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),

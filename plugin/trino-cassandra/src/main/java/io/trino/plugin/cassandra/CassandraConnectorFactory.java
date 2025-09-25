@@ -46,7 +46,7 @@ public class CassandraConnectorFactory
         requireNonNull(config, "config is null");
         checkStrictSpiVersionMatch(context, this);
 
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Injector injector = app.initialize();
 
@@ -56,7 +56,7 @@ public class CassandraConnectorFactory
     @Override
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Set<ConfigPropertyMetadata> usedProperties = app
                 .quiet()
@@ -66,9 +66,10 @@ public class CassandraConnectorFactory
         return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
     }
 
-    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 binder -> binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry()),
                 new MBeanModule(),
                 new JsonModule(),

@@ -78,6 +78,7 @@ public class ElasticsearchConnectorFactory
     private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 new MBeanModule(),
                 new MBeanServerModule(),
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.elasticsearch", "trino.plugin.elasticsearch"),

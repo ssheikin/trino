@@ -43,7 +43,7 @@ public class MemoryConnectorFactory
         requireNonNull(requiredConfig, "requiredConfig is null");
         checkStrictSpiVersionMatch(context, this);
 
-        Bootstrap app = createBootstrap(requiredConfig, context);
+        Bootstrap app = createBootstrap(catalogName, requiredConfig, context);
 
         Injector injector = app.initialize();
 
@@ -53,7 +53,7 @@ public class MemoryConnectorFactory
     @Override
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = createBootstrap(config, context);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Set<ConfigPropertyMetadata> usedProperties = app
                 .quiet()
@@ -63,10 +63,11 @@ public class MemoryConnectorFactory
         return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
     }
 
-    private static Bootstrap createBootstrap(Map<String, String> config, ConnectorContext context)
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         // A plugin is not required to use Guice; it is just very convenient
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
                 new MemoryModule(context.getTypeManager(), context.getCurrentNode(), context.getNodeManager()));
 

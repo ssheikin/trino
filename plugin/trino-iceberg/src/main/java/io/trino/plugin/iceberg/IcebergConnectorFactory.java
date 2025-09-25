@@ -119,6 +119,7 @@ public class IcebergConnectorFactory
             boolean quietBootstrap)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 new MBeanModule(),
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.iceberg", "trino.plugin.iceberg"),
                 new JsonModule(),

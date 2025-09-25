@@ -181,6 +181,7 @@ public class DeltaLakeConnectorFactory
             boolean quietBootstrap)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 new MBeanModule(),
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.deltalake", "trino.plugin.deltalake"),
                 new JsonModule(),
