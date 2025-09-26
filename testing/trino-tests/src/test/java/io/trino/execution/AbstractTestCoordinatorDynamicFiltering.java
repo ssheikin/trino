@@ -669,5 +669,8 @@ public abstract class AbstractTestCoordinatorDynamicFiltering
         {
             return new TestingPageSinkProvider();
         }
+
+        @Override
+        public void shutdown() {}
     }
 }
