@@ -74,6 +74,7 @@ public class DeltaLakeMetadataFactory
     private final boolean isOperateOnUnityMetastore;
     private final String trinoVersion;
     private final TransactionLogReaderFactory transactionLogReaderFactory;
+    private final boolean logRetentionDurationEnabled;
 
     @Inject
     public DeltaLakeMetadataFactory(
@@ -130,6 +131,7 @@ public class DeltaLakeMetadataFactory
         }
         this.isOperateOnUnityMetastore = metastoreTypeConfig.getMetastoreType() == UNITY;
         this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory is null");
+        this.logRetentionDurationEnabled = deltaLakeConfig.isLogRetentionDurationEnabled();
     }
 
     public DeltaLakeMetadata create(ConnectorIdentity identity)
@@ -175,7 +177,8 @@ public class DeltaLakeMetadataFactory
                 allowManagedTableRename,
                 isOperateOnUnityMetastore,
                 metadataFetchingExecutor,
-                transactionLogReaderFactory);
+                transactionLogReaderFactory,
+                logRetentionDurationEnabled);
     }
 
     public CachingHiveMetastore createTransactionMetastore(ConnectorIdentity identity)
