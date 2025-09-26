@@ -65,6 +65,6 @@ public class DefaultMongoSessionProvider
     @PreDestroy
     public void close()
     {
-        mongoSession.shutdown();
+        mongoSession.close();
     }
 }

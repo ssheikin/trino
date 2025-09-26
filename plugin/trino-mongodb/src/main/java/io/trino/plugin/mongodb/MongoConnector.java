@@ -15,6 +15,7 @@ package io.trino.plugin.mongodb;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import io.airlift.bootstrap.LifeCycleManager;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -36,6 +37,7 @@ import static java.util.Objects.requireNonNull;
 public class MongoConnector
         implements Connector
 {
+    private final LifeCycleManager lifeCycleManager;
     private final MongoTransactionManager transactionManager;
     private final MongoSplitManager splitManager;
     private final ConnectorPageSourceProvider pageSourceProvider;
@@ -45,6 +47,7 @@ public class MongoConnector
 
     @Inject
     public MongoConnector(
+            LifeCycleManager lifeCycleManager,
             MongoTransactionManager transactionManager,
             MongoSplitManager splitManager,
             ConnectorPageSourceProvider pageSourceProvider,
@@ -52,6 +55,7 @@ public class MongoConnector
             Set<ConnectorTableFunction> connectorTableFunctions,
             Set<SessionPropertiesProvider> sessionPropertiesProviders)
     {
+        this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
@@ -114,5 +118,11 @@ public class MongoConnector
     public List<PropertyMetadata<?>> getSessionProperties()
     {
         return sessionProperties;
+    }
+
+    @Override
+    public void shutdown()
+    {
+        lifeCycleManager.stop();
     }
 }
