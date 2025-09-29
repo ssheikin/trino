@@ -15,8 +15,7 @@
 
     <properties>
         <released-artifacts.dir>${project.build.directory}/released-artifacts</released-artifacts.dir>
-        <!-- disable in Cork/Galaxy-Trino -->
-        <trino.check.skip-revapi>true</trino.check.skip-revapi>
+        <trino.check.skip-revapi>${air.check.skip-basic}</trino.check.skip-revapi>
     </properties>
 
     <!-- the SPI should have only minimal dependencies -->
@@ -189,7 +188,7 @@
                 <version>0.15.1</version>
                 <configuration>
                     <skip>${trino.check.skip-revapi}</skip>
-                    <oldVersion>458</oldVersion>
+                    <oldVersion>477</oldVersion>
                     <ignoreSuggestionsFormat>xml</ignoreSuggestionsFormat>
                     <analysisConfiguration>
                         <revapi.filter>
@@ -197,7 +196,7 @@
                                 <exclude>
                                     <item>
                                         <matcher>java</matcher>
-                                        <match>type io.trino.spi.connector.ConstraintApplicationResult&lt;?&gt; {}</match>
+                                        <match>@io.trino.spi.Experimental(*) ^*;</match>
                                     </item>
                                 </exclude>
                             </elements>
@@ -205,28 +204,258 @@
                         <revapi.differences>
                             <ignore>true</ignore>
                             <differences>
+                                <!-- TODO: Sort into proper sections below -->
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <new>interface io.starburst.ai.model.ConnectionInfo</new>
+                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <new>class io.starburst.ai.model.EmbeddingModelConnectionSpec</new>
+                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <new>class io.starburst.ai.model.LanguageModelConnectionSpec</new>
+                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <new>interface io.starburst.ai.model.ModelConnectionSpec</new>
+                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <new>class io.starburst.ai.model.ModelConnectionSpecs</new>
+                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <new>class io.starburst.ai.model.PromptOverrides</new>
+                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method java.net.URI io.trino.spi.Node::getHttpUri()</new>
+                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                </item>
+
                                 <!-- Cork internal changes -->
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.ArrayBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.ArrayBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.ByteArrayBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.ByteArrayBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.Fixed12Block::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.Fixed12Block::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.Int128ArrayBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.Int128ArrayBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.IntArrayBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.IntArrayBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.LongArrayBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.LongArrayBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.MapBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.MapBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.RowBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.RowBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.ShortArrayBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.ShortArrayBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.ValueBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.ValueBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.VariableWidthBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.VariableWidthBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.block.BlockEncodingSerde::writeBlock(io.airlift.slice.SliceOutput, io.trino.spi.block.Block, java.util.Optional&lt;io.trino.spi.type.Type&gt;)</new>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int io.trino.spi.block.DictionaryBlock::getUniqueIds()</old>
+                                    <new>method int io.trino.spi.block.DictionaryBlock::getUniqueIds()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method boolean io.trino.spi.block.DictionaryBlock::isSequentialIds()</old>
+                                    <new>method boolean io.trino.spi.block.DictionaryBlock::isSequentialIds()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method long[] io.trino.spi.block.LongArrayBlock::getRawValues()</old>
+                                    <new>method long[] io.trino.spi.block.LongArrayBlock::getRawValues()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int io.trino.spi.block.LongArrayBlock::getRawValuesOffset()</old>
+                                    <new>method int io.trino.spi.block.LongArrayBlock::getRawValuesOffset()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method void io.trino.spi.block.VariableWidthBlock::&lt;init&gt;(int, int, io.airlift.slice.Slice, int[], boolean[])</old>
+                                    <new>method void io.trino.spi.block.VariableWidthBlock::&lt;init&gt;(int, int, io.airlift.slice.Slice, int[], boolean[])</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int io.trino.spi.block.VariableWidthBlock::getPositionOffset(int)</old>
+                                    <new>method int io.trino.spi.block.VariableWidthBlock::getPositionOffset(int)</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method void io.trino.spi.connector.ConstraintApplicationResult&lt;T&gt;::&lt;init&gt;(T, io.trino.spi.predicate.TupleDomain&lt;io.trino.spi.connector.ColumnHandle&gt;, java.util.Optional&lt;io.trino.spi.expression.ConnectorExpression&gt;, boolean)</old>
+                                    <new>method void io.trino.spi.connector.ConstraintApplicationResult&lt;T&gt;::&lt;init&gt;(boolean, java.util.List&lt;io.trino.spi.connector.ConstraintApplicationResult.Alternative&lt;T&gt;&gt;)</new>
+                                    <oldVisibility>private</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>Sub-plan alternatives (https://github.com/starburstdata/cork/pull/62)</justification>
+                                </item>
+
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.method.addedToInterface</code>
                                     <new>method java.util.OptionalLong io.trino.spi.connector.DynamicFilter::getPreferredDynamicFilterTimeout()</new>
-                                    <justification>Internal change</justification>
+                                    <justification>Dynamic Filter timeout improvements (https://github.com/starburstdata/cork/pull/141)</justification>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.removed</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.Page&gt; io.trino.spi.connector.MergePage::getInsertionsPage()</old>
+                                    <justification>Iceberg row lineage support (https://github.com/starburstdata/cork/pull/2019, https://github.com/starburstdata/trino-fork-log/issues/151)</justification>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::instantiateSink(io.trino.spi.exchange.ExchangeSinkHandle, int)</old>
+                                    <new>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::instantiateSink(io.trino.spi.exchange.ExchangeSinkHandle, int, java.util.Optional&lt;io.trino.spi.Node&gt;)</new>
+                                    <justification>FTE buffer service (https://github.com/starburstdata/trino-fork-log/issues/52)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::updateSinkInstanceHandle(io.trino.spi.exchange.ExchangeSinkHandle, int)</old>
+                                    <new>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::updateSinkInstanceHandle(io.trino.spi.exchange.ExchangeSinkHandle, int, java.util.Optional&lt;io.trino.spi.Node&gt;)</new>
+                                    <justification>FTE buffer service (https://github.com/starburstdata/trino-fork-log/issues/52)</justification>
                                 </item>
                                 <!-- / Cork internal changes -->
                                 <!-- Cork backports, i.e. temporary exclusions -->
                                 <!-- / Cork backports, i.e. temporary exclusions -->
 
                                 <!-- SEP fork specific changes -->
-                                <!-- Allow removing @JsonCreator annotation -->
-                                <!-- This allows Jackson to use a new constructor while still keeping the previous one for compatibility -->
                                 <item>
+                                    <ignore>true</ignore>
                                     <code>java.annotation.removed</code>
                                     <old>method void io.trino.spi.eventlistener.QueryMetadata::&lt;init&gt;(java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.List&lt;io.trino.spi.eventlistener.TableInfo&gt;, java.util.List&lt;io.trino.spi.eventlistener.RoutineInfo&gt;, java.net.URI, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;)</old>
                                     <new>method void io.trino.spi.eventlistener.QueryMetadata::&lt;init&gt;(java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.lang.String, java.util.List&lt;io.trino.spi.eventlistener.TableInfo&gt;, java.util.List&lt;io.trino.spi.eventlistener.RoutineInfo&gt;, java.net.URI, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;)</new>
                                     <annotation>@com.fasterxml.jackson.annotation.JsonCreator</annotation>
+                                    <justification>This allows Jackson to use a new constructor while still keeping the previous one for compatibility (https://github.com/starburstdata/starburst-enterprise-trino/commit/baa3295a73dee13d5236eec84a88801eaa3479ef)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;)</old>
+                                    <new>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;, java.lang.String)</new>
+                                    <justification>Query text selector for resource groups (https://github.com/starburstdata/starburst-enterprise-trino/commit/1c88a2612d0f252f6e05cd432290b93b023ab800)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;)</old>
+                                    <new>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;, java.lang.String)</new>
+                                    <justification>Query text selector for resource groups (https://github.com/starburstdata/starburst-enterprise-trino/commit/1c88a2612d0f252f6e05cd432290b93b023ab800)</justification>
                                 </item>
                                 <!-- / SEP fork specific changes -->
 
+                                <!-- OSS content follows -->
                                 <!-- Allow adding new annotations (such as @Nullable) -->
                                 <item>
                                     <code>java.annotation.added</code>
@@ -234,6 +463,24 @@
                                 <!-- Allow changing enum constant order (e.g., StandardErrorCode) -->
                                 <item>
                                     <code>java.field.enumConstantOrderChanged</code>
+                                </item>
+                                <!-- Allow arbitrary changes to unstable APIs -->
+                                <item>
+                                    <regex>true</regex>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>
+                                        <matcher>java</matcher>
+                                        <match>@io.trino.spi.Unstable *;</match>
+                                    </old>
+                                </item>
+                                <!-- Allow removing things that were previously deprecated -->
+                                <item>
+                                    <regex>true</regex>
+                                    <code>java\.(class|method|field)\.removed</code>
+                                    <old>
+                                        <matcher>java</matcher>
+                                        <match>@java.lang.Deprecated(*) ^*;</match>
+                                    </old>
                                 </item>
                                 <!-- Backwards incompatible changes since the previous release -->
                                 <!-- Any exclusions below can be deleted after each release -->
@@ -327,6 +574,11 @@
                                     <ignore>true</ignore>
                                     <code>java.method.numberOfParametersChanged</code>
                                     <old>method java.util.Optional&lt;java.lang.Object&gt; io.trino.spi.connector.ConnectorMetadata::getInfo(io.trino.spi.connector.ConnectorTableHandle)</old>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>method void io.trino.spi.eventlistener.QueryStatistics::&lt;init&gt;(java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, java.util.Optional&lt;java.time.Duration&gt;, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, double, double, java.util.List&lt;io.trino.spi.eventlistener.StageGcStatistics&gt;, int, boolean, java.util.List&lt;io.trino.spi.eventlistener.StageCpuDistribution&gt;, java.util.List&lt;io.trino.spi.eventlistener.StageOutputBufferUtilization&gt;, java.util.List&lt;io.trino.spi.eventlistener.StageOutputBufferMetrics&gt;, java.util.List&lt;io.trino.spi.eventlistener.StageTaskStatistics&gt;, java.util.function.Supplier&lt;java.util.List&lt;java.lang.String&gt;&gt;, java.util.List&lt;io.trino.spi.eventlistener.QueryPlanOptimizerStatistics&gt;, java.util.Optional&lt;java.lang.String&gt;)</old>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
