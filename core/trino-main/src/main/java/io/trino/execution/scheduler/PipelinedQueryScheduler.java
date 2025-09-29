@@ -1568,17 +1568,12 @@ public class PipelinedQueryScheduler
                 fail(t, Optional.empty());
             }
             finally {
-                RuntimeException closeError = new RuntimeException();
                 for (StageScheduler scheduler : stageSchedulers.values()) {
                     try {
                         scheduler.close();
                     }
                     catch (Throwable t) {
                         fail(t, Optional.empty());
-                        // Self-suppression not permitted
-                        if (closeError != t) {
-                            closeError.addSuppressed(t);
-                        }
                     }
                 }
             }
