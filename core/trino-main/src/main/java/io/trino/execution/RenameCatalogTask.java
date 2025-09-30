@@ -17,7 +17,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import io.trino.Session;
 import io.trino.execution.warnings.WarningCollector;
-import io.trino.metadata.CatalogManager;
+import io.trino.metadata.Metadata;
 import io.trino.security.AccessControl;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.sql.tree.Expression;
@@ -31,14 +31,14 @@ import static java.util.Objects.requireNonNull;
 public class RenameCatalogTask
         implements DataDefinitionTask<RenameCatalog>
 {
-    private final CatalogManager catalogManager;
     private final AccessControl accessControl;
+    private final Metadata metadata;
 
     @Inject
-    public RenameCatalogTask(CatalogManager catalogManager, AccessControl accessControl)
+    public RenameCatalogTask(AccessControl accessControl, Metadata metadata)
     {
-        this.catalogManager = requireNonNull(catalogManager, "catalogManager is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
+        this.metadata = requireNonNull(metadata, "metadata is null");
     }
 
     @Override
@@ -58,7 +58,7 @@ public class RenameCatalogTask
 
         accessControl.checkCanRenameCatalog(session.toSecurityContext(), statement.getSource().getValue(), statement.getTarget().getValue());
 
-        catalogManager.renameCatalog(new CatalogName(statement.getSource().getValue()), new CatalogName(statement.getTarget().getValue()));
+        metadata.renameCatalog(session, new CatalogName(statement.getSource().getValue()), new CatalogName(statement.getTarget().getValue()));
         return immediateVoidFuture();
     }
 }

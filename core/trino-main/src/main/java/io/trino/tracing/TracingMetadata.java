@@ -394,6 +394,15 @@ public class TracingMetadata
     }
 
     @Override
+    public void renameCatalog(Session session, CatalogName oldCatalogName, CatalogName newCatalogName)
+    {
+        Span span = startSpan("renameCatalog", oldCatalogName);
+        try (var _ = scopedSpan(span)) {
+            delegate.renameCatalog(session, oldCatalogName, newCatalogName);
+        }
+    }
+
+    @Override
     public void createSchema(Session session, CatalogSchemaName schema, Map<String, Object> properties, TrinoPrincipal principal)
     {
         Span span = startSpan("createSchema", schema);

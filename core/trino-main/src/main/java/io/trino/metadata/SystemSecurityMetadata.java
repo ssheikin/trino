@@ -199,6 +199,11 @@ public interface SystemSecurityMetadata
     void catalogDropped(Session session, CatalogName catalog);
 
     /**
+     * A catalog was renamed
+     */
+    void catalogRenamed(Session session, CatalogName sourceCatalog, CatalogName targetCatalog);
+
+    /**
      * A function is created
      */
     void functionCreated(Session session, CatalogSchemaFunctionName function);

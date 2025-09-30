@@ -222,6 +222,11 @@ public interface Metadata
     void dropCatalog(Session session, CatalogName catalog, boolean cascade);
 
     /**
+     * Renames the specified catalog.
+     */
+    void renameCatalog(Session session, CatalogName oldCatalogName, CatalogName newCatalogName);
+
+    /**
      * Creates a schema.
      *
      * @param principal TODO

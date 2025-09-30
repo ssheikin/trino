@@ -281,6 +281,12 @@ public abstract class AbstractMockMetadata
     }
 
     @Override
+    public void renameCatalog(Session session, CatalogName oldCatalogName, CatalogName newCatalogName)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void createSchema(Session session, CatalogSchemaName schema, Map<String, Object> properties, TrinoPrincipal principal)
     {
         throw new UnsupportedOperationException();

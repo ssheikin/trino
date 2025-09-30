@@ -861,6 +861,19 @@ public final class MetadataManager
     }
 
     @Override
+    public void renameCatalog(Session session, CatalogName oldCatalogName, CatalogName newCatalogName)
+    {
+        Optional<CatalogMetadata> catalogMetadata = Optional.empty();
+        if (catalogManager.getCatalog(oldCatalogName).isPresent()) {
+            catalogMetadata = Optional.of(getCatalogMetadataForWrite(session, oldCatalogName.toString()));
+        }
+        catalogManager.renameCatalog(oldCatalogName, newCatalogName);
+        if (catalogMetadata.isPresent() && catalogMetadata.get().getSecurityManagement() == SYSTEM) {
+            systemSecurityMetadata.catalogRenamed(session, oldCatalogName, newCatalogName);
+        }
+    }
+
+    @Override
     public void createSchema(Session session, CatalogSchemaName schema, Map<String, Object> properties, TrinoPrincipal principal)
     {
         CatalogMetadata catalogMetadata = getCatalogMetadataForWrite(session, schema.getCatalogName());

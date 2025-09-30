@@ -206,6 +206,9 @@ public class DisabledSystemSecurityMetadata
     public void catalogDropped(Session session, CatalogName catalog) {}
 
     @Override
+    public void catalogRenamed(Session session, CatalogName sourceCatalog, CatalogName targetCatalog) {}
+
+    @Override
     public void functionCreated(Session session, CatalogSchemaFunctionName function) {}
 
     @Override
