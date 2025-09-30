@@ -18,7 +18,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import io.trino.Session;
 import io.trino.execution.warnings.WarningCollector;
-import io.trino.metadata.CatalogManager;
 import io.trino.metadata.PropertyUtil;
 import io.trino.security.AccessControl;
 import io.trino.spi.catalog.CatalogName;
@@ -42,14 +41,12 @@ import static java.util.Objects.requireNonNull;
 public class SetCatalogPropertiesTask
         implements DataDefinitionTask<SetCatalogProperties>
 {
-    private final CatalogManager catalogManager;
     private final PlannerContext plannerContext;
     private final AccessControl accessControl;
 
     @Inject
-    public SetCatalogPropertiesTask(CatalogManager catalogManager, PlannerContext plannerContext, AccessControl accessControl)
+    public SetCatalogPropertiesTask(PlannerContext plannerContext, AccessControl accessControl)
     {
-        this.catalogManager = requireNonNull(catalogManager, "catalogManager is null");
         this.plannerContext = requireNonNull(plannerContext, "plannerContext is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
     }
@@ -75,7 +72,7 @@ public class SetCatalogPropertiesTask
 
         accessControl.checkCanSetCatalogProperties(session.toSecurityContext(), catalogName, properties);
 
-        catalogManager.alterCatalog(new CatalogName(catalogName), properties);
+        plannerContext.getMetadata().alterCatalog(session, new CatalogName(catalogName), properties);
 
         return immediateVoidFuture();
     }

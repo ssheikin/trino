@@ -204,6 +204,11 @@ public interface SystemSecurityMetadata
     void catalogRenamed(Session session, CatalogName sourceCatalog, CatalogName targetCatalog);
 
     /**
+     * A catalog was altered
+     */
+    void catalogAltered(Session session, CatalogName catalog);
+
+    /**
      * A function is created
      */
     void functionCreated(Session session, CatalogSchemaFunctionName function);

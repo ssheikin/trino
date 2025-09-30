@@ -227,6 +227,11 @@ public interface Metadata
     void renameCatalog(Session session, CatalogName oldCatalogName, CatalogName newCatalogName);
 
     /**
+     * Alters the specified catalog.
+     */
+    void alterCatalog(Session session, CatalogName catalog, Map<String, Optional<String>> properties);
+
+    /**
      * Creates a schema.
      *
      * @param principal TODO

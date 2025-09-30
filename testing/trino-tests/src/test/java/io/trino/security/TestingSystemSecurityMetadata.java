@@ -283,6 +283,9 @@ class TestingSystemSecurityMetadata
     public void catalogRenamed(Session session, CatalogName sourceCatalog, CatalogName targetCatalog) {}
 
     @Override
+    public void catalogAltered(Session session, CatalogName catalog) {}
+
+    @Override
     public void functionCreated(Session session, CatalogSchemaFunctionName function)
     {
         functionOwners.put(function, session.getIdentity());

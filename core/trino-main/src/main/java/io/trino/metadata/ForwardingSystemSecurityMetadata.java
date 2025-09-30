@@ -218,6 +218,12 @@ public abstract class ForwardingSystemSecurityMetadata
     }
 
     @Override
+    public void catalogAltered(Session session, CatalogName catalog)
+    {
+        delegate().catalogAltered(session, catalog);
+    }
+
+    @Override
     public void functionCreated(Session session, CatalogSchemaFunctionName function)
     {
         delegate().functionCreated(session, function);
