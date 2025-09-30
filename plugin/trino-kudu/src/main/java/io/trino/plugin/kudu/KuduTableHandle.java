@@ -78,14 +78,14 @@ public class KuduTableHandle
     public KuduTableHandle withRequiresRowId(boolean requiresRowId)
     {
         return new KuduTableHandle(
-            schemaTableName,
-            remoteTableName,
-            table,
-            constraint,
-            desiredColumns,
-            requiresRowId,
-            bucketCount,
-            limit);
+                schemaTableName,
+                remoteTableName,
+                table,
+                constraint,
+                desiredColumns,
+                requiresRowId,
+                bucketCount,
+                limit);
     }
 
     public KuduTable getTable(ConnectorSession connectorSession, KuduClientSession session)
