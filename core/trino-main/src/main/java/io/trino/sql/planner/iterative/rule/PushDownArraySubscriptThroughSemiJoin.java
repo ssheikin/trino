@@ -86,7 +86,7 @@ public class PushDownArraySubscriptThroughSemiJoin
         SemiJoinNode semiJoinNode = captures.get(CHILD);
 
         // Extract array subscript from project node assignments for pushdown
-        Set<Call> arraySubscripts = extractArraySubscripts(projectNode.getAssignments().getExpressions(), false);
+        Set<Call> arraySubscripts = extractArraySubscripts(projectNode.getAssignments().expressions(), false);
 
         // All array subscript can be assumed on the symbols coming from source, since filteringSource output is not propagated,
         // and semiJoinOutput is of type boolean. We exclude pushdown of array subscript on sourceJoinSymbol.

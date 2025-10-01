@@ -97,7 +97,7 @@ public class PushDownArraySubscriptThroughJoin
 
         // Consider array subscript in projections and join filter for pushdown
         ImmutableList.Builder<Expression> expressionsBuilder = ImmutableList.builder();
-        expressionsBuilder.addAll(projectNode.getAssignments().getExpressions());
+        expressionsBuilder.addAll(projectNode.getAssignments().expressions());
         joinNode.getFilter().ifPresent(expressionsBuilder::add);
         Set<Call> arraySubscripts = extractArraySubscripts(expressionsBuilder.build(), false);
 
@@ -152,7 +152,7 @@ public class PushDownArraySubscriptThroughJoin
         PlanNode rightNode = createProjectNodeIfRequired(joinNode.getRight(), rightAssignments, context.getIdAllocator());
 
         // Prepare new output symbols for join node
-        List<Symbol> referredSymbolsInAssignments = newAssignments.getExpressions().stream()
+        List<Symbol> referredSymbolsInAssignments = newAssignments.expressions().stream()
                 .flatMap(expression -> extractAll(expression).stream())
                 .toList();
 

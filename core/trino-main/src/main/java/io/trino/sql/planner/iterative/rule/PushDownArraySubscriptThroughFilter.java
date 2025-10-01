@@ -85,7 +85,7 @@ public class PushDownArraySubscriptThroughFilter
 
         // Pushdown superset of array subscripts expressions from projections and filtering predicate
         List<Expression> expressions = ImmutableList.<Expression>builder()
-                .addAll(node.getAssignments().getExpressions())
+                .addAll(node.getAssignments().expressions())
                 .add(filterNode.getPredicate())
                 .build();
 

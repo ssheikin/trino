@@ -74,7 +74,7 @@ public class PushDownArraySubscriptThroughProject
         ProjectNode child = captures.get(CHILD);
 
         // Extract array subscripts from project node assignments for pushdown
-        Set<Call> arraySubscripts = extractArraySubscripts(node.getAssignments().getExpressions(), false);
+        Set<Call> arraySubscripts = extractArraySubscripts(node.getAssignments().expressions(), false);
 
         // Exclude array subscript on symbols being synthesized within child
         arraySubscripts = arraySubscripts.stream()
