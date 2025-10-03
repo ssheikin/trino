@@ -449,13 +449,6 @@
                                     <ignore>true</ignore>
                                     <code>java.method.numberOfParametersChanged</code>
                                     <old>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;)</old>
-                                    <new>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;, java.lang.String)</new>
-                                    <justification>Query text selector for resource groups (https://github.com/starburstdata/starburst-enterprise-trino/commit/1c88a2612d0f252f6e05cd432290b93b023ab800)</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.numberOfParametersChanged</code>
-                                    <old>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;)</old>
                                     <new>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;, java.lang.String)</new>
                                     <justification>Query text selector for resource groups (https://github.com/starburstdata/starburst-enterprise-trino/commit/1c88a2612d0f252f6e05cd432290b93b023ab800)</justification>
                                 </item>
@@ -663,6 +656,17 @@
                                     <old>class io.trino.spi.QueryId</old>
                                     <new>class io.trino.spi.QueryId</new>
                                     <justification>QueryId converted to a record</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.removed</code>
+                                    <old>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;)</old>
+                                    <justification>Remove a deprecated constructor</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.removed</code>
+                                    <old>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;)</old>
                                 </item>
                             </differences>
                         </revapi.differences>
