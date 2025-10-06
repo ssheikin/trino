@@ -440,9 +440,6 @@
                         <!-- Conflicts with the same file in trino-hive, trino-iceberg and trino-delta-lake -->
                         <ignoredResourcePattern>ozone-filesystem-hadoop3-1.4.0.jar</ignoredResourcePattern>
                     </ignoredResourcePatterns>
-                    <ignoredClassPatterns>
-                        <ignoredClassPattern>org.apache.iceberg.variants.ValueArray</ignoredClassPattern>
-                    </ignoredClassPatterns>
                 </configuration>
             </plugin>
 
