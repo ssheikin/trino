@@ -300,7 +300,7 @@ public class IcebergPageSourceProvider
                 split.getDataSequenceNumber(),
                 split.getFirstRowId(),
                 tableHandle.getNameMappingJson().map(NameMappingParser::fromJson),
-                split.getFormatVersion());
+                tableHandle.getFormatVersion());
     }
 
     public ConnectorPageSource createPageSource(
