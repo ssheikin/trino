@@ -1940,7 +1940,7 @@ jobs:
               ignore exclusion if: >-
                 ${{ env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || secrets.DATABRICKS_TOKEN != '' }}
             - suite: suite-delta-lake-databricks-unity-s3-credentials-vending
-              config: hdp3 
+              config: hdp3
             - suite: suite-delta-lake-databricks-unity-s3-credentials-vending
               ignore exclusion if: >-
                 ${{ env.CI_SKIP_SECRETS_PRESENCE_CHECKS != '' || secrets.DATABRICKS_TOKEN != '' }}
