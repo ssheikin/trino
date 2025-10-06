@@ -13,9 +13,11 @@
  */
 package io.trino.plugin.iceberg.catalog.rest;
 
+import io.trino.spi.security.ConnectorIdentity;
+
 import java.util.Map;
 
 public interface SecurityProperties
 {
-    Map<String, String> get();
+    Map<String, String> get(ConnectorIdentity identity);
 }

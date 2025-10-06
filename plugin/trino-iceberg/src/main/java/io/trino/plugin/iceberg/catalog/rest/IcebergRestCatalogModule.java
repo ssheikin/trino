@@ -20,7 +20,6 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.iceberg.IcebergConfig;
 import io.trino.plugin.iceberg.IcebergFileSystemFactory;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
-import io.trino.plugin.iceberg.catalog.rest.IcebergRestCatalogConfig.Security;
 import io.trino.spi.TrinoException;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
@@ -35,11 +34,15 @@ public class IcebergRestCatalogModule
     protected void setup(Binder binder)
     {
         configBinder(binder).bindConfig(IcebergRestCatalogConfig.class);
-        install(conditionalModule(
-                IcebergRestCatalogConfig.class,
-                config -> config.getSecurity() == Security.OAUTH2,
-                new OAuth2SecurityModule(),
-                new NoneSecurityModule()));
+        IcebergRestCatalogConfig restCatalogConfig = buildConfigObject(IcebergRestCatalogConfig.class);
+        switch (restCatalogConfig.getSecurity()) {
+            case NONE -> install(new NoneSecurityModule());
+            case OAUTH2 -> install(new OAuth2SecurityModule());
+            case OAUTH2_PASSTHROUGH -> {
+                // handled in SEP
+            }
+        }
+
         install(conditionalModule(
                 IcebergRestCatalogConfig.class,
                 IcebergRestCatalogConfig::isSigV4Enabled,
@@ -53,7 +56,6 @@ public class IcebergRestCatalogModule
         newOptionalBinder(binder, IcebergFileSystemFactory.class).setBinding().to(IcebergRestCatalogFileSystemFactory.class).in(Scopes.SINGLETON);
 
         IcebergConfig icebergConfig = buildConfigObject(IcebergConfig.class);
-        IcebergRestCatalogConfig restCatalogConfig = buildConfigObject(IcebergRestCatalogConfig.class);
         if (restCatalogConfig.isVendedCredentialsEnabled() && icebergConfig.isRegisterTableProcedureEnabled()) {
             throw new TrinoException(NOT_SUPPORTED, "Using the `register_table` procedure with vended credentials is currently not supported");
         }

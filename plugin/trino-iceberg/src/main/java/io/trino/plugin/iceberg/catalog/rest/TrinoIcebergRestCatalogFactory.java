@@ -128,7 +128,7 @@ public class TrinoIcebergRestCatalogFactory
             properties.put("view-endpoints-supported", Boolean.toString(viewEndpointsEnabled));
             properties.put("trino-version", trinoVersion);
             properties.put(AUTH_SESSION_TIMEOUT_MS, String.valueOf(sessionTimeout.toMillis()));
-            properties.putAll(securityProperties.get());
+            properties.putAll(securityProperties.get(identity));
             properties.putAll(awsProperties.get());
 
             if (vendedCredentialsEnabled) {
@@ -153,7 +153,7 @@ public class TrinoIcebergRestCatalogFactory
 
         // `OAuth2Properties.SCOPE` is not set as scope passed through credentials is unused in
         // https://github.com/apache/iceberg/blob/229d8f6fcd109e6c8943ea7cbb41dab746c6d0ed/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Util.java#L714-L721
-        Map<String, String> credentials = Maps.filterKeys(securityProperties.get(), key -> Set.of(TOKEN, CREDENTIAL).contains(key));
+        Map<String, String> credentials = Maps.filterKeys(securityProperties.get(identity), key -> Set.of(TOKEN, CREDENTIAL).contains(key));
 
         return new TrinoRestCatalog(
                 icebergCatalog,
