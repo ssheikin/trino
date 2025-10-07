@@ -702,6 +702,7 @@ public class IcebergPageSourceProvider
                     nameMapping,
                     partition,
                     dataColumns,
+                    partitionKeys,
                     dataSequenceNumber,
                     firstRowId,
                     formatVersion);
@@ -1304,6 +1305,7 @@ public class IcebergPageSourceProvider
             Optional<NameMapping> nameMapping,
             String partition,
             List<IcebergColumnHandle> columns,
+            Map<Integer, Optional<String>> partitionKeys,
             Long dataSequenceNumber,
             Long firstRowId,
             int formatVersion)
@@ -1347,7 +1349,13 @@ public class IcebergPageSourceProvider
 
             int nextOrdinal = 0;
             for (IcebergColumnHandle column : columns) {
-                if (column.isPartitionColumn()) {
+                if (partitionKeys.containsKey(column.getId())) {
+                    Type trinoType = column.getType();
+                    transforms.constantValue(nativeValueToBlock(
+                            trinoType,
+                            deserializePartitionValue(trinoType, partitionKeys.get(column.getId()).orElse(null), column.getName())));
+                }
+                else if (column.isPartitionColumn()) {
                     transforms.constantValue(nativeValueToBlock(PARTITION.getType(), utf8Slice(partition)));
                 }
                 else if (column.isPathColumn()) {
