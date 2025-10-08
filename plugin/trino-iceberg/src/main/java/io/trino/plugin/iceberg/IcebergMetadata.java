@@ -2835,6 +2835,12 @@ public class IcebergMetadata
     }
 
     @Override
+    public io.trino.spi.metrics.Metrics getMetrics(ConnectorSession session)
+    {
+        return catalog.getMetrics();
+    }
+
+    @Override
     public void dropTable(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         if (tableHandle instanceof CorruptedIcebergTableHandle corruptedTableHandle) {
