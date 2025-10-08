@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.kudu;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import io.airlift.log.Logger;
 import io.trino.sql.planner.plan.LimitNode;
@@ -26,6 +27,7 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
@@ -1088,25 +1090,6 @@ public class TestKuduConnectorTest
     }
 
     @Test
-    void testCreateDropDynamicCatalog()
-    {
-        String catalog = "new_catalog_" + randomNameSuffix();
-        @Language("SQL")
-        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, masterAddress);
-        assertUpdate(createCatalogSql);
-        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing", catalog);
-
-        assertUpdate("DROP CATALOG " + catalog);
-        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing");
-        // re-add the same catalog
-        assertUpdate(createCatalogSql);
-        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing", catalog);
-
-        assertUpdate("DROP CATALOG " + catalog);
-        assertCatalogs("system", "kudu", "tpch", "mock_dynamic_listing");
-    }
-
-    @Test
     void testCreateDropMultipleCatalogs()
     {
         String firstCatalog = "catalog1_" + randomNameSuffix();
@@ -1136,52 +1119,20 @@ public class TestKuduConnectorTest
         }
     }
 
-    @Test
-    void testRenameCatalog()
+    @Override
+    protected Map<String, String> getBehaviorAlteringCatalogProperties()
     {
-        String catalog = "catalog_rename_" + randomNameSuffix();
-        try {
-            String oldCatalog = "catalog_rename_" + randomNameSuffix();
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(oldCatalog, masterAddress));
-            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(oldCatalog, DEFAULT));
-
-            assertUpdate("ALTER CATALOG %s RENAME TO %s".formatted(oldCatalog, catalog));
-            assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
-                    .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, masterAddress));
-            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, DEFAULT));
-        }
-        finally {
-            assertUpdate("DROP CATALOG IF EXISTS " + catalog);
-        }
+        return ImmutableMap.<String, String>builder()
+                .put("kudu.client.master-addresses", "invalid:1234")
+                .buildOrThrow();
     }
 
-    @Test
-    void testCatalogSetProperties()
+    @Override
+    protected void assertAlteredCatalogBehavior(String catalogName)
     {
-        String catalog = "catalog_set_props_" + randomNameSuffix();
-        try {
-            @Language("SQL")
-            String catalogWithIncorrectAddress = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "invalid:1234");
-            assertUpdate(catalogWithIncorrectAddress);
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(catalogWithIncorrectAddress);
-            assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, DEFAULT)))
-                    .isInstanceOf(QueryFailedException.class)
-                    .hasMessageContaining("Couldn't find a valid master");
-
-            assertUpdate("""
-                    ALTER CATALOG %s SET PROPERTIES
-                      "kudu.client.master-addresses" = '%s'
-                    """.formatted(catalog, masterAddress));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, masterAddress));
-            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, DEFAULT));
-        }
-        finally {
-            assertUpdate("DROP CATALOG IF EXISTS " + catalog);
-        }
+        assertThatThrownBy(() -> computeActual(format("SHOW TABLES FROM %s.%s", catalogName, DEFAULT)))
+                .isInstanceOf(QueryFailedException.class)
+                .hasMessageContaining("Couldn't find a valid master");
     }
 
     @Override

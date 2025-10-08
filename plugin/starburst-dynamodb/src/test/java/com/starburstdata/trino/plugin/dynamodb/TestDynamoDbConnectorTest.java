@@ -9,19 +9,20 @@
  */
 package com.starburstdata.trino.plugin.dynamodb;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.trino.plugin.jdbc.BaseJdbcConnectorTest;
 import io.trino.testing.MaterializedResult;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.SqlExecutor;
-import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
 
 import static io.trino.spi.type.VarcharType.VARCHAR;
@@ -128,25 +129,6 @@ public class TestDynamoDbConnectorTest
     }
 
     @Test
-    void testCreateDropDynamicCatalog()
-    {
-        String catalog = "new_catalog_" + randomNameSuffix();
-        @Language("SQL")
-        String createCatalogSql = CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath());
-        assertUpdate(createCatalogSql);
-        assertCatalogs("system", "dynamodb", "tpch", "mock_dynamic_listing", "jmx", catalog);
-
-        assertUpdate("DROP CATALOG " + catalog);
-        assertCatalogs("system", "dynamodb", "mock_dynamic_listing", "tpch", "jmx");
-        // re-add the same catalog
-        assertUpdate(createCatalogSql);
-        assertCatalogs("system", "dynamodb", "tpch", "mock_dynamic_listing", "jmx", catalog);
-
-        assertUpdate("DROP CATALOG " + catalog);
-        assertCatalogs("system", "dynamodb", "tpch", "mock_dynamic_listing", "jmx");
-    }
-
-    @Test
     void testCreateDropMultipleCatalogs()
     {
         String firstCatalog = "catalog1_" + randomNameSuffix();
@@ -181,49 +163,19 @@ public class TestDynamoDbConnectorTest
         }
     }
 
-    @Test
-    void testRenameCatalog()
+    @Override
+    protected Map<String, String> getBehaviorAlteringCatalogProperties()
     {
-        String catalog = "catalog_rename_" + randomNameSuffix();
-        try {
-            String oldCatalog = "catalog_rename_" + randomNameSuffix();
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(oldCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
-            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(oldCatalog, "amazondynamodb"));
-
-            assertUpdate("ALTER CATALOG %s RENAME TO %s".formatted(oldCatalog, catalog));
-            assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
-                    .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
-            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, "amazondynamodb"));
-        }
-        finally {
-            assertUpdate("DROP CATALOG " + catalog);
-        }
+        return ImmutableMap.<String, String>builder()
+                .put("dynamodb.endpoint-url", "http://invalid:666")
+                .buildOrThrow();
     }
 
-    @Test
-    void testCatalogSetProperties()
+    @Override
+    protected void assertAlteredCatalogBehavior(String catalogName)
     {
-        String catalog = "catalog_set_props_" + randomNameSuffix();
-        try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "INVALID", server.getSchemaDirectory().getAbsolutePath()));
-            assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, "amazondynamodb"), "Error listing tables for catalog %s: The url must begin with http:// or https://".formatted(catalog));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, "INVALID", server.getSchemaDirectory().getAbsolutePath()));
-
-            assertUpdate("""
-                ALTER CATALOG %s SET PROPERTIES
-                  "dynamodb.endpoint-url" = '%s'
-                """
-                    .formatted(catalog, server.getEndpointUrl()));
-            assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, server.getEndpointUrl(), server.getSchemaDirectory()));
-            assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, "amazondynamodb"));
-        }
-        finally {
-            assertUpdate("DROP CATALOG " + catalog);
-        }
+        assertQueryFails(format("SHOW TABLES FROM %s.%s", catalogName, "amazondynamodb"),
+                format("Error listing tables for catalog %s: Invalid HTTP response! System error: UnknownHostException - invalid.*", catalogName));
     }
 
     @Test

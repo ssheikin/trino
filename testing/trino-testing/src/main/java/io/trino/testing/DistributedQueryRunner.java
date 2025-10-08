@@ -49,6 +49,7 @@ import io.trino.server.testing.TestingTrinoServer;
 import io.trino.spi.ErrorType;
 import io.trino.spi.Plugin;
 import io.trino.spi.QueryId;
+import io.trino.spi.catalog.CatalogProperties;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.eventlistener.QueryCompletedEvent;
@@ -580,6 +581,14 @@ public final class DistributedQueryRunner
         coordinator.createCatalog(catalogName, connectorName, properties);
         backupCoordinator.ifPresent(backup -> backup.createCatalog(catalogName, connectorName, properties));
         log.debug("Created catalog %s in %s", catalogName, nanosSince(start));
+    }
+
+    @Override
+    public Optional<CatalogProperties> getCatalogProperties(String catalogName)
+    {
+        return coordinator.getCatalogProperties(coordinator.getCatalogHandle(catalogName))
+                .or(() -> backupCoordinator.flatMap(backup ->
+                        backup.getCatalogProperties(backup.getCatalogHandle(catalogName))));
     }
 
     @Override

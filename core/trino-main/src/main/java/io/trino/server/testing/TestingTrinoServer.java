@@ -103,6 +103,7 @@ import io.trino.spi.ErrorType;
 import io.trino.spi.Plugin;
 import io.trino.spi.QueryId;
 import io.trino.spi.catalog.CatalogName;
+import io.trino.spi.catalog.CatalogProperties;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
@@ -561,6 +562,11 @@ public class TestingTrinoServer
             return;
         }
         catalogManager.get().createCatalog(new CatalogName(catalogName), new ConnectorName(connectorName), properties, false);
+    }
+
+    public Optional<CatalogProperties> getCatalogProperties(CatalogHandle catalogHandle)
+    {
+        return catalogManager.flatMap(manager -> manager.getCatalogProperties(catalogHandle));
     }
 
     public void loadExchangeManager(String name, Map<String, String> properties)
