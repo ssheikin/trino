@@ -347,6 +347,7 @@ public class FailedDispatchQuery
                 DataSize.ofBytes(0),
                 ImmutableList.of(),
                 DynamicFiltersStats.EMPTY,
+                ImmutableMap.of(),
                 ImmutableList.of(),
                 ImmutableList.of());
     }
