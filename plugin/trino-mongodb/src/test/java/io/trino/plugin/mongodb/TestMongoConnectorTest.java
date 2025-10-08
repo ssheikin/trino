@@ -87,7 +87,13 @@ public class TestMongoConnectorTest
         client = createMongoClient(server);
         return MongoQueryRunner.builder(server)
                 .setInitialTables(REQUIRED_TPCH_TABLES)
+                .addConnectorProperties(connectorProperties())
                 .build();
+    }
+
+    protected Map<String, String> connectorProperties()
+    {
+        return ImmutableMap.of();
     }
 
     @BeforeAll
