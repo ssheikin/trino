@@ -120,6 +120,7 @@ import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.expression.Variable;
 import io.trino.spi.function.LanguageFunction;
 import io.trino.spi.function.SchemaFunctionName;
+import io.trino.spi.metrics.Metrics;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.predicate.TupleDomain;
@@ -845,6 +846,13 @@ public class HiveMetadata
                 partitionIds,
                 !hiveTableHandle.getPartitionColumns().isEmpty(),
                 tableDefaultFileFormat));
+    }
+
+    @Override
+    public Metrics getMetrics(ConnectorSession session)
+    {
+        // HiveMetadata and metastore are created per session
+        return getMetastore(session).getMetrics();
     }
 
     @Override

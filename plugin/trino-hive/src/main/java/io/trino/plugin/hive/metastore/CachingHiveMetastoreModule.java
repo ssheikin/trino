@@ -22,6 +22,7 @@ import com.google.inject.TypeLiteral;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.metastore.HiveMetastore;
 import io.trino.metastore.HiveMetastoreFactory;
+import io.trino.metastore.MeasuredHiveMetastore.MeasuredMetastoreFactory;
 import io.trino.metastore.RawHiveMetastoreFactory;
 import io.trino.metastore.cache.CachingHiveMetastore;
 import io.trino.metastore.cache.CachingHiveMetastoreConfig;
@@ -77,7 +78,7 @@ public final class CachingHiveMetastoreModule
         metastoreFactory = new DecoratingHiveMetastoreFactory(metastoreFactory, decorators);
 
         // cross TX metastore cache is enabled wrapper with caching metastore
-        return sharedHiveMetastoreCache.createCachingHiveMetastoreFactory(metastoreFactory);
+        return sharedHiveMetastoreCache.createCachingHiveMetastoreFactory(new MeasuredMetastoreFactory(metastoreFactory));
     }
 
     private static class DecoratingHiveMetastoreFactory
