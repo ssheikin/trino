@@ -25,7 +25,6 @@ import com.google.inject.Inject;
 import io.airlift.json.JsonCodec;
 import io.airlift.json.ObjectMapperProvider;
 import io.airlift.log.Logger;
-import io.airlift.stats.TimeStat;
 import io.airlift.units.Duration;
 import io.trino.plugin.elasticsearch.ElasticsearchConfig;
 import io.trino.spi.TrinoException;
@@ -53,8 +52,6 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.weakref.jmx.Managed;
-import org.weakref.jmx.Nested;
 
 import javax.net.ssl.SSLContext;
 
@@ -89,6 +86,7 @@ import static io.trino.plugin.elasticsearch.ElasticsearchErrorCode.ELASTICSEARCH
 import static java.lang.StrictMath.toIntExact;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.elasticsearch.action.search.SearchType.QUERY_THEN_FETCH;
@@ -115,24 +113,22 @@ public class ElasticsearchClient
     private final Duration refreshInterval;
     private final boolean tlsEnabled;
     private final boolean ignorePublishAddress;
-
-    private final TimeStat searchStats = new TimeStat(MILLISECONDS);
-    private final TimeStat nextPageStats = new TimeStat(MILLISECONDS);
-    private final TimeStat countStats = new TimeStat(MILLISECONDS);
-    private final TimeStat backpressureStats = new TimeStat(MILLISECONDS);
+    private final ElasticsearchClientStats elasticsearchClientStats;
 
     @Inject
     public ElasticsearchClient(
             ElasticsearchConfig config,
-            Set<ElasticRestClientConfigurator> clientConfigurators)
+            Set<ElasticRestClientConfigurator> clientConfigurators,
+            ElasticsearchClientStats elasticsearchClientStats)
     {
-        client = createClient(config, clientConfigurators, backpressureStats);
+        client = createClient(config, clientConfigurators, elasticsearchClientStats);
 
         this.ignorePublishAddress = config.isIgnorePublishAddress();
         this.scrollSize = config.getScrollSize();
         this.scrollTimeout = config.getScrollTimeout();
         this.refreshInterval = config.getNodeRefreshInterval();
         this.tlsEnabled = config.isTlsEnabled();
+        this.elasticsearchClientStats = requireNonNull(elasticsearchClientStats, "elasticsearchClientStats is null");
     }
 
     @PostConstruct
@@ -183,7 +179,7 @@ public class ElasticsearchClient
     private static BackpressureRestHighLevelClient createClient(
             ElasticsearchConfig config,
             Set<ElasticRestClientConfigurator> clientConfigurators,
-            TimeStat backpressureStats)
+            ElasticsearchClientStats elasticsearchClientStats)
     {
         RestClientBuilder builder = RestClient.builder(
                 config.getHosts().stream()
@@ -221,7 +217,7 @@ public class ElasticsearchClient
             return clientBuilder;
         });
 
-        return new BackpressureRestHighLevelClient(builder, config, backpressureStats);
+        return new BackpressureRestHighLevelClient(builder, config, elasticsearchClientStats);
     }
 
     private static Optional<SSLContext> buildSslContext(
@@ -583,7 +579,7 @@ public class ElasticsearchClient
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
         }
         finally {
-            searchStats.add(Duration.nanosSince(start));
+            elasticsearchClientStats.getSearchStats().add(Duration.nanosSince(start));
         }
     }
 
@@ -602,7 +598,7 @@ public class ElasticsearchClient
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
         }
         finally {
-            nextPageStats.add(Duration.nanosSince(start));
+            elasticsearchClientStats.getNextPageStats().add(Duration.nanosSince(start));
         }
     }
 
@@ -641,7 +637,7 @@ public class ElasticsearchClient
             }
         }
         finally {
-            countStats.add(Duration.nanosSince(start));
+            elasticsearchClientStats.getCountStats().add(Duration.nanosSince(start));
         }
     }
 
@@ -655,34 +651,6 @@ public class ElasticsearchClient
         catch (IOException e) {
             throw new TrinoException(ELASTICSEARCH_CONNECTION_ERROR, e);
         }
-    }
-
-    @Managed
-    @Nested
-    public TimeStat getSearchStats()
-    {
-        return searchStats;
-    }
-
-    @Managed
-    @Nested
-    public TimeStat getNextPageStats()
-    {
-        return nextPageStats;
-    }
-
-    @Managed
-    @Nested
-    public TimeStat getCountStats()
-    {
-        return countStats;
-    }
-
-    @Managed
-    @Nested
-    public TimeStat getBackpressureStats()
-    {
-        return backpressureStats;
     }
 
     private <T> T doRequest(String path, ResponseHandler<T> handler)

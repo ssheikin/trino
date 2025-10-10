@@ -21,7 +21,6 @@ import dev.failsafe.event.ExecutionAttemptedEvent;
 import dev.failsafe.event.ExecutionCompletedEvent;
 import dev.failsafe.function.CheckedSupplier;
 import io.airlift.log.Logger;
-import io.airlift.stats.TimeStat;
 import io.trino.plugin.elasticsearch.ElasticsearchConfig;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionResponse;
@@ -53,15 +52,15 @@ public class BackpressureRestHighLevelClient
     private final RestHighLevelClient delegate;
     private final BackpressureRestClient backpressureRestClient;
     private final RetryPolicy<ActionResponse> retryPolicy;
-    private final TimeStat backpressureStats;
+    private final ElasticsearchClientStats elasticsearchClientStats;
     private final ThreadLocal<Stopwatch> stopwatch = ThreadLocal.withInitial(Stopwatch::createUnstarted);
 
-    public BackpressureRestHighLevelClient(RestClientBuilder restClientBuilder, ElasticsearchConfig config, TimeStat backpressureStats)
+    public BackpressureRestHighLevelClient(RestClientBuilder restClientBuilder, ElasticsearchConfig config, ElasticsearchClientStats elasticsearchClientStats)
     {
-        this.backpressureStats = requireNonNull(backpressureStats, "backpressureStats is null");
+        this.elasticsearchClientStats = requireNonNull(elasticsearchClientStats, "elasticsearchClientStats is null");
         delegate = new RestHighLevelClientBuilder(requireNonNull(restClientBuilder, "restClientBuilder is null").build())
                 .build();
-        backpressureRestClient = new BackpressureRestClient(delegate.getLowLevelClient(), config, backpressureStats);
+        backpressureRestClient = new BackpressureRestClient(delegate.getLowLevelClient(), config, elasticsearchClientStats);
         retryPolicy = RetryPolicy.<ActionResponse>builder()
                 .withMaxAttempts(-1)
                 .withMaxDuration(java.time.Duration.ofMillis(config.getMaxRetryTime().toMillis()))
@@ -116,7 +115,7 @@ public class BackpressureRestHighLevelClient
             long delayMillis = stopwatch.get().elapsed(MILLISECONDS);
             log.debug("Adding %s milliseconds to backpressure stats", delayMillis);
             stopwatch.get().reset();
-            backpressureStats.add(delayMillis, MILLISECONDS);
+            elasticsearchClientStats.getBackpressureStats().add(delayMillis, MILLISECONDS);
         }
     }
 
