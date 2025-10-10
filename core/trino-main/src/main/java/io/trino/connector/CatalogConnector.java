@@ -26,6 +26,7 @@ import java.util.Optional;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.airlift.units.DataSize.succinctBytes;
 import static io.trino.ExceededMemoryLimitException.exceededLocalUserMemoryLimit;
+import static io.trino.metadata.CatalogStatus.OPERATIONAL;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -72,7 +73,8 @@ public class CatalogConnector
                 connectorName,
                 catalogConnector,
                 informationSchemaConnector,
-                systemConnector);
+                systemConnector,
+                OPERATIONAL);
     }
 
     public CatalogHandle getCatalogHandle()
