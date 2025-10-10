@@ -13,6 +13,8 @@
  */
 package io.trino.plugin.mongodb;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -44,11 +46,12 @@ public class DefaultMongoSessionProvider
         requireNonNull(configurators, "configurators is null");
         requireNonNull(openTelemetry, "openTelemetry is null");
 
-        MongoClientSettings.Builder options = MongoClientSettings.builder();
-        configurators.forEach(configurator -> configurator.configure(options));
-        options.addCommandListener(MongoTelemetry.builder(openTelemetry).build().newCommandListener());
-
-        MongoClient client = MongoClients.create(options.build());
+        Supplier<MongoClient> client = Suppliers.memoize(() -> {
+            MongoClientSettings.Builder options = MongoClientSettings.builder();
+            configurators.forEach(configurator -> configurator.configure(options));
+            options.addCommandListener(MongoTelemetry.builder(openTelemetry).build().newCommandListener());
+            return MongoClients.create(options.build());
+        });
 
         this.mongoSession = new MongoSession(
                 typeManager,
