@@ -15,11 +15,11 @@ package io.trino.filesystem.gcs;
 
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
+import io.airlift.configuration.DefunctConfig;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.airlift.units.MinDuration;
 import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.AssertFalse;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
 
+@DefunctConfig("gcs.use-access-token")
 public class GcsFileSystemConfig
 {
     public enum AuthType
@@ -47,8 +48,7 @@ public class GcsFileSystemConfig
     private String projectId;
     private Optional<String> endpoint = Optional.empty();
 
-    private Optional<Boolean> useGcsAccessToken = Optional.empty();
-    private Optional<AuthType> authType = Optional.empty();
+    private AuthType authType = AuthType.SERVICE_ACCOUNT;
     private boolean useOauthPassthroughToken;
     private int maxRetries = 20;
     private double backoffScaleFactor = 3.0;
@@ -143,16 +143,13 @@ public class GcsFileSystemConfig
     @NotNull
     public AuthType getAuthType()
     {
-        if (useGcsAccessToken.isPresent() && useGcsAccessToken.get()) {
-            return AuthType.ACCESS_TOKEN;
-        }
-        return authType.orElse(AuthType.SERVICE_ACCOUNT);
+        return authType;
     }
 
     @Config("gcs.auth-type")
     public GcsFileSystemConfig setAuthType(AuthType authType)
     {
-        this.authType = Optional.of(authType);
+        this.authType = authType;
         return this;
     }
 
@@ -166,20 +163,6 @@ public class GcsFileSystemConfig
     public GcsFileSystemConfig setUseOauthPassthroughToken(boolean useOauthPassthroughToken)
     {
         this.useOauthPassthroughToken = useOauthPassthroughToken;
-        return this;
-    }
-
-    @Deprecated
-    public boolean isUseGcsAccessToken()
-    {
-        return useGcsAccessToken.orElse(false);
-    }
-
-    @Deprecated
-    @Config("gcs.use-access-token")
-    public GcsFileSystemConfig setUseGcsAccessToken(boolean useGcsAccessToken)
-    {
-        this.useGcsAccessToken = Optional.of(useGcsAccessToken);
         return this;
     }
 
@@ -274,11 +257,5 @@ public class GcsFileSystemConfig
     public boolean isRetryDelayValid()
     {
         return minBackoffDelay.compareTo(maxBackoffDelay) <= 0;
-    }
-
-    @AssertFalse(message = "Cannot set both gcs.use-access-token and gcs.auth-type")
-    public boolean isAuthTypeAndGcsAccessTokenConfigured()
-    {
-        return authType.isPresent() && useGcsAccessToken.isPresent();
     }
 }
