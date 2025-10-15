@@ -60,6 +60,7 @@ public class TestingKuduServer
                 .withNetwork(network)
                 .withNetworkAliases(masterContainerAlias));
 
+        @SuppressWarnings("deprecation")
         ToxiproxyContainer toxiProxy = closer.register(new ToxiproxyContainer(TOXIPROXY_IMAGE)
                 .withNetwork(network)
                 .withNetworkAliases(TOXIPROXY_NETWORK_ALIAS));
