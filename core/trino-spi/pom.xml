@@ -1209,6 +1209,51 @@
                                     <code>java.method.removed</code>
                                     <old>method io.trino.spi.block.Block io.trino.spi.block.RowBlock::getFieldBlock(int)</old>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
+                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.AbstractIntType::createPreSizedBlockBuilder(int)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
+                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.AbstractLongType::createPreSizedBlockBuilder(int)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
+                                    <new>method void io.trino.spi.type.AbstractLongType::writeLong(io.trino.spi.block.PreSizedBlockBuilder, long)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.Type::createPreSizedBlockBuilder(int)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeBoolean(io.trino.spi.block.PreSizedBlockBuilder, boolean)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeDouble(io.trino.spi.block.PreSizedBlockBuilder, double)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeLong(io.trino.spi.block.PreSizedBlockBuilder, long)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeObject(io.trino.spi.block.PreSizedBlockBuilder, java.lang.Object)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeSlice(io.trino.spi.block.PreSizedBlockBuilder, io.airlift.slice.Slice)</new>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
