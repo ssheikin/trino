@@ -28,6 +28,7 @@ import io.trino.spi.connector.ConnectorMaterializedViewDefinition;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TestingTypeManager;
+import software.amazon.awssdk.services.glue.GlueClient;
 
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +46,15 @@ public class TestTrinoGlueCatalogV1
     protected TrinoCatalog createTrinoCatalog(boolean useUniqueTableLocations)
     {
         return createGlueTrinoCatalog(useUniqueTableLocations, false);
+    }
+
+    @Override
+    protected void createNamespaceWithProperties(TrinoCatalog catalog, String namespace, Map<String, String> properties)
+    {
+        try (GlueClient glueClient = GlueClient.create()) {
+            glueClient.createDatabase(database -> database
+                    .databaseInput(input -> input.name(namespace).parameters(properties)));
+        }
     }
 
     private TrinoCatalog createGlueTrinoCatalog(boolean useUniqueTableLocations, boolean useSystemSecurity)

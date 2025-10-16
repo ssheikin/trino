@@ -317,9 +317,6 @@ public class TrinoGlueCatalogV1
             if (database.getLocationUri() != null) {
                 metadata.put(LOCATION_PROPERTY, database.getLocationUri());
             }
-            if (database.getParameters() != null) {
-                metadata.putAll(database.getParameters());
-            }
             return metadata.buildOrThrow();
         }
         catch (EntityNotFoundException e) {
