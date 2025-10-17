@@ -46,9 +46,8 @@ public class WebUiPreviewModule
                 jaxrsBinder(binder).bind(OAuth2WebUiPreviewResource.class);
                 break;
             case "none":
-                break;
             default:
-                throw new IllegalArgumentException("Unknown authentication type: " + authentication);
+                break;
         }
     }
 
