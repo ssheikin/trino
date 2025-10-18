@@ -17,12 +17,17 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.Session;
 import io.trino.connector.TestDynamicCatalogs;
 import io.trino.plugin.memory.MemoryPlugin;
+import io.trino.spi.catalog.CatalogName;
+import io.trino.spi.catalog.CatalogProperties;
+import io.trino.spi.connector.CatalogHandle.CatalogVersion;
+import io.trino.spi.connector.ConnectorName;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
+import static io.trino.spi.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
@@ -30,13 +35,19 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 public class TestSystemMetadataCatalogTable
         extends AbstractTestQueryFramework
 {
+    private static final String BROKEN_CATALOG = "broken_catalog";
+
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
         Session session = testSessionBuilder().build();
+        ImmutableMap<String, String> properties = ImmutableMap.of("non_existing", "false");
         QueryRunner queryRunner = DistributedQueryRunner.builder(session)
-                .setAdditionalModule(new TestDynamicCatalogs.TestCatalogStoreModule())
+                .setAdditionalModule(new TestDynamicCatalogs.TestCatalogStoreModule(ImmutableMap.of(new CatalogName(BROKEN_CATALOG), new CatalogProperties(
+                        createRootCatalogHandle(new CatalogName(BROKEN_CATALOG), new CatalogVersion("abc123")),
+                        new ConnectorName("memory"),
+                        properties))))
                 .setCoordinatorProperties(ImmutableMap.of("catalog.store", "prepopulated_memory"))
                 .setWorkerCount(0)
                 .build();
