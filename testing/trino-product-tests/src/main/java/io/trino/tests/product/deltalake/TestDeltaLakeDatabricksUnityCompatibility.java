@@ -127,7 +127,7 @@ public class TestDeltaLakeDatabricksUnityCompatibility
                 .containsOnly(expectedRowsForMerge);
     }
 
-    @Test(groups = {DELTA_LAKE_DATABRICKS_UNITY, PROFILE_SPECIFIC_TESTS}, enabled = false)
+    @Test(groups = {DELTA_LAKE_DATABRICKS_UNITY, PROFILE_SPECIFIC_TESTS})
     @Flaky(issue = DATABRICKS_COMMUNICATION_FAILURE_ISSUE, match = DATABRICKS_COMMUNICATION_FAILURE_MATCH)
     public void testReadWriteCatalogOwnedTable()
     {
@@ -190,7 +190,7 @@ public class TestDeltaLakeDatabricksUnityCompatibility
         }
     }
 
-    @Test(groups = {DELTA_LAKE_DATABRICKS_UNITY, PROFILE_SPECIFIC_TESTS})
+    @Test(groups = {DELTA_LAKE_DATABRICKS_UNITY, PROFILE_SPECIFIC_TESTS}, enabled = false)
     @Flaky(issue = DATABRICKS_COMMUNICATION_FAILURE_ISSUE, match = DATABRICKS_COMMUNICATION_FAILURE_MATCH)
     public void testTableReadWriteManagedTable()
     {
