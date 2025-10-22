@@ -29,6 +29,7 @@ import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
+import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -83,7 +84,7 @@ public class ElasticsearchConnectorFactory
                 new MBeanServerModule(),
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.elasticsearch", "trino.plugin.elasticsearch"),
                 new JsonModule(),
-                new TypeDeserializerModule(context.getTypeManager()),
+                new TypeDeserializerModule(),
                 new ElasticsearchConnectorModule(),
                 binder -> {
                     binder.bind(ElasticsearchClientFactory.class).to(DefaultElasticsearchClientFactory.class).in(Scopes.SINGLETON);
@@ -91,6 +92,7 @@ public class ElasticsearchConnectorFactory
                 binder -> {
                     binder.bind(Node.class).toInstance(context.getCurrentNode());
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
+                    binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                 });
 
         return app

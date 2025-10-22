@@ -84,7 +84,7 @@ public class KafkaConnectorFactory
                 ImmutableList.<Module>builder()
                         .add(new CatalogNameModule(catalogName))
                         .add(new JsonModule())
-                        .add(new TypeDeserializerModule(context.getTypeManager()))
+                        .add(new TypeDeserializerModule())
                         .add(new KafkaConnectorModule())
                         .add(binder -> {
                             binder.bind(ClassLoader.class).toInstance(KafkaConnectorFactory.class.getClassLoader());

@@ -70,6 +70,7 @@ import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.security.LocationAccessControl;
+import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -195,7 +196,7 @@ public class HiveConnectorFactory
                 new MBeanModule(),
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.hive", "trino.plugin.hive"),
                 new JsonModule(),
-                new TypeDeserializerModule(context.getTypeManager()),
+                new TypeDeserializerModule(),
                 new HiveModule(),
                 new CachingDirectoryListerModule(directoryLister),
                 new HiveMetastoreModule(metastore, true),
@@ -217,6 +218,7 @@ public class HiveConnectorFactory
                     binder.bind(PageSorter.class).toInstance(context.getPageSorter());
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                     binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
+                    binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                 },
                 binder -> newSetBinder(binder, EventListener.class),
                 binder -> newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(HiveSessionProperties.class).in(Scopes.SINGLETON),
