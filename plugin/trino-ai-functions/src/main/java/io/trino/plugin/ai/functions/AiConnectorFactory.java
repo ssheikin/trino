@@ -16,7 +16,7 @@ package io.trino.plugin.ai.functions;
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
-import io.opentelemetry.api.trace.Tracer;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
@@ -68,8 +68,8 @@ public class AiConnectorFactory
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
                 new AiModule(),
+                new ConnectorContextModule(context),
                 binder -> {
-                    binder.bind(Tracer.class).toInstance(context.getTracer());
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                 });
         return app

@@ -21,11 +21,10 @@ import io.airlift.bootstrap.Bootstrap;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.trace.Tracer;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.manager.FileSystemModule;
 import io.trino.plugin.base.CatalogNameModule;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorAccessControl;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorCacheMetadata;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSinkProvider;
@@ -39,10 +38,6 @@ import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.deltalake.metastore.DeltaLakeMetastoreModule;
 import io.trino.plugin.hive.HiveConfig;
-import io.trino.spi.Node;
-import io.trino.spi.NodeManager;
-import io.trino.spi.NodeVersion;
-import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.cache.ConnectorCacheMetadata;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.classloader.ThreadContextClassLoader;
@@ -60,8 +55,6 @@ import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.function.table.ConnectorTableFunction;
 import io.trino.spi.procedure.Procedure;
-import io.trino.spi.security.LocationAccessControl;
-import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -194,17 +187,10 @@ public class DeltaLakeConnectorFactory
                 fileSystemFactory
                         .map(factory -> (Module) binder -> binder.bind(TrinoFileSystemFactory.class).toInstance(factory))
                         .orElseGet(() -> new FileSystemModule(catalogName, context, false, quietBootstrap)),
+                new ConnectorContextModule(context),
                 binder -> {
-                    binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
-                    binder.bind(Tracer.class).toInstance(context.getTracer());
-                    binder.bind(NodeVersion.class).toInstance(new NodeVersion(context.getCurrentNode().getVersion()));
-                    binder.bind(NodeManager.class).toInstance(context.getNodeManager());
-                    binder.bind(Node.class).toInstance(context.getCurrentNode());
-                    binder.bind(TypeManager.class).toInstance(context.getTypeManager());
-                    binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                     newSetBinder(binder, EventListener.class);
-                    binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
                 },
                 module);
 

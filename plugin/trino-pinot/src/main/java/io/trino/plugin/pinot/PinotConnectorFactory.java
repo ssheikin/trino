@@ -19,6 +19,7 @@ import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.TypeDeserializerModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.base.jmx.MBeanServerModule;
@@ -26,7 +27,6 @@ import io.trino.plugin.pinot.auth.PinotAuthenticationModule;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
-import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -86,7 +86,7 @@ public class PinotConnectorFactory
                 .add(new MBeanModule())
                 .add(new MBeanServerModule())
                 .add(new TypeDeserializerModule())
-                .add(binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()))
+                .add(new ConnectorContextModule(context))
                 .add(new PinotModule(catalogName))
                 .add(new PinotAuthenticationModule());
 

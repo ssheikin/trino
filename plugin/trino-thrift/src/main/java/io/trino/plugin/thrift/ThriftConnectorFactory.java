@@ -18,6 +18,7 @@ import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.drift.transport.netty.client.DriftNettyClientModule;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
@@ -25,7 +26,6 @@ import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
-import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -85,8 +85,8 @@ public class ThriftConnectorFactory
                 new MBeanServerModule(),
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.thrift", "trino.plugin.thrift"),
                 new DriftNettyClientModule(),
+                new ConnectorContextModule(context),
                 binder -> {
-                    binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                 },
                 locationModule,

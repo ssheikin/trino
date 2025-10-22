@@ -16,19 +16,12 @@ import com.starburstdata.trino.plugin.functions.io.StorageModule;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.trace.Tracer;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
-import io.trino.spi.NodeManager;
-import io.trino.spi.NodeVersion;
-import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
-import io.trino.spi.security.AiModelAccessControl;
-import io.trino.spi.security.LocationAccessControl;
-import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
 import java.util.Set;
@@ -78,16 +71,9 @@ public class FunctionsConnectorFactory
                 new JsonModule(),
                 new StorageModule(),
                 new ResolvingFileSystemModule(context.getOpenTelemetry()),
+                new ConnectorContextModule(context),
                 binder -> {
-                    binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
-                    binder.bind(Tracer.class).toInstance(context.getTracer());
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
-                    binder.bind(NodeManager.class).toInstance(context.getNodeManager());
-                    binder.bind(NodeVersion.class).toInstance(new NodeVersion(context.getCurrentNode().getVersion()));
-                    binder.bind(TypeManager.class).toInstance(context.getTypeManager());
-                    binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
-                    binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
-                    binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
                 });
         return app
                 .doNotInitializeLogging()

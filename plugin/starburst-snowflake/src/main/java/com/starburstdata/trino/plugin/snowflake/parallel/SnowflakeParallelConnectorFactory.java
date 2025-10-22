@@ -12,15 +12,13 @@ package com.starburstdata.trino.plugin.snowflake.parallel;
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.jdbc.JdbcModule;
-import io.trino.spi.Node;
-import io.trino.spi.VersionEmbedder;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
-import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
 import java.util.Set;
@@ -74,9 +72,7 @@ public class SnowflakeParallelConnectorFactory
     {
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
-                binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
-                binder -> binder.bind(Node.class).toInstance(context.getCurrentNode()),
-                binder -> binder.bind(VersionEmbedder.class).toInstance(context.getVersionEmbedder()),
+                new ConnectorContextModule(context),
                 binder -> binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName)),
                 new JdbcModule(),
                 new SnowflakeJdbcOverrideModule(),

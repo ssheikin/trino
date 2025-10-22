@@ -17,12 +17,12 @@ import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
-import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +74,7 @@ public class KuduConnectorFactory
                 new JsonModule(),
                 new KuduModule(),
                 binder -> binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName)),
-                binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
+                new ConnectorContextModule(context),
                 binder -> binder.bind(ClassLoader.class).toInstance(KuduConnectorFactory.class.getClassLoader()));
 
         return app
