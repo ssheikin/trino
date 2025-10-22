@@ -23,7 +23,6 @@ import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.manager.FileSystemModule;
-import io.trino.plugin.base.CatalogNameModule;
 import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorAccessControl;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorCacheMetadata;
@@ -39,7 +38,6 @@ import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.deltalake.metastore.DeltaLakeMetastoreModule;
 import io.trino.plugin.hive.HiveConfig;
 import io.trino.spi.cache.ConnectorCacheMetadata;
-import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorAccessControl;
@@ -179,7 +177,6 @@ public class DeltaLakeConnectorFactory
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.deltalake", "trino.plugin.deltalake"),
                 new JsonModule(),
                 new MBeanServerModule(),
-                new CatalogNameModule(catalogName),
                 metastoreModule.orElse(new DeltaLakeMetastoreModule()),
                 new DeltaLakeModule(),
                 new DeltaLakeSecurityModule(),
@@ -187,9 +184,8 @@ public class DeltaLakeConnectorFactory
                 fileSystemFactory
                         .map(factory -> (Module) binder -> binder.bind(TrinoFileSystemFactory.class).toInstance(factory))
                         .orElseGet(() -> new FileSystemModule(catalogName, context, false, quietBootstrap)),
-                new ConnectorContextModule(context),
+                new ConnectorContextModule(catalogName, context),
                 binder -> {
-                    binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                     newSetBinder(binder, EventListener.class);
                 },
                 module);

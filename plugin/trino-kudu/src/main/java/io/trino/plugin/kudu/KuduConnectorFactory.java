@@ -19,7 +19,6 @@ import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
-import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
@@ -73,8 +72,7 @@ public class KuduConnectorFactory
                 "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
                 new KuduModule(),
-                binder -> binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName)),
-                new ConnectorContextModule(context),
+                new ConnectorContextModule(catalogName, context),
                 binder -> binder.bind(ClassLoader.class).toInstance(KuduConnectorFactory.class.getClassLoader()));
 
         return app

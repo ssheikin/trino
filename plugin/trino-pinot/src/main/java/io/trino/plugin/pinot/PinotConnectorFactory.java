@@ -86,7 +86,7 @@ public class PinotConnectorFactory
                 .add(new MBeanModule())
                 .add(new MBeanServerModule())
                 .add(new TypeDeserializerModule())
-                .add(new ConnectorContextModule(context))
+                .add(new ConnectorContextModule(catalogName, context))
                 .add(new PinotModule(catalogName))
                 .add(new PinotAuthenticationModule());
 

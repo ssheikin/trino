@@ -80,7 +80,7 @@ public class MongoConnectorFactory
                 "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
                 new MongoClientModule(),
-                new ConnectorContextModule(context));
+                new ConnectorContextModule(catalogName, context));
 
         return app
                 .doNotInitializeLogging()

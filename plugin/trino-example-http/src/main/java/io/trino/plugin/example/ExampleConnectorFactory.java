@@ -72,7 +72,7 @@ public class ExampleConnectorFactory
                 "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
                 new TypeDeserializerModule(),
-                new ConnectorContextModule(context),
+                new ConnectorContextModule(catalogName, context),
                 new ExampleModule());
 
         return app

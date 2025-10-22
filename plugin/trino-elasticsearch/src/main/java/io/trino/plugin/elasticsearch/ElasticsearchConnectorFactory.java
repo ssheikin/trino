@@ -25,7 +25,6 @@ import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.elasticsearch.client.DefaultElasticsearchClientFactory;
 import io.trino.plugin.elasticsearch.client.ElasticsearchClientFactory;
-import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
@@ -88,10 +87,7 @@ public class ElasticsearchConnectorFactory
                 binder -> {
                     binder.bind(ElasticsearchClientFactory.class).to(DefaultElasticsearchClientFactory.class).in(Scopes.SINGLETON);
                 },
-                new ConnectorContextModule(context),
-                binder -> {
-                    binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
-                });
+                new ConnectorContextModule(catalogName, context));
 
         return app
                 .doNotInitializeLogging()

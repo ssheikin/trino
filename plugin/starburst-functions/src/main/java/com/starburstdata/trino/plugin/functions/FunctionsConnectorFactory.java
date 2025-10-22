@@ -18,7 +18,6 @@ import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
-import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
@@ -71,10 +70,7 @@ public class FunctionsConnectorFactory
                 new JsonModule(),
                 new StorageModule(),
                 new ResolvingFileSystemModule(context.getOpenTelemetry()),
-                new ConnectorContextModule(context),
-                binder -> {
-                    binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
-                });
+                new ConnectorContextModule(catalogName, context));
         return app
                 .doNotInitializeLogging()
                 .loadSecretsPlugins() // starburst-functions-client requires access to secrets.
