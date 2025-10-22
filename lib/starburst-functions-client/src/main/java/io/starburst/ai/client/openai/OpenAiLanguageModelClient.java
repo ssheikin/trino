@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableList;
 import com.openai.client.OpenAIClient;
 import com.openai.core.JsonValue;
 import com.openai.core.http.StreamResponse;
+import com.openai.errors.InternalServerException;
 import com.openai.errors.RateLimitException;
 import com.openai.helpers.ChatCompletionAccumulator;
 import com.openai.models.FunctionDefinition;
@@ -311,6 +312,6 @@ public class OpenAiLanguageModelClient
 
     private static boolean isRetryable(Throwable t)
     {
-        return t instanceof RateLimitException;
+        return t instanceof RateLimitException || t instanceof InternalServerException;
     }
 }
