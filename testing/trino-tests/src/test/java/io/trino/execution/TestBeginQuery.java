@@ -15,6 +15,7 @@ package io.trino.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.trino.Session;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.spi.Plugin;
@@ -46,6 +47,7 @@ import org.junit.jupiter.api.parallel.Execution;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.trino.testing.TestingSession.testSessionBuilder;
@@ -157,6 +159,13 @@ public class TestBeginQuery
                 public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
                 {
                     return new TestConnector(metadata);
+                }
+
+                @Override
+                public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+                {
+                    // This connector is used for testing purposes only and does not have any security-sensitive properties.
+                    return ImmutableSet.of();
                 }
             });
         }

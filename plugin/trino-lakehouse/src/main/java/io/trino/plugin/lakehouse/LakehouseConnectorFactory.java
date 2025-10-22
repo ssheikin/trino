@@ -15,11 +15,13 @@ package io.trino.plugin.lakehouse;
 
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.starburst.ai.client.AiClientModule;
 import io.trino.plugin.base.TypeDeserializerModule;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.hive.NodeVersion;
@@ -39,6 +41,7 @@ import io.trino.spi.security.AiModelAccessControl;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
+import java.util.Set;
 
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
 
@@ -55,6 +58,29 @@ public class LakehouseConnectorFactory
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         checkStrictSpiVersionMatch(context, this);
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Injector injector = app
+                .initialize();
+
+        return injector.getInstance(LakehouseConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
         try (var _ = new ThreadContextClassLoader(getClass().getClassLoader())) {
             Bootstrap app = new Bootstrap(
                     "io.trino.bootstrap.catalog." + catalogName,
@@ -84,13 +110,9 @@ public class LakehouseConnectorFactory
                         binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
                     },
                     new AiClientModule(context.getModelConnectionSpecsLoader()));
-
-            Injector injector = app
+            return app
                     .doNotInitializeLogging()
-                    .setRequiredConfigurationProperties(config)
-                    .initialize();
-
-            return injector.getInstance(LakehouseConnector.class);
+                    .setRequiredConfigurationProperties(config);
         }
     }
 }

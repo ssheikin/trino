@@ -53,6 +53,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
@@ -224,6 +225,12 @@ public class TestCreateCatalogTask
         public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
         {
             throw new IllegalArgumentException("TEST create catalog fail: " + catalogName);
+        }
+
+        @Override
+        public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+        {
+            throw new IllegalArgumentException("TEST getSecuritySensitivePropertyNames fail: " + catalogName);
         }
     }
 

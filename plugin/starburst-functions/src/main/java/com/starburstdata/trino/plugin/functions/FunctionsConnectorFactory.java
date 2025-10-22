@@ -15,9 +15,11 @@ import com.starburstdata.trino.plugin.functions.ai.AiModule;
 import com.starburstdata.trino.plugin.functions.io.ResolvingFileSystemModule;
 import com.starburstdata.trino.plugin.functions.io.StorageModule;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.hive.NodeVersion;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
@@ -28,6 +30,7 @@ import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.security.AiModelAccessControl;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
@@ -59,6 +62,29 @@ public class FunctionsConnectorFactory
     {
         checkStrictSpiVersionMatch(context, this);
 
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Injector injector = app
+                .initialize();
+
+        return injector.getInstance(Connector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
                 new AiModule(context.getModelConnectionSpecsLoader()),
@@ -75,13 +101,9 @@ public class FunctionsConnectorFactory
                     binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
                 },
                 module);
-
-        Injector injector = app
+        return app
                 .doNotInitializeLogging()
                 .loadSecretsPlugins() // starburst-functions-client requires access to secrets.
-                .setRequiredConfigurationProperties(config)
-                .initialize();
-
-        return injector.getInstance(Connector.class);
+                .setRequiredConfigurationProperties(config);
     }
 }
