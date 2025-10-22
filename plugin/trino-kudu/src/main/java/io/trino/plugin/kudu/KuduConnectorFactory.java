@@ -22,6 +22,7 @@ import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
+import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
 import java.util.Set;
@@ -71,8 +72,9 @@ public class KuduConnectorFactory
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
-                new KuduModule(context.getTypeManager()),
+                new KuduModule(),
                 binder -> binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName)),
+                binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
                 binder -> binder.bind(ClassLoader.class).toInstance(KuduConnectorFactory.class.getClassLoader()));
 
         return app

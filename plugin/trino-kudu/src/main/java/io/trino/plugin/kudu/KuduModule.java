@@ -41,7 +41,6 @@ import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
-import io.trino.spi.type.TypeManager;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
@@ -49,23 +48,13 @@ import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.HIVE_METASTORE;
 import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.NONE;
 import static io.trino.plugin.kudu.KuduClientConfig.SchemaEmulationType.TABLE_NAME;
-import static java.util.Objects.requireNonNull;
 
 public class KuduModule
         extends AbstractConfigurationAwareModule
 {
-    private final TypeManager typeManager;
-
-    public KuduModule(TypeManager typeManager)
-    {
-        this.typeManager = requireNonNull(typeManager, "typeManager is null");
-    }
-
     @Override
     protected void setup(Binder binder)
     {
-        binder.bind(TypeManager.class).toInstance(typeManager);
-
         binder.bind(KuduConnector.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, ConnectorMetadata.class).setDefault().to(KuduMetadata.class);
         binder.bind(KuduTableProperties.class).in(Scopes.SINGLETON);
