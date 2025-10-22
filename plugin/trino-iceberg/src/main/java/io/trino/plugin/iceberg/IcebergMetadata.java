@@ -3422,10 +3422,14 @@ public class IcebergMetadata
     }
 
     @Override
-    public TableStatisticsMetadata getStatisticsCollectionMetadataForWrite(ConnectorSession session, ConnectorTableMetadata tableMetadata)
+    public TableStatisticsMetadata getStatisticsCollectionMetadataForWrite(ConnectorSession session, ConnectorTableMetadata tableMetadata, boolean tableReplace)
     {
         if (!isExtendedStatisticsEnabled(session) || !isCollectExtendedStatisticsOnWrite(session)) {
             return TableStatisticsMetadata.empty();
+        }
+
+        if (tableReplace) {
+            return getStatisticsCollectionMetadata(tableMetadata, Optional.empty(), availableColumnNames -> {});
         }
 
         ConnectorTableHandle tableHandle = getTableHandle(session, tableMetadata.getTable(), Optional.empty(), Optional.empty());
@@ -3460,6 +3464,12 @@ public class IcebergMetadata
                 .map(IcebergColumnHandle::getName)
                 .collect(toImmutableSet());
         return getStatisticsCollectionMetadata(tableMetadata, Optional.of(columnsWithExtendedStatistics), availableColumnNames -> {});
+    }
+
+    @Override
+    public TableStatisticsMetadata getStatisticsCollectionMetadataForWrite(ConnectorSession session, ConnectorTableMetadata tableMetadata)
+    {
+        throw new UnsupportedOperationException("This variant of getStatisticsCollectionMetadataForWrite is unsupported");
     }
 
     @Override
