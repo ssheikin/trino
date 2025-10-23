@@ -41,6 +41,7 @@ public class HiveProxiedConnectorInitializer
 {
     private static final Module DEFAULT_ADDITIONAL_MODULE = EMPTY_MODULE;
     private static final Optional<HiveMetastore> DEFAULT_METASTORE = Optional.empty();
+    private static final boolean DEFAULT_METASTORE_IMPERSONATION_ENABLED = false;
     private static final Optional<TrinoFileSystemFactory> DEFAULT_FILESYSTEM_FACTORY = Optional.empty();
     private static final Optional<DirectoryLister> DEFAULT_DIRECTORY_LISTENER = Optional.empty();
 
@@ -65,6 +66,7 @@ public class HiveProxiedConnectorInitializer
                     context,
                     DEFAULT_ADDITIONAL_MODULE,
                     DEFAULT_METASTORE,
+                    DEFAULT_METASTORE_IMPERSONATION_ENABLED,
                     DEFAULT_FILESYSTEM_FACTORY,
                     DEFAULT_DIRECTORY_LISTENER);
         }
@@ -86,6 +88,7 @@ public class HiveProxiedConnectorInitializer
                     context,
                     DEFAULT_ADDITIONAL_MODULE,
                     DEFAULT_METASTORE,
+                    DEFAULT_METASTORE_IMPERSONATION_ENABLED,
                     DEFAULT_FILESYSTEM_FACTORY,
                     DEFAULT_DIRECTORY_LISTENER,
                     true);

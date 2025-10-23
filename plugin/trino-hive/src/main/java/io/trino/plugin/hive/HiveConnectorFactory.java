@@ -75,6 +75,7 @@ public class HiveConnectorFactory
 {
     private static final Module DEFAULT_ADDITIONAL_MODULE = EMPTY_MODULE;
     private static final Optional<HiveMetastore> DEFAULT_METASTORE = Optional.empty();
+    private static final boolean DEFAULT_METASTORE_IMPERSONATION_ENABLED = false;
     private static final Optional<TrinoFileSystemFactory> DEFAULT_FILESYSTEM_FACTORY = Optional.empty();
     private static final Optional<DirectoryLister> DEFAULT_DIRECTORY_LISTENER = Optional.empty();
 
@@ -88,7 +89,7 @@ public class HiveConnectorFactory
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         checkStrictSpiVersionMatch(context, this);
-        return createConnector(catalogName, config, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER);
+        return createConnector(catalogName, config, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER);
     }
 
     @Override
@@ -96,7 +97,7 @@ public class HiveConnectorFactory
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER, true);
+            Bootstrap app = createBootstrap(catalogName, config, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -110,12 +111,13 @@ public class HiveConnectorFactory
             ConnectorContext context,
             Module module,
             Optional<HiveMetastore> metastore,
+            boolean metastoreImpersonationEnabled,
             Optional<TrinoFileSystemFactory> fileSystemFactory,
             Optional<DirectoryLister> directoryLister)
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, context, module, metastore, fileSystemFactory, directoryLister, false);
+            Bootstrap app = createBootstrap(catalogName, config, context, module, metastore, metastoreImpersonationEnabled, fileSystemFactory, directoryLister, false);
 
             Injector injector = app.initialize();
 
@@ -174,6 +176,7 @@ public class HiveConnectorFactory
             ConnectorContext context,
             Module module,
             Optional<HiveMetastore> metastore,
+            boolean metastoreImpersonationEnabled,
             Optional<TrinoFileSystemFactory> fileSystemFactory,
             Optional<DirectoryLister> directoryLister,
             boolean quietBootstrap)
@@ -186,7 +189,7 @@ public class HiveConnectorFactory
                 new TypeDeserializerModule(),
                 new HiveModule(),
                 new CachingDirectoryListerModule(directoryLister),
-                new HiveMetastoreModule(metastore, true),
+                new HiveMetastoreModule(metastore, true, metastoreImpersonationEnabled),
                 new HiveSecurityModule(),
                 fileSystemFactory
                         .map(factory -> (Module) binder -> binder.bind(TrinoFileSystemFactory.class).toInstance(factory))

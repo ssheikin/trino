@@ -48,23 +48,26 @@ public class TestingHiveConnectorFactory
         implements ConnectorFactory
 {
     private final Optional<HiveMetastore> metastore;
+    private final boolean metastoreImpersonationEnabled;
     private final Module module;
     private final Optional<DirectoryLister> directoryLister;
 
     public TestingHiveConnectorFactory(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional.empty(), Optional.empty(), EMPTY_MODULE, Optional.empty());
+        this(localFileSystemRootPath, Optional.empty(), false, Optional.empty(), EMPTY_MODULE, Optional.empty());
     }
 
     @Deprecated
     public TestingHiveConnectorFactory(
             Path localFileSystemRootPath,
             Optional<HiveMetastore> metastore,
+            boolean metastoreImpersonationEnabled,
             Optional<DecryptionKeyRetriever> decryptionKeyRetriever,
             Module module,
             Optional<DirectoryLister> directoryLister)
     {
         this.metastore = requireNonNull(metastore, "metastore is null");
+        this.metastoreImpersonationEnabled = metastoreImpersonationEnabled;
 
         boolean ignored = localFileSystemRootPath.toFile().mkdirs();
         this.module = new AbstractConfigurationAwareModule()
@@ -97,7 +100,7 @@ public class TestingHiveConnectorFactory
     @Override
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        return createConnector(catalogName, createConfig(config), context, module, metastore, Optional.empty(), directoryLister);
+        return createConnector(catalogName, createConfig(config), context, module, metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister);
     }
 
     @Override
@@ -105,7 +108,7 @@ public class TestingHiveConnectorFactory
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), context, module, metastore, Optional.empty(), directoryLister, true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), context, module, metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
