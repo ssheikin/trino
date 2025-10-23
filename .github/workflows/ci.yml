@@ -6,9 +6,6 @@ on:
       - master
       - release-*-e
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
   repository_dispatch:
     types: [test-with-secrets-command]
   workflow_dispatch:
