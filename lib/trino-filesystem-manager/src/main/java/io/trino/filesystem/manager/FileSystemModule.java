@@ -21,7 +21,6 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.airlift.configuration.ConfigPropertyMetadata;
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.trino.filesystem.DecoratingTrinoFileSystemFactory;
 import io.trino.filesystem.Location;
@@ -55,6 +54,7 @@ import io.trino.filesystem.tracking.TrackingFileSystemFactory;
 import io.trino.plugin.base.Decorator;
 import io.trino.plugin.base.security.passthrough.TokenPassThroughConfig;
 import io.trino.spi.NodeManager;
+import io.trino.spi.connector.ConnectorContext;
 
 import java.util.Map;
 import java.util.Optional;
@@ -71,18 +71,18 @@ public class FileSystemModule
         extends AbstractConfigurationAwareModule
 {
     private final String catalogName;
+    private final ConnectorContext context;
     private final NodeManager nodeManager;
     private final boolean isCoordinator;
-    private final OpenTelemetry openTelemetry;
     private final boolean coordinatorFileCaching;
     private final boolean quietBootstrap;
 
-    public FileSystemModule(String catalogName, NodeManager nodeManager, boolean isCoordinator, OpenTelemetry openTelemetry, boolean coordinatorFileCaching, boolean quietBootstrap)
+    public FileSystemModule(String catalogName, ConnectorContext context, boolean coordinatorFileCaching, boolean quietBootstrap)
     {
         this.catalogName = requireNonNull(catalogName, "catalogName is null");
-        this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
-        this.isCoordinator = isCoordinator;
-        this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
+        this.context = requireNonNull(context, "context is null");
+        this.nodeManager = context.getNodeManager();
+        this.isCoordinator = context.getCurrentNode().isCoordinator();
         this.coordinatorFileCaching = coordinatorFileCaching;
         this.quietBootstrap = quietBootstrap;
     }
@@ -101,7 +101,7 @@ public class FileSystemModule
                     !config.isNativeGcsEnabled(),
                     !config.isNativeS3Enabled(),
                     catalogName,
-                    openTelemetry,
+                    context,
                     quietBootstrap);
 
             loader.configure().forEach((name, securitySensitive) ->

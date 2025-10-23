@@ -203,7 +203,7 @@ public class HiveConnectorFactory
                 new HiveSecurityModule(),
                 fileSystemFactory
                         .map(factory -> (Module) binder -> binder.bind(TrinoFileSystemFactory.class).toInstance(factory))
-                        .orElseGet(() -> new FileSystemModule(catalogName, context.getNodeManager(), context.getCurrentNode().isCoordinator(), context.getOpenTelemetry(), false, quietBootstrap)),
+                        .orElseGet(() -> new FileSystemModule(catalogName, context, false, quietBootstrap)),
                 new HiveProcedureModule(),
                 new MBeanServerModule(),
                 binder -> {
