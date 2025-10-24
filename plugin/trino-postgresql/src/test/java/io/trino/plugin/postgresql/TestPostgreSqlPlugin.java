@@ -14,9 +14,15 @@
 package io.trino.plugin.postgresql;
 
 import com.google.common.collect.ImmutableMap;
+import io.trino.FeaturesConfig;
+import io.trino.metadata.TypeRegistry;
+import io.trino.plugin.geospatial.GeometryType;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.type.TypeOperators;
 import io.trino.testing.TestingConnectorContext;
+import io.trino.type.InternalTypeManager;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -27,6 +33,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestPostgreSqlPlugin
 {
+    public static final TypeManager TESTING_POSTGRESQL_TYPE_MANAGER;
+
+    static {
+        TypeRegistry typeRegistry = new TypeRegistry(new TypeOperators(), new FeaturesConfig());
+        typeRegistry.addType(GeometryType.GEOMETRY);
+        TESTING_POSTGRESQL_TYPE_MANAGER = new InternalTypeManager(typeRegistry);
+    }
+
     @Test
     public void testCreateConnector()
     {
@@ -37,7 +51,7 @@ public class TestPostgreSqlPlugin
                 ImmutableMap.of(
                         "connection-url", "jdbc:postgresql:test",
                         "bootstrap.quiet", "true"),
-                new TestingPostgreSqlConnectorContext()).shutdown();
+                TestingConnectorContext.builder().withTypeManager(TESTING_POSTGRESQL_TYPE_MANAGER).build()).shutdown();
     }
 
     @Test
