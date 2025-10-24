@@ -10,6 +10,7 @@
 package io.starburst.stargate.buffer.data.memory;
 
 import com.google.common.collect.ImmutableMap;
+import io.airlift.units.DataSize;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -17,31 +18,26 @@ import java.util.Map;
 import static io.airlift.configuration.testing.ConfigAssertions.assertFullMapping;
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
+import static io.airlift.units.DataSize.Unit.GIGABYTE;
 
-public class TestMemoryAllocatorConfig
+public class TestFullHeapMemoryConfig
 {
     @Test
     public void assertDefaults()
     {
-        assertRecordedDefaults(recordDefaults(MemoryAllocatorConfig.class)
-                .setAllocationRatioLowWatermark(0.75)
-                .setAllocationRatioHighWatermark(0.9)
-                .setChunkSlicePoolingFraction(0.8));
+        assertRecordedDefaults(recordDefaults(FullHeapMemoryConfig.class)
+                .setHeapHeadroom("16%"));
     }
 
     @Test
     public void testExplicitPropertyMappings()
     {
         Map<String, String> properties = ImmutableMap.<String, String>builder()
-                .put("memory.allocation-low-watermark", "0.5")
-                .put("memory.allocation-high-watermark", "0.99")
-                .put("memory.chunk-slice-pool-fraction", "0.66")
+                .put("memory.heap-headroom", "2GB")
                 .buildOrThrow();
 
-        MemoryAllocatorConfig expected = new MemoryAllocatorConfig()
-                .setAllocationRatioLowWatermark(0.5)
-                .setAllocationRatioHighWatermark(0.99)
-                .setChunkSlicePoolingFraction(0.66);
+        FullHeapMemoryConfig expected = new FullHeapMemoryConfig()
+                .setHeapHeadroom(DataSize.of(2, GIGABYTE).toBytesValueString());
 
         assertFullMapping(properties, expected);
     }
