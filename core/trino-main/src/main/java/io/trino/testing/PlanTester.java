@@ -463,7 +463,7 @@ public class PlanTester
                 EMPTY_LOADER,
                 optimizerConfig,
                 new ConfigurationFactory(ImmutableMap.of()),
-                new LocalMemoryManager(new NodeMemoryConfig()),
+                new LocalMemoryManager(new NodeMemoryConfig(), Optional.empty()),
                 secretsResolver));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
         this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager));
