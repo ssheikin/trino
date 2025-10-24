@@ -34,8 +34,7 @@ import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.opentelemetry.api.metrics.MeterProvider;
 import io.starburst.stargate.buffer.data.memory.MemoryConfig;
-import io.starburst.stargate.buffer.trino.exchange.BufferExchangeManagerFactory;
-import io.starburst.stargate.buffer.trino.exchange.BufferExchangeManagerFactoryRegistrar;
+import io.starburst.stargate.buffer.trino.exchange.BufferExchangeManagerFactory.RealBufferExchangeManagerFactoryModule;
 import io.trino.FeaturesConfig;
 import io.trino.SystemSessionProperties;
 import io.trino.SystemSessionPropertiesProvider;
@@ -512,9 +511,7 @@ public class ServerMainModule
         newSetBinder(binder, ServerLoadableComponent.class);
 
         // Buffer service exchange
-        binder.bind(BufferExchangeManagerFactory.InternalCommunicationDependencies.class).in(Scopes.SINGLETON);
-        binder.bind(BufferExchangeManagerFactory.class).toProvider(BufferExchangeManagerFactory.RealBufferExchangeManagerFactoryProvider.class).in(Scopes.SINGLETON);
-        binder.bind(BufferExchangeManagerFactoryRegistrar.class).in(Scopes.SINGLETON);
+        install(new RealBufferExchangeManagerFactoryModule());
 
         // cleanup
         closingBinder(binder).registerExecutor(Key.get(ScheduledExecutorService.class, ForExchange.class));
