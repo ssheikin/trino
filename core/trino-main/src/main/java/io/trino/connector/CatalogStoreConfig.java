@@ -18,7 +18,7 @@ import jakarta.validation.constraints.NotNull;
 
 public class CatalogStoreConfig
 {
-    private String catalogStoreKind = "file";
+    private String catalogStoreKind = "starburst";
 
     @NotNull
     public String getCatalogStoreKind()

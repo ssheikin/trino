@@ -28,7 +28,7 @@ public class TestCatalogStoreConfig
     public void testDefaults()
     {
         assertRecordedDefaults(recordDefaults(CatalogStoreConfig.class)
-                .setCatalogStoreKind("file"));
+                .setCatalogStoreKind("starburst"));
     }
 
     @Test
