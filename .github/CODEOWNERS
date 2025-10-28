@@ -1,2 +1,4 @@
 # These owners will be the default owners for everything in the repo.
-*  @kokosing @hashhar @Praveen2112 @lukasz-walkiewicz
+# The idea is here to push back the work in this repo by default, and steer engineers towards Cork.
+# We want to keep SEP-Trino thin and eventually remove it all together and base SEP directly on Cork.
+*  @kokosing @lukasz-walkiewicz @ksobolew
