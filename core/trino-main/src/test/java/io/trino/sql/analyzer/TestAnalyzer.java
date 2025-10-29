@@ -7832,7 +7832,7 @@ public class TestAnalyzer
                 plannerContext.getMetadata(),
                 SQL_PARSER,
                 accessControl,
-                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop()))),
+                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, ImmutableSet.of(), directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop()))),
                 new SessionPropertyManager(),
                 new SchemaPropertyManager(CatalogServiceProvider.fail()),
                 new ColumnPropertyManager(CatalogServiceProvider.fail()),

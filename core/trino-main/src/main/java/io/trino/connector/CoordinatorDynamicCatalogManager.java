@@ -79,6 +79,7 @@ public class CoordinatorDynamicCatalogManager
 
     private final CatalogStoreWithBuiltInCatalogs catalogStore;
     private final CatalogFactory catalogFactory;
+    private final Set<CatalogFailureHandler> catalogFailureHandler;
     private final Executor executor;
     private final CatalogMetricsService catalogMetricsService;
 
@@ -102,6 +103,7 @@ public class CoordinatorDynamicCatalogManager
             CatalogStore catalogStore,
             CatalogFactory catalogFactory,
             BuiltInCatalogsProvider builtInCatalogsProvider,
+            Set<CatalogFailureHandler> catalogFailureHandler,
             @ForStartup Executor executor,
             CatalogMetricsService catalogMetricsService)
     {
@@ -109,6 +111,7 @@ public class CoordinatorDynamicCatalogManager
                 requireNonNull(catalogStore, "catalogStore is null"),
                 requireNonNull(builtInCatalogsProvider, "builtInCatalogsProvider is null"));
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
+        this.catalogFailureHandler = requireNonNull(catalogFailureHandler, "catalogFailureHandler is null");
         this.executor = requireNonNull(executor, "executor is null");
         this.catalogMetricsService = requireNonNull(catalogMetricsService, "catalogMetricsService is null");
     }
@@ -166,8 +169,10 @@ public class CoordinatorDynamicCatalogManager
                                 catch (Throwable e) {
                                     CatalogVersion catalogVersion = catalog != null ? catalog.version() : new CatalogVersion("failed");
                                     ConnectorName connectorName = catalog != null ? catalog.connectorName() : new ConnectorName("unknown");
-                                    activeCatalogs.put(storedCatalog.name(), failedCatalog(storedCatalog.name(), catalogVersion, connectorName));
+                                    Catalog failedCatalog = failedCatalog(storedCatalog.name(), catalogVersion, connectorName);
+                                    activeCatalogs.put(storedCatalog.name(), failedCatalog);
                                     log.error(e, "-- Failed to load catalog %s using connector %s --", storedCatalog.name(), connectorName);
+                                    handleFailure(failedCatalog, e);
                                 }
                                 return null;
                             })
@@ -175,6 +180,19 @@ public class CoordinatorDynamicCatalogManager
         }
         finally {
             catalogsUpdateLock.unlock();
+        }
+    }
+
+    private void handleFailure(Catalog failedCatalog, Throwable cause)
+    {
+        for (CatalogFailureHandler failureHandler : catalogFailureHandler) {
+            try {
+                failureHandler.handleCatalogFailure(failedCatalog, cause);
+            }
+            catch (Throwable e) {
+                cause.addSuppressed(e);
+                log.error(e, "Uncaught exception from CatalogFailureHandler");
+            }
         }
     }
 

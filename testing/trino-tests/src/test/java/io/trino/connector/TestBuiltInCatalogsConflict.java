@@ -15,6 +15,7 @@ package io.trino.connector;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Key;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.testing.TempFile;
@@ -85,6 +86,7 @@ public class TestBuiltInCatalogsConflict
                                                     ImmutableMap.of());
                                         }
                                     }),
+                    ImmutableSet.of(),
                     Executors.newSingleThreadScheduledExecutor(),
                     new CatalogMetricsService(Optional.of(MeterProvider.noop())));
             assertThatThrownBy(catalogManager::loadInitialCatalogs)
