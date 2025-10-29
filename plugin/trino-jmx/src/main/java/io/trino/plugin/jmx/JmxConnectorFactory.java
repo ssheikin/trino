@@ -88,6 +88,7 @@ public class JmxConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(config);
     }
 }

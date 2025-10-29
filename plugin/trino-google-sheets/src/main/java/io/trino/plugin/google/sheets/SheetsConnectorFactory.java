@@ -76,6 +76,7 @@ public class SheetsConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(config);
     }
 }

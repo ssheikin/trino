@@ -84,6 +84,7 @@ public class MongoConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(config);
     }
 }

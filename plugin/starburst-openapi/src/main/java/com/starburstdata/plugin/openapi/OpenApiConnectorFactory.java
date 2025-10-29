@@ -71,6 +71,7 @@ public class OpenApiConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(requiredConfig);
     }
 }

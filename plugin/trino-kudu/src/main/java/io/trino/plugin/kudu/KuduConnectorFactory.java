@@ -77,6 +77,7 @@ public class KuduConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(config);
     }
 }

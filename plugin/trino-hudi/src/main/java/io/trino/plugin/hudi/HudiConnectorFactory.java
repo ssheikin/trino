@@ -161,6 +161,7 @@ public class HudiConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(requiredConfig)
                 .setOptionalConfigurationProperties(optionalConfig);
     }

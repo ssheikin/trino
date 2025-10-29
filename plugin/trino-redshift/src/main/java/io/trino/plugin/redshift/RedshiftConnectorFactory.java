@@ -78,6 +78,7 @@ public class RedshiftConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(requiredConfig);
     }
 }

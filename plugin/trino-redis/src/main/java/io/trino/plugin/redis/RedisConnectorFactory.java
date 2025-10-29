@@ -99,6 +99,7 @@ public class RedisConnectorFactory
                 });
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(config);
     }
 }

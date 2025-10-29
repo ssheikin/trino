@@ -90,6 +90,7 @@ public class LakehouseConnectorFactory
                     new AiClientModule(context.getModelConnectionSpecsLoader()));
             return app
                     .doNotInitializeLogging()
+                    .disableSystemProperties()
                     .setRequiredConfigurationProperties(config);
         }
     }

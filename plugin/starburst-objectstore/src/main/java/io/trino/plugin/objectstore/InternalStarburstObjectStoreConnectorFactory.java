@@ -107,6 +107,7 @@ public final class InternalStarburstObjectStoreConnectorFactory
 
                 app
                         .doNotInitializeLogging()
+                        .disableSystemProperties()
                         .setRequiredConfigurationProperties(ImmutableMap.of())
                         .setOptionalConfigurationProperties(objectStoreConfig);
 

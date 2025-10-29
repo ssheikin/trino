@@ -218,6 +218,7 @@ public class DeltaLakeConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(requiredConfig)
                 .setOptionalConfigurationProperties(optionalConfig);
     }

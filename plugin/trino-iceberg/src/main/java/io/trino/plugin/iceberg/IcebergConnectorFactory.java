@@ -151,6 +151,7 @@ public class IcebergConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(requiredConfig)
                 .setOptionalConfigurationProperties(optionalConfig);
     }

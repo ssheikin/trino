@@ -235,6 +235,7 @@ public class HiveConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(requiredConfig)
                 .setOptionalConfigurationProperties(optionalConfig);
     }

@@ -70,6 +70,7 @@ public class AiConnectorFactory
                 new ConnectorContextModule(catalogName, context));
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(config);
     }
 }

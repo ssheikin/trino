@@ -96,6 +96,7 @@ public class InternalDispatcherConnectorFactory
 
         Injector injector = app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(Collections.emptyMap())
                 .setOptionalConfigurationProperties(warpConfig)
                 .initialize();

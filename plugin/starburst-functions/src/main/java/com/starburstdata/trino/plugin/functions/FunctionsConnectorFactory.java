@@ -76,6 +76,7 @@ public class FunctionsConnectorFactory
         return app
                 .doNotInitializeLogging()
                 .loadSecretsPlugins() // starburst-functions-client requires access to secrets.
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(config);
     }
 }
