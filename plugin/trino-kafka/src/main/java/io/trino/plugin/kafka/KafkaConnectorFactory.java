@@ -85,7 +85,7 @@ public class KafkaConnectorFactory
                         .add(new CatalogNameModule(catalogName))
                         .add(new JsonModule())
                         .add(new TypeDeserializerModule(context.getTypeManager()))
-                        .add(new KafkaConnectorModule(context.getTypeManager()))
+                        .add(new KafkaConnectorModule())
                         .add(binder -> {
                             binder.bind(ClassLoader.class).toInstance(KafkaConnectorFactory.class.getClassLoader());
                             binder.bind(TypeManager.class).toInstance(context.getTypeManager());
