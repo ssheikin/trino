@@ -23,6 +23,7 @@ import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
+import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -70,10 +71,11 @@ public class CassandraConnectorFactory
     {
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
+                binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
                 binder -> binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry()),
                 new MBeanModule(),
                 new JsonModule(),
-                new CassandraClientModule(context.getTypeManager()),
+                new CassandraClientModule(),
                 new MBeanServerModule());
 
         return app
