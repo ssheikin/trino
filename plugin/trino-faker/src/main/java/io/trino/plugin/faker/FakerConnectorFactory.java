@@ -17,6 +17,7 @@ package io.trino.plugin.faker;
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -73,7 +74,10 @@ public class FakerConnectorFactory
 
     private static Bootstrap createBootstrap(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = new Bootstrap("io.trino.bootstrap.catalog." + catalogName, new FakerModule(context.getTypeManager()));
+        Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
+                new ConnectorContextModule(catalogName, context),
+                new FakerModule());
 
         return app
                 .doNotInitializeLogging()
