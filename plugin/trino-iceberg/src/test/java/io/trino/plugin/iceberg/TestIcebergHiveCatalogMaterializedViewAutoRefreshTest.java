@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
-import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -79,8 +78,8 @@ public class TestIcebergHiveCatalogMaterializedViewAutoRefreshTest
             throws Exception
     {
         return IcebergQueryRunner.builder()
+                .setWorkScheduler(workScheduler)
                 .setIcebergProperties(icebergCatalogProperties)
-                .setAdditionalModule(binder -> newOptionalBinder(binder, WorkScheduler.class).setBinding().toInstance(workScheduler))
                 .build();
     }
 

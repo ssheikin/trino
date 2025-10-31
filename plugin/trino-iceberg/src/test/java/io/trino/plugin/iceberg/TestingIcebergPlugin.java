@@ -15,7 +15,6 @@ package io.trino.plugin.iceberg;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
-import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.ConnectorFactory;
 
 import java.nio.file.Path;
@@ -30,7 +29,6 @@ public class TestingIcebergPlugin
 {
     private final Path localFileSystemRootPath;
     private final Optional<Module> icebergCatalogModule;
-    private final Optional<WorkScheduler> workScheduler;
 
     public TestingIcebergPlugin(Path localFileSystemRootPath)
     {
@@ -40,14 +38,8 @@ public class TestingIcebergPlugin
     @Deprecated
     public TestingIcebergPlugin(Path localFileSystemRootPath, Optional<Module> icebergCatalogModule)
     {
-        this(localFileSystemRootPath, icebergCatalogModule, Optional.empty());
-    }
-
-    public TestingIcebergPlugin(Path localFileSystemRootPath, Optional<Module> icebergCatalogModule, Optional<WorkScheduler> workScheduler)
-    {
         this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");
         this.icebergCatalogModule = requireNonNull(icebergCatalogModule, "icebergCatalogModule is null");
-        this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
     }
 
     @Override
@@ -56,6 +48,6 @@ public class TestingIcebergPlugin
         List<ConnectorFactory> connectorFactories = ImmutableList.copyOf(super.getConnectorFactories());
         verify(connectorFactories.size() == 1, "Unexpected connector factories: %s", connectorFactories);
 
-        return ImmutableList.of(new TestingIcebergConnectorFactory(localFileSystemRootPath, icebergCatalogModule, workScheduler));
+        return ImmutableList.of(new TestingIcebergConnectorFactory(localFileSystemRootPath, icebergCatalogModule));
     }
 }

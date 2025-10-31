@@ -44,8 +44,6 @@ import io.trino.plugin.iceberg.catalog.file.IcebergFileMetastoreCatalogModule;
 import io.trino.plugin.iceberg.catalog.glue.IcebergGlueCatalogModule;
 import io.trino.plugin.iceberg.catalog.hms.IcebergHiveMetastoreCatalogModule;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
-import io.trino.spi.NoopWorkScheduler;
-import io.trino.spi.WorkScheduler;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
@@ -96,6 +94,5 @@ public class LakehouseIcebergModule
 
         configBinder(binder).bindConfig(IcebergScheduledMvRefreshConfig.class);
         jsonCodecBinder(binder).bindJsonCodec(IcebergCacheSplitId.class);
-        newOptionalBinder(binder, WorkScheduler.class).setDefault().toInstance(new NoopWorkScheduler());
     }
 }

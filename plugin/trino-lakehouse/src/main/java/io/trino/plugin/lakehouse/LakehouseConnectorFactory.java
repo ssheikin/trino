@@ -31,6 +31,7 @@ import io.trino.spi.NodeVersion;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
+import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
@@ -111,6 +112,7 @@ public class LakehouseConnectorFactory
                         binder.bind(PageSorter.class).toInstance(context.getPageSorter());
                         binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
                         binder.bind(TypeManager.class).toInstance(context.getTypeManager());
+                        binder.bind(WorkScheduler.class).toInstance(context.getWorkScheduler());
                         binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
                     },
                     new AiClientModule(context.getModelConnectionSpecsLoader()));

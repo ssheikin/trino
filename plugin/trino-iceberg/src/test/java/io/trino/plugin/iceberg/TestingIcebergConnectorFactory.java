@@ -21,7 +21,6 @@ import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.local.LocalFileSystemFactory;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.plugin.hive.metastore.file.FileHiveMetastoreConfig;
-import io.trino.spi.WorkScheduler;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -33,7 +32,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
-import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.iceberg.IcebergConnectorFactory.createBootstrap;
 import static io.trino.plugin.iceberg.IcebergConnectorFactory.createConnector;
@@ -47,26 +45,21 @@ public class TestingIcebergConnectorFactory
 
     public TestingIcebergConnectorFactory(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional.empty(), Optional.empty());
+        this(localFileSystemRootPath, Optional.empty());
     }
 
     @Deprecated
     public TestingIcebergConnectorFactory(
             Path localFileSystemRootPath,
-            Optional<Module> icebergCatalogModule,
-            Optional<WorkScheduler> workScheduler)
+            Optional<Module> icebergCatalogModule)
     {
         boolean ignored = localFileSystemRootPath.toFile().mkdirs();
         this.icebergCatalogModule = requireNonNull(icebergCatalogModule, "icebergCatalogModule is null");
-        requireNonNull(workScheduler, "workScheduler is null");
         this.module = binder -> {
             newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
                     .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
             configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, config -> config.setCatalogDirectory("local:///"));
             configBinder(binder).bindConfigDefaults(IcebergConfig.class, config -> config.setMaxFormatVersion(3));
-            if (workScheduler.isPresent()) {
-                newOptionalBinder(binder, WorkScheduler.class).setBinding().toInstance(workScheduler.get());
-            }
         };
     }
 

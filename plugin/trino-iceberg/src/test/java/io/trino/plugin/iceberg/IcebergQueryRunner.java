@@ -16,6 +16,7 @@ package io.trino.plugin.iceberg;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
+import com.google.inject.Module;
 import io.airlift.http.server.testing.TestingHttpServer;
 import io.airlift.log.Level;
 import io.airlift.log.Logger;
@@ -49,8 +50,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static com.starburstdata.trino.plugin.functions.ai.AiQueryRunner.addStarburstAiCatalog;
 import static com.starburstdata.trino.plugin.functions.ai.AiQueryRunner.starburstAiFileStorageProperties;
+import static io.airlift.configuration.ConfigurationAwareModule.combine;
 import static io.airlift.testing.Closeables.closeAllSuppress;
 import static io.trino.plugin.iceberg.catalog.jdbc.TestingIcebergJdbcServer.PASSWORD;
 import static io.trino.plugin.iceberg.catalog.jdbc.TestingIcebergJdbcServer.USER;
@@ -96,10 +100,7 @@ public final class IcebergQueryRunner
 
         protected Builder()
         {
-            super(testSessionBuilder()
-                    .setCatalog(ICEBERG_CATALOG)
-                    .setSchema("tpch")
-                    .build());
+            this("tpch");
         }
 
         protected Builder(String schema)
@@ -108,6 +109,16 @@ public final class IcebergQueryRunner
                     .setCatalog(ICEBERG_CATALOG)
                     .setSchema(schema)
                     .build());
+            setAdditionalModule(EMPTY_MODULE);
+        }
+
+        @Override
+        public Builder setAdditionalModule(Module additionalModule)
+        {
+            return super.setAdditionalModule(combine(
+                    additionalModule,
+                    binder -> workScheduler.ifPresent(scheduler ->
+                            newOptionalBinder(binder, WorkScheduler.class).setBinding().toInstance(scheduler))));
         }
 
         public Builder setMetastoreDirectory(File metastoreDirectory)
@@ -185,7 +196,7 @@ public final class IcebergQueryRunner
                 }
 
                 Path dataDir = metastoreDirectory.map(File::toPath).orElseGet(() -> queryRunner.getCoordinator().getBaseDataDir().resolve("iceberg_data"));
-                queryRunner.installPlugin(new TestingIcebergPlugin(dataDir, Optional.empty(), workScheduler));
+                queryRunner.installPlugin(new TestingIcebergPlugin(dataDir, Optional.empty()));
                 queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", icebergProperties.buildOrThrow());
 
                 queryRunner.getServers().forEach(TestingTrinoServer::getCacheManagerRegistry);
