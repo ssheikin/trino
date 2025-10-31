@@ -28,6 +28,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.security.AiModelAccessControl;
+import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +90,7 @@ public class FunctionsConnectorFactory
                 "io.trino.bootstrap.catalog." + catalogName,
                 new AiModule(context.getModelConnectionSpecsLoader()),
                 new JsonModule(),
-                new StorageModule(context.getTypeManager()),
+                new StorageModule(),
                 new ResolvingFileSystemModule(context.getOpenTelemetry()),
                 binder -> {
                     binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
@@ -97,6 +98,7 @@ public class FunctionsConnectorFactory
                     binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                     binder.bind(NodeManager.class).toInstance(context.getNodeManager());
                     binder.bind(NodeVersion.class).toInstance(new NodeVersion(context.getCurrentNode().getVersion()));
+                    binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                     binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
                     binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
                 },
