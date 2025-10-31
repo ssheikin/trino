@@ -17,6 +17,7 @@ import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
 import io.airlift.json.JsonModule;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -69,7 +70,8 @@ public class MemoryConnectorFactory
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
-                new MemoryModule(context.getTypeManager(), context.getCurrentNode(), context.getNodeManager()));
+                new ConnectorContextModule(catalogName, context),
+                new MemoryModule());
 
         return app
                 .doNotInitializeLogging()
