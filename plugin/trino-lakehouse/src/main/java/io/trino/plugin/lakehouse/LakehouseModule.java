@@ -19,7 +19,6 @@ import com.google.inject.Scopes;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.base.metrics.FileFormatDataSourceStats;
 import io.trino.plugin.hive.HideDeltaLakeTables;
-import io.trino.plugin.hive.LocationAccessControlModule;
 import io.trino.plugin.hive.SortingFileWriterConfig;
 import io.trino.plugin.hive.orc.OrcReaderConfig;
 import io.trino.plugin.hive.orc.OrcWriterConfig;
@@ -55,7 +54,5 @@ class LakehouseModule
         newExporter(binder).export(FileFormatDataSourceStats.class).withGeneratedName();
 
         binder.bind(Key.get(boolean.class, HideDeltaLakeTables.class)).toInstance(false);
-
-        binder.install(new LocationAccessControlModule());
     }
 }

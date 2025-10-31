@@ -38,6 +38,7 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.security.AiModelAccessControl;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
 
@@ -110,6 +111,7 @@ public class LakehouseConnectorFactory
                         binder.bind(PageSorter.class).toInstance(context.getPageSorter());
                         binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
                         binder.bind(TypeManager.class).toInstance(context.getTypeManager());
+                        binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
                     },
                     new AiClientModule(context.getModelConnectionSpecsLoader()));
             return app

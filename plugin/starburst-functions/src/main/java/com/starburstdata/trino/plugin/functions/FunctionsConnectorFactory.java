@@ -10,7 +10,6 @@
 package com.starburstdata.trino.plugin.functions;
 
 import com.google.inject.Injector;
-import com.google.inject.Module;
 import com.starburstdata.trino.plugin.functions.ai.AiModule;
 import com.starburstdata.trino.plugin.functions.io.ResolvingFileSystemModule;
 import com.starburstdata.trino.plugin.functions.io.StorageModule;
@@ -28,30 +27,17 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.security.AiModelAccessControl;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
-import static java.util.Objects.requireNonNull;
 
 public class FunctionsConnectorFactory
         implements ConnectorFactory
 {
-    private final Module module;
-
-    public FunctionsConnectorFactory()
-    {
-        this(EMPTY_MODULE);
-    }
-
-    public FunctionsConnectorFactory(Module module)
-    {
-        this.module = requireNonNull(module, "module is null");
-    }
-
     @Override
     public String getName()
     {
@@ -101,8 +87,8 @@ public class FunctionsConnectorFactory
                     binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                     binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
                     binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
-                },
-                module);
+                    binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
+                });
         return app
                 .doNotInitializeLogging()
                 .loadSecretsPlugins() // starburst-functions-client requires access to secrets.
