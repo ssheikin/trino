@@ -19,6 +19,7 @@ import io.airlift.bootstrap.Bootstrap;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.trino.plugin.base.jmx.MBeanServerModule;
+import io.trino.spi.NodeManager;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
@@ -64,10 +65,11 @@ public class TpchConnectorFactory
 
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
+                binder -> binder.bind(NodeManager.class).toInstance(context.getNodeManager()),
                 binder -> binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry()),
                 new MBeanModule(),
                 new JsonModule(),
-                new TpchModule(context.getNodeManager(), defaultSplitsPerNode, predicatePushdownEnabled),
+                new TpchModule(defaultSplitsPerNode, predicatePushdownEnabled),
                 new MBeanServerModule());
 
         Injector injector = app.doNotInitializeLogging()
