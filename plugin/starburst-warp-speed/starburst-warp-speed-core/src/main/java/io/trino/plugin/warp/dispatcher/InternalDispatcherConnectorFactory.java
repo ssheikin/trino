@@ -30,6 +30,7 @@ import io.trino.plugin.warp.di.WarpModules;
 import io.trino.plugin.warp.di.dispatcher.DispatcherCoordinatorModule;
 import io.trino.plugin.warp.di.dispatcher.DispatcherMainModule;
 import io.trino.plugin.warp.dispatcher.connectors.DispatcherConnectorBase;
+import io.trino.server.StartupStatus;
 import io.trino.spi.NodeManager;
 import io.trino.spi.cache.ConnectorCacheMetadata;
 import io.trino.spi.connector.Connector;
@@ -88,6 +89,9 @@ public class InternalDispatcherConnectorFactory
                     binder.bind(TypeManager.class).toInstance(warpConnectorContext.getTypeManager());
                     binder.bind(NodeManager.class).toInstance(warpConnectorContext.getNodeManager());
                     binder.bind(Tracer.class).toInstance(warpConnectorContext.getTracer());
+                    StartupStatus startupStatus = new StartupStatus();
+                    startupStatus.startupComplete();
+                    binder.bind(StartupStatus.class).toInstance(startupStatus);
                 }));
         modules.addAll(proxiedConnectorInitializer.getModules(warpConnectorContext));
         modules.add(proxiedConnectorModule(proxiedConnector));
