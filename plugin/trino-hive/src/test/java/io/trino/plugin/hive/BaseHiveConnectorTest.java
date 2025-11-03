@@ -8317,6 +8317,7 @@ public abstract class BaseHiveConnectorTest
         assertUpdate("DROP TABLE " + tableName);
     }
 
+    @Test
     public void testCreateTableWithCompressionCodec()
     {
         for (HiveCompressionCodec compressionCodec : HiveCompressionCodec.values()) {
