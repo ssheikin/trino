@@ -75,7 +75,7 @@ public class WarpConnectorFactory
         requireNonNull(licenseVerifier, "licenseManager is null");
 
         WarpConnectorContext warpConnectorContext = new WarpConnectorContext(context,
-                warpPluginSharedInstancesFactory.create(context.getCurrentNode().isCoordinator(), config));
+                warpPluginSharedInstancesFactory.create("io.trino.bootstrap.catalog." + catalogName, context.getCurrentNode().isCoordinator(), config));
 
         return new StarburstWarpConnector(dispatcherConnectorFactory.create(
                 catalogName,
@@ -89,7 +89,7 @@ public class WarpConnectorFactory
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         WarpConnectorContext warpConnectorContext = new WarpConnectorContext(context,
-                warpPluginSharedInstancesFactory.create(context.getCurrentNode().isCoordinator(), config));
+                warpPluginSharedInstancesFactory.create("io.trino.bootstrap.catalog." + catalogName, context.getCurrentNode().isCoordinator(), config));
 
         return dispatcherConnectorFactory.getSecuritySensitivePropertyNames(
                 catalogName,
