@@ -22,6 +22,7 @@ import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
@@ -146,6 +147,12 @@ public class WarpConnectorContext
     public ModelConnectionSpecsLoader getModelConnectionSpecsLoader()
     {
         return connectorContext.getModelConnectionSpecsLoader();
+    }
+
+    @Override
+    public CatalogVersion getCatalogVersion()
+    {
+        return connectorContext.getCatalogVersion();
     }
 
     @Override

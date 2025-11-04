@@ -22,6 +22,7 @@ import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
@@ -49,6 +50,7 @@ public class ConnectorContextInstance
     private final LocationAccessControl locationAccessControl;
     private final AiModelAccessControl aiModelAccessControl;
     private final ModelConnectionSpecsLoader modelConnectionSpecsLoader;
+    private final CatalogVersion catalogVersion;
     private final Metastore metastore;
     private final CoordinatorLocator coordinatorLocator;
     private final Map<String, String> serverProperties;
@@ -68,6 +70,7 @@ public class ConnectorContextInstance
             PageSorter pageSorter,
             WorkScheduler workScheduler,
             PageIndexerFactory pageIndexerFactory,
+            CatalogVersion catalogVersion,
             Map<String, String> serverProperties)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
@@ -84,6 +87,7 @@ public class ConnectorContextInstance
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
+        this.catalogVersion = requireNonNull(catalogVersion, "catalogVersion is null");
         this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
     }
 
@@ -163,6 +167,12 @@ public class ConnectorContextInstance
     public ModelConnectionSpecsLoader getModelConnectionSpecsLoader()
     {
         return modelConnectionSpecsLoader;
+    }
+
+    @Override
+    public CatalogVersion getCatalogVersion()
+    {
+        return catalogVersion;
     }
 
     @Override

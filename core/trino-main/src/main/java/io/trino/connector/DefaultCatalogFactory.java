@@ -38,6 +38,7 @@ import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.catalog.CatalogProperties;
 import io.trino.spi.classloader.ThreadContextClassLoader;
+import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
@@ -158,6 +159,7 @@ public class DefaultCatalogFactory
         CatalogHandle catalogHandle = createRootCatalogHandle(catalogProperties.name(), catalogProperties.version());
         Connector connector = createConnector(
                 catalogProperties.name(),
+                catalogProperties.version(),
                 connectorFactory,
                 secretsResolver.getResolvedConfiguration(catalogProperties.properties()));
 
@@ -184,7 +186,7 @@ public class DefaultCatalogFactory
             return ImmutableSet.copyOf(catalogProperties.properties().keySet());
         }
 
-        ConnectorContext context = createConnectorContext(catalogProperties.name());
+        ConnectorContext context = createConnectorContext(catalogProperties.name(), catalogProperties.version());
         String catalogName = catalogProperties.name().toString();
         Map<String, String> config = secretsResolver.getResolvedConfiguration(catalogProperties.properties());
 
@@ -237,9 +239,9 @@ public class DefaultCatalogFactory
                 catalogProperties);
     }
 
-    private Connector createConnector(CatalogName catalogName, ConnectorFactory connectorFactory, Map<String, String> properties)
+    private Connector createConnector(CatalogName catalogName, CatalogVersion catalogVersion, ConnectorFactory connectorFactory, Map<String, String> properties)
     {
-        ConnectorContext context = createConnectorContext(catalogName);
+        ConnectorContext context = createConnectorContext(catalogName, catalogVersion);
 
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(connectorFactory.getClass().getClassLoader())) {
             // TODO: connector factory should take CatalogName
@@ -247,7 +249,7 @@ public class DefaultCatalogFactory
         }
     }
 
-    private ConnectorContext createConnectorContext(CatalogName catalogName)
+    private ConnectorContext createConnectorContext(CatalogName catalogName, CatalogVersion catalogVersion)
     {
         return new ConnectorContextInstance(
                 openTelemetry,
@@ -264,6 +266,7 @@ public class DefaultCatalogFactory
                 pageSorter,
                 workScheduler,
                 pageIndexerFactory,
+                catalogVersion,
                 serverProperties);
     }
 
