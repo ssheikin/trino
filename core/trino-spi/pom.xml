@@ -209,37 +209,43 @@
                                     <ignore>true</ignore>
                                     <code>java.class.externalClassExposedInAPI</code>
                                     <new>interface io.starburst.ai.model.ConnectionInfo</new>
-                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                    <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.class.externalClassExposedInAPI</code>
                                     <new>class io.starburst.ai.model.EmbeddingModelConnectionSpec</new>
-                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                    <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.class.externalClassExposedInAPI</code>
                                     <new>class io.starburst.ai.model.LanguageModelConnectionSpec</new>
-                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                    <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.class.externalClassExposedInAPI</code>
                                     <new>interface io.starburst.ai.model.ModelConnectionSpec</new>
-                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                    <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.class.externalClassExposedInAPI</code>
                                     <new>class io.starburst.ai.model.ModelConnectionSpecs</new>
-                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                    <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.class.externalClassExposedInAPI</code>
                                     <new>class io.starburst.ai.model.PromptOverrides</new>
-                                    <justification>ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE</justification>
+                                    <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <new>enum io.starburst.ai.model.LlmTrait</new>
+                                    <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
