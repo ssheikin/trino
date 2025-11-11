@@ -58,6 +58,7 @@ import io.trino.plugin.hive.parquet.ParquetPageSourceFactory;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.plugin.hive.parquet.ParquetWriterConfig;
 import io.trino.plugin.hive.rcfile.RcFilePageSourceFactory;
+import io.trino.plugin.hive.util.SortTempFileFactory;
 import io.trino.spi.cache.ConnectorCacheMetadata;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
@@ -170,6 +171,8 @@ public class HiveModule
         newOptionalBinder(binder, FunctionProvider.class).setDefault().to(HiveFunctionProvider.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(UnloadConfig.class);
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(Unload.class).in(Scopes.SINGLETON);
+
+        binder.bind(SortTempFileFactory.class).in(Scopes.SINGLETON);
 
         binder.install(new HiveExecutorModule());
         install(new ParquetEncryptionModule());
