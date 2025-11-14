@@ -71,6 +71,7 @@ public abstract class AbstractIcebergMergeSink
     protected final Optional<String> nameMapping;
     protected final int formatVersion;
     protected final Map<Slice, FileDeletion> fileDeletions = new HashMap<>();
+    protected long writtenBytes;
 
     protected AbstractIcebergMergeSink(
             LocationProvider locationProvider,
@@ -159,6 +160,14 @@ public abstract class AbstractIcebergMergeSink
                 deletion.rowsToDelete().addLong(rowPosition);
             }
         });
+
+        writtenBytes = updateInsertPageSink.orElse(insertPageSink).getCompletedBytes();
+    }
+
+    @Override
+    public long getCompletedBytes()
+    {
+        return writtenBytes;
     }
 
     protected static List<IcebergColumnHandle> withRowLineageColumns(List<IcebergColumnHandle> columns)

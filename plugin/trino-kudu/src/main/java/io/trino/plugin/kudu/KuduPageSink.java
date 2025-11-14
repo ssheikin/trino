@@ -117,6 +117,12 @@ public class KuduPageSink
     }
 
     @Override
+    public long getCompletedBytes()
+    {
+        return 0;
+    }
+
+    @Override
     public CompletableFuture<?> appendPage(Page page)
     {
         try (KuduOperationApplier operationApplier = KuduOperationApplier.fromKuduClientSession(session)) {

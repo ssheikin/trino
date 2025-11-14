@@ -538,6 +538,13 @@ public abstract class BaseObjectStoreHiveConnectorTest
         assertThatThrownBy(super::testMergeSubqueries).hasMessage(MODIFYING_NON_TRANSACTIONAL_TABLE_MESSAGE);
     }
 
+    @Test
+    @Override
+    public void testMergeWrittenStats()
+    {
+        assertThatThrownBy(super::testMergeWrittenStats).hasMessage(MODIFYING_NON_TRANSACTIONAL_TABLE_MESSAGE);
+    }
+
     @Override
     protected void verifyConcurrentUpdateFailurePermissible(Exception e)
     {

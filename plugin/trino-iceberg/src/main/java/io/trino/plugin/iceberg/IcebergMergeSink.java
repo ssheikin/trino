@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static io.airlift.slice.Slices.wrappedBuffer;
 import static io.trino.plugin.base.util.Closables.closeAllSuppress;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -94,6 +95,7 @@ public class IcebergMergeSink
     public CompletableFuture<Collection<Slice>> finish()
     {
         List<Slice> fragments = new ArrayList<>(insertPageSink.finish().join());
+        writtenBytes = insertPageSink.getCompletedBytes();
 
         updateInsertPageSink.ifPresent(pageSink -> fragments.addAll(pageSink.finish().join()));
 
@@ -128,7 +130,6 @@ public class IcebergMergeSink
                 fileWriterFactory,
                 icebergPageSourceProvider.deletePageSourceProvider(session, fileSystem, formatVersion),
                 fileSystem,
-                jsonCodec,
                 session,
                 formatVersion,
                 fileFormat,
@@ -136,10 +137,12 @@ public class IcebergMergeSink
                 previousDeleteFiles);
     }
 
-    private static Collection<Slice> writePositionDeletes(PositionDeleteWriter writer, ImmutableLongBitmapDataProvider rowsToDelete)
+    private Collection<Slice> writePositionDeletes(PositionDeleteWriter writer, ImmutableLongBitmapDataProvider rowsToDelete)
     {
         try {
-            return writer.write(rowsToDelete);
+            CommitTaskData task = writer.write(rowsToDelete);
+            writtenBytes += task.fileSizeInBytes();
+            return List.of(wrappedBuffer(jsonCodec.toJsonBytes(task)));
         }
         catch (Throwable t) {
             closeAllSuppress(t, writer::abort);
