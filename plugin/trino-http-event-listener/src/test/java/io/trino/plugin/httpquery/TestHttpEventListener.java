@@ -196,6 +196,7 @@ final class TestHttpEventListener
                 queryContext,
                 queryIOMetadata,
                 Optional.empty(),
+                Optional.empty(),
                 Collections.emptyList(),
                 Instant.now(),
                 Instant.now(),

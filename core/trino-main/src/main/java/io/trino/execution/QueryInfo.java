@@ -26,6 +26,7 @@ import io.trino.spi.ErrorCode;
 import io.trino.spi.ErrorType;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoWarning;
+import io.trino.spi.eventlistener.ColumnLineageInfo;
 import io.trino.spi.eventlistener.RoutineInfo;
 import io.trino.spi.eventlistener.TableInfo;
 import io.trino.spi.resourcegroups.QueryType;
@@ -82,6 +83,7 @@ public class QueryInfo
     private final List<TrinoWarning> warnings;
     private final Set<Input> inputs;
     private final Optional<Output> output;
+    private final Optional<List<ColumnLineageInfo>> selectColumnsLineageInfo;
     private final boolean finalQueryInfo;
     private final Optional<ResourceGroupId> resourceGroupId;
     private final Optional<QueryType> queryType;
@@ -121,6 +123,7 @@ public class QueryInfo
             @JsonProperty("warnings") List<TrinoWarning> warnings,
             @JsonProperty("inputs") Set<Input> inputs,
             @JsonProperty("output") Optional<Output> output,
+            @JsonProperty("selectColumnsLineageInfo") Optional<List<ColumnLineageInfo>> selectColumnsLineageInfo,
             @JsonProperty("referencedTables") List<TableInfo> referencedTables,
             @JsonProperty("routines") List<RoutineInfo> routines,
             @JsonProperty("finalQueryInfo") boolean finalQueryInfo,
@@ -160,6 +163,7 @@ public class QueryInfo
         requireNonNull(queryType, "queryType is null");
         requireNonNull(retryPolicy, "retryPolicy is null");
         requireNonNull(version, "version is null");
+        requireNonNull(selectColumnsLineageInfo, "selectColumnsLineageInfo is null");
 
         this.queryId = queryId;
         this.session = session;
@@ -201,6 +205,13 @@ public class QueryInfo
         this.retryPolicy = retryPolicy;
         this.pruned = pruned;
         this.version = version;
+        this.selectColumnsLineageInfo = selectColumnsLineageInfo.map(ImmutableList::copyOf);
+    }
+
+    @JsonProperty
+    public Optional<List<ColumnLineageInfo>> getSelectColumnsLineageInfo()
+    {
+        return selectColumnsLineageInfo;
     }
 
     @JsonProperty
@@ -502,6 +513,7 @@ public class QueryInfo
                 warnings,
                 inputs,
                 output,
+                selectColumnsLineageInfo,
                 referencedTables,
                 routines,
                 finalQueryInfo,
