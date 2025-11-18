@@ -76,6 +76,7 @@ import static io.trino.plugin.objectstore.TableType.ICEBERG;
 import static io.trino.spi.connector.ConnectorCapabilities.ALWAYS_VISIBLE_SYSTEM_TABLES;
 import static io.trino.spi.connector.ConnectorCapabilities.DEFAULT_COLUMN_VALUE;
 import static io.trino.spi.connector.ConnectorCapabilities.MATERIALIZED_VIEW_GRACE_PERIOD;
+import static io.trino.spi.connector.ConnectorCapabilities.MATERIALIZED_VIEW_WHEN_STALE_BEHAVIOR;
 import static io.trino.spi.connector.ConnectorCapabilities.NOT_NULL_COLUMN_CONSTRAINT;
 import static io.trino.spi.session.PropertyMetadata.stringProperty;
 import static io.trino.spi.transaction.IsolationLevel.READ_UNCOMMITTED;
@@ -506,6 +507,7 @@ public class ObjectStoreConnector
                 DEFAULT_COLUMN_VALUE,
                 NOT_NULL_COLUMN_CONSTRAINT,
                 MATERIALIZED_VIEW_GRACE_PERIOD,
+                MATERIALIZED_VIEW_WHEN_STALE_BEHAVIOR,
                 ALWAYS_VISIBLE_SYSTEM_TABLES);
     }
 

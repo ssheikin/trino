@@ -1226,9 +1226,16 @@ public abstract class BaseTestObjectStoreIcebergFeaturesConnectorTest
 
     @Test
     @Override
-    public void testMaterializedViewWhenStale()
+    public void testMaterializedViewWhenStaleFail()
     {
-        skipDuplicateTestCoverage("testMaterializedViewWhenStale");
+        skipDuplicateTestCoverage("testMaterializedViewWhenStaleFail");
+    }
+
+    @Test
+    @Override
+    public void testMaterializedViewWhenStaleInline()
+    {
+        skipDuplicateTestCoverage("testMaterializedViewWhenStaleInline");
     }
 
     @Test
