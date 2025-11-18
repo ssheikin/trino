@@ -397,6 +397,10 @@ public class ElasticsearchClient
                         format("A column, (%s) cannot be declared as a Trino array and also be rendered as json.", name));
             }
 
+            List<IndexMetadata.Field> multiFields = Optional.ofNullable(value.get("fields"))
+                    .map(node -> parseType(node, metaNode).fields())
+                    .orElse(ImmutableList.of());
+
             switch (type) {
                 case "date":
                     List<String> formats = ImmutableList.of();
@@ -426,7 +430,7 @@ public class ElasticsearchClient
                     break;
 
                 default:
-                    result.add(new IndexMetadata.Field(asRawJson, isArray, name, new IndexMetadata.PrimitiveType(type)));
+                    result.add(new IndexMetadata.Field(asRawJson, isArray, name, new IndexMetadata.PrimitiveType(type), multiFields));
             }
         }
 
