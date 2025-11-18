@@ -43,7 +43,7 @@ public class OpenApiConnectorFactory
     {
         requireNonNull(requiredConfig, "requiredConfig is null");
 
-        Bootstrap bootstrap = createBootstrap(catalogName, requiredConfig, context);
+        Bootstrap bootstrap = createBootstrap(catalogName, requiredConfig);
 
         Injector injector = bootstrap
                 .initialize();
@@ -54,7 +54,7 @@ public class OpenApiConnectorFactory
     @Override
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = createBootstrap(catalogName, config, context);
+        Bootstrap app = createBootstrap(catalogName, config);
 
         Set<ConfigPropertyMetadata> usedProperties = app
                 .quiet()
@@ -64,13 +64,11 @@ public class OpenApiConnectorFactory
         return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
     }
 
-    private static Bootstrap createBootstrap(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> requiredConfig)
     {
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
-                new OpenApiModule(
-                        context.getNodeManager(),
-                        context.getTypeManager()));
+                new OpenApiModule());
 
         return app
                 .doNotInitializeLogging()
