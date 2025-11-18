@@ -1411,6 +1411,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
 
     @Test
     @Override
+    public void testMaterializedViewWhenStale()
+    {
+        skipDuplicateTestCoverage("testMaterializedViewWhenStale");
+    }
+
+    @Test
+    @Override
     public void testMergeAllColumnsReversed()
     {
         skipDuplicateTestCoverage("testMergeAllColumnsReversed");

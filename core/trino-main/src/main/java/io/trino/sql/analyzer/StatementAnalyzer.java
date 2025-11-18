@@ -1501,9 +1501,6 @@ class StatementAnalyzer
                 }
                 analyzeExpression(gracePeriod, Scope.create());
             });
-            if (node.getWhenStaleBehavior().isPresent()) {
-                throw new TrinoException(NOT_SUPPORTED, "WHEN STALE is not supported yet");
-            }
 
             // analyze the query that creates the view
             StatementAnalyzer analyzer = statementAnalyzerFactory.createStatementAnalyzer(analysis, session, warningCollector, CorrelationSupport.ALLOWED);

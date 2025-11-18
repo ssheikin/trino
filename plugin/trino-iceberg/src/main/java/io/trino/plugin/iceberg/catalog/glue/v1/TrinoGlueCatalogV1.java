@@ -1356,6 +1356,7 @@ public class TrinoGlueCatalogV1
                         .map(currentViewColumn -> Objects.equals(columnName, currentViewColumn.getName()) ? new ConnectorMaterializedViewDefinition.Column(currentViewColumn.getName(), currentViewColumn.getType(), comment) : currentViewColumn)
                         .collect(toImmutableList()),
                 definition.getGracePeriod(),
+                definition.getWhenStaleBehavior(),
                 definition.getComment(),
                 definition.getOwner(),
                 definition.getPath());

@@ -106,6 +106,7 @@ public class TestMockConnector
                                                 ImmutableList.of(new Column("nationkey", BIGINT.getTypeId(), Optional.empty())),
                                                 Optional.of(Duration.ZERO),
                                                 Optional.empty(),
+                                                Optional.empty(),
                                                 Optional.of("alice"),
                                                 ImmutableList.of())))
                                 .withData(schemaTableName -> {
