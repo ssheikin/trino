@@ -5827,11 +5827,11 @@ public class TestAnalyzer
         accessControlManager.setSystemAccessControls(List.of(AllowAllSystemAccessControl.INSTANCE));
         accessControlManager.setLocationAccessControls(List.of(LocationAccessControl.ALLOW_ALL));
 
-        analyze("SELECT * FROM fresh_materialized_view");
+        analyze(CLIENT_SESSION, "SELECT * FROM fresh_materialized_view", accessControlManager);
 
         // materialized view analysis should succeed even if access to storage table is denied when querying the table directly
         accessControlManager.deny(privilege("t2.a", SELECT_COLUMN));
-        analyze("SELECT * FROM fresh_materialized_view");
+        analyze(CLIENT_SESSION, "SELECT * FROM fresh_materialized_view", accessControlManager);
 
         accessControlManager.deny(privilege("fresh_materialized_view.a", SELECT_COLUMN));
         assertFails(
