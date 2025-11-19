@@ -36,6 +36,7 @@ import java.util.function.Function;
 
 import static io.trino.filesystem.s3.S3FileSystemConfig.S3SseType.CUSTOMER;
 import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestS3FileSystemAwsS3WithSseCustomerKey
         extends AbstractTestS3FileSystem
@@ -99,6 +100,9 @@ public class TestS3FileSystemAwsS3WithSseCustomerKey
     @Override
     protected S3FileSystemFactory createS3FileSystemFactory()
     {
+        DataSize streamingPartSize = DataSize.valueOf("5.5MB");
+        assertThat(streamingPartSize).describedAs("Configured part size should be less than test's larger file size")
+                .isLessThan(LARGER_FILE_DATA_SIZE);
         return new S3FileSystemFactory(
                 OpenTelemetry.noop(),
                 new S3FileSystemConfig()
@@ -107,7 +111,7 @@ public class TestS3FileSystemAwsS3WithSseCustomerKey
                         .setRegion(region)
                         .setSseType(CUSTOMER)
                         .setSseCustomerKey(s3SseCustomerKey.key())
-                        .setStreamingPartSize(DataSize.valueOf("5.5MB")),
+                        .setStreamingPartSize(streamingPartSize),
                 new S3FileSystemStats());
     }
 
