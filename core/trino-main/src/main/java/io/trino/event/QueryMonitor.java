@@ -46,6 +46,7 @@ import io.trino.operator.RetryPolicy;
 import io.trino.operator.TableFinishInfo;
 import io.trino.operator.TaskStats;
 import io.trino.server.BasicQueryInfo;
+import io.trino.server.BasicQueryStats;
 import io.trino.spi.ErrorCode;
 import io.trino.spi.QueryId;
 import io.trino.spi.eventlistener.DoubleSymmetricDistribution;
@@ -672,8 +673,9 @@ public class QueryMonitor
 
     private static void logQueryTimeline(BasicQueryInfo queryInfo)
     {
-        Instant queryStartTime = queryInfo.getQueryStats().getCreateTime().truncatedTo(MILLIS);
-        Instant queryEndTime = queryInfo.getQueryStats().getEndTime().truncatedTo(MILLIS);
+        BasicQueryStats queryStats = queryInfo.getQueryStats();
+        Instant queryStartTime = queryStats.getCreateTime().truncatedTo(MILLIS);
+        Instant queryEndTime = queryStats.getEndTime().truncatedTo(MILLIS);
 
         // query didn't finish cleanly
         if (queryStartTime == null || queryEndTime == null) {
@@ -688,8 +690,8 @@ public class QueryMonitor
                 queryInfo.getSession().getQueryDataEncoding(),
                 Optional.ofNullable(queryInfo.getErrorCode()),
                 elapsed,
-                elapsed,
-                0,
+                queryStats.getPlanningTime().toMillis(),
+                queryStats.getResourceWaitingTime().toMillis(),
                 0,
                 0,
                 0,
