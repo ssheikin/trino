@@ -554,6 +554,7 @@ public class TestQueryStateMachine
         assertThat(stats.getCreateTime()).isNotNull();
         assertThat(stats.getEndTime()).isNull();
         assertThat(stats.getQueuedTime()).isNotNull();
+        assertThat(stats.getResourceWaitingTime()).isNotNull();
         assertThat(stats.getElapsedTime()).isNotNull();
         assertThat(stats.getExecutionTime()).isNotNull();
         assertThat(stats.getFailedTasks()).isEqualTo(expectedStatsValue);
