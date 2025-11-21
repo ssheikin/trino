@@ -1351,7 +1351,6 @@ jobs:
                 - plugin/trino-faker
                 - plugin/trino-geospatial
                 - plugin/trino-memory
-                - plugin/trino-openapi
                 - plugin/trino-openlineage
                 - plugin/trino-thrift
             - modules:
@@ -1414,6 +1413,7 @@ jobs:
             - { modules: plugin/trino-mongodb }
             - { modules: plugin/trino-mongodb, profile: cloud-tests }
             - { modules: plugin/trino-mysql }
+            - { modules: plugin/trino-openapi }
             - { modules: plugin/trino-openlineage }
             - { modules: plugin/trino-opensearch }
             - { modules: plugin/trino-oracle }
