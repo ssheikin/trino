@@ -239,6 +239,29 @@ public class TestDeltaLakePlugin
     }
 
     @Test
+    public void testConfigureS3LogWriting()
+    {
+        ConnectorFactory factory = getConnectorFactory();
+        factory.create(
+                        "test",
+                        ImmutableMap.of(
+                                "hive.metastore.uri", "thrift://foo:1234",
+                                "delta.s3.transaction-log-conditional-writes.enabled", "true",
+                                "bootstrap.quiet", "true"),
+                        new TestingConnectorContext())
+                .shutdown();
+
+        factory.create(
+                        "test",
+                        ImmutableMap.of(
+                                "hive.metastore.uri", "thrift://foo:1234",
+                                "s3.exclusive-create", "true", // legacy option name
+                                "bootstrap.quiet", "true"),
+                        new TestingConnectorContext())
+                .shutdown();
+    }
+
+    @Test
     void testGetSecuritySensitivePropertyNames()
     {
         ConnectorFactory factory = getConnectorFactory();
