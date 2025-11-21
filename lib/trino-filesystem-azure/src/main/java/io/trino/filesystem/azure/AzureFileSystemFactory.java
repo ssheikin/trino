@@ -74,6 +74,7 @@ public class AzureFileSystemFactory
                 config.getMaxWriteConcurrency(),
                 config.getMaxSingleUploadSize(),
                 config.getMaxHttpRequests(),
+                config.getMaxHttpConnections(),
                 config.getApplicationId(),
                 config.isMultipartWriteEnabled());
     }
@@ -89,6 +90,7 @@ public class AzureFileSystemFactory
             int maxWriteConcurrency,
             DataSize maxSingleUploadSize,
             int maxHttpRequests,
+            int maxHttpConnections,
             String applicationId,
             boolean multipart)
     {
@@ -102,11 +104,12 @@ public class AzureFileSystemFactory
         this.maxWriteConcurrency = maxWriteConcurrency;
         this.maxSingleUploadSize = requireNonNull(maxSingleUploadSize, "maxSingleUploadSize is null");
         this.tracingOptions = new OpenTelemetryTracingOptions().setOpenTelemetry(openTelemetry);
-        this.connectionProvider = ConnectionProvider.create(applicationId, maxHttpRequests);
+        this.connectionProvider = ConnectionProvider.create(applicationId, maxHttpConnections);
         this.eventLoopGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         HttpClientOptions clientOptions = new HttpClientOptions();
         clientOptions.setTracingOptions(tracingOptions);
         clientOptions.setApplicationId(applicationId);
+        clientOptions.setMaximumConnectionPoolSize(maxHttpConnections);
         httpClient = createAzureHttpClient(connectionProvider, eventLoopGroup, clientOptions);
         this.multipart = multipart;
         this.concurrencyPolicy = new ConcurrencyLimitHttpPipelinePolicy(maxHttpRequests);
