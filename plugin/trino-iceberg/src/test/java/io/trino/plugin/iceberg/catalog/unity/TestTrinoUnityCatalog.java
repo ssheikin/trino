@@ -16,7 +16,7 @@ package io.trino.plugin.iceberg.catalog.unity;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import org.junit.jupiter.api.Test;
 
-import static io.trino.spi.testing.InterfaceTestUtils.assertAllMethodsOverridden;
+import static io.trino.testing.InterfaceTestUtils.assertAllMethodsOverridden;
 
 class TestTrinoUnityCatalog
 {

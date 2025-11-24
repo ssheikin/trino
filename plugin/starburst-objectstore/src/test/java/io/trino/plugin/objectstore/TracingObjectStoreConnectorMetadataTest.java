@@ -14,15 +14,16 @@
 package io.trino.plugin.objectstore;
 
 import io.trino.spi.connector.ConnectorMetadata;
-import io.trino.spi.testing.InterfaceTestUtils;
 import org.junit.jupiter.api.Test;
+
+import static io.trino.testing.InterfaceTestUtils.assertAllMethodsOverridden;
 
 class TracingObjectStoreConnectorMetadataTest
 {
     @Test
     public void testEverythingImplemented()
     {
-        InterfaceTestUtils.assertAllMethodsOverridden(
+        assertAllMethodsOverridden(
                 ConnectorMetadata.class,
                 TracingObjectStoreConnectorMetadata.class);
     }

@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 import java.util.function.Function;
 
-import static io.trino.spi.testing.InterfaceTestUtils.assertAllMethodsOverridden;
-import static io.trino.spi.testing.InterfaceTestUtils.assertProperForwardingMethodsAreCalled;
+import static io.trino.testing.InterfaceTestUtils.assertAllMethodsOverridden;
+import static io.trino.testing.InterfaceTestUtils.assertProperForwardingMethodsAreCalled;
 
 public class TestDecoratingTrinoFileSystemFactory
 {
