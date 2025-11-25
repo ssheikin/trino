@@ -27,7 +27,6 @@ import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.ConnectorMaterializedViewDefinition;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.SchemaTableName;
-import io.trino.spi.type.TestingTypeManager;
 import software.amazon.awssdk.services.glue.GlueClient;
 
 import java.util.Map;
@@ -66,7 +65,7 @@ public class TestTrinoGlueCatalogV1
                 new NoopWorkScheduler(),
                 HDFS_FILE_SYSTEM_FACTORY,
                 FILE_IO_FACTORY,
-                new TestingTypeManager(),
+                TESTING_TYPE_MANAGER,
                 catalogConfig.isCacheTableMetadata(),
                 new GlueIcebergTableOperationsProviderV1(
                         HDFS_FILE_SYSTEM_FACTORY,
