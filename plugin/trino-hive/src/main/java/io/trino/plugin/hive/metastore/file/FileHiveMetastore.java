@@ -1422,7 +1422,7 @@ public class FileHiveMetastore
             if (getCausalChain(e).stream().anyMatch(FileNotFoundException.class::isInstance)) {
                 return Optional.empty();
             }
-            throw new TrinoException(HIVE_METASTORE_ERROR, "Could not read " + type, e);
+            throw new TrinoException(HIVE_METASTORE_ERROR, "Could not read %s from %s".formatted(type, file), e);
         }
     }
 
