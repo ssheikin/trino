@@ -1002,7 +1002,7 @@ public abstract class AstVisitor<R, C>
         return visitDataTypeParameter(node, context);
     }
 
-    protected R visitIntervalDataType(IntervalDayTimeDataType node, C context)
+    protected R visitIntervalDataType(IntervalDataType node, C context)
     {
         return visitDataType(node, context);
     }
