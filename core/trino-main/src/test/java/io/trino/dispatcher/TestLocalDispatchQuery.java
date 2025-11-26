@@ -22,7 +22,6 @@ import io.airlift.json.JsonCodec;
 import io.airlift.node.NodeInfo;
 import io.airlift.units.Duration;
 import io.opentelemetry.api.OpenTelemetry;
-import io.trino.Session;
 import io.trino.client.NodeVersion;
 import io.trino.connector.CatalogHandle;
 import io.trino.connector.ConnectorCatalogServiceProvider;
@@ -227,7 +226,7 @@ public class TestLocalDispatchQuery
         public void loadInitialCatalogs() {}
 
         @Override
-        public void ensureCatalogsLoaded(Session session, List<CatalogProperties> catalogs) {}
+        public void ensureCatalogsLoaded(List<CatalogProperties> catalogs) {}
 
         @Override
         public void pruneCatalogs(Set<CatalogHandle> catalogsInUse)

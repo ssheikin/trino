@@ -20,7 +20,6 @@ import com.google.common.io.Files;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
-import io.trino.Session;
 import io.trino.connector.system.GlobalSystemConnector;
 import io.trino.metadata.Catalog;
 import io.trino.metadata.CatalogManager;
@@ -193,7 +192,7 @@ public class StaticCatalogManager
     }
 
     @Override
-    public void ensureCatalogsLoaded(Session session, List<CatalogProperties> catalogs)
+    public void ensureCatalogsLoaded(List<CatalogProperties> catalogs)
     {
         List<CatalogName> missingCatalogs = catalogs.stream()
                 .map(CatalogProperties::name)
