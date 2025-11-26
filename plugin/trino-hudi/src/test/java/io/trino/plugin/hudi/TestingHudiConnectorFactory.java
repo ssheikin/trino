@@ -62,7 +62,7 @@ public class TestingHudiConnectorFactory
         if (!config.containsKey("hive.metastore")) {
             configBuilder.put("hive.metastore", "file");
         }
-        return createConnector(catalogName, configBuilder.buildOrThrow(), Optional.empty(), context, createAdditionalModule());
+        return createConnector(catalogName, configBuilder.buildOrThrow(), Optional.empty(), context, createAdditionalModule(catalogName));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class TestingHudiConnectorFactory
     {
         ClassLoader classLoader = HudiConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), Optional.empty(), context, createAdditionalModule(), true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), Optional.empty(), context, createAdditionalModule(catalogName), true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -78,12 +78,14 @@ public class TestingHudiConnectorFactory
         }
     }
 
-    private Module createAdditionalModule()
+    private Module createAdditionalModule(String catalogName)
     {
         return binder -> {
             newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
                     .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
-            configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, metastoreConfig -> metastoreConfig.setCatalogDirectory("local:///managed/"));
+            configBinder(binder).bindConfigDefaults(
+                    FileHiveMetastoreConfig.class,
+                    metastoreConfig -> metastoreConfig.setCatalogDirectory("local:///" + catalogName));
         };
     }
 

@@ -23,11 +23,15 @@ import io.trino.testing.sql.TestTable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.io.MoreFiles.deleteRecursively;
+import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static com.google.common.io.Resources.getResource;
 import static io.trino.plugin.iceberg.IcebergFileFormat.ORC;
 import static io.trino.plugin.iceberg.IcebergTestUtils.checkOrcFileSorting;
@@ -61,6 +65,9 @@ public class TestIcebergMinioOrcConnectorTest
         minio.start();
         minio.createBucket(bucketName);
 
+        Path dataDirectory = Files.createTempDirectory("catalog-dir");
+        closeAfterClass(() -> deleteRecursively(dataDirectory, ALLOW_INSECURE));
+
         return IcebergQueryRunner.builder()
                 .setIcebergProperties(
                         ImmutableMap.<String, String>builder()
@@ -81,6 +88,8 @@ public class TestIcebergMinioOrcConnectorTest
                                 .put("iceberg.writer-sort-buffer-size", "1MB")
                                 // Disable partition statistics to make diff from Trino smaller
                                 .put("iceberg.partition-statistics.enabled", "false")
+                                // Intentionally sharing the file metastore directory between catalogs (needed for tests of dynamic catalogs)
+                                .put("hive.metastore.catalog.dir", dataDirectory.toString())
                                 .buildOrThrow())
                 .setSchemaInitializer(
                         SchemaInitializer.builder()

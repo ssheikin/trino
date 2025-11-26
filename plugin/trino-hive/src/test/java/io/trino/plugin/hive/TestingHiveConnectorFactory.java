@@ -49,6 +49,8 @@ public class TestingHiveConnectorFactory
 {
     private final Optional<HiveMetastore> metastore;
     private final boolean metastoreImpersonationEnabled;
+    private final Path localFileSystemRootPath;
+    private final Optional<DecryptionKeyRetriever> decryptionKeyRetriever;
     private final Module module;
     private final Optional<DirectoryLister> directoryLister;
 
@@ -68,26 +70,10 @@ public class TestingHiveConnectorFactory
     {
         this.metastore = requireNonNull(metastore, "metastore is null");
         this.metastoreImpersonationEnabled = metastoreImpersonationEnabled;
-
         boolean ignored = localFileSystemRootPath.toFile().mkdirs();
-        this.module = new AbstractConfigurationAwareModule()
-        {
-            @Override
-            protected void setup(Binder binder)
-            {
-                install(module);
-                newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
-                        .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
-                configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, config -> config.setCatalogDirectory("local:///"));
-
-                decryptionKeyRetriever.ifPresent(retriever -> {
-                    Multibinder<DecryptionKeyRetriever> retrieverBinder =
-                            Multibinder.newSetBinder(binder, DecryptionKeyRetriever.class);
-                    retrieverBinder.addBinding().toInstance(retriever);
-                });
-            }
-        };
-
+        this.localFileSystemRootPath = localFileSystemRootPath;
+        this.decryptionKeyRetriever = requireNonNull(decryptionKeyRetriever, "decryptionKeyRetriever is null");
+        this.module = requireNonNull(module, "module is null");
         this.directoryLister = requireNonNull(directoryLister, "directoryLister is null");
     }
 
@@ -100,7 +86,7 @@ public class TestingHiveConnectorFactory
     @Override
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        return createConnector(catalogName, createConfig(config), context, module, metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister);
+        return createConnector(catalogName, createConfig(config), context, createAdditionalModule(catalogName), metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister);
     }
 
     @Override
@@ -108,7 +94,7 @@ public class TestingHiveConnectorFactory
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, module, metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister, true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, createAdditionalModule(catalogName), metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -125,5 +111,28 @@ public class TestingHiveConnectorFactory
             configBuilder.put("hive.metastore", "file");
         }
         return configBuilder.buildOrThrow();
+    }
+
+    private Module createAdditionalModule(String catalogName)
+    {
+        return new AbstractConfigurationAwareModule()
+        {
+            @Override
+            protected void setup(Binder binder)
+            {
+                install(TestingHiveConnectorFactory.this.module);
+                newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
+                        .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
+                configBinder(binder).bindConfigDefaults(
+                        FileHiveMetastoreConfig.class,
+                        metastoreConfig -> metastoreConfig.setCatalogDirectory("local:///" + catalogName));
+
+                decryptionKeyRetriever.ifPresent(retriever -> {
+                    Multibinder<DecryptionKeyRetriever> retrieverBinder =
+                            Multibinder.newSetBinder(binder, DecryptionKeyRetriever.class);
+                    retrieverBinder.addBinding().toInstance(retriever);
+                });
+            }
+        };
     }
 }

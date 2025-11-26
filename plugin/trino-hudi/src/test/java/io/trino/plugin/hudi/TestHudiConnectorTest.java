@@ -20,9 +20,13 @@ import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.io.MoreFiles.deleteRecursively;
+import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static io.trino.plugin.hudi.testing.HudiTestUtils.COLUMNS_TO_HIDE;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,8 +38,15 @@ public class TestHudiConnectorTest
     protected QueryRunner createQueryRunner()
             throws Exception
     {
+        Path dataDirectory = Files.createTempDirectory("catalog-dir");
+        closeAfterClass(() -> deleteRecursively(dataDirectory, ALLOW_INSECURE));
+
         return HudiQueryRunner.builder()
                 .addConnectorProperty("hudi.columns-to-hide", COLUMNS_TO_HIDE)
+                .addConnectorProperty("hive.metastore", "file")
+                // Intentionally sharing the file metastore directory between catalogs (needed for tests of dynamic catalogs)
+                .addConnectorProperty("hive.metastore.catalog.dir", dataDirectory.toString())
+                .addConnectorProperty("fs.hadoop.enabled", "true")
                 .setDataLoader(new TpchHudiTablesInitializer(REQUIRED_TPCH_TABLES))
                 .build();
     }

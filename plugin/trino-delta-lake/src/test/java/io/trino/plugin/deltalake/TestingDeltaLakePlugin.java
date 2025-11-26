@@ -86,7 +86,7 @@ public class TestingDeltaLakePlugin
                         context,
                         metastoreModule,
                         fileSystemFactory,
-                        createAdditionalModule());
+                        createAdditionalModule(catalogName));
             }
 
             @Override
@@ -94,7 +94,7 @@ public class TestingDeltaLakePlugin
             {
                 ClassLoader classLoader = DeltaLakeConnectorFactory.class.getClassLoader();
                 try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-                    Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, metastoreModule, fileSystemFactory, createAdditionalModule(), true);
+                    Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, metastoreModule, fileSystemFactory, createAdditionalModule(catalogName), true);
 
                     Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -102,7 +102,7 @@ public class TestingDeltaLakePlugin
                 }
             }
 
-            private Module createAdditionalModule()
+            private Module createAdditionalModule(String catalogName)
             {
                 localFileSystemRootPath.toFile().mkdirs();
                 return binder -> {
@@ -112,8 +112,10 @@ public class TestingDeltaLakePlugin
                             .addBinding("local").toInstance(localFileSystemFactory);
                     newMapBinder(binder, String.class, TransactionLogSynchronizer.class)
                             .addBinding("local").toInstance(new LocalTransactionLogSynchronizer(new DefaultDeltaLakeFileSystemFactory(localFileSystemFactory, new NoOpVendedCredentialsProvider())));
-                    configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, defaults -> defaults.setCatalogDirectory("local:///"));
                     configBinder(binder).bindConfig(MetastoreTypeConfig.class);
+                    configBinder(binder).bindConfigDefaults(
+                            FileHiveMetastoreConfig.class,
+                            metastoreConfig -> metastoreConfig.setCatalogDirectory("local:///" + catalogName));
                 };
             }
         });

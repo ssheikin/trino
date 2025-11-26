@@ -40,8 +40,8 @@ import static java.util.Objects.requireNonNull;
 public class TestingIcebergConnectorFactory
         implements ConnectorFactory
 {
+    private final Path localFileSystemRootPath;
     private final Optional<Module> icebergCatalogModule;
-    private final Module module;
 
     public TestingIcebergConnectorFactory(Path localFileSystemRootPath)
     {
@@ -53,14 +53,9 @@ public class TestingIcebergConnectorFactory
             Path localFileSystemRootPath,
             Optional<Module> icebergCatalogModule)
     {
+        this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");
         boolean ignored = localFileSystemRootPath.toFile().mkdirs();
         this.icebergCatalogModule = requireNonNull(icebergCatalogModule, "icebergCatalogModule is null");
-        this.module = binder -> {
-            newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
-                    .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
-            configBinder(binder).bindConfigDefaults(FileHiveMetastoreConfig.class, config -> config.setCatalogDirectory("local:///"));
-            configBinder(binder).bindConfigDefaults(IcebergConfig.class, config -> config.setMaxFormatVersion(3));
-        };
     }
 
     @Override
@@ -72,7 +67,7 @@ public class TestingIcebergConnectorFactory
     @Override
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        return createConnector(catalogName, createConfig(config), context, module, icebergCatalogModule);
+        return createConnector(catalogName, createConfig(config), context, createAdditionalModule(catalogName), icebergCatalogModule);
     }
 
     @Override
@@ -80,7 +75,7 @@ public class TestingIcebergConnectorFactory
     {
         ClassLoader classLoader = IcebergConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, module, icebergCatalogModule, true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, createAdditionalModule(catalogName), icebergCatalogModule, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -97,5 +92,16 @@ public class TestingIcebergConnectorFactory
                     .buildOrThrow();
         }
         return config;
+    }
+
+    private Module createAdditionalModule(String catalogName)
+    {
+        return binder -> {
+            newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
+                    .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
+            configBinder(binder).bindConfigDefaults(
+                    FileHiveMetastoreConfig.class,
+                    metastoreConfig -> metastoreConfig.setCatalogDirectory("local:///" + catalogName));
+        };
     }
 }
