@@ -843,7 +843,7 @@ public abstract class BaseMySqlConnectorTest
     }
 
     @Override
-    protected void createTableForWrites(String createTable, String tableName, Optional<String> primaryKey, OptionalInt updateCount)
+    protected void createTableForWrites(@Language("SQL") String createTable, String tableName, Optional<String> primaryKey, OptionalInt updateCount)
     {
         super.createTableForWrites(createTable, tableName, primaryKey, updateCount);
         primaryKey.ifPresent(key -> addPrimaryKey(createTable, tableName, key));
