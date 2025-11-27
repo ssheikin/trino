@@ -1844,7 +1844,7 @@ public class TestCassandraConnectorTest
     @Override
     protected void verifyColumnNameLengthFailurePermissible(Throwable e)
     {
-        assertThat(e).hasMessageContaining("Attempted serializing to buffer exceeded maximum of 65535 bytes:");
+        assertThat(e).hasMessageContaining("Column name is too long. The maximum supported length is");
     }
 
     @Override
