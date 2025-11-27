@@ -135,7 +135,7 @@ public final class HudiQueryRunner
     {
         private DefaultHudiQueryRunnerMain() {}
 
-        public static void main(String[] args)
+        static void main()
                 throws Exception
         {
             Logging.initialize();
@@ -155,7 +155,7 @@ public final class HudiQueryRunner
     {
         private HudiMinioQueryRunnerMain() {}
 
-        public static void main(String[] args)
+        static void main()
                 throws Exception
         {
             Logging.initialize();

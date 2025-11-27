@@ -261,7 +261,7 @@ public final class KafkaQueryRunner
     {
         private DefaultKafkaQueryRunnerMain() {}
 
-        public static void main(String[] args)
+        static void main()
                 throws Exception
         {
             Logging.initialize();
@@ -281,7 +281,7 @@ public final class KafkaQueryRunner
     {
         private ConfluentSchemaRegistryQueryRunnerMain() {}
 
-        public static void main(String[] args)
+        static void main()
                 throws Exception
         {
             Logging.initialize();
