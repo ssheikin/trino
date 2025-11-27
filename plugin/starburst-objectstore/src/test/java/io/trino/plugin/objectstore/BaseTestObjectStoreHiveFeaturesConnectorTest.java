@@ -1098,6 +1098,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
 
     @Test
     @Override
+    public void testDropColumn()
+    {
+        skipDuplicateTestCoverage("testDropColumn");
+    }
+
+    @Test
+    @Override
     public void testDropDefaultColumn()
     {
         skipDuplicateTestCoverage("testDropDefaultColumn");
@@ -1259,6 +1266,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
 
     @Test
     @Override
+    public void testInsert()
+    {
+        skipDuplicateTestCoverage("testInsert");
+    }
+
+    @Test
+    @Override
     public void testInsertArray()
     {
         skipDuplicateTestCoverage("testInsertArray");
@@ -1276,6 +1290,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
     public void testInsertForDefaultColumn()
     {
         skipDuplicateTestCoverage("testInsertForDefaultColumn");
+    }
+
+    @Test
+    @Override
+    public void testInsertHighestUnicodeCharacter()
+    {
+        skipDuplicateTestCoverage("testInsertHighestUnicodeCharacter");
     }
 
     @Test
@@ -1318,6 +1339,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
     public void testInsertSameValues()
     {
         skipDuplicateTestCoverage("testInsertSameValues");
+    }
+
+    @Test
+    @Override
+    public void testInsertUnicode()
+    {
+        skipDuplicateTestCoverage("testInsertUnicode");
     }
 
     @Test
@@ -1374,6 +1402,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
     public void testLimitMax()
     {
         skipDuplicateTestCoverage("testLimitMax");
+    }
+
+    @Test
+    @Override
+    public void testLimitPushdown()
+    {
+        skipDuplicateTestCoverage("testLimitPushdown");
     }
 
     @Test
@@ -1574,6 +1609,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
 
     @Test
     @Override
+    public void testMergeWrittenStats()
+    {
+        skipDuplicateTestCoverage("testMergeWrittenStats");
+    }
+
+    @Test
+    @Override
     public void testMultipleRangesPredicate()
     {
         skipDuplicateTestCoverage("testMultipleRangesPredicate");
@@ -1679,6 +1721,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
 
     @Test
     @Override
+    public void testRenameColumn()
+    {
+        skipDuplicateTestCoverage("testRenameColumn");
+    }
+
+    @Test
+    @Override
     public void testRenameColumnName()
     {
         skipDuplicateTestCoverage("testRenameColumnName");
@@ -1773,6 +1822,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
     public void testRollback()
     {
         skipDuplicateTestCoverage("testRollback");
+    }
+
+    @Test
+    @Override
+    public void testRowLevelUpdate()
+    {
+        skipDuplicateTestCoverage("testRowLevelUpdate");
     }
 
     @Test
@@ -2127,6 +2183,13 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
 
     @Test
     @Override
+    public void testTopNPushdown()
+    {
+        skipDuplicateTestCoverage("testTopNPushdown");
+    }
+
+    @Test
+    @Override
     public void testTruncateTable()
     {
         skipDuplicateTestCoverage("testTruncateTable");
@@ -2148,9 +2211,65 @@ public abstract class BaseTestObjectStoreHiveFeaturesConnectorTest
 
     @Test
     @Override
+    public void testUpdate()
+    {
+        skipDuplicateTestCoverage("testUpdate");
+    }
+
+    @Test
+    @Override
+    public void testUpdateAllValues()
+    {
+        skipDuplicateTestCoverage("testUpdateAllValues");
+    }
+
+    @Test
+    @Override
+    public void testUpdateCaseSensitivity()
+    {
+        skipDuplicateTestCoverage("testUpdateCaseSensitivity");
+    }
+
+    @Test
+    @Override
+    public void testUpdateMultipleCondition()
+    {
+        skipDuplicateTestCoverage("testUpdateMultipleCondition");
+    }
+
+    @Test
+    @Override
     public void testUpdateNotNullColumn()
     {
         skipDuplicateTestCoverage("testUpdateNotNullColumn");
+    }
+
+    @Test
+    @Override
+    public void testUpdateRowConcurrently()
+    {
+        skipDuplicateTestCoverage("testUpdateRowConcurrently");
+    }
+
+    @Test
+    @Override
+    public void testUpdateRowType()
+    {
+        skipDuplicateTestCoverage("testUpdateRowType");
+    }
+
+    @Test
+    @Override
+    public void testUpdateWithNullValues()
+    {
+        skipDuplicateTestCoverage("testUpdateWithNullValues");
+    }
+
+    @Test
+    @Override
+    public void testUpdateWithPredicates()
+    {
+        skipDuplicateTestCoverage("testUpdateWithPredicates");
     }
 
     @Test

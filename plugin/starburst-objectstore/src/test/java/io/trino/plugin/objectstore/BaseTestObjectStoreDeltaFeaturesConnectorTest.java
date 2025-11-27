@@ -633,6 +633,13 @@ public abstract class BaseTestObjectStoreDeltaFeaturesConnectorTest
 
     @Test
     @Override
+    public void testDropDefaultColumn()
+    {
+        skipDuplicateTestCoverage("testDropDefaultColumn");
+    }
+
+    @Test
+    @Override
     public void testDropNonEmptySchemaWithMaterializedView()
     {
         skipDuplicateTestCoverage("testDropNonEmptySchemaWithMaterializedView");
@@ -927,6 +934,13 @@ public abstract class BaseTestObjectStoreDeltaFeaturesConnectorTest
 
     @Test
     @Override
+    public void testLimitPushdown()
+    {
+        skipDuplicateTestCoverage("testLimitPushdown");
+    }
+
+    @Test
+    @Override
     public void testLimitWithAggregation()
     {
         skipDuplicateTestCoverage("testLimitWithAggregation");
@@ -1105,6 +1119,13 @@ public abstract class BaseTestObjectStoreDeltaFeaturesConnectorTest
     public void testMergeWithoutTablesAliases()
     {
         skipDuplicateTestCoverage("testMergeWithoutTablesAliases");
+    }
+
+    @Test
+    @Override
+    public void testMergeWrittenStats()
+    {
+        skipDuplicateTestCoverage("testMergeWrittenStats");
     }
 
     @Test
@@ -1396,20 +1417,6 @@ public abstract class BaseTestObjectStoreDeltaFeaturesConnectorTest
 
     @Test
     @Override
-    public void testSetDefaultColumn()
-    {
-        skipDuplicateTestCoverage("testSetDefaultColumn");
-    }
-
-    @Test
-    @Override
-    public void testDropDefaultColumn()
-    {
-        skipDuplicateTestCoverage("testDropDefaultColumn");
-    }
-
-    @Test
-    @Override
     public void testSetColumnTypeWithNotNull()
     {
         skipDuplicateTestCoverage("testSetColumnTypeWithNotNull");
@@ -1420,6 +1427,13 @@ public abstract class BaseTestObjectStoreDeltaFeaturesConnectorTest
     public void testSetColumnTypes()
     {
         skipDuplicateTestCoverage("testSetColumnTypes");
+    }
+
+    @Test
+    @Override
+    public void testSetDefaultColumn()
+    {
+        skipDuplicateTestCoverage("testSetDefaultColumn");
     }
 
     @Test
@@ -1698,6 +1712,13 @@ public abstract class BaseTestObjectStoreDeltaFeaturesConnectorTest
 
     @Test
     @Override
+    public void testTopNPushdown()
+    {
+        skipDuplicateTestCoverage("testTopNPushdown");
+    }
+
+    @Test
+    @Override
     public void testTruncateTable()
     {
         skipDuplicateTestCoverage("testTruncateTable");
@@ -1855,6 +1876,13 @@ public abstract class BaseTestObjectStoreDeltaFeaturesConnectorTest
     public void verifySupportsDeleteDeclaration()
     {
         skipDuplicateTestCoverage("verifySupportsDeleteDeclaration");
+    }
+
+    @Test
+    @Override
+    public void verifySupportsMergeDeclaration()
+    {
+        skipDuplicateTestCoverage("verifySupportsMergeDeclaration");
     }
 
     @Test

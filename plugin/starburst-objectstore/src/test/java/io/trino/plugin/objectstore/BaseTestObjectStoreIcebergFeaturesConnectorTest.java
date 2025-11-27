@@ -1110,6 +1110,13 @@ public abstract class BaseTestObjectStoreIcebergFeaturesConnectorTest
 
     @Test
     @Override
+    public void testLimitPushdown()
+    {
+        skipDuplicateTestCoverage("testLimitPushdown");
+    }
+
+    @Test
+    @Override
     public void testLimitWithAggregation()
     {
         skipDuplicateTestCoverage("testLimitWithAggregation");
@@ -1288,6 +1295,13 @@ public abstract class BaseTestObjectStoreIcebergFeaturesConnectorTest
     public void testMergeWithoutTablesAliases()
     {
         skipDuplicateTestCoverage("testMergeWithoutTablesAliases");
+    }
+
+    @Test
+    @Override
+    public void testMergeWrittenStats()
+    {
+        skipDuplicateTestCoverage("testMergeWrittenStats");
     }
 
     @Test
@@ -1919,6 +1933,13 @@ public abstract class BaseTestObjectStoreIcebergFeaturesConnectorTest
 
     @Test
     @Override
+    public void testTopNPushdown()
+    {
+        skipDuplicateTestCoverage("testTopNPushdown");
+    }
+
+    @Test
+    @Override
     public void testTruncateTable()
     {
         skipDuplicateTestCoverage("testTruncateTable");
@@ -2076,6 +2097,13 @@ public abstract class BaseTestObjectStoreIcebergFeaturesConnectorTest
     public void verifySupportsDeleteDeclaration()
     {
         skipDuplicateTestCoverage("verifySupportsDeleteDeclaration");
+    }
+
+    @Test
+    @Override
+    public void verifySupportsMergeDeclaration()
+    {
+        skipDuplicateTestCoverage("verifySupportsMergeDeclaration");
     }
 
     @Test
