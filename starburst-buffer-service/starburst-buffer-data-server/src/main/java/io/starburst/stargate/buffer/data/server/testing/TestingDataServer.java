@@ -67,7 +67,7 @@ public class TestingDataServer
         finalConfigProperties.put("trino.plane-id", "aws-us-east1-1");
         List<Module> modules = new ArrayList<>(Arrays.asList(
                 new TestingNodeModule("test"),
-                new TestingHttpServerModule(),
+                new TestingHttpServerModule("test-data-server"),
                 new JsonModule(),
                 new JaxrsModule(),
                 new MBeanModule(),

@@ -179,7 +179,7 @@ class TestAnnounceNodeInventory
     {
         ImmutableList.Builder<Module> modules = ImmutableList.<Module>builder()
                 .add(new TestingNodeModule())
-                .add(new TestingHttpServerModule())
+                .add(new TestingHttpServerModule("test-announce-server"))
                 .add(new JsonModule())
                 .add(new JaxrsModule())
                 .add(new AnnounceNodeInventoryModule())
@@ -294,7 +294,7 @@ class TestAnnounceNodeInventory
         {
             Bootstrap app = new Bootstrap(
                     new TestingNodeModule(),
-                    new TestingHttpServerModule(),
+                    new TestingHttpServerModule("test-announce-server"),
                     binder -> {
                         binder.bind(Servlet.class).toInstance(servlet);
                     });

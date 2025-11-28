@@ -95,7 +95,7 @@ public class RateLimitingTestServer
         ImmutableList.Builder<Module> modules = ImmutableList.builder();
         modules.add(
                 new TestingNodeModule("test"),
-                new TestingHttpServerModule(),
+                new TestingHttpServerModule("test-rate-limiting-server"),
                 new JsonModule(),
                 new JaxrsModule(),
                 new AbstractConfigurationAwareModule() {
