@@ -16,11 +16,14 @@ package io.trino.plugin.openapi;
 
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.configuration.ConfigPropertyMetadata;
+import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -40,18 +43,37 @@ public class OpenApiConnectorFactory
     {
         requireNonNull(requiredConfig, "requiredConfig is null");
 
-        // A plugin is not required to use Guice; it is just very convenient
+        Bootstrap bootstrap = createBootstrap(catalogName, requiredConfig, context);
+
+        Injector injector = bootstrap
+                .initialize();
+
+        return injector.getInstance(OpenApiConnector.class);
+    }
+
+    @Override
+    public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
+    {
+        Bootstrap app = createBootstrap(catalogName, config, context);
+
+        Set<ConfigPropertyMetadata> usedProperties = app
+                .quiet()
+                .skipErrorReporting()
+                .configure();
+
+        return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
+    }
+
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
+    {
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
                 new OpenApiModule(
                         context.getNodeManager(),
                         context.getTypeManager()));
 
-        Injector injector = app
+        return app
                 .doNotInitializeLogging()
-                .setRequiredConfigurationProperties(requiredConfig)
-                .initialize();
-
-        return injector.getInstance(OpenApiConnector.class);
+                .setRequiredConfigurationProperties(requiredConfig);
     }
 }
