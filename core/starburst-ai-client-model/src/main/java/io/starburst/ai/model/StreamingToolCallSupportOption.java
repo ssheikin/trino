@@ -9,8 +9,8 @@
  */
 package io.starburst.ai.model;
 
-public enum LlmTrait
+public enum StreamingToolCallSupportOption
 {
-    TOOL_CALL_SUPPORT,
-    STREAMING_TOOL_CALL_SUPPORT,
+    STREAMING_TOOL_CALL_SUPPORTED,
+    STREAMING_TOOL_CALL_NOT_SUPPORTED,
 }
