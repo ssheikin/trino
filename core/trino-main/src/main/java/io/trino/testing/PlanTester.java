@@ -316,7 +316,6 @@ public class PlanTester
 
     private final SqlParser sqlParser;
     private final PlanFragmenter planFragmenter;
-    private final TestingInternalNodeManager nodeManager;
     private final TypeOperators typeOperators;
     private final BlockTypeOperators blockTypeOperators;
     private final NullSafeHashCompiler hashCompiler;
@@ -346,7 +345,6 @@ public class PlanTester
     private final FormatOptions formatOptions;
 
     private final PageFunctionCompiler pageFunctionCompiler;
-    private final ColumnarFilterCompiler filterCompiler;
     private final ExpressionCompiler expressionCompiler;
     private final JoinFilterFunctionCompiler joinFilterFunctionCompiler;
     private final JoinCompiler joinCompiler;
@@ -395,7 +393,7 @@ public class PlanTester
         this.blockTypeOperators = new BlockTypeOperators(typeOperators);
         this.hashCompiler = new NullSafeHashCompiler(typeOperators);
         this.sqlParser = new SqlParser();
-        this.nodeManager = TestingInternalNodeManager.createDefault();
+        TestingInternalNodeManager nodeManager = TestingInternalNodeManager.createDefault();
         PageSorter pageSorter = new PagesIndexPageSorter(new PagesIndex.TestingFactory(false));
         NodeSchedulerConfig nodeSchedulerConfig = new NodeSchedulerConfig().setIncludeCoordinator(true);
         this.optimizerConfig = new OptimizerConfig();
@@ -502,7 +500,7 @@ public class PlanTester
         CacheMetadata cacheMetadata = new CacheMetadata(createCacheMetadata(catalogManager));
         this.plannerContext = new PlannerContext(metadata, cacheMetadata, typeOperators, blockEncodingSerde, typeManager, functionManager, languageFunctionManager, BuiltinFunctionsChecker.NOOP_CHECKER, tracer);
         this.pageFunctionCompiler = new PageFunctionCompiler(functionManager, 0);
-        this.filterCompiler = new ColumnarFilterCompiler(functionManager, 0);
+        ColumnarFilterCompiler filterCompiler = new ColumnarFilterCompiler(functionManager, 0);
         this.expressionCompiler = new ExpressionCompiler(pageFunctionCompiler, filterCompiler);
         this.joinFilterFunctionCompiler = new JoinFilterFunctionCompiler(functionManager, compilerConfig);
 
@@ -542,7 +540,6 @@ public class PlanTester
                 ImmutableSet.of(),
                 ImmutableSet.of(new ExcludeColumnsFunction()),
                 nodeManager);
-
         cacheManagerRegistry = new CacheManagerRegistry(cacheConfig, new LocalMemoryManager(new NodeMemoryConfig()), plannerContext.getBlockEncodingSerde(), new CacheStats(), node, TestingInternalNodeManager.createDefault(), new SecretsResolver(ImmutableMap.of()));
         cachePerformanceTracker = new CachePerformanceTracker();
         tupleDomainCodec = getTupleDomainJsonCodec(blockEncodingSerde, typeManager);
