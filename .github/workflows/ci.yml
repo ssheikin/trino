@@ -1203,7 +1203,7 @@ jobs:
             !:trino-memory,
             !:trino-mongodb,
             !:trino-mysql,
-            !:trino-openapi,
+            !:starburst-openapi,
             !:trino-openlineage,
             !:trino-opensearch,
             !:trino-oracle,
@@ -1414,7 +1414,7 @@ jobs:
             - { modules: plugin/trino-mongodb }
             - { modules: plugin/trino-mongodb, profile: cloud-tests }
             - { modules: plugin/trino-mysql }
-            - { modules: plugin/trino-openapi }
+            - { modules: plugin/starburst-openapi }
             - { modules: plugin/trino-openlineage }
             - { modules: plugin/trino-opensearch }
             - { modules: plugin/trino-oracle }
