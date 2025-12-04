@@ -242,7 +242,7 @@ public class TestIcebergGlueCatalogV1ConnectorSmokeTest
     }
 
     @Override
-    protected void dropTableFromMetastore(String tableName)
+    protected void dropTableFromCatalog(String tableName)
     {
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest()
                 .withDatabaseName(schemaName)

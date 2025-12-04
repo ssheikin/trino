@@ -120,7 +120,7 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     }
 
     @Override
-    protected void dropTableFromMetastore(String tableName)
+    protected void dropTableFromCatalog(String tableName)
     {
         throw new UnsupportedOperationException();
     }
