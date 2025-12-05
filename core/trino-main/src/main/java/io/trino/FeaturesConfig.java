@@ -131,7 +131,7 @@ public class FeaturesConfig
 
     private boolean legacyArithmeticDecimalOperators;
 
-    private boolean parallelizeLookupOuterOperator = true;
+    private boolean parallelizeLookupOuterOperator;
 
     public enum DataIntegrityVerification
     {
