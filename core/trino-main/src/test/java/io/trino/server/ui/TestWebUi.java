@@ -1332,6 +1332,12 @@ public class TestWebUi
         }
 
         @Override
+        public Optional<Map<String, Object>> getIdTokenClaims(String idToken)
+        {
+            return Optional.of(claims);
+        }
+
+        @Override
         public Response refreshTokens(String refreshToken)
                 throws ChallengeFailedException
         {

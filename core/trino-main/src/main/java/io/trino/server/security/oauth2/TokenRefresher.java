@@ -43,7 +43,7 @@ public class TokenRefresher
         if (refreshToken.isPresent()) {
             UUID refreshingId = UUID.randomUUID();
             try {
-                refreshToken(refreshToken.get(), refreshingId);
+                refreshToken(refreshToken.get(), refreshingId, tokenPair.principal());
                 return Optional.of(refreshingId);
             }
             // If Refresh token has expired then restart the flow
@@ -54,11 +54,11 @@ public class TokenRefresher
         return Optional.empty();
     }
 
-    private void refreshToken(String refreshToken, UUID refreshingId)
+    private void refreshToken(String refreshToken, UUID refreshingId, Optional<String> principal)
     {
         try {
             Response response = client.refreshTokens(refreshToken);
-            String serializedToken = tokenAssembler.serialize(TokenPair.fromOAuth2Response(response));
+            String serializedToken = tokenAssembler.serialize(TokenPair.fromOAuth2Response(response, principal));
             tokenHandler.setAccessToken(hashAuthId(refreshingId), serializedToken);
         }
         catch (ChallengeFailedException e) {

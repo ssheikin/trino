@@ -51,7 +51,7 @@ public class OAuth2ServiceModule
                 .to(NimbusOAuth2Client.class)
                 .in(Scopes.SINGLETON);
         install(conditionalModule(OAuth2Config.class, OAuth2Config::isEnableDiscovery, this::bindOidcDiscovery, this::bindStaticConfiguration));
-        install(conditionalModule(OAuth2Config.class, OAuth2Config::isEnableRefreshTokens, this::enableRefreshTokens, this::disableRefreshTokens));
+        install(conditionalModule(OAuth2Config.class, OAuth2ServiceModule::isTokenSerializerRequired, this::useTokenSerializer, this::usePropagateAccessToken));
         httpClientBinder(binder)
                 .bindHttpClient("oauth2-jwk", ForOAuth2.class)
                 .withConfigDefaults(clientConfig -> clientConfig
@@ -59,12 +59,17 @@ public class OAuth2ServiceModule
                         .setResponseBufferSize(DataSize.of(32, KILOBYTE)));
     }
 
-    private void enableRefreshTokens(Binder binder)
+    private static boolean isTokenSerializerRequired(OAuth2Config oAuth2Config)
+    {
+        return oAuth2Config.isEnableRefreshTokens() || oAuth2Config.isUsePrincipalFromIdToken();
+    }
+
+    private void useTokenSerializer(Binder binder)
     {
         install(new JweTokenSerializerModule());
     }
 
-    private void disableRefreshTokens(Binder binder)
+    private void usePropagateAccessToken(Binder binder)
     {
         binder.bind(TokenPairSerializer.class).toInstance(ACCESS_TOKEN_ONLY_SERIALIZER);
         newOptionalBinder(binder, Key.get(Duration.class, ForRefreshTokens.class));

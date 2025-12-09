@@ -143,6 +143,7 @@ public class TestResourceSecurity
     private static final String TEST_USER_LOGIN = TEST_USER + "@allowed";
     private static final String TEST_PASSWORD = "test-password";
     private static final String TEST_PASSWORD2 = "test-password-2";
+    private static final String ID_TOKEN_USER = "id-token-user";
     private static final String MANAGEMENT_USER = "management-user";
     private static final String MANAGEMENT_USER_LOGIN = MANAGEMENT_USER + "@allowed";
     private static final String MANAGEMENT_PASSWORD = "management-password";
@@ -724,6 +725,97 @@ public class TestResourceSecurity
         }
     }
 
+    @Test
+    public void testOAuth2AuthenticatorWithPrincipalFromIdToken()
+            throws Exception
+    {
+        verifyOAuth2AuthenticatorWithPrincipalFromIdToken(false);
+        verifyOAuth2AuthenticatorWithPrincipalFromIdToken(true);
+    }
+
+    private void verifyOAuth2AuthenticatorWithPrincipalFromIdToken(boolean refreshTokensEnabled)
+            throws Exception
+    {
+        String principalField = "custom-principal";
+        CookieManager cookieManager = new CookieManager();
+        OkHttpClient client = this.client.newBuilder()
+                .cookieJar(new JavaNetCookieJar(cookieManager))
+                .build();
+
+        try (TokenServer tokenServer = new TokenServer(Optional.of(principalField));
+                TestingTrinoServer server = TestingTrinoServer.builder()
+                        .setProperties(ImmutableMap.<String, String>builder()
+                                .putAll(SECURE_PROPERTIES)
+                                .put("web-ui.enabled", "true")
+                                .put("http-server.authentication.type", "oauth2")
+                                .putAll(getOAuth2Properties(tokenServer))
+                                .put("http-server.authentication.oauth2.principal-field", principalField)
+                                .put("http-server.authentication.oauth2.refresh-tokens", String.valueOf(refreshTokensEnabled))
+                                .put("http-server.authentication.oauth2.oidc.use-principal-from-id-token", "true")
+                                .buildOrThrow())
+                        .setAdditionalModule(oauth2Module(tokenServer))
+                        .setSystemAccessControl(TestSystemAccessControl.NO_IMPERSONATION)
+                        .build()) {
+            HttpServerInfo httpServerInfo = server.getInstance(Key.get(HttpServerInfo.class));
+            URI baseUri = httpServerInfo.getHttpsUri();
+            assertAuthenticateOAuth2Bearer(client, getManagementLocation(baseUri), "http://example.com/authorize");
+            OAuthBearer bearer = assertAuthenticateOAuth2Bearer(client, getAuthorizedUserLocation(baseUri), "http://example.com/authorize");
+            // login with the callback endpoint
+            assertOk(
+                    client,
+                    uriBuilderFrom(baseUri)
+                            .replacePath("/oauth2/callback/")
+                            .addParameter("code", "TEST_CODE")
+                            .addParameter("state", bearer.state())
+                            .toString());
+
+            String oauthToken = getOauthToken(client, bearer.tokenServer());
+            OkHttpClient clientWithOAuthToken = client.newBuilder()
+                    .authenticator((route, response) -> response.request().newBuilder()
+                            .header(AUTHORIZATION, "Bearer " + oauthToken)
+                            .build())
+                    .build();
+            // Verify that the principal from ID token is used (ID_TOKEN_USER) instead of access token (TEST_USER)
+            try (Response response = clientWithOAuthToken.newCall(new Request.Builder()
+                            .url(getLocation(httpServerInfo.getHttpsUri(), "/protocol/identity"))
+                            .build())
+                    .execute()) {
+                assertThat(response.code()).isEqualTo(SC_OK);
+                assertThat(response.header("user")).isEqualTo(ID_TOKEN_USER);
+                assertThat(response.header("principal")).isEqualTo(ID_TOKEN_USER);
+            }
+
+            OkHttpClient clientWithOAuthCookie = client.newBuilder()
+                    .cookieJar(new CookieJar()
+                    {
+                        @Override
+                        public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {}
+
+                        @Override
+                        public List<Cookie> loadForRequest(HttpUrl url)
+                        {
+                            return ImmutableList.of(new Cookie.Builder()
+                                    .domain(httpServerInfo.getHttpsUri().getHost())
+                                    .path(UI_LOCATION)
+                                    .name(OAUTH2_COOKIE)
+                                    .value(oauthToken)
+                                    .httpOnly()
+                                    .secure()
+                                    .build());
+                        }
+                    })
+                    .build();
+            try (Response response = clientWithOAuthCookie.newCall(new Request.Builder()
+                            .url(getLocation(httpServerInfo.getHttpsUri(), "/ui/api/identity"))
+                            .build())
+                    .execute()) {
+                assertThat(response.code()).isEqualTo(SC_OK);
+                assertThat(response.header("user")).isEqualTo(ID_TOKEN_USER);
+                assertThat(response.header("principal")).isEqualTo(ID_TOKEN_USER);
+            }
+        }
+    }
+
     private static void assertErrorCodeIsEncoded(OkHttpClient client, URI baseUri, OAuthBearer bearer)
             throws IOException
     {
@@ -1095,6 +1187,12 @@ public class TestResourceSecurity
                 }
 
                 @Override
+                public Optional<Map<String, Object>> getIdTokenClaims(String idToken)
+                {
+                    return Optional.of(jwtParser.parseSignedClaims(idToken).getPayload());
+                }
+
+                @Override
                 public Response refreshTokens(String refreshToken)
                         throws ChallengeFailedException
                 {
@@ -1166,7 +1264,7 @@ public class TestResourceSecurity
                     .audience().add(clientId).and()
                     .expiration(tokenExpiration);
             if (principalField.isPresent()) {
-                idToken.claim(principalField.get(), TEST_USER);
+                idToken.claim(principalField.get(), ID_TOKEN_USER);
             }
             else {
                 idToken.subject(TEST_USER);

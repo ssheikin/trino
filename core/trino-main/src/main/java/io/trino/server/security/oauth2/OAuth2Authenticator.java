@@ -75,10 +75,8 @@ public class OAuth2Authenticator
             return Optional.empty();
         }
         Optional<Map<String, Object>> claims = client.getAccessTokenClaims(tokenPair.accessToken());
-        if (claims.isEmpty()) {
-            return Optional.empty();
-        }
-        Optional<String> principal = Optional.ofNullable((String) claims.get().get(principalField));
+        Optional<String> principal = tokenPair.principal()
+                .or(() -> claims.flatMap(claimsMap -> Optional.ofNullable((String) claimsMap.get(principalField))));
         if (principal.isEmpty()) {
             return Optional.empty();
         }

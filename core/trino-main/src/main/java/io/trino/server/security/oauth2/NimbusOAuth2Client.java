@@ -92,7 +92,6 @@ public class NimbusOAuth2Client
     private final ClientID clientId;
     private final ClientSecretBasic clientAuth;
     private final Scope scope;
-    private final String principalField;
     private final Set<String> accessTokenAudiences;
     private final Duration maxClockSkew;
     private final Optional<String> jwtType;
@@ -105,6 +104,7 @@ public class NimbusOAuth2Client
     private Optional<URI> endSessionUrl;
     private JWSKeySelector<SecurityContext> jwsKeySelector;
     private JWTProcessor<SecurityContext> accessTokenProcessor;
+    private JWTProcessor<SecurityContext> idTokenProcessor;
     private AuthorizationCodeFlow flow;
 
     @Inject
@@ -114,7 +114,6 @@ public class NimbusOAuth2Client
         clientId = new ClientID(oauthConfig.getClientId());
         clientAuth = new ClientSecretBasic(clientId, new Secret(oauthConfig.getClientSecret()));
         scope = Scope.parse(oauthConfig.getScopes());
-        principalField = oauthConfig.getPrincipalField();
         maxClockSkew = oauthConfig.getMaxClockSkew();
         jwtType = oauthConfig.getJwtType();
 
@@ -153,11 +152,16 @@ public class NimbusOAuth2Client
                 new JWTClaimsSet.Builder()
                         .issuer(config.accessTokenIssuer().orElse(issuer.getValue()))
                         .build(),
-                ImmutableSet.of(principalField),
+                ImmutableSet.of(),
                 ImmutableSet.of());
         accessTokenVerifier.setMaxClockSkew((int) maxClockSkew.roundTo(SECONDS));
         processor.setJWTClaimsSetVerifier(accessTokenVerifier);
         accessTokenProcessor = processor;
+
+        DefaultJWTProcessor<SecurityContext> idTokenJwtProcessor = new DefaultJWTProcessor<>();
+        idTokenJwtProcessor.setJWSKeySelector(jwsKeySelector);
+        idTokenProcessor = idTokenJwtProcessor;
+
         flow = scope.contains(OPENID) ? new OAuth2WithOidcExtensionsCodeFlow() : new OAuth2AuthorizationCodeFlow();
         loaded = true;
     }
@@ -182,6 +186,13 @@ public class NimbusOAuth2Client
     {
         checkState(loaded, "OAuth2 client not initialized");
         return getJWTClaimsSet(accessToken).map(JWTClaimsSet::getClaims);
+    }
+
+    @Override
+    public Optional<Map<String, Object>> getIdTokenClaims(String idToken)
+    {
+        checkState(loaded, "OAuth2 client not initialized");
+        return parseIdToken(idToken).map(JWTClaimsSet::getClaims);
     }
 
     @Override
@@ -417,6 +428,17 @@ public class NimbusOAuth2Client
         }
         catch (java.text.ParseException | BadJOSEException | JOSEException e) {
             LOG.error(e, "Failed to parse JWT access token");
+            return Optional.empty();
+        }
+    }
+
+    private Optional<JWTClaimsSet> parseIdToken(String idToken)
+    {
+        try {
+            return Optional.of(idTokenProcessor.process(idToken, null));
+        }
+        catch (java.text.ParseException | BadJOSEException | JOSEException e) {
+            LOG.error(e, "Failed to parse JWT ID token");
             return Optional.empty();
         }
     }

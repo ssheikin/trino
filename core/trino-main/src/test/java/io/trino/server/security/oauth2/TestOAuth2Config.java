@@ -37,6 +37,7 @@ public class TestOAuth2Config
     public void testDefaults()
     {
         assertRecordedDefaults(recordDefaults(OAuth2Config.class)
+                .setUsePrincipalFromIdToken(false)
                 .setStateKey(null)
                 .setIssuer(null)
                 .setClientId(null)
@@ -60,6 +61,7 @@ public class TestOAuth2Config
     {
         Path userMappingFile = Files.createTempFile(null, null);
         Map<String, String> properties = ImmutableMap.<String, String>builder()
+                .put("http-server.authentication.oauth2.oidc.use-principal-from-id-token", "true")
                 .put("http-server.authentication.oauth2.state-key", "key-secret")
                 .put("http-server.authentication.oauth2.issuer", "http://127.0.0.1:9000/oauth2")
                 .put("http-server.authentication.oauth2.client-id", "another-consumer")
@@ -78,6 +80,7 @@ public class TestOAuth2Config
                 .buildOrThrow();
 
         OAuth2Config expected = new OAuth2Config()
+                .setUsePrincipalFromIdToken(true)
                 .setStateKey("key-secret")
                 .setIssuer("http://127.0.0.1:9000/oauth2")
                 .setClientId("another-consumer")

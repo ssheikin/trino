@@ -50,6 +50,7 @@ public class OAuth2Config
     private Optional<File> userMappingFile = Optional.empty();
     private boolean enableRefreshTokens;
     private boolean enableDiscovery = true;
+    private boolean usePrincipalFromIdToken;
 
     public Optional<String> getStateKey()
     {
@@ -255,6 +256,19 @@ public class OAuth2Config
     public OAuth2Config setEnableDiscovery(boolean enableDiscovery)
     {
         this.enableDiscovery = enableDiscovery;
+        return this;
+    }
+
+    public boolean isUsePrincipalFromIdToken()
+    {
+        return usePrincipalFromIdToken;
+    }
+
+    @Config("http-server.authentication.oauth2.oidc.use-principal-from-id-token")
+    @ConfigDescription("Use principal from the ID token claims instead of from access token claims")
+    public OAuth2Config setUsePrincipalFromIdToken(boolean usePrincipalFromIdToken)
+    {
+        this.usePrincipalFromIdToken = usePrincipalFromIdToken;
         return this;
     }
 }

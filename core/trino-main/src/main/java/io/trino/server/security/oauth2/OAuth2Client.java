@@ -31,6 +31,8 @@ public interface OAuth2Client
 
     Optional<Map<String, Object>> getAccessTokenClaims(String accessToken);
 
+    Optional<Map<String, Object>> getIdTokenClaims(String idToken);
+
     Response refreshTokens(String refreshToken)
             throws ChallengeFailedException;
 

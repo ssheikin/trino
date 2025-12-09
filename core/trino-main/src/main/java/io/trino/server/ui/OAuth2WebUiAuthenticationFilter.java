@@ -96,13 +96,15 @@ public class OAuth2WebUiAuthenticationFilter
         Optional<Map<String, Object>> claims = tokenPair
                 .filter(this::tokenNotExpired)
                 .flatMap(this::getAccessTokenClaims);
-        if (claims.isEmpty()) {
+        if (tokenPair.flatMap(TokenPair::principal).isEmpty() && claims.isEmpty()) {
             needAuthentication(request, tokenPair);
             return;
         }
 
         try {
-            Object principal = claims.get().get(principalField);
+            Object principal = tokenPair.get().principal()
+                    .or(() -> claims.flatMap(c -> Optional.ofNullable((String) c.get(principalField))))
+                    .orElse("");
             if (!isValidPrincipal(principal)) {
                 LOG.debug("Invalid principal field: %s. Expected principal to be non-empty", principalField);
                 sendErrorMessage(request, UNAUTHORIZED, "Unauthorized");
@@ -147,7 +149,7 @@ public class OAuth2WebUiAuthenticationFilter
         Optional<String> refreshToken = tokenPair.flatMap(TokenPair::refreshToken);
         if (refreshToken.isPresent()) {
             try {
-                redirectForNewToken(request, refreshToken.get());
+                redirectForNewToken(request, refreshToken.get(), tokenPair.get().principal());
                 return;
             }
             catch (Exception e) {
@@ -157,11 +159,11 @@ public class OAuth2WebUiAuthenticationFilter
         handleAuthenticationFailure(request);
     }
 
-    private void redirectForNewToken(ContainerRequestContext request, String refreshToken)
+    private void redirectForNewToken(ContainerRequestContext request, String refreshToken, Optional<String> principal)
             throws ChallengeFailedException
     {
         OAuth2Client.Response response = client.refreshTokens(refreshToken);
-        String serializedToken = tokenPairSerializer.serialize(TokenPair.fromOAuth2Response(response));
+        String serializedToken = tokenPairSerializer.serialize(TokenPair.fromOAuth2Response(response, principal));
         Instant newExpirationTime = tokenExpiration.map(expiration -> Instant.now().plus(expiration)).orElse(response.getExpiration());
         Response.ResponseBuilder builder = Response.temporaryRedirect(ExternalUriInfo.from(request).fullRequestUri())
                 .cookie(OAuthWebUiCookie.create(serializedToken, newExpirationTime));

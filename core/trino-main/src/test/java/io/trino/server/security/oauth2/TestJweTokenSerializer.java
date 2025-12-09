@@ -223,6 +223,12 @@ public class TestJweTokenSerializer
         }
 
         @Override
+        public Optional<Map<String, Object>> getIdTokenClaims(String idToken)
+        {
+            return Optional.of(claims);
+        }
+
+        @Override
         public Response refreshTokens(String refreshToken)
         {
             throw new UnsupportedOperationException("operation is not yet supported");

@@ -37,6 +37,7 @@ import java.text.ParseException;
 import java.time.Clock;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.trino.server.security.jwt.JwtUtil.newJwtBuilder;
 import static io.trino.server.security.jwt.JwtUtil.newJwtParserBuilder;
@@ -52,6 +53,7 @@ public class JweTokenSerializer
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String EXPIRATION_TIME_KEY = "expiration_time";
     private static final String REFRESH_TOKEN_KEY = "refresh_token";
+    private static final String ID_TOKEN_PRINCIPAL_KEY = "id_token_principal";
     private final JweEncryptedSerializer jweSerializer;
     private final OAuth2Client client;
     private final Clock clock;
@@ -97,10 +99,11 @@ public class JweTokenSerializer
 
         try {
             Claims claims = parser.parseUnsecuredClaims(jweSerializer.deserialize(token)).getPayload();
-            return TokenPair.withAccessAndRefreshTokens(
+            return new TokenPair(
                     claims.get(ACCESS_TOKEN_KEY, String.class),
                     claims.get(EXPIRATION_TIME_KEY, Date.class),
-                    claims.get(REFRESH_TOKEN_KEY, String.class));
+                    Optional.ofNullable(claims.get(REFRESH_TOKEN_KEY, String.class)),
+                    Optional.ofNullable(claims.get(ID_TOKEN_PRINCIPAL_KEY, String.class)));
         }
         catch (ParseException ex) {
             return TokenPair.withAccessToken(token);
@@ -113,12 +116,15 @@ public class JweTokenSerializer
         requireNonNull(tokenPair, "tokenPair is null");
 
         Map<String, Object> claims = client.getAccessTokenClaims(tokenPair.accessToken()).orElseThrow(() -> new IllegalArgumentException("Access Token claims are missing"));
-        if (!claims.containsKey(principalField)) {
+        if (!claims.containsKey(principalField) && tokenPair.principal().isEmpty()) {
             throw new IllegalArgumentException(format("%s field is missing", principalField));
         }
+        String principal = tokenPair.principal()
+                .orElseGet(() -> claims.get(principalField).toString());
+
         JwtBuilder jwt = newJwtBuilder()
                 .expiration(Date.from(clock.instant().plusMillis(tokenExpiration.toMillis())))
-                .claim(principalField, claims.get(principalField).toString())
+                .claim(principalField, principal)
                 .audience().add(audience).and()
                 .issuer(issuer)
                 .claim(ACCESS_TOKEN_KEY, tokenPair.accessToken())
@@ -131,6 +137,13 @@ public class JweTokenSerializer
         else {
             LOG.info("No refresh token has been issued, although coordinator expects one. Please check your IdP whether that is correct behaviour");
         }
+
+        if (tokenPair.principal().isPresent()) {
+            // use separate ID_TOKEN_PRINCIPAL_KEY (not reuse principalField) so TokenPair serialisation/deserialisation is idempotent
+            // regardless tokenPair.principal().isPresent() or not
+            jwt.claim(ID_TOKEN_PRINCIPAL_KEY, principal);
+        }
+
         return jweSerializer.serialize(jwt.compact());
     }
 

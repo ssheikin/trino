@@ -44,29 +44,31 @@ public interface TokenPairSerializer
 
     String serialize(TokenPair tokenPair);
 
-    record TokenPair(String accessToken, Date expiration, Optional<String> refreshToken)
+    record TokenPair(String accessToken, Date expiration, Optional<String> refreshToken, Optional<String> principal)
     {
         public TokenPair
         {
             requireNonNull(accessToken, "accessToken is nul");
             requireNonNull(expiration, "expiration is null");
             requireNonNull(refreshToken, "refreshToken is null");
+            requireNonNull(principal, "principal is null");
         }
 
         public static TokenPair withAccessToken(String accessToken)
         {
-            return new TokenPair(accessToken, new Date(MAX_VALUE), Optional.empty());
+            return new TokenPair(accessToken, new Date(MAX_VALUE), Optional.empty(), Optional.empty());
         }
 
-        public static TokenPair fromOAuth2Response(Response tokens)
+        public static TokenPair fromOAuth2Response(Response tokens, Optional<String> principal)
         {
             requireNonNull(tokens, "tokens is null");
-            return new TokenPair(tokens.getAccessToken(), Date.from(tokens.getExpiration()), tokens.getRefreshToken());
+            requireNonNull(principal, "principal is null");
+            return new TokenPair(tokens.getAccessToken(), Date.from(tokens.getExpiration()), tokens.getRefreshToken(), principal);
         }
 
         public static TokenPair withAccessAndRefreshTokens(String accessToken, Date expiration, @Nullable String refreshToken)
         {
-            return new TokenPair(accessToken, expiration, Optional.ofNullable(refreshToken));
+            return new TokenPair(accessToken, expiration, Optional.ofNullable(refreshToken), Optional.empty());
         }
     }
 }

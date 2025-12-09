@@ -18,6 +18,7 @@ import io.airlift.log.Logger;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.trino.server.ExternalUriInfo;
+import io.trino.server.security.oauth2.TokenPairSerializer.TokenPair;
 import io.trino.server.ui.OAuth2WebUiInstalled;
 import io.trino.server.ui.OAuthIdTokenCookie;
 import io.trino.server.ui.OAuthWebUiCookie;
@@ -41,7 +42,6 @@ import static com.google.common.hash.Hashing.sha256;
 import static io.jsonwebtoken.security.Keys.hmacShaKeyFor;
 import static io.trino.server.security.jwt.JwtUtil.newJwtBuilder;
 import static io.trino.server.security.jwt.JwtUtil.newJwtParserBuilder;
-import static io.trino.server.security.oauth2.TokenPairSerializer.TokenPair.fromOAuth2Response;
 import static io.trino.server.ui.FormWebUiAuthenticationFilter.UI_LOCATION;
 import static io.trino.web.ui.WebUiResources.readWebUiResource;
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -75,6 +75,8 @@ public class OAuth2Service
     private final JwtParser jwtParser;
 
     private final OAuth2TokenHandler tokenHandler;
+    private final String principalField;
+    private final boolean usePrincipalFromIdToken;
 
     private final boolean webUiOAuthEnabled;
 
@@ -104,6 +106,8 @@ public class OAuth2Service
 
         this.tokenHandler = requireNonNull(tokenHandler, "tokenHandler is null");
         this.tokenPairSerializer = requireNonNull(tokenPairSerializer, "tokenPairSerializer is null");
+        this.principalField = requireNonNull(oauth2Config.getPrincipalField(), "principalField is null");
+        this.usePrincipalFromIdToken = oauth2Config.isUsePrincipalFromIdToken();
 
         this.tokenExpiration = requireNonNull(tokenExpiration, "tokenExpiration is null");
         this.webUiOAuthEnabled = webUiOAuthEnabled.isPresent();
@@ -171,13 +175,19 @@ public class OAuth2Service
             // fetch access token
             OAuth2Client.Response oauth2Response = client.getOAuth2Response(code, externalUriInfo.absolutePath(externalUriInfo.fullRequestUri().getPath()), nonce);
 
+            Optional<String> principal = usePrincipalFromIdToken
+                    ? getPrincipalFromIdToken(oauth2Response)
+                    : Optional.empty();
+
+            TokenPair tokenPair = TokenPair.fromOAuth2Response(oauth2Response, principal);
+
             Instant cookieExpirationTime = tokenExpiration
                     .map(expiration -> Instant.now().plus(expiration))
                     .orElse(oauth2Response.getExpiration());
             if (handlerState.isEmpty()) {
                 Response.ResponseBuilder builder = Response
                         .seeOther(externalUriInfo.absolutePath(UI_LOCATION))
-                        .cookie(OAuthWebUiCookie.create(tokenPairSerializer.serialize(fromOAuth2Response(oauth2Response)), cookieExpirationTime))
+                        .cookie(OAuthWebUiCookie.create(tokenPairSerializer.serialize(tokenPair), cookieExpirationTime))
                         .cookie(NonceCookie.delete());
                 if (oauth2Response.getIdToken().isPresent()) {
                     builder.cookie(OAuthIdTokenCookie.create(oauth2Response.getIdToken().get(), cookieExpirationTime));
@@ -185,12 +195,12 @@ public class OAuth2Service
                 return builder.build();
             }
 
-            tokenHandler.setAccessToken(handlerState.get(), tokenPairSerializer.serialize(fromOAuth2Response(oauth2Response)));
+            tokenHandler.setAccessToken(handlerState.get(), tokenPairSerializer.serialize(tokenPair));
 
             Response.ResponseBuilder builder = Response.ok(getSuccessHtml());
             if (webUiOAuthEnabled) {
                 builder.cookie(
-                        OAuthWebUiCookie.create(tokenPairSerializer.serialize(fromOAuth2Response(oauth2Response)), cookieExpirationTime));
+                        OAuthWebUiCookie.create(tokenPairSerializer.serialize(tokenPair), cookieExpirationTime));
 
                 if (oauth2Response.getIdToken().isPresent()) {
                     builder.cookie(OAuthIdTokenCookie.create(oauth2Response.getIdToken().get(), cookieExpirationTime));
@@ -207,6 +217,14 @@ public class OAuth2Service
                     .entity(getInternalFailureHtml("Authentication response could not be verified"))
                     .build();
         }
+    }
+
+    private Optional<String> getPrincipalFromIdToken(OAuth2Client.Response oauth2Response)
+    {
+        return oauth2Response.getIdToken()
+                .flatMap(client::getIdTokenClaims)
+                .flatMap(claims -> Optional.ofNullable(claims.get(principalField)))
+                .map(Object::toString);
     }
 
     private Claims parseState(String state)
