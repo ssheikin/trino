@@ -32,7 +32,6 @@ public final class SelectionCriteria
     private final Set<String> clientTags;
     private final ResourceEstimates resourceEstimates;
     private final Optional<String> queryType;
-    private final String queryText;
 
     public SelectionCriteria(
             boolean authenticated,
@@ -43,8 +42,7 @@ public final class SelectionCriteria
             Optional<String> source,
             Set<String> clientTags,
             ResourceEstimates resourceEstimates,
-            Optional<String> queryType,
-            String queryText)
+            Optional<String> queryType)
     {
         this.authenticated = authenticated;
         this.user = requireNonNull(user, "user is null");
@@ -55,7 +53,6 @@ public final class SelectionCriteria
         this.clientTags = Set.copyOf(requireNonNull(clientTags, "clientTags is null"));
         this.resourceEstimates = requireNonNull(resourceEstimates, "resourceEstimates is null");
         this.queryType = requireNonNull(queryType, "queryType is null");
-        this.queryText = requireNonNull(queryText, "queryText is null");
     }
 
     public boolean isAuthenticated()
@@ -103,11 +100,6 @@ public final class SelectionCriteria
         return queryType;
     }
 
-    public String getQueryText()
-    {
-        return queryText;
-    }
-
     @Override
     public String toString()
     {
@@ -121,7 +113,6 @@ public final class SelectionCriteria
                 .add("clientTags=" + clientTags)
                 .add("resourceEstimates=" + resourceEstimates)
                 .add("queryType=" + queryType)
-                .add("queryText=" + queryText)
                 .toString();
     }
 }

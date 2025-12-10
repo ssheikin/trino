@@ -388,7 +388,6 @@ public class DbResourceGroupConfigurationManager
                                 selectorRecord.getOriginalUserRegex(),
                                 selectorRecord.getAuthenticatedUserRegex(),
                                 selectorRecord.getSourceRegex(),
-                                selectorRecord.getQueryTextRegex(),
                                 selectorRecord.getQueryType(),
                                 selectorRecord.getClientTags(),
                                 selectorRecord.getSelectorResourceEstimate(),

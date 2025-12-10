@@ -82,7 +82,6 @@ final class TestingResourceGroups
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.empty(),
                         groupIdTemplate));
     }
 
@@ -111,7 +110,6 @@ final class TestingResourceGroups
                             spec.getOriginalUserRegex(),
                             spec.getAuthenticatedUserRegex(),
                             spec.getSourceRegex(),
-                            spec.getQueryTextRegex(),
                             spec.getQueryType(),
                             spec.getClientTags(),
                             spec.getResourceEstimate(),
@@ -127,7 +125,6 @@ final class TestingResourceGroups
                             spec.getOriginalUserRegex(),
                             spec.getAuthenticatedUserRegex(),
                             spec.getSourceRegex(),
-                            spec.getQueryTextRegex(),
                             spec.getQueryType(),
                             spec.getClientTags(),
                             spec.getResourceEstimate(),
@@ -143,7 +140,6 @@ final class TestingResourceGroups
                             Optional.of(Pattern.compile(originalUserPattern)),
                             spec.getAuthenticatedUserRegex(),
                             spec.getSourceRegex(),
-                            spec.getQueryTextRegex(),
                             spec.getQueryType(),
                             spec.getClientTags(),
                             spec.getResourceEstimate(),
@@ -159,23 +155,6 @@ final class TestingResourceGroups
                             spec.getOriginalUserRegex(),
                             Optional.of(Pattern.compile(authenticatedUserPattern)),
                             spec.getSourceRegex(),
-                            spec.getQueryTextRegex(),
-                            spec.getQueryType(),
-                            spec.getClientTags(),
-                            spec.getResourceEstimate(),
-                            spec.getGroup()));
-        }
-
-        public SelectorSpecBuilder queryText(String... queryTexts)
-        {
-            return new SelectorSpecBuilder(
-                    new SelectorSpec(
-                            spec.getUserRegex(),
-                            spec.getUserGroupRegex(),
-                            spec.getOriginalUserRegex(),
-                            spec.getAuthenticatedUserRegex(),
-                            spec.getSourceRegex(),
-                            Optional.of(Pattern.compile(String.join("|", queryTexts))),
                             spec.getQueryType(),
                             spec.getClientTags(),
                             spec.getResourceEstimate(),
