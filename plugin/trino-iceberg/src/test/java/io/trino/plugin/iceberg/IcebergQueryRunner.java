@@ -51,6 +51,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
@@ -118,8 +119,14 @@ public final class IcebergQueryRunner
         @Override
         public Builder setAdditionalModule(Module additionalModule)
         {
-            return super.setAdditionalModule(combine(
-                    additionalModule,
+            return setAdditionalModuleSupplier(() -> additionalModule);
+        }
+
+        @Override
+        public Builder setAdditionalModuleSupplier(Supplier<Module> additionalModule)
+        {
+            return super.setAdditionalModuleSupplier(() -> combine(
+                    additionalModule.get(),
                     binder -> workScheduler.ifPresent(scheduler ->
                             newOptionalBinder(binder, WorkScheduler.class).setBinding().toInstance(scheduler))));
         }
@@ -199,7 +206,7 @@ public final class IcebergQueryRunner
                 }
 
                 Path dataDir = metastoreDirectory.map(File::toPath).orElseGet(() -> queryRunner.getCoordinator().getBaseDataDir().resolve("iceberg_data"));
-                queryRunner.installPlugin(new TestingIcebergPlugin(dataDir, Optional.empty()));
+                queryRunner.installPlugin(new TestingIcebergPlugin(dataDir, Optional::empty));
                 queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", icebergProperties.buildOrThrow());
 
                 queryRunner.getServers().forEach(TestingTrinoServer::getCacheManagerRegistry);

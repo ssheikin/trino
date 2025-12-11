@@ -16,7 +16,6 @@ package io.trino.plugin.warp;
 import com.starburstdata.trino.plugin.license.LicenseVerifier;
 import io.airlift.configuration.ConfigurationFactory;
 import io.trino.plugin.warp.config.ProxiedConnectorConfig;
-import io.trino.plugin.warp.di.InitializationModule;
 import io.trino.plugin.warp.dispatcher.DispatcherConnectorFactory;
 import io.trino.plugin.warp.dispatcher.WarpConnectorContext;
 import io.trino.plugin.warp.dispatcher.WarpPluginSharedInstancesFactory;
@@ -31,9 +30,7 @@ import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -49,18 +46,15 @@ public class WarpConnectorFactory
     private final WarpPluginSharedInstancesFactory warpPluginSharedInstancesFactory;
     private final DispatcherConnectorFactory dispatcherConnectorFactory;
     private final LicenseVerifier licenseVerifier;
-    private final List<Class<? extends InitializationModule>> extraModules;
 
     public WarpConnectorFactory(
             WarpPluginSharedInstancesFactory warpPluginSharedInstancesFactory,
             DispatcherConnectorFactory dispatcherConnectorFactory,
-            LicenseVerifier licenseVerifier,
-            List<Class<? extends InitializationModule>> extraModules)
+            LicenseVerifier licenseVerifier)
     {
         this.warpPluginSharedInstancesFactory = requireNonNull(warpPluginSharedInstancesFactory);
         this.dispatcherConnectorFactory = requireNonNull(dispatcherConnectorFactory);
         this.licenseVerifier = requireNonNull(licenseVerifier, "licenseManager is null");
-        this.extraModules = !extraModules.isEmpty() ? extraModules : List.of(WarpExtensionHandlerModule.class);
     }
 
     @Override
@@ -81,7 +75,7 @@ public class WarpConnectorFactory
                 catalogName,
                 buildConfig(config, context),
                 warpConnectorContext,
-                Optional.of(extraModules),
+                WarpExtensionHandlerModule.class,
                 PROXIED_CONNECTOR_INITIALIZERS));
     }
 
@@ -95,7 +89,7 @@ public class WarpConnectorFactory
                 catalogName,
                 buildConfig(config, context),
                 warpConnectorContext,
-                Optional.of(extraModules),
+                WarpExtensionHandlerModule.class,
                 PROXIED_CONNECTOR_INITIALIZERS);
     }
 

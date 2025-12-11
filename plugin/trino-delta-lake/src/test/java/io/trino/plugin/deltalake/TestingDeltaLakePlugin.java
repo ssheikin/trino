@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
@@ -47,20 +48,20 @@ public class TestingDeltaLakePlugin
 {
     private final LocalFileSystemFactory localFileSystemFactory;
     private final TestingLocalTransactionLogSynchronizer localTransactionLogSynchronizer;
-    private final Optional<Module> metastoreModule;
+    private final Supplier<Optional<Module>> metastoreModule;
     private final Optional<TrinoFileSystemFactory> fileSystemFactory;
 
     public TestingDeltaLakePlugin(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional.empty(), Optional.empty());
+        this(localFileSystemRootPath, Optional::empty, Optional.empty());
     }
 
-    public TestingDeltaLakePlugin(Path localFileSystemRootPath, Optional<Module> metastoreModule)
+    public TestingDeltaLakePlugin(Path localFileSystemRootPath, Supplier<Optional<Module>> metastoreModule)
     {
         this(localFileSystemRootPath, metastoreModule, Optional.empty());
     }
 
-    public TestingDeltaLakePlugin(Path localFileSystemRootPath, Optional<Module> metastoreModule, Optional<TrinoFileSystemFactory> fileSystemFactory)
+    public TestingDeltaLakePlugin(Path localFileSystemRootPath, Supplier<Optional<Module>> metastoreModule, Optional<TrinoFileSystemFactory> fileSystemFactory)
     {
         localFileSystemRootPath.toFile().mkdirs();
         localFileSystemFactory = new LocalFileSystemFactory(localFileSystemRootPath);
@@ -87,7 +88,7 @@ public class TestingDeltaLakePlugin
                         catalogName,
                         config,
                         context,
-                        metastoreModule,
+                        metastoreModule.get(),
                         fileSystemFactory,
                         createAdditionalModule(catalogName));
             }
@@ -97,7 +98,7 @@ public class TestingDeltaLakePlugin
             {
                 ClassLoader classLoader = DeltaLakeConnectorFactory.class.getClassLoader();
                 try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-                    Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, metastoreModule, fileSystemFactory, createAdditionalModule(catalogName), true);
+                    Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, metastoreModule.get(), fileSystemFactory, createAdditionalModule(catalogName), true);
 
                     Set<ConfigPropertyMetadata> usedProperties = app.configure();
 

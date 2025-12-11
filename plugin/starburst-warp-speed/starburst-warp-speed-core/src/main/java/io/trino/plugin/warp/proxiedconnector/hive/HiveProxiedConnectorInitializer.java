@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.trino.plugin.warp.proxiedconnector.utils.ConfigurationUtils.getHiveFilteredConfig;
@@ -47,9 +48,9 @@ public class HiveProxiedConnectorInitializer
     private static final Optional<DirectoryLister> DEFAULT_DIRECTORY_LISTENER = Optional.empty();
 
     @Override
-    public List<Module> getModules(ConnectorContext context)
+    public Supplier<List<Module>> getModules(ConnectorContext context)
     {
-        return List.of(
+        return () -> List.of(
                 new ConnectorObjectNameGeneratorModule(
                         "io.trino.plugin.hive",
                         "trino.plugin.hive"),

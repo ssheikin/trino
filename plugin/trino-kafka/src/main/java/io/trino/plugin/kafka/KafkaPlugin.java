@@ -19,21 +19,24 @@ import io.trino.plugin.kafka.security.KafkaSecurityModule;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 
-import java.util.List;
+import java.util.function.Supplier;
+
+import static io.airlift.configuration.ConfigurationAwareModule.combine;
+import static java.util.Objects.requireNonNull;
 
 public class KafkaPlugin
         implements Plugin
 {
-    private final List<Module> extensions;
+    private final Supplier<Module> extensions;
 
     public KafkaPlugin()
     {
-        this(ImmutableList.of(new KafkaClientsModule(), new KafkaSecurityModule()));
+        this(() -> combine(new KafkaClientsModule(), new KafkaSecurityModule()));
     }
 
-    public KafkaPlugin(List<Module> extensions)
+    public KafkaPlugin(Supplier<Module> extensions)
     {
-        this.extensions = ImmutableList.copyOf(extensions);
+        this.extensions = requireNonNull(extensions, "extensions is null");
     }
 
     @Override

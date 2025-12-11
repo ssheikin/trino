@@ -21,10 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public interface ProxiedConnectorInitializer
 {
-    List<Module> getModules(ConnectorContext context);
+    Supplier<List<Module>> getModules(ConnectorContext context);
 
     Connector create(String catalogName, Map<String, String> config, ConnectorContext context, Optional<Module> optionalProxyModule);
 

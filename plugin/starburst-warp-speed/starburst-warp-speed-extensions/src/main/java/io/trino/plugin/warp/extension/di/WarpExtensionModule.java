@@ -19,9 +19,7 @@ import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.OptionalBinder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
-import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.http.server.HttpServerModule;
-import io.airlift.jaxrs.JaxrsModule;
 import io.airlift.json.JsonModule;
 import io.trino.plugin.warp.annotation.ForWarmupRuleCloudFetcher;
 import io.trino.plugin.warp.config.CacheManagerConfig;
@@ -44,10 +42,12 @@ import io.trino.spi.connector.ConnectorContext;
 
 import java.util.Map;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static java.util.Objects.requireNonNull;
 
+// problem
 public class WarpExtensionModule
         extends AbstractConfigurationAwareModule
         implements InitializationModule
@@ -80,8 +80,7 @@ public class WarpExtensionModule
         else {
             booleanSuppliers.add(WorkerReadyTaskExecutionIsAllowedSupplier.class);
         }
-        ConfigurationFactory configFactory = new ConfigurationFactory(config);
-        CacheManagerConfig cacheManagerConfig = configFactory.build(CacheManagerConfig.class);
+        CacheManagerConfig cacheManagerConfig = buildConfigObject(CacheManagerConfig.class);
         install(
                 new WarpTasksModule(
                         isCoordinator,
@@ -89,11 +88,23 @@ public class WarpExtensionModule
                         cacheManagerConfig.getIsCache(),
                         booleanSuppliers.build()));
         if (!Boolean.parseBoolean(config.getOrDefault(WarpExtensionConfig.USE_HTTP_SERVER_PORT, "true"))) {
-            configureHttpServer();
+            install(new HttpServerModule());
+            install(new JsonModule());
+
+            CacheManagerConfig cacheManagerConfig1 = buildConfigObject(CacheManagerConfig.class);
+            boolean isCoordinator1 = connectorContext.getCurrentNode().isCoordinator();
+            boolean isWorker1 = WarpBaseModule.isSingle(config) || !isCoordinator1;
+            WarpJaxrsModule module = new WarpJaxrsModule(
+                    isCoordinator1,
+                    isWorker1,
+                    cacheManagerConfig1.getIsCache());
+
+            install(module);
+            install(binder1 -> binder1.bind(HttpServerLifeCycleHandler.class));
         }
 
         configBinder(binder).bindConfig(CallHomeConfig.class);
-        CallHomeConfig callHomeConfig = configFactory.build(CallHomeConfig.class);
+        CallHomeConfig callHomeConfig = buildConfigObject(CallHomeConfig.class);
         OptionalBinder.newOptionalBinder(binder, CallHomeService.class);
         if (callHomeConfig.isEnable()) {
             binder.bind(CallHomeService.class);
@@ -101,7 +112,7 @@ public class WarpExtensionModule
 
         configBinder(binder).bindConfig(WarpExtensionConfig.class);
 
-        WarmupRuleCloudFetcherConfig warmupRuleCloudFetcherConfig = configFactory.build(WarmupRuleCloudFetcherConfig.class);
+        WarmupRuleCloudFetcherConfig warmupRuleCloudFetcherConfig = buildConfigObject(WarmupRuleCloudFetcherConfig.class);
         if (isWorker &&
                 !cacheManagerConfig.getIsCache() &&
                 StringUtils.isEmpty(warmupRuleCloudFetcherConfig.getStorePath())) {
@@ -114,33 +125,8 @@ public class WarpExtensionModule
     }
 
     @Override
-    public Module createModule(Map<String, String> config, ConnectorContext connectorContext, String catalogName)
+    public Supplier<Module> createModule(Map<String, String> config, ConnectorContext connectorContext, String catalogName)
     {
-        return new WarpExtensionModule(config, connectorContext, catalogName);
-    }
-
-    private void configureHttpServer()
-    {
-        ConfigurationFactory configFactory = new ConfigurationFactory(config);
-        JaxrsModule jaxrsModule = new JaxrsModule();
-        configFactory.registerConfigurationClasses(jaxrsModule);
-
-        HttpServerModule httpServerModule = new HttpServerModule();
-        configFactory.registerConfigurationClasses(httpServerModule);
-
-        install(httpServerModule);
-        install(new JsonModule());
-
-        CacheManagerConfig cacheManagerConfig = configFactory.build(CacheManagerConfig.class);
-        boolean isCoordinator = connectorContext.getCurrentNode().isCoordinator();
-        boolean isWorker = WarpBaseModule.isSingle(config) || !isCoordinator;
-        WarpJaxrsModule module = new WarpJaxrsModule(
-                isCoordinator,
-                isWorker,
-                cacheManagerConfig.getIsCache());
-
-        module.setConfigurationFactory(configFactory);
-        install(module);
-        install(binder1 -> binder1.bind(HttpServerLifeCycleHandler.class));
+        return () -> new WarpExtensionModule(config, connectorContext, catalogName);
     }
 }

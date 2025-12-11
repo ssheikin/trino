@@ -43,7 +43,7 @@ public class TestBuiltInCatalogs
         return DistributedQueryRunner
                 .builder(TestingSession.testSessionBuilder().build())
                 .setAdditionalSetup(runner -> runner.installPlugin(new TpchPlugin()))
-                .setAdditionalModule(new AbstractConfigurationAwareModule()
+                .setAdditionalModuleSupplier(() -> new AbstractConfigurationAwareModule()
                 {
                     @Override
                     protected void setup(Binder binder)

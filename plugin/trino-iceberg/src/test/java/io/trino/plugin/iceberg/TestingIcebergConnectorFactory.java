@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
@@ -41,17 +42,17 @@ public class TestingIcebergConnectorFactory
         implements ConnectorFactory
 {
     private final Path localFileSystemRootPath;
-    private final Optional<Module> icebergCatalogModule;
+    private final Supplier<Optional<Module>> icebergCatalogModule;
 
     public TestingIcebergConnectorFactory(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional.empty());
+        this(localFileSystemRootPath, Optional::empty);
     }
 
     @Deprecated
     public TestingIcebergConnectorFactory(
             Path localFileSystemRootPath,
-            Optional<Module> icebergCatalogModule)
+            Supplier<Optional<Module>> icebergCatalogModule)
     {
         this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");
         boolean ignored = localFileSystemRootPath.toFile().mkdirs();
@@ -67,7 +68,7 @@ public class TestingIcebergConnectorFactory
     @Override
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        return createConnector(catalogName, createConfig(config), context, createAdditionalModule(catalogName), icebergCatalogModule);
+        return createConnector(catalogName, createConfig(config), context, createAdditionalModule(catalogName), icebergCatalogModule.get());
     }
 
     @Override
@@ -75,7 +76,7 @@ public class TestingIcebergConnectorFactory
     {
         ClassLoader classLoader = IcebergConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, createAdditionalModule(catalogName), icebergCatalogModule, true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, createAdditionalModule(catalogName), icebergCatalogModule.get(), true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 

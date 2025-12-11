@@ -29,6 +29,7 @@ import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static io.trino.plugin.base.Versions.checkStrictSpiVersionMatch;
 import static java.util.Objects.requireNonNull;
@@ -37,9 +38,9 @@ public class ThriftConnectorFactory
         implements ConnectorFactory
 {
     private final String name;
-    private final Module locationModule;
+    private final Supplier<Module> locationModule;
 
-    public ThriftConnectorFactory(String name, Module locationModule)
+    public ThriftConnectorFactory(String name, Supplier<Module> locationModule)
     {
         this.name = requireNonNull(name, "name is null");
         this.locationModule = requireNonNull(locationModule, "locationModule is null");
@@ -85,7 +86,7 @@ public class ThriftConnectorFactory
                 new ConnectorObjectNameGeneratorModule("io.trino.plugin.thrift", "trino.plugin.thrift"),
                 new DriftNettyClientModule(),
                 new ConnectorContextModule(catalogName, context),
-                locationModule,
+                locationModule.get(),
                 new ThriftModule());
 
         return app

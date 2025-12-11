@@ -89,6 +89,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -146,7 +147,7 @@ public final class DistributedQueryRunner
             Map<String, String> extraProperties,
             Map<String, String> coordinatorProperties,
             String environment,
-            Module additionalModule,
+            Supplier<Module> additionalModule,
             Optional<Path> baseDataDir,
             Optional<FactoryConfiguration> systemAccessControlConfiguration,
             Optional<List<SystemAccessControl>> systemAccessControls,
@@ -262,7 +263,7 @@ public final class DistributedQueryRunner
             boolean coordinator,
             Map<String, String> extraProperties,
             String environment,
-            Module additionalModule,
+            Supplier<Module> additionalModule,
             Optional<Path> baseDataDir,
             Optional<FactoryConfiguration> systemAccessControlConfiguration,
             Optional<List<SystemAccessControl>> systemAccessControls,
@@ -323,7 +324,7 @@ public final class DistributedQueryRunner
             boolean coordinator,
             Map<String, String> extraProperties,
             String environment,
-            Module additionalModule,
+            Supplier<Module> additionalModule,
             Optional<Path> baseDataDir,
             SpanProcessor spanProcessor,
             Optional<FactoryConfiguration> systemAccessControlConfiguration,
@@ -360,7 +361,7 @@ public final class DistributedQueryRunner
                 .setCoordinator(coordinator)
                 .setProperties(properties)
                 .setEnvironment(environment)
-                .setAdditionalModule(additionalModule)
+                .setAdditionalModuleSupplier(additionalModule)
                 .setBaseDataDir(baseDataDir)
                 .setSpanProcessor(spanProcessor)
                 .setSystemAccessControlConfiguration(systemAccessControlConfiguration)
@@ -808,7 +809,7 @@ public final class DistributedQueryRunner
         private Map<String, String> coordinatorProperties = ImmutableMap.of();
         private Consumer<QueryRunner> additionalSetup = queryRunner -> {};
         private String environment = ENVIRONMENT;
-        private Module additionalModule = EMPTY_MODULE;
+        private Supplier<Module> additionalModule = () -> EMPTY_MODULE;
         private Optional<Path> baseDataDir = Optional.empty();
         private Optional<FactoryConfiguration> systemAccessControlConfiguration = Optional.empty();
         private Optional<List<SystemAccessControl>> systemAccessControls = Optional.empty();
@@ -913,6 +914,15 @@ public final class DistributedQueryRunner
 
         @CanIgnoreReturnValue
         public SELF setAdditionalModule(Module additionalModule)
+        {
+            this.additionalModule = () -> requireNonNull(additionalModule, "additionalModules is null");
+            return self();
+        }
+
+        // TODO: Adding this method temporarily since TroubleshootingModule requires ConfigurationFactory.
+        //  Change the above setAdditionalModule to Supplier in OS Trino, and remove this method.
+        @CanIgnoreReturnValue
+        public SELF setAdditionalModuleSupplier(Supplier<Module> additionalModule)
         {
             this.additionalModule = requireNonNull(additionalModule, "additionalModules is null");
             return self();

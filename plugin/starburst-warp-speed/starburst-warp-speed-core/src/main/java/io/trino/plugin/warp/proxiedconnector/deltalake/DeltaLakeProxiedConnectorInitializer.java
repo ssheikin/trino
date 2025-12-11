@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static io.trino.plugin.warp.proxiedconnector.utils.ConfigurationUtils.getDeltaLakeFilteredConfig;
 
@@ -41,9 +42,9 @@ public class DeltaLakeProxiedConnectorInitializer
     private static final Optional<TrinoFileSystemFactory> DEFAULT_FILE_SYSTEM_FACTORY = Optional.empty();
 
     @Override
-    public List<Module> getModules(ConnectorContext context)
+    public Supplier<List<Module>> getModules(ConnectorContext context)
     {
-        return List.of(
+        return () -> List.of(
                 new ConnectorObjectNameGeneratorModule(
                         "io.trino.plugin.deltalake",
                         "trino.plugin.deltalake"),
