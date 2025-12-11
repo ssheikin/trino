@@ -84,6 +84,7 @@ public abstract class BaseElasticsearchConnectorTest
 
     protected ElasticsearchServer server;
     protected RestHighLevelClient client;
+    private String jmxBaseName;
 
     BaseElasticsearchConnectorTest(ElasticsearchServer server)
     {
@@ -95,8 +96,10 @@ public abstract class BaseElasticsearchConnectorTest
     protected QueryRunner createQueryRunner()
             throws Exception
     {
+        jmxBaseName = randomNameSuffix();
         return ElasticsearchQueryRunner.builder(server)
                 .setInitialTables(REQUIRED_TPCH_TABLES)
+                .addConnectorProperties(Map.of("jmx.base-name", jmxBaseName))
                 .build();
     }
 
@@ -231,8 +234,8 @@ public abstract class BaseElasticsearchConnectorTest
         String catalogName = getSession().getCatalog().orElseThrow();
         assertQuerySucceeds("SELECT * FROM orders");
         // Check that JMX stats show no sign of backpressure
-        assertQueryReturnsEmptyResult(format("SELECT 1 FROM jmx.current.\"trino.plugin.elasticsearch.client:*name=%s*\" WHERE \"backpressurestats.alltime.count\" > 0", catalogName));
-        assertQueryReturnsEmptyResult(format("SELECT 1 FROM jmx.current.\"trino.plugin.elasticsearch.client:*name=%s*\" WHERE \"backpressurestats.alltime.max\" > 0", catalogName));
+        assertQueryReturnsEmptyResult(format("SELECT 1 FROM jmx.current.\"%s.client:*name=%s*\" WHERE \"backpressurestats.alltime.count\" > 0", jmxBaseName, catalogName));
+        assertQueryReturnsEmptyResult(format("SELECT 1 FROM jmx.current.\"%s.client:*name=%s*\" WHERE \"backpressurestats.alltime.max\" > 0", jmxBaseName, catalogName));
     }
 
     @Test
