@@ -68,7 +68,7 @@ public class TestKuduIntegrationDynamicFilter
         return KuduQueryRunnerFactory.builder(closeAfterClass(TestingKuduServer.builder().build()))
                 .withSchemaEmulationByTableName("")
                 .addConnectorProperty("kudu.dynamic-filtering.wait-timeout", "1h")
-                .addExtraProperty("dynamic-filtering.small.max-distinct-values-per-driver", "100")
+                .addExtraProperty("dynamic-filtering.max-distinct-values-per-driver", "100")
                 .setInitialTables(List.of(LINE_ITEM, ORDERS, PART))
                 .build();
     }
