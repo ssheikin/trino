@@ -20,6 +20,7 @@ import io.trino.spi.CoordinatorLocator;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
+import io.trino.spi.PageStreamFactory;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogVersion;
@@ -47,6 +48,7 @@ public class ConnectorContextInstance
     private final PageSorter pageSorter;
     private final WorkScheduler workScheduler;
     private final PageIndexerFactory pageIndexerFactory;
+    private final PageStreamFactory pageStreamFactory;
     private final LocationAccessControl locationAccessControl;
     private final AiModelAccessControl aiModelAccessControl;
     private final ModelConnectionSpecsLoader modelConnectionSpecsLoader;
@@ -70,6 +72,7 @@ public class ConnectorContextInstance
             PageSorter pageSorter,
             WorkScheduler workScheduler,
             PageIndexerFactory pageIndexerFactory,
+            PageStreamFactory pageStreamFactory,
             CatalogVersion catalogVersion,
             Map<String, String> serverProperties)
     {
@@ -87,6 +90,7 @@ public class ConnectorContextInstance
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
+        this.pageStreamFactory = requireNonNull(pageStreamFactory, "pageStreamFactory is null");
         this.catalogVersion = requireNonNull(catalogVersion, "catalogVersion is null");
         this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
     }
@@ -143,6 +147,12 @@ public class ConnectorContextInstance
     public PageIndexerFactory getPageIndexerFactory()
     {
         return pageIndexerFactory;
+    }
+
+    @Override
+    public PageStreamFactory getPageStreamFactory()
+    {
+        return pageStreamFactory;
     }
 
     @Override

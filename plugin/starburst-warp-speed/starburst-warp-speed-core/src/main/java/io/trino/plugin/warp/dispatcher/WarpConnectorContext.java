@@ -20,6 +20,7 @@ import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
+import io.trino.spi.PageStreamFactory;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogVersion;
@@ -111,6 +112,12 @@ public class WarpConnectorContext
     public PageIndexerFactory getPageIndexerFactory()
     {
         return connectorContext.getPageIndexerFactory();
+    }
+
+    @Override
+    public PageStreamFactory getPageStreamFactory()
+    {
+        return connectorContext.getPageStreamFactory();
     }
 
     @Override

@@ -23,6 +23,7 @@ import io.trino.spi.NodeManager;
 import io.trino.spi.NodeVersion;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
+import io.trino.spi.PageStreamFactory;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
@@ -64,6 +65,7 @@ public class ConnectorContextModule
         binder.bind(PageSorter.class).toInstance(context.getPageSorter());
         binder.bind(WorkScheduler.class).toInstance(context.getWorkScheduler());
         binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
+        binder.bind(PageStreamFactory.class).toInstance(context.getPageStreamFactory());
         binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
         binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
         binder.bind(CoordinatorLocator.class).toInstance(context.getCoordinatorLocator());

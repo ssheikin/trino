@@ -33,6 +33,7 @@ import io.trino.node.InternalNodeManager;
 import io.trino.security.AccessControl;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
+import io.trino.spi.PageStreamFactory;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
@@ -75,6 +76,7 @@ public class DefaultCatalogFactory
     private final PageSorter pageSorter;
     private final WorkScheduler workScheduler;
     private final PageIndexerFactory pageIndexerFactory;
+    private final PageStreamFactory pageStreamFactory;
     private final VersionEmbedder versionEmbedder;
     private final OpenTelemetry openTelemetry;
     private final TransactionManager transactionManager;
@@ -102,6 +104,7 @@ public class DefaultCatalogFactory
             PageSorter pageSorter,
             WorkScheduler workScheduler,
             PageIndexerFactory pageIndexerFactory,
+            PageStreamFactory pageStreamFactory,
             VersionEmbedder versionEmbedder,
             OpenTelemetry openTelemetry,
             TransactionManager transactionManager,
@@ -124,6 +127,7 @@ public class DefaultCatalogFactory
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.workScheduler = requireNonNull(workScheduler, "workScheduler is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
+        this.pageStreamFactory = requireNonNull(pageStreamFactory, "pageStreamFactory is null");
         this.versionEmbedder = requireNonNull(versionEmbedder, "versionEmbedder is null");
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
@@ -266,6 +270,7 @@ public class DefaultCatalogFactory
                 pageSorter,
                 workScheduler,
                 pageIndexerFactory,
+                pageStreamFactory,
                 catalogVersion,
                 serverProperties);
     }
