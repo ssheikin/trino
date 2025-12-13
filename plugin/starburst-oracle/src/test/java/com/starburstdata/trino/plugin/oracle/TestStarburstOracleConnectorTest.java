@@ -353,8 +353,8 @@ public class TestStarburstOracleConnectorTest
                 ImmutableList.of("'my_long_char', 'my_long_varchar'"))) {
             // Verify using a large value in WHERE, larger than the 2000 and 4000 bytes Oracle max
             // this does not work in Oracle 11
-            assertThat(query(format("SELECT c_long_char FROM %s WHERE c_long_char = '" + "💩".repeat(2000) + "'", table.getName()))).isFullyPushedDown();
-            assertThat(query(format("SELECT c_long_varchar FROM %s WHERE c_long_varchar = '" + "💩".repeat(4000) + "'", table.getName()))).isFullyPushedDown();
+            assertThat(query(format("SELECT c_long_char FROM %s WHERE c_long_char = '%s'", table.getName(), "💩".repeat(2000)))).isFullyPushedDown();
+            assertThat(query(format("SELECT c_long_varchar FROM %s WHERE c_long_varchar = '%s'", table.getName(), "💩".repeat(4000)))).isFullyPushedDown();
         }
     }
 

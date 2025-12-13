@@ -1437,7 +1437,7 @@ public class TrinoGlueCatalogV1
         }
         else {
             String storageMetadataLocation = parameters.get(METADATA_LOCATION_PROP);
-            checkState(storageMetadataLocation != null, "Storage location missing in definition of materialized view " + view.getName());
+            checkState(storageMetadataLocation != null, "Storage location missing in definition of materialized view %s", view.getName());
             try {
                 dropMaterializedViewStorage(session, fileSystemFactory.create(session), storageMetadataLocation);
             }
@@ -1546,7 +1546,7 @@ public class TrinoGlueCatalogV1
 
             // TODO getTableAndCacheMetadata saved the value in materializedViewCache, so we could just use that, except when conversion fails
             storageMetadataLocation = getTableParameters(materializedView).get(METADATA_LOCATION_PROP);
-            checkState(storageMetadataLocation != null, "Storage location missing in definition of materialized view " + materializedView.getName());
+            checkState(storageMetadataLocation != null, "Storage location missing in definition of materialized view %s", materializedView.getName());
         }
         else {
             storageMetadataLocation = materializedViewData.storageMetadataLocation

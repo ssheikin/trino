@@ -3450,6 +3450,7 @@
                                     -Xep:ExtendsObject:ERROR \
                                     -Xep:FallThrough:ERROR \
                                     -Xep:Finalize:ERROR \
+                                    -Xep:FormatStringShouldUsePlaceholders:ERROR \
                                     -Xep:GetClassOnEnum:ERROR \
                                     <!-- TODO enable globally -->
                                     -Xep:GuardedBy:${trino.error-prone.guarded-by} \
