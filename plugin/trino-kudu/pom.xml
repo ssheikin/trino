@@ -343,6 +343,16 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.basepom.maven</groupId>
+                    <artifactId>duplicate-finder-maven-plugin</artifactId>
+                    <configuration>
+                        <ignoredResourcePatterns combine.children="append">
+                            <!-- com.google.protobuf:protobuf-java and org.apache.kudu:kudu-client proto file duplicate -->
+                            <ignoredResourcePattern>google/protobuf/.*\.proto$</ignoredResourcePattern>
+                        </ignoredResourcePatterns>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
