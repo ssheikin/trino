@@ -384,10 +384,6 @@ public class TestingTrinoServer
                     }
                 });
 
-        if (coordinator) {
-            modules.add(new TestingSessionTimeModule());
-        }
-
         modules.add(aiModelAccessControlModule());
         modules.add(new ModelConnectionSpecsLoaderModule(modelConnectionSpecsLoader, coordinator));
 

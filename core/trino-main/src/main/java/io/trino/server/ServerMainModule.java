@@ -141,7 +141,6 @@ import io.trino.split.PageSourceProviderFactory;
 import io.trino.split.SplitManager;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.SqlEnvironmentConfig;
-import io.trino.sql.analyzer.SessionTimeProvider;
 import io.trino.sql.analyzer.StatementAnalyzerFactory;
 import io.trino.sql.dialect.trino.TrinoDialect;
 import io.trino.sql.dialect.trino.operationmetadata.TrinoAttributeMetadata.ConstantValue;
@@ -254,8 +253,6 @@ public class ServerMainModule
 
         newOptionalBinder(binder, ExplainAnalyzeContext.class);
         binder.bind(StatementAnalyzerFactory.class).in(Scopes.SINGLETON);
-        newOptionalBinder(binder, SessionTimeProvider.class)
-                .setDefault().toInstance(SessionTimeProvider.DEFAULT);
         newOptionalBinder(binder, MeterProvider.class).setDefault().toInstance(MeterProvider.noop());
 
         // GC Monitor

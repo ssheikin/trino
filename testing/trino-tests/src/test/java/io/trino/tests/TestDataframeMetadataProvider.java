@@ -55,7 +55,6 @@ import io.trino.spi.security.LocationAccessControl;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.SqlEnvironmentConfig;
 import io.trino.sql.analyzer.AnalyzerFactory;
-import io.trino.sql.analyzer.SessionTimeProvider;
 import io.trino.sql.analyzer.StatementAnalyzerFactory;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.rewrite.ShowQueriesRewrite;
@@ -135,7 +134,6 @@ public class TestDataframeMetadataProvider
         StatementAnalyzerFactory statementAnalyzerFactory = new StatementAnalyzerFactory(
                 plannerContext,
                 SQL_PARSER,
-                SessionTimeProvider.DEFAULT,
                 accessControl,
                 transactionManager,
                 user -> ImmutableSet.of(),
