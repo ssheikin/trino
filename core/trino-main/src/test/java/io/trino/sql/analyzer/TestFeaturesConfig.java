@@ -73,7 +73,7 @@ public class TestFeaturesConfig
                 .setSuperSetPredicatePushdownEnabled(true)
                 .setLegacyArithmeticDecimalOperators(false)
                 .setFaultTolerantExecutionExchangeEncryptionEnabled(true)
-                .setParallelizeLookupOuterOperator(false));
+                .setParallelizeLookupOuterOperator(true));
     }
 
     @Test
@@ -114,7 +114,7 @@ public class TestFeaturesConfig
                 .put("deprecated.legacy-arithmetic-decimal-operators", "true")
                 .put("fault-tolerant-execution-exchange-encryption-enabled", "false")
                 .put("optimizer.super-set-predicate.pushdown.enabled", "false")
-                .put("parallelize-lookup-outer-operator", "true")
+                .put("parallelize-lookup-outer-operator", "false")
                 .buildOrThrow();
 
         FeaturesConfig expected = new FeaturesConfig()
@@ -152,7 +152,7 @@ public class TestFeaturesConfig
                 .setSuperSetPredicatePushdownEnabled(false)
                 .setLegacyArithmeticDecimalOperators(true)
                 .setFaultTolerantExecutionExchangeEncryptionEnabled(false)
-                .setParallelizeLookupOuterOperator(true);
+                .setParallelizeLookupOuterOperator(false);
         assertFullMapping(properties, expected);
     }
 }

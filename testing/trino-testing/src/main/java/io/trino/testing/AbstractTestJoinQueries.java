@@ -2444,7 +2444,6 @@ public abstract class AbstractTestJoinQueries
         assertLookupOuterOperatorParallelization(
                 Session.builder(getSession())
                         .setSystemProperty(TASK_CONCURRENCY, Integer.toString(taskConcurrency))
-                        .setSystemProperty(PARALLELIZE_LOOKUP_OUTER_OPERATOR, "true")
                         .build(),
                 actual,
                 expected,
