@@ -1421,7 +1421,7 @@ public class IcebergMetadata
     {
         int formatVersion = getFormatVersion(tableProperties);
         io.trino.spi.type.Type newType = coerceType(formatVersion, type);
-        if (type.getTypeSignature().equals(newType.getTypeSignature())) {
+        if (type.equals(newType)) {
             return Optional.empty();
         }
         return Optional.of(newType);
