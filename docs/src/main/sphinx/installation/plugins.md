@@ -252,6 +252,10 @@ with the listed coordinates.
   - [](/connector/kudu)
   - [io.trino:trino-kudu](https://central.sonatype.com/search?q=io.trino%3Atrino-kudu)
   - {download_gh}`kudu`
+* - lakehouse
+  - [](/connector/lakehouse)
+  -
+  - {download_gh}`lakehouse`
 * - loki
   - [](/connector/loki)
   - [io.trino:trino-loki](https://central.sonatype.com/search?q=io.trino%3Atrino-loki)
