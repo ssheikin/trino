@@ -51,12 +51,6 @@ public final class NoOpResourceGroupManager
     }
 
     @Override
-    public Optional<List<ResourceGroupInfo>> tryGetPathToRoot(ResourceGroupId id)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void addConfigurationManagerFactory(ResourceGroupConfigurationManagerFactory factory, boolean setAsDefault)
     {
         // no-op
