@@ -1512,7 +1512,7 @@ public class DispatcherMetadata
     @Override
     public void dropLanguageFunction(ConnectorSession session, SchemaFunctionName name, String signatureToken)
     {
-        ConnectorMetadata.super.dropLanguageFunction(session, name, signatureToken);
+        proxiedConnectorMetadata.dropLanguageFunction(session, name, signatureToken);
     }
 
     @Override
