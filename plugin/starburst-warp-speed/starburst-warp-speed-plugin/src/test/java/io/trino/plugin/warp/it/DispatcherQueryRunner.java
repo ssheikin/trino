@@ -27,6 +27,8 @@ import io.trino.plugin.warp.config.GlobalConfig;
 import io.trino.plugin.warp.config.WarmupDemoterConfig;
 import io.trino.plugin.warp.extension.config.WarpExtensionConfig;
 import io.trino.spi.Plugin;
+import io.trino.spi.security.Identity;
+import io.trino.spi.security.SelectedRole;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingSession;
@@ -38,9 +40,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.trino.plugin.hive.security.SqlStandardAccessControl.ADMIN_ROLE_NAME;
 import static io.trino.plugin.warp.config.GlobalConfig.CONFIG_IS_SINGLE;
 import static io.trino.plugin.warp.config.GlobalConfig.FAILURE_GENERATOR_ENABLED;
 import static io.trino.plugin.warp.extension.config.WarpExtensionConfig.CLUSTER_UUID;
+import static io.trino.spi.security.SelectedRole.Type.ROLE;
 
 public class DispatcherQueryRunner
 {
@@ -170,6 +174,9 @@ public class DispatcherQueryRunner
     private static Session createSession(String catalogName)
     {
         return TestingSession.testSessionBuilder()
+                .setIdentity(Identity.forUser("hive")
+                        .withConnectorRole(catalogName, new SelectedRole(ROLE, Optional.of(ADMIN_ROLE_NAME)))
+                        .build())
                 .setCatalog(catalogName)
                 .setSystemProperty(SystemSessionProperties.REDISTRIBUTE_WRITES, "true")
                 .build();
