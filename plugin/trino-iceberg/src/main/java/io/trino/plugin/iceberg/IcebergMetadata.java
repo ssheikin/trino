@@ -1138,7 +1138,7 @@ public class IcebergMetadata
         return ColumnMetadata.builder()
                 .setName(column.getName())
                 .setType(column.getType())
-                .setDefaultValue(column.getDefaultValue())
+                .setDefaultValue(column.getWriteDefaultValue())
                 .setNullable(column.isNullable())
                 .setComment(column.getComment())
                 .setHidden(isMetadataColumnId(column.getId()))
