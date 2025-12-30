@@ -134,7 +134,7 @@ public abstract class BaseJdbcConnectorTest
 {
     private static final Logger log = Logger.get(BaseJdbcConnectorTest.class);
 
-    private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed(getClass().getName()));
+    private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed(getClass().getName() + "-%s"));
 
     protected static final String CREATE_CATALOG_SQL_TEMPLATE = """
                 CREATE CATALOG %s USING %s
