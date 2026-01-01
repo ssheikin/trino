@@ -348,7 +348,7 @@ import static io.trino.plugin.iceberg.IcebergBranchProperties.getSnapshotId;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_ROW_ID_NAME;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID_NAME;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.lastUpdatedSequenceNumberColumnColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.partitionColumnHandle;
@@ -4133,7 +4133,7 @@ public class IcebergMetadata
             fields.add(MetadataColumns.ROW_ID);
             fields.add(MetadataColumns.LAST_UPDATED_SEQUENCE_NUMBER);
         }
-        NestedField field = NestedField.required(TRINO_MERGE_ROW_ID, TRINO_ROW_ID_NAME, StructType.of(fields.build()));
+        NestedField field = NestedField.required(TRINO_MERGE_ROW_ID, TRINO_MERGE_ROW_ID_NAME, StructType.of(fields.build()));
         return getColumnHandle(field, typeManager);
     }
 
