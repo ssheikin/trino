@@ -232,6 +232,7 @@ import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.exceptions.RESTException;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.expressions.Term;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
@@ -325,6 +326,9 @@ import static io.trino.plugin.iceberg.IcebergColumnHandle.lastUpdatedSequenceNum
 import static io.trino.plugin.iceberg.IcebergColumnHandle.partitionColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.rowIdColumnHandle;
+import static io.trino.plugin.iceberg.IcebergDefaultValues.formatIcebergDefaultAsSql;
+import static io.trino.plugin.iceberg.IcebergDefaultValues.parseDefaultValue;
+import static io.trino.plugin.iceberg.IcebergDefaultValues.toIcebergLiteral;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_CATALOG_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
@@ -431,7 +435,6 @@ import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_O
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.ROLLBACK_TO_SNAPSHOT;
 import static io.trino.plugin.iceberg.procedure.MigrationUtils.addFiles;
 import static io.trino.plugin.iceberg.procedure.MigrationUtils.addFilesFromTable;
-import static io.trino.plugin.iceberg.util.IcebergDefaultValues.toIcebergLiteral;
 import static io.trino.plugin.iceberg.util.SystemTableUtil.getAllPartitionFields;
 import static io.trino.spi.StandardErrorCode.BRANCH_NOT_FOUND;
 import static io.trino.spi.StandardErrorCode.COLUMN_ALREADY_EXISTS;
@@ -477,7 +480,6 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 import static java.util.UUID.randomUUID;
 import static java.util.function.Function.identity;
@@ -1205,14 +1207,26 @@ public class IcebergMetadata
     @Override
     public ColumnMetadata getColumnMetadata(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle columnHandle)
     {
+        IcebergTableHandle icebergTableHandle = (IcebergTableHandle) tableHandle;
         IcebergColumnHandle column = (IcebergColumnHandle) columnHandle;
+
+        // Look up write-default from the table schema
+        Optional<String> defaultValue = Optional.empty();
+        if (!isMetadataColumnId(column.getId())) {
+            Schema tableSchema = SchemaParser.fromJson(icebergTableHandle.getTableSchemaJson());
+            NestedField field = tableSchema.findField(column.getId());
+            if (field != null) {
+                defaultValue = formatIcebergDefaultAsSql(field.writeDefault(), field.type());
+            }
+        }
+
         return ColumnMetadata.builder()
                 .setName(column.getName())
                 .setType(column.getType())
-                .setDefaultValue(column.getWriteDefaultValue())
                 .setNullable(column.isNullable())
                 .setComment(column.getComment())
                 .setHidden(isMetadataColumnId(column.getId()))
+                .setDefaultValue(defaultValue)
                 .build();
     }
 
@@ -1501,6 +1515,7 @@ public class IcebergMetadata
         if (!schemaExists(session, schemaName)) {
             throw new SchemaNotFoundException(schemaName);
         }
+
         int formatVersion = getFormatVersion(tableMetadata.getProperties());
         tableMetadata.getColumns().forEach(column -> checkDefaultValueCompatibility(formatVersion, column));
 
@@ -3345,11 +3360,18 @@ public class IcebergMetadata
         // added - instead of relying on addColumn in iceberg library to assign Ids
         AtomicInteger nextFieldId = new AtomicInteger(icebergTable.schema().highestFieldId() + 2);
         try {
-            Type type = toIcebergTypeForNewColumn(column.getType(), nextFieldId);
             UpdateSchema updateSchema = icebergTable.updateSchema();
-            updateSchema.addColumn(null, column.getName(), type, column.getComment(), column.getDefaultValue()
-                    .map((String defaultValue) -> toIcebergLiteral(type, defaultValue))
-                    .orElse(null));
+            org.apache.iceberg.types.Type icebergType = toIcebergTypeForNewColumn(column.getType(), nextFieldId);
+
+            // Handle default value if present
+            Literal<?> defaultLiteral = column.getDefaultValue()
+                    .map(defaultValue -> {
+                        Object parsed = parseDefaultValue(defaultValue, column.getType(), icebergType);
+                        return toIcebergLiteral(parsed, icebergType);
+                    })
+                    .orElse(null);
+
+            updateSchema.addColumn(null, column.getName(), icebergType, column.getComment(), defaultLiteral);
             switch (position) {
                 case ColumnPosition.First _ -> updateSchema.moveFirst(column.getName());
                 case ColumnPosition.After after -> updateSchema.moveAfter(column.getName(), after.columnName());
@@ -3362,15 +3384,46 @@ public class IcebergMetadata
         }
     }
 
-    private static void checkDefaultValueCompatibility(int formatVersion, ColumnMetadata column)
+    @Override
+    public void setDefaultValue(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column, String defaultValue)
     {
-        checkDefaultValueCompatibility(formatVersion, column.getDefaultValue().isPresent());
+        IcebergTableHandle icebergTableHandle = (IcebergTableHandle) tableHandle;
+        IcebergColumnHandle columnHandle = (IcebergColumnHandle) column;
+
+        Table icebergTable = catalog.loadTable(session, icebergTableHandle.getSchemaTableName());
+        checkDefaultValueCompatibility(formatVersion(icebergTable), true);
+
+        NestedField field = icebergTable.schema().findField(columnHandle.getId());
+        Object parsed = parseDefaultValue(defaultValue, columnHandle.getType(), field.type());
+        Literal<?> defaultLiteral = toIcebergLiteral(parsed, field.type());
+
+        try {
+            icebergTable.updateSchema()
+                    .updateColumnDefault(field.name(), defaultLiteral)
+                    .commit();
+        }
+        catch (RuntimeException e) {
+            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to set default value: " + firstNonNull(e.getMessage(), e), e);
+        }
     }
 
-    private static void checkDefaultValueCompatibility(int formatVersion, boolean defaultValuePresent)
+    @Override
+    public void dropDefaultValue(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column)
     {
-        if (formatVersion < 3 && defaultValuePresent) {
-            throw new TrinoException(NOT_SUPPORTED, "Default values are not supported for format version < 3");
+        IcebergTableHandle icebergTableHandle = (IcebergTableHandle) tableHandle;
+        IcebergColumnHandle columnHandle = (IcebergColumnHandle) column;
+
+        Table icebergTable = catalog.loadTable(session, icebergTableHandle.getSchemaTableName());
+        checkDefaultValueCompatibility(formatVersion(icebergTable), true);
+
+        NestedField field = icebergTable.schema().findField(columnHandle.getId());
+        try {
+            icebergTable.updateSchema()
+                    .updateColumnDefault(field.name(), null)
+                    .commit();
+        }
+        catch (RuntimeException e) {
+            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to drop default value: " + firstNonNull(e.getMessage(), e), e);
         }
     }
 
@@ -3632,48 +3685,6 @@ public class IcebergMetadata
         }
         catch (RuntimeException e) {
             throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to drop a not null constraint: " + firstNonNull(e.getMessage(), e), e);
-        }
-    }
-
-    @Override
-    public void setDefaultValue(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle columnHandle, String defaultValue)
-    {
-        IcebergTableHandle table = (IcebergTableHandle) tableHandle;
-        IcebergColumnHandle column = (IcebergColumnHandle) columnHandle;
-
-        checkDefaultValueCompatibility(table.getFormatVersion(), true);
-
-        Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
-        verify(column.isBaseColumn(), "Cannot set default values on nested fields");
-
-        try {
-            icebergTable.updateSchema()
-                    .updateColumnDefault(column.getName(), toIcebergLiteral(icebergTable.schema().findType(column.getName()), defaultValue))
-                    .commit();
-        }
-        catch (RuntimeException e) {
-            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to set default values: " + requireNonNullElse(e.getMessage(), e), e);
-        }
-    }
-
-    @Override
-    public void dropDefaultValue(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle columnHandle)
-    {
-        IcebergTableHandle table = (IcebergTableHandle) tableHandle;
-        IcebergColumnHandle column = (IcebergColumnHandle) columnHandle;
-
-        checkDefaultValueCompatibility(table.getFormatVersion(), true);
-
-        Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
-        verify(column.isBaseColumn(), "Cannot drop default values on nested fields");
-
-        try {
-            icebergTable.updateSchema()
-                    .updateColumnDefault(column.getName(), null)
-                    .commit();
-        }
-        catch (RuntimeException e) {
-            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to drop default values: " + requireNonNullElse(e.getMessage(), e), e);
         }
     }
 
@@ -5431,5 +5442,17 @@ public class IcebergMetadata
             throw new TrinoException(NOT_SUPPORTED, "Branch '%s' does not exist, but a tag with that name exists".formatted(branch));
         }
         return ref;
+    }
+
+    private static void checkDefaultValueCompatibility(int formatVersion, ColumnMetadata column)
+    {
+        checkDefaultValueCompatibility(formatVersion, column.getDefaultValue().isPresent());
+    }
+
+    private static void checkDefaultValueCompatibility(int formatVersion, boolean defaultValuePresent)
+    {
+        if (formatVersion < 3 && defaultValuePresent) {
+            throw new TrinoException(NOT_SUPPORTED, "Default column values are not supported for Iceberg table format version < 3");
+        }
     }
 }
