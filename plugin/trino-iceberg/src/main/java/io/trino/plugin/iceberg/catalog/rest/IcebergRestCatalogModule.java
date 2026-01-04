@@ -22,6 +22,7 @@ import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.spi.TrinoException;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 
@@ -33,15 +34,14 @@ public class IcebergRestCatalogModule
     {
         configBinder(binder).bindConfig(IcebergRestCatalogConfig.class);
         IcebergRestCatalogConfig restCatalogConfig = buildConfigObject(IcebergRestCatalogConfig.class);
-        switch (restCatalogConfig.getSecurity()) {
-            case NONE -> install(new NoneSecurityModule());
-            case SIGV4 -> install(new SigV4SecurityModule());
-            case OAUTH2 -> install(new OAuth2SecurityModule());
-            case GOOGLE -> install(new GoogleSecurityModule());
-            case OAUTH2_PASSTHROUGH -> {
-                // handled in SEP
-            }
-        }
+        install(switch (restCatalogConfig.getSecurity()) {
+            case OAUTH2 -> new OAuth2SecurityModule();
+            case SIGV4 -> new SigV4SecurityModule();
+            case GOOGLE -> new GoogleSecurityModule();
+            case NONE -> new NoneSecurityModule();
+            // handled in SEP
+            case OAUTH2_PASSTHROUGH -> EMPTY_MODULE;
+        });
 
         binder.bind(TrinoCatalogFactory.class).to(TrinoIcebergRestCatalogFactory.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, IcebergFileSystemFactory.class).setBinding().to(IcebergRestCatalogFileSystemFactory.class).in(Scopes.SINGLETON);
