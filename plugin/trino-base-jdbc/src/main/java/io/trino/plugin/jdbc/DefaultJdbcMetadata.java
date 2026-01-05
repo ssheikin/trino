@@ -1385,7 +1385,7 @@ public class DefaultJdbcMetadata
             throw new TrinoException(NOT_SUPPORTED, "This connector does not support replacing tables");
         }
         JdbcOutputTableHandle handle = jdbcClient.beginCreateTable(session, tableMetadata, rollbackActions::add);
-        rollbackActions.add(() -> jdbcClient.rollbackCreateTable(session, handle));
+        rollbackActions.add(() -> jdbcClient.rollbackTemporaryTableCreation(session, handle));
         return handle;
     }
 
@@ -1475,7 +1475,7 @@ public class DefaultJdbcMetadata
                 .map(JdbcColumnHandle.class::cast)
                 .collect(toImmutableList());
         JdbcOutputTableHandle handle = jdbcClient.beginInsertTable(session, (JdbcTableHandle) tableHandle, columnHandles);
-        rollbackActions.add(() -> jdbcClient.rollbackCreateTable(session, handle));
+        rollbackActions.add(() -> jdbcClient.rollbackTemporaryTableCreation(session, handle));
         return handle;
     }
 
