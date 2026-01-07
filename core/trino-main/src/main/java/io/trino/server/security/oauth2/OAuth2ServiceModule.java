@@ -26,7 +26,6 @@ import io.trino.server.ui.OAuth2WebUiInstalled;
 import java.time.Duration;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
-import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
@@ -50,8 +49,23 @@ public class OAuth2ServiceModule
                 .setDefault()
                 .to(NimbusOAuth2Client.class)
                 .in(Scopes.SINGLETON);
-        install(conditionalModule(OAuth2Config.class, OAuth2Config::isEnableDiscovery, this::bindOidcDiscovery, this::bindStaticConfiguration));
-        install(conditionalModule(OAuth2Config.class, OAuth2ServiceModule::isTokenSerializerRequired, this::useTokenSerializer, this::usePropagateAccessToken));
+
+        OAuth2Config oAuth2Config = buildConfigObject(OAuth2Config.class);
+
+        if (oAuth2Config.isEnableDiscovery()) {
+            bindOidcDiscovery(binder);
+        }
+        else {
+            bindStaticConfiguration(binder);
+        }
+
+        if (isTokenSerializerRequired(oAuth2Config)) {
+            useTokenSerializer();
+        }
+        else {
+            usePropagateAccessToken(binder);
+        }
+
         httpClientBinder(binder)
                 .bindHttpClient("oauth2-jwk", ForOAuth2.class)
                 .withConfigDefaults(clientConfig -> clientConfig
@@ -64,7 +78,7 @@ public class OAuth2ServiceModule
         return oAuth2Config.isEnableRefreshTokens() || oAuth2Config.isUsePrincipalFromIdToken();
     }
 
-    private void useTokenSerializer(Binder binder)
+    private void useTokenSerializer()
     {
         install(new JweTokenSerializerModule());
     }
