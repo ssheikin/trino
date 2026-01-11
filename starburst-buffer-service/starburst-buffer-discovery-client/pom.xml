@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.starburst.stargate.buffer</groupId>
         <artifactId>starburst-buffer-root</artifactId>
-        <version>479-e.0.23-SNAPSHOT</version>
+        <version>479-e.0.23</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
