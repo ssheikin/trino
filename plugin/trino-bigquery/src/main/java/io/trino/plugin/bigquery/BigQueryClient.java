@@ -87,6 +87,7 @@ import static io.trino.plugin.bigquery.BigQueryUtil.quote;
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.joining;
 
@@ -540,7 +541,15 @@ public class BigQueryClient
             jobConfiguration = bigQuery.create(jobInfo).getConfiguration();
         }
         catch (BigQueryException e) {
-            throw new TrinoException(BIGQUERY_INVALID_STATEMENT, "Failed to get destination table for query. " + firstNonNull(e.getMessage(), e), e);
+            throw new TrinoException(
+                    BIGQUERY_INVALID_STATEMENT,
+                    "Failed to get destination table for query. code: %s, reason: %s, retryable: %s, debug: %s, message: %s".formatted(
+                            e.getCode(),
+                            e.getReason(),
+                            e.isRetryable(),
+                            e.getDebugInfo(),
+                            requireNonNullElse(e.getMessage(), e)),
+                    e);
         }
 
         return requireNonNull(((QueryJobConfiguration) jobConfiguration).getDestinationTable(), "Cannot determine destination table for query");
