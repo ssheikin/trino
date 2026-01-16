@@ -26,7 +26,7 @@ public class UnityMetastoreConfig
     private String catalogName;
     private String host;
     private String token;
-    private boolean catalogOwnedTableEnabled;
+    private boolean catalogManagedTableEnabled;
     private boolean vendedCredentialsEnabled;
 
     @NotNull
@@ -75,16 +75,17 @@ public class UnityMetastoreConfig
         return this;
     }
 
-    public boolean isCatalogOwnedTableEnabled()
+    public boolean isCatalogManagedTableEnabled()
     {
-        return catalogOwnedTableEnabled;
+        return catalogManagedTableEnabled;
     }
 
-    @Config("hive.metastore.unity.catalog-owned-table-enabled")
-    @ConfigDescription("Unity metastore owned table enabled")
-    public UnityMetastoreConfig setCatalogOwnedTableEnabled(boolean catalogOwnedTableEnabled)
+    @Config("hive.metastore.unity.catalog-managed-table-enabled")
+    @LegacyConfig("hive.metastore.unity.catalog-owned-table-enabled")
+    @ConfigDescription("Unity metastore catalog managed table writing enabled")
+    public UnityMetastoreConfig setCatalogManagedTableEnabled(boolean catalogManagedTableEnabled)
     {
-        this.catalogOwnedTableEnabled = catalogOwnedTableEnabled;
+        this.catalogManagedTableEnabled = catalogManagedTableEnabled;
         return this;
     }
 
