@@ -20,16 +20,22 @@ import io.trino.plugin.jdbc.JdbcColumnHandle;
 import io.trino.plugin.jdbc.JdbcTypeHandle;
 import io.trino.plugin.jdbc.QueryParameter;
 import io.trino.plugin.jdbc.WriteFunction;
+import io.trino.plugin.jdbc.expression.ParameterizedExpression;
 import io.trino.plugin.jdbc.logging.RemoteQueryModifier;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.type.CharType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarcharType;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static com.google.common.base.Verify.verify;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.plugin.singlestore.SingleStoreSessionProperties.isEnableStringPushdownWithBinary;
+import static java.util.stream.Collectors.joining;
 
 public class BinaryComparisonQueryBuilder
         extends DefaultQueryBuilder
@@ -38,6 +44,30 @@ public class BinaryComparisonQueryBuilder
     public BinaryComparisonQueryBuilder(RemoteQueryModifier queryModifier)
     {
         super(queryModifier);
+    }
+
+    @Override
+    protected String getGroupBy(JdbcClient client, Optional<List<List<JdbcColumnHandle>>> groupingSets, Map<String, ParameterizedExpression> columnExpressions)
+    {
+        if (groupingSets.isEmpty()) {
+            return "";
+        }
+
+        // Supporting only single grouping set for now
+        verify(!groupingSets.get().isEmpty() && groupingSets.get().size() == 1, "Multiple grouping sets not supported: %s", groupingSets.get());
+        List<JdbcColumnHandle> groupingSet = getOnlyElement(groupingSets.get());
+        if (groupingSet.isEmpty()) {
+            // global aggregation
+            return "";
+        }
+        return " GROUP BY " + groupingSet.stream()
+                .map(column -> {
+                    String name = client.quoted(column.getColumnName());
+                    // Use BINARY in GROUP BY to enforce case-sensitive grouping on string columns
+                    // https://docs.singlestore.com/cloud/reference/sql-reference/character-encoding/collations-supported/
+                    return isStringType(column) ? "BINARY " + name : name;
+                })
+                .collect(joining(", "));
     }
 
     @Override
