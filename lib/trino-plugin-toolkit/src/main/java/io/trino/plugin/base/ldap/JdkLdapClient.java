@@ -69,8 +69,10 @@ public class JdkLdapClient
                 .put(REFERRAL, ldapConfig.isIgnoreReferrals() ? "ignore" : "follow");
 
         builder.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(ldapConfig.getLdapConnectionTimeout().toMillis()));
-
         builder.put("com.sun.jndi.ldap.read.timeout", String.valueOf(ldapConfig.getLdapReadTimeout().toMillis()));
+        if (!ldapConfig.getBinaryAttributes().isEmpty()) {
+            builder.put("java.naming.ldap.attributes.binary", String.join(" ", ldapConfig.getBinaryAttributes()));
+        }
 
         this.basicEnvironment = builder.buildOrThrow();
 

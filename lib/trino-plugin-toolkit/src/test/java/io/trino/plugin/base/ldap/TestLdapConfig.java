@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -52,7 +53,8 @@ public class TestLdapConfig
                 .setLdapReadTimeout(succinctDuration(1, MINUTES))
                 .setLdapSearchTimeLimit(0)
                 .setLdapSearchCountLimit(0)
-                .setLdapSearchScope(LdapSearchScope.SUBTREE));
+                .setLdapSearchScope(LdapSearchScope.SUBTREE)
+                .setBinaryAttributes(List.of()));
     }
 
     @Test
@@ -75,6 +77,7 @@ public class TestLdapConfig
                 .put("ldap.search.time-limit", "30000")
                 .put("ldap.search.count-limit", "1000")
                 .put("ldap.search.scope", "ONELEVEL")
+                .put("ldap.binary-attributes", "userCertificate,photo,thumbnailPhoto")
                 .buildOrThrow();
 
         LdapClientConfig expected = new LdapClientConfig()
@@ -89,7 +92,8 @@ public class TestLdapConfig
                 .setLdapReadTimeout(new Duration(4, TimeUnit.MINUTES))
                 .setLdapSearchTimeLimit(30000)
                 .setLdapSearchCountLimit(1000)
-                .setLdapSearchScope(LdapSearchScope.ONELEVEL);
+                .setLdapSearchScope(LdapSearchScope.ONELEVEL)
+                .setBinaryAttributes(List.of("userCertificate", "photo", "thumbnailPhoto"));
 
         assertFullMapping(properties, expected);
     }
@@ -140,5 +144,27 @@ public class TestLdapConfig
         assertThat(LdapSearchScope.SUBTREE.getJndiValue()).isEqualTo(2);  // SearchControls.SUBTREE_SCOPE
         assertThat(LdapSearchScope.ONELEVEL.getJndiValue()).isEqualTo(1);  // SearchControls.ONELEVEL_SCOPE
         assertThat(LdapSearchScope.OBJECT.getJndiValue()).isEqualTo(0);  // SearchControls.OBJECT_SCOPE
+    }
+
+    @Test
+    public void testBinaryAttributesConfiguration()
+    {
+        LdapClientConfig config = new LdapClientConfig()
+                .setLdapUrl("ldaps://localhost");
+
+        // Default is empty
+        assertThat(config.getBinaryAttributes()).isEmpty();
+
+        // Single attribute
+        config.setBinaryAttributes(List.of("userCertificate"));
+        assertThat(config.getBinaryAttributes()).containsExactly("userCertificate");
+
+        // Multiple attributes
+        config.setBinaryAttributes(List.of("userCertificate", "photo", "thumbnailPhoto"));
+        assertThat(config.getBinaryAttributes()).containsExactly("userCertificate", "photo", "thumbnailPhoto");
+
+        // Empty list
+        config.setBinaryAttributes(List.of());
+        assertThat(config.getBinaryAttributes()).isEmpty();
     }
 }

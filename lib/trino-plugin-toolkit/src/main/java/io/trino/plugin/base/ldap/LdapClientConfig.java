@@ -24,6 +24,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Strings.nullToEmpty;
@@ -44,6 +45,7 @@ public class LdapClientConfig
     private int ldapSearchTimeLimit;
     private int ldapSearchCountLimit;
     private LdapSearchScope ldapSearchScope = LdapSearchScope.SUBTREE;
+    private List<String> binaryAttributes = List.of();
 
     @NotNull
     @Pattern(regexp = "^ldaps?://.*", message = "Invalid LDAP server URL. Expected ldap:// or ldaps://")
@@ -211,6 +213,20 @@ public class LdapClientConfig
     public LdapClientConfig setLdapSearchScope(LdapSearchScope scope)
     {
         this.ldapSearchScope = scope;
+        return this;
+    }
+
+    @NotNull
+    public List<String> getBinaryAttributes()
+    {
+        return binaryAttributes;
+    }
+
+    @Config("ldap.binary-attributes")
+    @ConfigDescription("LDAP attributes that should be treated as binary data")
+    public LdapClientConfig setBinaryAttributes(List<String> binaryAttributes)
+    {
+        this.binaryAttributes = List.copyOf(binaryAttributes);
         return this;
     }
 }
