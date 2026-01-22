@@ -33,6 +33,7 @@ import static io.airlift.testing.ValidationAssertions.assertFailsValidation;
 import static io.airlift.testing.ValidationAssertions.assertValidates;
 import static io.airlift.units.Duration.succinctDuration;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestLdapConfig
 {
@@ -48,7 +49,10 @@ public class TestLdapConfig
                 .setTruststorePassword(null)
                 .setIgnoreReferrals(false)
                 .setLdapConnectionTimeout(succinctDuration(1, MINUTES))
-                .setLdapReadTimeout(succinctDuration(1, MINUTES)));
+                .setLdapReadTimeout(succinctDuration(1, MINUTES))
+                .setLdapSearchTimeLimit(0)
+                .setLdapSearchCountLimit(0)
+                .setLdapSearchScope(LdapSearchScope.SUBTREE));
     }
 
     @Test
@@ -68,6 +72,9 @@ public class TestLdapConfig
                 .put("ldap.ignore-referrals", "true")
                 .put("ldap.timeout.connect", "3m")
                 .put("ldap.timeout.read", "4m")
+                .put("ldap.search.time-limit", "30000")
+                .put("ldap.search.count-limit", "1000")
+                .put("ldap.search.scope", "ONELEVEL")
                 .buildOrThrow();
 
         LdapClientConfig expected = new LdapClientConfig()
@@ -79,7 +86,10 @@ public class TestLdapConfig
                 .setTruststorePassword("54321")
                 .setIgnoreReferrals(true)
                 .setLdapConnectionTimeout(new Duration(3, TimeUnit.MINUTES))
-                .setLdapReadTimeout(new Duration(4, TimeUnit.MINUTES));
+                .setLdapReadTimeout(new Duration(4, TimeUnit.MINUTES))
+                .setLdapSearchTimeLimit(30000)
+                .setLdapSearchCountLimit(1000)
+                .setLdapSearchScope(LdapSearchScope.ONELEVEL);
 
         assertFullMapping(properties, expected);
     }
@@ -108,5 +118,27 @@ public class TestLdapConfig
         assertFailsValidation(new LdapClientConfig(), "ldapUrl", "must not be null", NotNull.class);
         assertFailsValidation(new LdapClientConfig().setLdapConnectionTimeout(null), "ldapConnectionTimeout", "must not be null", NotNull.class);
         assertFailsValidation(new LdapClientConfig().setLdapReadTimeout(null), "ldapReadTimeout", "must not be null", NotNull.class);
+    }
+
+    @Test
+    public void testSearchScopeEnum()
+    {
+        LdapClientConfig config = new LdapClientConfig()
+                .setLdapUrl("ldaps://localhost");
+
+        // Valid scopes
+        config.setLdapSearchScope(LdapSearchScope.SUBTREE);
+        assertThat(config.getLdapSearchScope()).isEqualTo(LdapSearchScope.SUBTREE);
+
+        config.setLdapSearchScope(LdapSearchScope.ONELEVEL);
+        assertThat(config.getLdapSearchScope()).isEqualTo(LdapSearchScope.ONELEVEL);
+
+        config.setLdapSearchScope(LdapSearchScope.OBJECT);
+        assertThat(config.getLdapSearchScope()).isEqualTo(LdapSearchScope.OBJECT);
+
+        // Verify JNDI values are correct
+        assertThat(LdapSearchScope.SUBTREE.getJndiValue()).isEqualTo(2);  // SearchControls.SUBTREE_SCOPE
+        assertThat(LdapSearchScope.ONELEVEL.getJndiValue()).isEqualTo(1);  // SearchControls.ONELEVEL_SCOPE
+        assertThat(LdapSearchScope.OBJECT.getJndiValue()).isEqualTo(0);  // SearchControls.OBJECT_SCOPE
     }
 }

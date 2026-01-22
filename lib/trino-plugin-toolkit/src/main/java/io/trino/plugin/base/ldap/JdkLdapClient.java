@@ -49,10 +49,14 @@ public class JdkLdapClient
 
     private final Map<String, String> basicEnvironment;
     private final Optional<SSLContext> sslContext;
+    private final LdapSearchScope ldapSearchScope;
+    private final int ldapSearchTimeLimit;
+    private final int ldapSearchCountLimit;
 
     @Inject
     public JdkLdapClient(LdapClientConfig ldapConfig)
     {
+        requireNonNull(ldapConfig, "ldapConfig is null");
         String ldapUrl = requireNonNull(ldapConfig.getLdapUrl(), "ldapUrl is null");
         if (ldapUrl.startsWith("ldap://")) {
             log.warn("Passwords will be sent in the clear to the LDAP server. Please consider using SSL to connect.");
@@ -75,6 +79,10 @@ public class JdkLdapClient
                 ldapConfig.getKeystorePassword(),
                 ldapConfig.getTrustStorePath(),
                 ldapConfig.getTruststorePassword());
+
+        this.ldapSearchScope = ldapConfig.getLdapSearchScope();
+        this.ldapSearchTimeLimit = ldapConfig.getLdapSearchTimeLimit();
+        this.ldapSearchCountLimit = ldapConfig.getLdapSearchCountLimit();
     }
 
     @Override
@@ -96,12 +104,31 @@ public class JdkLdapClient
         }
     }
 
-    private static CloseableSearchResults searchContext(LdapQuery ldapQuery, CloseableContext context)
+    private CloseableSearchResults searchContext(LdapQuery ldapQuery, CloseableContext context)
             throws NamingException
     {
         SearchControls searchControls = new SearchControls();
-        searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+        int scope = ldapQuery.getSearchScope() >= 0
+                ? ldapQuery.getSearchScope()
+                : ldapSearchScope.getJndiValue();
+        searchControls.setSearchScope(scope);
+
+        int timeLimit = ldapQuery.getTimeLimit() >= 0
+                ? ldapQuery.getTimeLimit()
+                : ldapSearchTimeLimit;
+        searchControls.setTimeLimit(timeLimit);
+
+        int countLimit = ldapQuery.getCountLimit() >= 0
+                ? ldapQuery.getCountLimit()
+                : ldapSearchCountLimit;
+        searchControls.setCountLimit(countLimit);
+
         searchControls.setReturningAttributes(ldapQuery.getAttributes());
+
+        log.debug("LDAP search: scope=%d, timeLimit=%dms, countLimit=%d",
+                scope, timeLimit, countLimit);
+
         return new CloseableSearchResults(
                 context.search(
                         ldapQuery.getSearchBase(),

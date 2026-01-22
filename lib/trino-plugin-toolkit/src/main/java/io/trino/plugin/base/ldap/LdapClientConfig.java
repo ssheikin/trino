@@ -41,6 +41,9 @@ public class LdapClientConfig
     private boolean ignoreReferrals;
     private Duration ldapConnectionTimeout = succinctDuration(1, MINUTES);
     private Duration ldapReadTimeout = succinctDuration(1, MINUTES);
+    private int ldapSearchTimeLimit;
+    private int ldapSearchCountLimit;
+    private LdapSearchScope ldapSearchScope = LdapSearchScope.SUBTREE;
 
     @NotNull
     @Pattern(regexp = "^ldaps?://.*", message = "Invalid LDAP server URL. Expected ldap:// or ldaps://")
@@ -169,6 +172,45 @@ public class LdapClientConfig
     public LdapClientConfig setLdapReadTimeout(Duration ldapReadTimeout)
     {
         this.ldapReadTimeout = ldapReadTimeout;
+        return this;
+    }
+
+    public int getLdapSearchTimeLimit()
+    {
+        return ldapSearchTimeLimit;
+    }
+
+    @Config("ldap.search.time-limit")
+    @ConfigDescription("Maximum time in milliseconds to wait for LDAP search results (0 = no limit)")
+    public LdapClientConfig setLdapSearchTimeLimit(int ldapSearchTimeLimit)
+    {
+        this.ldapSearchTimeLimit = ldapSearchTimeLimit;
+        return this;
+    }
+
+    public int getLdapSearchCountLimit()
+    {
+        return ldapSearchCountLimit;
+    }
+
+    @Config("ldap.search.count-limit")
+    @ConfigDescription("Maximum number of entries to return from LDAP search (0 = no limit)")
+    public LdapClientConfig setLdapSearchCountLimit(int ldapSearchCountLimit)
+    {
+        this.ldapSearchCountLimit = ldapSearchCountLimit;
+        return this;
+    }
+
+    public LdapSearchScope getLdapSearchScope()
+    {
+        return ldapSearchScope;
+    }
+
+    @Config("ldap.search.scope")
+    @ConfigDescription("LDAP search scope: SUBTREE, ONELEVEL, or OBJECT")
+    public LdapClientConfig setLdapSearchScope(LdapSearchScope scope)
+    {
+        this.ldapSearchScope = scope;
         return this;
     }
 }
