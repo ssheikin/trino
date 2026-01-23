@@ -40,7 +40,6 @@ import io.trino.execution.warnings.WarningCollector;
 import io.trino.metadata.FunctionBundle;
 import io.trino.metadata.QualifiedObjectName;
 import io.trino.metadata.SessionPropertyManager;
-import io.trino.node.InternalNode;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangePlugin;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.PluginManager;
@@ -119,7 +118,7 @@ public final class DistributedQueryRunner
 
     private TestingTrinoServer coordinator;
     private Optional<TestingTrinoServer> backupCoordinator = Optional.empty();
-    private Function<Map<String, String>, TestingTrinoServer> createNewWorker;
+    private Consumer<Map<String, String>> createNewWorker;
     private final InMemorySpanExporter spanExporter = InMemorySpanExporter.create();
     private final List<TestingTrinoServer> servers = new CopyOnWriteArrayList<>();
     private final List<FunctionBundle> functionBundles = new CopyOnWriteArrayList<>(ImmutableList.of(CustomFunctionBundle.CUSTOM_FUNCTIONS));
@@ -208,10 +207,7 @@ public final class DistributedQueryRunner
                     modelConnectionSpecsLoader,
                     bindAllInterfaces));
 
-            backupCoordinator.ifPresent(backup -> {
-                coordinator.registerServer(backup.getCurrentNode());
-                backup.registerServer(coordinator.getCurrentNode());
-            });
+            refreshNodes();
 
             extraCloseables.forEach(closeable -> closer.register(() -> closeUnchecked(closeable)));
 
@@ -233,9 +229,9 @@ public final class DistributedQueryRunner
                         bindAllInterfaces);
 
             for (int i = 0; i < workerCount; i++) {
-                TestingTrinoServer worker = createNewWorker.apply(Map.of());
-                registerServer(worker);
+                createNewWorker.accept(Map.of());
             }
+            refreshNodes();
         }
         catch (Exception e) {
             try {
@@ -319,13 +315,10 @@ public final class DistributedQueryRunner
         return server;
     }
 
-    private void registerServer(TestingTrinoServer server)
+    private void refreshNodes()
     {
-        if (this.coordinator != null) {
-            InternalNode node = server.getCurrentNode();
-            this.coordinator.registerServer(node);
-            this.backupCoordinator.ifPresent(backup -> backup.registerServer(node));
-        }
+        coordinator.refreshNodes();
+        backupCoordinator.ifPresent(TestingTrinoServer::refreshNodes);
     }
 
     private static void setupLogging()
@@ -403,9 +396,9 @@ public final class DistributedQueryRunner
     public void addServers(int nodeCount)
     {
         for (int i = 0; i < nodeCount; i++) {
-            TestingTrinoServer worker = createNewWorker.apply(Map.of());
-            registerServer(worker);
+            createNewWorker.accept(Map.of());
         }
+        refreshNodes();
     }
 
     /**
@@ -426,7 +419,7 @@ public final class DistributedQueryRunner
             throw new IllegalStateException("No workers");
         }
         worker.close();
-        coordinator.unregisterServer(worker.getCurrentNode());
+        refreshNodes();
     }
 
     /**
@@ -444,14 +437,12 @@ public final class DistributedQueryRunner
         Connector httpConnector = getOnlyElement(asList(((Server) serverField.get(workerHttpServer)).getConnectors()));
         httpConnector.stop();
         server.close();
-        if (!server.isCoordinator()) {
-            coordinator.unregisterServer(server.getCurrentNode());
-            backupCoordinator.ifPresent(backup -> backup.unregisterServer(server.getCurrentNode()));
-        }
+        refreshNodes();
 
         Map<String, String> reusePort = Map.of("http-server.http.port", Integer.toString(baseUrl.getPort()));
-        TestingTrinoServer worker = createNewWorker.apply(reusePort);
-        registerServer(worker);
+        createNewWorker.accept(reusePort);
+        refreshNodes();
+
         // Verify the address was reused.
         assertThat(servers.stream()
                 .map(TestingTrinoServer::getBaseUrl)
