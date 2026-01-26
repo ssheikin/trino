@@ -469,6 +469,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 import static java.util.UUID.randomUUID;
 import static java.util.function.Function.identity;
@@ -3534,7 +3535,7 @@ public class IcebergMetadata
                     .commit();
         }
         catch (RuntimeException e) {
-            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to set default values: " + firstNonNull(e.getMessage(), e), e);
+            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to set default values: " + requireNonNullElse(e.getMessage(), e), e);
         }
     }
 
@@ -3555,7 +3556,7 @@ public class IcebergMetadata
                     .commit();
         }
         catch (RuntimeException e) {
-            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to drop default values: " + firstNonNull(e.getMessage(), e), e);
+            throw new TrinoException(ICEBERG_COMMIT_ERROR, "Failed to drop default values: " + requireNonNullElse(e.getMessage(), e), e);
         }
     }
 
