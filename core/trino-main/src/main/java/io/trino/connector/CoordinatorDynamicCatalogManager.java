@@ -74,7 +74,10 @@ public class CoordinatorDynamicCatalogManager
 {
     private static final Logger log = Logger.get(CoordinatorDynamicCatalogManager.class);
 
-    private enum State { CREATED, INITIALIZED, STOPPED }
+    private enum State
+    {
+        CREATED, INITIALIZED, STOPPED
+    }
 
     private final CatalogStoreWithBuiltInCatalogs catalogStore;
     private final CatalogFactory catalogFactory;
