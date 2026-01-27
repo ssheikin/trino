@@ -14,6 +14,7 @@
 package io.trino.plugin.objectstore.hive.schemadiscovery;
 
 import com.google.inject.Binder;
+import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
@@ -37,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.trino.plugin.base.ClosingBinder.closingBinder;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
@@ -59,6 +61,9 @@ public class HiveSchemaDiscoveryModule
 
         Multibinder<SystemTableProvider> systemTableProviders = newSetBinder(binder, SystemTableProvider.class);
         systemTableProviders.addBinding().to(SchemaDiscoverySystemTableProvider.class).in(Scopes.SINGLETON);
+
+        // cleanup
+        closingBinder(binder).registerExecutor(Key.get(ExecutorService.class, ForSchemaDiscovery.class));
     }
 
     @Provides
