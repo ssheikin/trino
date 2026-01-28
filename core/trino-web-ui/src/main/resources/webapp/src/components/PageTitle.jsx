@@ -44,7 +44,7 @@ export class PageTitle extends React.Component<Props, State> {
 
     refreshLoop = () => {
         clearTimeout(this.timeoutId)
-        fetch('/ui/api/cluster')
+        fetch('api/cluster')
             .then((response) => {
                 if (response.status === 401) {
                     location.reload()

@@ -634,7 +634,7 @@ export class StageDetail extends React.Component {
             }
         }
 
-        $.get('/ui/api/query/' + queryId, (query) => {
+        $.get('api/query/' + queryId, (query) => {
             this.setState({
                 initialized: true,
                 ended: query.finalQueryInfo,
