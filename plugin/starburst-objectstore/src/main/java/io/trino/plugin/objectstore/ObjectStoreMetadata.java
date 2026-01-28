@@ -490,7 +490,7 @@ public class ObjectStoreMetadata
     @Override
     public boolean isMaterializedView(ConnectorSession session, SchemaTableName viewName)
     {
-        return icebergMetadata.isMaterializedView(session, viewName);
+        return icebergMetadata.isMaterializedView(unwrap(ICEBERG, session), viewName);
     }
 
     @Override
