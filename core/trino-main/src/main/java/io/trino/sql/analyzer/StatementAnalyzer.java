@@ -2579,7 +2579,8 @@ class StatementAnalyzer
                     view.getPath(),
                     view.getColumns(),
                     freshStorageTable,
-                    true);
+                    true,
+                    view.isCanSkipQueryAnalysis());
         }
 
         private Scope createScopeForView(Table table, QualifiedObjectName name, Optional<Scope> scope, ViewDefinition view)
@@ -2594,6 +2595,7 @@ class StatementAnalyzer
                     view.getPath(),
                     view.getColumns(),
                     Optional.empty(),
+                    false,
                     false);
         }
 
@@ -2608,7 +2610,8 @@ class StatementAnalyzer
                 List<CatalogSchemaName> path,
                 List<ViewColumn> columns,
                 Optional<TableHandle> freshStorageTable,
-                boolean isMaterializedView)
+                boolean isMaterializedView,
+                boolean canSkipQueryAnalysis)
         {
             Statement statement = analysis.getStatement();
             if (statement instanceof CreateView viewStatement) {
@@ -2645,7 +2648,7 @@ class StatementAnalyzer
                 List<Field> storageTableFields = analyzeStorageTable(table, viewFields, freshStorageTable.get());
                 analysis.setMaterializedViewStorageTableFields(table, storageTableFields);
             }
-            else {
+            if (freshStorageTable.isEmpty() || !canSkipQueryAnalysis) {
                 Query query = parseView(originalSql, name, table);
 
                 if (!query.getFunctions().isEmpty()) {
@@ -2659,7 +2662,9 @@ class StatementAnalyzer
                 checkViewStaleness(columns, descriptor.getVisibleFields(), name, table)
                         .ifPresent(explanation -> { throw semanticException(VIEW_IS_STALE, table, "View '%s' is stale or in invalid state: %s", name, explanation); });
 
-                analysis.registerNamedQuery(table, query);
+                if (freshStorageTable.isEmpty()) {
+                    analysis.registerNamedQuery(table, query);
+                }
             }
 
             Scope accessControlScope = Scope.builder()

@@ -44,6 +44,7 @@ public class ConnectorMaterializedViewDefinition
     private final Optional<String> owner;
     private final List<CatalogSchemaName> path;
     private final boolean shouldUseInvoker;
+    private final boolean canSkipQueryAnalysis;
 
     public ConnectorMaterializedViewDefinition(
             String originalSql,
@@ -57,7 +58,7 @@ public class ConnectorMaterializedViewDefinition
             Optional<String> owner,
             List<CatalogSchemaName> path)
     {
-        this(originalSql, storageTable, catalog, schema, columns, gracePeriod, whenStaleBehavior, comment, owner, path, false);
+        this(originalSql, storageTable, catalog, schema, columns, gracePeriod, whenStaleBehavior, comment, owner, path, false, true);
     }
 
     public ConnectorMaterializedViewDefinition(
@@ -71,7 +72,8 @@ public class ConnectorMaterializedViewDefinition
             Optional<String> comment,
             Optional<String> owner,
             List<CatalogSchemaName> path,
-            boolean shouldUseInvoker)
+            boolean shouldUseInvoker,
+            boolean canSkipQueryAnalysis)
     {
         this.originalSql = requireNonNull(originalSql, "originalSql is null");
         this.storageTable = requireNonNull(storageTable, "storageTable is null");
@@ -85,6 +87,7 @@ public class ConnectorMaterializedViewDefinition
         this.owner = requireNonNull(owner, "owner is null");
         this.path = List.copyOf(path);
         this.shouldUseInvoker = shouldUseInvoker;
+        this.canSkipQueryAnalysis = canSkipQueryAnalysis;
 
         if (catalog.isEmpty() && schema.isPresent()) {
             throw new IllegalArgumentException("catalog must be present if schema is present");
@@ -149,6 +152,11 @@ public class ConnectorMaterializedViewDefinition
         return shouldUseInvoker;
     }
 
+    public boolean isCanSkipQueryAnalysis()
+    {
+        return canSkipQueryAnalysis;
+    }
+
     @Override
     public String toString()
     {
@@ -164,6 +172,7 @@ public class ConnectorMaterializedViewDefinition
         joiner.add("owner=" + owner);
         joiner.add("shouldUseInvoker=" + shouldUseInvoker);
         joiner.add(path.stream().map(CatalogSchemaName::toString).collect(joining(", ", "path=(", ")")));
+        joiner.add("canSkipQueryAnalysis=" + canSkipQueryAnalysis);
         return getClass().getSimpleName() + joiner;
     }
 
@@ -187,13 +196,14 @@ public class ConnectorMaterializedViewDefinition
                 Objects.equals(comment, that.comment) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(path, that.path) &&
-                shouldUseInvoker == that.shouldUseInvoker;
+                shouldUseInvoker == that.shouldUseInvoker &&
+                canSkipQueryAnalysis == that.canSkipQueryAnalysis;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(originalSql, storageTable, catalog, schema, columns, gracePeriod, whenStaleBehavior, comment, owner, shouldUseInvoker, path);
+        return Objects.hash(originalSql, storageTable, catalog, schema, columns, gracePeriod, whenStaleBehavior, comment, owner, shouldUseInvoker, path, canSkipQueryAnalysis);
     }
 
     public static final class Column

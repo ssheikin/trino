@@ -34,6 +34,7 @@ public class MaterializedViewDefinition
     private final Optional<Duration> gracePeriod;
     private final Optional<WhenStaleBehavior> whenStaleBehavior;
     private final Optional<CatalogSchemaTableName> storageTable;
+    private final boolean canSkipQueryAnalysis;
 
     public MaterializedViewDefinition(
             String originalSql,
@@ -47,11 +48,28 @@ public class MaterializedViewDefinition
             List<CatalogSchemaName> path,
             Optional<CatalogSchemaTableName> storageTable)
     {
+        this(originalSql, catalog, schema, columns, gracePeriod, whenStaleBehavior, comment, owner, path, storageTable, true);
+    }
+
+    public MaterializedViewDefinition(
+            String originalSql,
+            Optional<String> catalog,
+            Optional<String> schema,
+            List<ViewColumn> columns,
+            Optional<Duration> gracePeriod,
+            Optional<WhenStaleBehavior> whenStaleBehavior,
+            Optional<String> comment,
+            Identity owner,
+            List<CatalogSchemaName> path,
+            Optional<CatalogSchemaTableName> storageTable,
+            boolean canSkipQueryAnalysis)
+    {
         super(originalSql, catalog, schema, columns, comment, Optional.of(owner), path);
         this.gracePeriod = requireNonNull(gracePeriod, "gracePeriod is null");
         checkArgument(gracePeriod.isEmpty() || !gracePeriod.get().isNegative(), "gracePeriod cannot be negative: %s", gracePeriod);
         this.whenStaleBehavior = requireNonNull(whenStaleBehavior, "whenStaleBehavior is null");
         this.storageTable = requireNonNull(storageTable, "storageTable is null");
+        this.canSkipQueryAnalysis = canSkipQueryAnalysis;
     }
 
     public Optional<Duration> getGracePeriod()
@@ -67,6 +85,11 @@ public class MaterializedViewDefinition
     public Optional<CatalogSchemaTableName> getStorageTable()
     {
         return storageTable;
+    }
+
+    public boolean isCanSkipQueryAnalysis()
+    {
+        return canSkipQueryAnalysis;
     }
 
     public ConnectorMaterializedViewDefinition toConnectorMaterializedViewDefinition()
@@ -100,6 +123,7 @@ public class MaterializedViewDefinition
                 .add("runAsIdentity", getRunAsIdentity())
                 .add("path", getPath())
                 .add("storageTable", storageTable.orElse(null))
+                .add("canSkipQueryAnalysis", canSkipQueryAnalysis)
                 .toString();
     }
 }

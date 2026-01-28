@@ -1881,7 +1881,8 @@ public final class MetadataManager
                 view.getComment(),
                 runAsIdentity,
                 view.getPath(),
-                view.getStorageTable());
+                view.getStorageTable(),
+                view.isCanSkipQueryAnalysis());
     }
 
     private Optional<ConnectorMaterializedViewDefinition> getMaterializedViewInternal(Session session, QualifiedObjectName viewName)
