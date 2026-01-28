@@ -167,7 +167,7 @@ public final class GlueIcebergUtil
     }
 
     // Copied from org.apache.iceberg.aws.glue.IcebergToGlueConverter#toTypeString
-    private static String toGlueTypeStringLossy(Type type)
+    static String toGlueTypeStringLossy(Type type)
     {
         switch (type.typeId()) {
             case BOOLEAN:

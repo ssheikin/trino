@@ -98,6 +98,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -151,9 +152,11 @@ import static io.trino.plugin.iceberg.IcebergUtil.getIcebergTableWithMetadata;
 import static io.trino.plugin.iceberg.IcebergUtil.quotedTableName;
 import static io.trino.plugin.iceberg.TableType.MATERIALIZED_VIEW_STORAGE;
 import static io.trino.plugin.iceberg.TrinoMetricsReporter.TRINO_METRICS_REPORTER;
+import static io.trino.plugin.iceberg.TypeConverter.toIcebergTypeForNewColumn;
 import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getMaterializedViewTableInput;
 import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getTableInput;
 import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.getViewTableInput;
+import static io.trino.plugin.iceberg.catalog.glue.GlueIcebergUtil.toGlueTypeStringLossy;
 import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -1278,9 +1281,10 @@ public class TrinoGlueCatalog
 
     private List<Column> toGlueColumns(List<ConnectorMaterializedViewDefinition.Column> columns)
     {
+        AtomicInteger dummyNextFieldId = new AtomicInteger(); // We don't use the field id in Glue
         return columns.stream().map(column -> Column.builder()
                 .name(column.getName())
-                .type(typeManager.getType(column.getType()).getBaseName())
+                .type(toGlueTypeStringLossy(toIcebergTypeForNewColumn(typeManager.getType(column.getType()), dummyNextFieldId)))
                 .comment(column.getComment().orElse(""))
                 .build())
                 .collect(toImmutableList());
