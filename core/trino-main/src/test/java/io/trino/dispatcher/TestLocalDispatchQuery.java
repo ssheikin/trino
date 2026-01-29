@@ -82,7 +82,7 @@ import static io.airlift.tracing.Tracing.noopTracer;
 import static io.opentelemetry.api.OpenTelemetry.noop;
 import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.execution.querystats.PlanOptimizersStatsCollector.createPlanOptimizersStatsCollector;
-import static io.trino.metadata.TestMetadataManager.createTestMetadataManager;
+import static io.trino.metadata.TestingMetadataManager.createTestingMetadataManager;
 import static io.trino.sql.tree.SaveMode.FAIL;
 import static io.trino.testing.TestingEventListenerManager.emptyEventListenerManager;
 import static io.trino.transaction.InMemoryTransactionManager.createTestTransactionManager;
@@ -93,7 +93,7 @@ public class TestLocalDispatchQuery
 {
     private CountDownLatch countDownLatch;
     private final Executor executor = newCachedThreadPool(daemonThreadsNamed(getClass().getSimpleName() + "-%s"));
-    private final Metadata metadata = createTestMetadataManager();
+    private final Metadata metadata = createTestingMetadataManager();
     private final TransactionManager transactionManager = createTestTransactionManager();
     private final CreateTable statement = new CreateTable(new NodeLocation(1, 1), QualifiedName.of("table"), ImmutableList.of(), FAIL, ImmutableList.of(), Optional.empty());
     private final QueryPreparer.PreparedQuery preparedQuery = new QueryPreparer.PreparedQuery(statement, statement, ImmutableList.of(), Optional.empty());
