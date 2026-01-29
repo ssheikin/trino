@@ -31,6 +31,7 @@ public class SchemaDiscoveryControllerFactory
     private final OrcDataSourceFactory orcDataSourceFactory;
     private final ParquetDataSourceFactory parquetDataSourceFactory;
     private final IdentifierConstraint identifierConstraint;
+    private final Dialect dialect;
 
     @Inject
     public SchemaDiscoveryControllerFactory(
@@ -39,13 +40,15 @@ public class SchemaDiscoveryControllerFactory
             TrinoFileSystemFactory trinoFileSystemFactory,
             OrcDataSourceFactory orcDataSourceFactory,
             ParquetDataSourceFactory parquetDataSourceFactory,
-            IdentifierConstraint identifierConstraint)
+            IdentifierConstraint identifierConstraint,
+            @ForSchemaDiscovery Dialect dialect)
     {
         this.executor = new BoundedExecutor(requireNonNull(executorService, "executorService is null"), config.getSchemaDiscoveryConcurrency());
         this.trinoFileSystemFactory = requireNonNull(trinoFileSystemFactory, "trinoFileSystemFactory is null");
         this.orcDataSourceFactory = requireNonNull(orcDataSourceFactory, "orcDataSourceFactory is null");
         this.parquetDataSourceFactory = requireNonNull(parquetDataSourceFactory, "parquetDataSourceFactory is null");
         this.identifierConstraint = requireNonNull(identifierConstraint, "identifierConstraint is null");
+        this.dialect = requireNonNull(dialect, "dialect is null");
     }
 
     public SchemaDiscoveryController createSchemaDiscoveryController(ConnectorSession session)
@@ -54,7 +57,7 @@ public class SchemaDiscoveryControllerFactory
                 _ -> new DiscoveryTrinoFileSystem(trinoFileSystemFactory.create(session)),
                 parquetDataSourceFactory,
                 orcDataSourceFactory,
-                Dialect.TRINO,
+                dialect,
                 identifierConstraint,
                 executor);
     }

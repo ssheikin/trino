@@ -25,6 +25,7 @@ import io.starburst.schema.discovery.SchemaDiscoveryConfig;
 import io.starburst.schema.discovery.SchemaDiscoveryControllerFactory;
 import io.starburst.schema.discovery.formats.orc.OrcDataSourceFactory;
 import io.starburst.schema.discovery.formats.parquet.ParquetDataSourceFactory;
+import io.starburst.schema.discovery.generation.Dialect;
 import io.starburst.schema.discovery.models.IdentifierConstraint;
 import io.trino.parquet.ParquetReaderOptions;
 import io.trino.plugin.base.connector.SystemTableProvider;
@@ -61,6 +62,9 @@ public class HiveSchemaDiscoveryModule
 
         Multibinder<SystemTableProvider> systemTableProviders = newSetBinder(binder, SystemTableProvider.class);
         systemTableProviders.addBinding().to(SchemaDiscoverySystemTableProvider.class).in(Scopes.SINGLETON);
+
+        // GALAXY is actually used for exposing 'type' table property in objectstore connector
+        binder.bind(Dialect.class).annotatedWith(ForSchemaDiscovery.class).toInstance(Dialect.GALAXY);
 
         // cleanup
         closingBinder(binder).registerExecutor(Key.get(ExecutorService.class, ForSchemaDiscovery.class));
