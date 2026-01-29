@@ -37,6 +37,7 @@ import io.trino.connector.CatalogHandle;
 import io.trino.exchange.DirectExchangeInput;
 import io.trino.exchange.ExchangeContextInstance;
 import io.trino.exchange.ExchangeManagerRegistry;
+import io.trino.exchange.ExchangeMetricsCollector;
 import io.trino.execution.BasicStageStats;
 import io.trino.execution.BasicStagesInfo;
 import io.trino.execution.ExecutionFailureInfo;
@@ -202,6 +203,7 @@ public class PipelinedQueryScheduler
     private final TableExecuteContextManager tableExecuteContextManager;
     private final SplitSourceFactory splitSourceFactory;
     private final ExchangeManagerRegistry exchangeManagerRegistry;
+    private final ExchangeMetricsCollector exchangeMetricsCollector;
 
     private final StageManager stageManager;
     private final CoordinatorStagesScheduler coordinatorStagesScheduler;
@@ -246,6 +248,7 @@ public class PipelinedQueryScheduler
             Metadata metadata,
             SplitSourceFactory splitSourceFactory,
             ExchangeManagerRegistry exchangeManagerRegistry,
+            ExchangeMetricsCollector exchangeMetricsCollector,
             SqlTaskManager coordinatorTaskManager)
     {
         this.queryStateMachine = requireNonNull(queryStateMachine, "queryStateMachine is null");
@@ -263,6 +266,7 @@ public class PipelinedQueryScheduler
         this.tableExecuteContextManager = requireNonNull(tableExecuteContextManager, "tableExecuteContextManager is null");
         this.splitSourceFactory = requireNonNull(splitSourceFactory, "splitSourceFactory is null");
         this.exchangeManagerRegistry = requireNonNull(exchangeManagerRegistry, "exchangeManagerRegistry is null");
+        this.exchangeMetricsCollector = requireNonNull(exchangeMetricsCollector, "exchangeMetricsCollector is null");
         this.schedulerSpan = tracer.spanBuilder("scheduler")
                 .setParent(Context.current().with(queryStateMachine.getSession().getQuerySpan()))
                 .setAttribute(TrinoAttributes.QUERY_ID, queryStateMachine.getQueryId().toString())
@@ -387,6 +391,7 @@ public class PipelinedQueryScheduler
                         dynamicFilterService,
                         schedulerSpan,
                         exchangeManagerRegistry,
+                        exchangeMetricsCollector,
                         tableExecuteContextManager,
                         splitAdmissionControllerProvider,
                         retryPolicy,
@@ -924,6 +929,7 @@ public class PipelinedQueryScheduler
                 DynamicFilterService dynamicFilterService,
                 Span schedulerSpan,
                 ExchangeManagerRegistry exchangeManagerRegistry,
+                ExchangeMetricsCollector exchangeMetricsCollector,
                 TableExecuteContextManager tableExecuteContextManager,
                 SplitAdmissionControllerProvider splitAdmissionControllerProvider,
                 RetryPolicy retryPolicy,
@@ -954,6 +960,7 @@ public class PipelinedQueryScheduler
                     stageManager,
                     bucketToPartitionMap,
                     exchangeManagerRegistry,
+                    exchangeMetricsCollector,
                     schedulerSpan);
 
             TaskLifecycleListener coordinatorTaskLifecycleListener = coordinatorStagesScheduler.getTaskLifecycleListener();
@@ -1142,6 +1149,7 @@ public class PipelinedQueryScheduler
                 StageManager stageManager,
                 Map<PlanFragmentId, Optional<BucketToPartition>> bucketToPartitionMaps,
                 ExchangeManagerRegistry exchangeManagerRegistry,
+                ExchangeMetricsCollector exchangeMetricsCollector,
                 Span schedulerSpan)
         {
             ImmutableMap.Builder<PlanFragmentId, Exchange> result = ImmutableMap.builder();
@@ -1162,6 +1170,7 @@ public class PipelinedQueryScheduler
                             new ExchangeId("external-exchange-" + fragmentId),
                             schedulerSpan);
                     Exchange exchange = exchangeManagerRegistry.getExchangeManager().createExchange(exchangeContext, numberOfPartitions, false); // todo preserverOrderInPartition
+                    exchangeMetricsCollector.register(queryId, exchange);
 
                     result.put(fragmentId, exchange);
                 }

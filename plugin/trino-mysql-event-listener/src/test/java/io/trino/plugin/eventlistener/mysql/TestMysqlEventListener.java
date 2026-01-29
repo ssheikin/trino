@@ -146,6 +146,8 @@ final class TestMysqlEventListener
             // not stored
             ImmutableMap.of(),
             // not stored
+            ImmutableMap.of(),
+            // not stored
             Optional.empty());
 
     private static final QueryContext FULL_QUERY_CONTEXT = new QueryContext(
@@ -313,6 +315,7 @@ final class TestMysqlEventListener
             Collections.emptyList(),
             Collections.emptyList(),
             Collections.emptyList(),
+            ImmutableMap.of(),
             ImmutableMap.of(),
             // not stored
             Optional.empty());

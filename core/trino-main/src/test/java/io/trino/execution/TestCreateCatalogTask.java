@@ -23,6 +23,7 @@ import io.trino.client.NodeVersion;
 import io.trino.connector.CatalogStoreManager;
 import io.trino.connector.InMemoryCatalogStore;
 import io.trino.connector.MockConnectorPlugin;
+import io.trino.exchange.ExchangeMetricsCollector;
 import io.trino.execution.warnings.WarningCollector;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.spi.TrinoException;
@@ -49,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +100,7 @@ public class TestCreateCatalogTask
                 queryRunner.getPlannerContext().getMetadata(),
                 WarningCollector.NOOP,
                 createPlanOptimizersStatsCollector(),
+                new ExchangeMetricsCollector(ImmutableList::of, Duration.ofMillis(1)),
                 Optional.empty(),
                 true,
                 Optional.empty(),
@@ -191,6 +194,7 @@ public class TestCreateCatalogTask
                     queryRunner.getPlannerContext().getMetadata(),
                     WarningCollector.NOOP,
                     createPlanOptimizersStatsCollector(),
+                    new ExchangeMetricsCollector(ImmutableList::of, Duration.ofMillis(1)),
                     Optional.empty(),
                     true,
                     Optional.empty(),

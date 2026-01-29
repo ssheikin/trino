@@ -33,6 +33,7 @@ import io.trino.NotInTransactionException;
 import io.trino.Session;
 import io.trino.client.NodeVersion;
 import io.trino.exchange.ExchangeInput;
+import io.trino.exchange.ExchangeMetricsCollector;
 import io.trino.execution.QueryExecution.QueryOutputInfo;
 import io.trino.execution.StateMachine.StateChangeListener;
 import io.trino.execution.querystats.PlanOptimizersStatsCollector;
@@ -56,6 +57,7 @@ import io.trino.spi.eventlistener.ColumnLineageInfo;
 import io.trino.spi.eventlistener.RoutineInfo;
 import io.trino.spi.eventlistener.StageGcStatistics;
 import io.trino.spi.eventlistener.TableInfo;
+import io.trino.spi.exchange.ExchangeId;
 import io.trino.spi.metrics.Metrics;
 import io.trino.spi.resourcegroups.QueryType;
 import io.trino.spi.resourcegroups.ResourceGroupId;
@@ -127,6 +129,7 @@ import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.stream.Collectors.toMap;
 
 @ThreadSafe
 public class QueryStateMachine
@@ -196,10 +199,12 @@ public class QueryStateMachine
     private final AtomicReference<List<TableInfo>> referencedTables = new AtomicReference<>(ImmutableList.of());
     private final AtomicReference<List<RoutineInfo>> routines = new AtomicReference<>(ImmutableList.of());
     private final AtomicReference<Map<String, Metrics>> catalogMetadataMetrics = new AtomicReference<>(ImmutableMap.of());
+    private final AtomicReference<Map<String, Metrics>> exchangeMetrics = new AtomicReference<>(ImmutableMap.of());
     private final StateMachine<Optional<QueryInfo>> finalQueryInfo;
 
     private final WarningCollector warningCollector;
     private final PlanOptimizersStatsCollector planOptimizersStatsCollector;
+    private final ExchangeMetricsCollector exchangeMetricsCollector;
 
     private final Optional<QueryType> queryType;
 
@@ -225,6 +230,7 @@ public class QueryStateMachine
             Metadata metadata,
             WarningCollector warningCollector,
             PlanOptimizersStatsCollector queryStatsCollector,
+            ExchangeMetricsCollector exchangeMetricsCollector,
             Optional<QueryType> queryType,
             NodeVersion version)
     {
@@ -239,6 +245,7 @@ public class QueryStateMachine
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.stateMachineExecutor = requireNonNull(stateMachineExecutor, "stateMachineExecutor is null");
         this.planOptimizersStatsCollector = requireNonNull(queryStatsCollector, "queryStatsCollector is null");
+        this.exchangeMetricsCollector = requireNonNull(exchangeMetricsCollector, "exchangeMetricsCollector is null");
 
         this.queryState = new StateMachine<>("query " + query, stateMachineExecutor, QUEUED, TERMINAL_QUERY_STATES);
         this.finalQueryInfo = new StateMachine<>("finalQueryInfo-" + queryId, stateMachineExecutor, Optional.empty());
@@ -265,6 +272,7 @@ public class QueryStateMachine
             Metadata metadata,
             WarningCollector warningCollector,
             PlanOptimizersStatsCollector queryStatsCollector,
+            ExchangeMetricsCollector exchangeMetricsCollector,
             Optional<QueryType> queryType,
             boolean faultTolerantExecutionExchangeEncryptionEnabled,
             Optional<SessionPropertiesApplier> sessionPropertiesApplier,
@@ -285,6 +293,7 @@ public class QueryStateMachine
                 metadata,
                 warningCollector,
                 queryStatsCollector,
+                exchangeMetricsCollector,
                 queryType,
                 faultTolerantExecutionExchangeEncryptionEnabled,
                 sessionPropertiesApplier,
@@ -306,6 +315,7 @@ public class QueryStateMachine
             Metadata metadata,
             WarningCollector warningCollector,
             PlanOptimizersStatsCollector queryStatsCollector,
+            ExchangeMetricsCollector exchangeMetricsCollector,
             Optional<QueryType> queryType,
             boolean faultTolerantExecutionExchangeEncryptionEnabled,
             Optional<SessionPropertiesApplier> sessionPropertiesApplier,
@@ -368,6 +378,7 @@ public class QueryStateMachine
                 metadata,
                 warningCollector,
                 queryStatsCollector,
+                exchangeMetricsCollector,
                 queryType,
                 version);
 
@@ -434,6 +445,14 @@ public class QueryStateMachine
                 QUERY_STATE_LOG.error(e, "Error collecting query catalog metadata metrics: %s", queryId);
             }
         }
+    }
+
+    private void collectExchangeMetrics()
+    {
+        Map<ExchangeId, Metrics> metrics = exchangeMetricsCollector.collectMetrics(queryId);
+        this.exchangeMetrics.set(
+                metrics.entrySet().stream()
+                        .collect(toMap(entry -> entry.getKey().getId(), Map.Entry::getValue)));
     }
 
     public QueryId getQueryId()
@@ -930,6 +949,9 @@ public class QueryStateMachine
         // The collection will fail, and we will use metrics collected earlier if
         // the query is already committed or aborted and metadata is not available.
         collectCatalogMetadataMetrics();
+
+        // Try to collect the current snapshot of exchange metrics.
+        collectExchangeMetrics();
         return new QueryStats(
                 queryStateTimer.getCreateTime(),
                 getExecutionStartTime().orElse(null),
@@ -1016,6 +1038,7 @@ public class QueryStateMachine
 
                 getDynamicFiltersStats(),
                 catalogMetadataMetrics.get(),
+                exchangeMetrics.get(),
                 operatorStatsSummary.build(),
                 planOptimizersStatsCollector.getTopRuleStats());
     }
@@ -1663,6 +1686,7 @@ public class QueryStateMachine
                 queryStats.getFailedPhysicalWrittenDataSize(),
                 queryStats.getStageGcStatistics(),
                 queryStats.getDynamicFiltersStats(),
+                ImmutableMap.of(),
                 ImmutableMap.of(),
                 ImmutableList.of(), // Remove the operator summaries as OperatorInfo (especially DirectExchangeClientStatus) can hold onto a large amount of memory
                 ImmutableList.of());

@@ -249,6 +249,7 @@ public class QueryMonitor
                         ImmutableList.of(),
                         ImmutableList.of(),
                         ImmutableMap.of(),
+                        ImmutableMap.of(),
                         Optional.empty()),
                 createQueryContext(
                         queryInfo.getSession(),
@@ -371,6 +372,7 @@ public class QueryMonitor
                 memoize(() -> operatorStats.stream().map(operatorStatsCodec::toJson).toList()),
                 ImmutableList.copyOf(queryInfo.getQueryStats().getOptimizerRulesSummaries()),
                 ImmutableMap.copyOf(queryInfo.getQueryStats().getCatalogMetadataMetrics()),
+                ImmutableMap.copyOf(queryInfo.getQueryStats().getExchangeMetrics()),
                 serializedPlanNodeStatsAndCosts);
     }
 

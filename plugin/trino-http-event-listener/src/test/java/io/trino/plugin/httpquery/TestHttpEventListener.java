@@ -183,6 +183,7 @@ final class TestHttpEventListener
                 Collections.emptyList(),
                 Collections.emptyList(),
                 ImmutableMap.of(),
+                ImmutableMap.of(),
                 Optional.empty());
 
         queryCreatedEvent = new QueryCreatedEvent(

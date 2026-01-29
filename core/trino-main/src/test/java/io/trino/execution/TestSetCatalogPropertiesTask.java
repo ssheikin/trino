@@ -18,6 +18,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import io.trino.client.NodeVersion;
+import io.trino.exchange.ExchangeMetricsCollector;
 import io.trino.execution.warnings.WarningCollector;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.spi.resourcegroups.ResourceGroupId;
@@ -294,6 +295,7 @@ public class TestSetCatalogPropertiesTask
                 queryRunner.getPlannerContext().getMetadata(),
                 WarningCollector.NOOP,
                 createPlanOptimizersStatsCollector(),
+                new ExchangeMetricsCollector(ImmutableList::of, java.time.Duration.ofMillis(1)),
                 Optional.empty(),
                 true,
                 Optional.empty(),
