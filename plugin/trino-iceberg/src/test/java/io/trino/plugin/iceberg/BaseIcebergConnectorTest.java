@@ -8643,6 +8643,15 @@ public abstract class BaseIcebergConnectorTest
     }
 
     @Test
+    public void testBucketFunction()
+    {
+        // Simple test to verify the system.bucket function is available.
+        // More detailed tests exist in TestIcebergBucketFunctions.
+        assertThat(query("SELECT system.bucket(TINYINT '-128', 16)"))
+                .matches("VALUES 2");
+    }
+
+    @Test
     public void testBucketedSelect()
     {
         try {
