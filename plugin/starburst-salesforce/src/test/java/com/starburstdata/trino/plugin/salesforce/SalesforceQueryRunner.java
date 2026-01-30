@@ -328,7 +328,7 @@ public final class SalesforceQueryRunner
         }
     }
 
-    public static void main(String[] args)
+    static void main()
             throws Exception
     {
         Logging.initialize();
