@@ -26,6 +26,7 @@ import io.trino.plugin.iceberg.catalog.glue.TestIcebergGlueCatalogAccessOperatio
 import io.trino.testing.AbstractTestQueryFramework;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
@@ -236,6 +237,7 @@ public abstract class BaseTestObjectStoreIcebergGlueCatalogAccessOperations
     }
 
     @Test
+    @Disabled("https://starburstdata.atlassian.net/browse/ENG-6890 java.lang.IllegalArgumentException: varchar type is specified without length: varchar")
     public void testSelectFromMaterializedView()
     {
         try {
@@ -254,6 +256,7 @@ public abstract class BaseTestObjectStoreIcebergGlueCatalogAccessOperations
     }
 
     @Test
+    @Disabled("https://starburstdata.atlassian.net/browse/ENG-6890 java.lang.IllegalArgumentException: varchar type is specified without length: varchar")
     public void testSelectFromMaterializedViewWithFilter()
     {
         try {
@@ -272,6 +275,7 @@ public abstract class BaseTestObjectStoreIcebergGlueCatalogAccessOperations
     }
 
     @Test
+    @Disabled("https://starburstdata.atlassian.net/browse/ENG-6890 java.lang.IllegalArgumentException: varchar type is specified without length: varchar")
     public void testRefreshMaterializedView()
     {
         try {

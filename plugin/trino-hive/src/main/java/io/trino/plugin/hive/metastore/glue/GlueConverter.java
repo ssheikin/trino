@@ -179,7 +179,8 @@ public final class GlueConverter
             partitionColumns = ImmutableList.of();
             storage = FAKE_PARQUET_STORAGE;
         }
-        else if (isIcebergTable(tableParameters) || isTrinoMaterializedView(tableType, tableParameters)) {
+        else if (isIcebergTable(tableParameters)) {
+            // todo: any reason to not do this for trino mv?
             if (sd.columns() == null) {
                 dataColumns = ImmutableList.of(FAKE_COLUMN);
             }
