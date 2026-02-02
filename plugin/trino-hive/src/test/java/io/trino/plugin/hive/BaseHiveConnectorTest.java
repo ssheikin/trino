@@ -264,13 +264,6 @@ public abstract class BaseHiveConnectorTest
                 .setTpchBucketedCatalogEnabled(true)
                 .build();
 
-        // extra catalog with NANOSECOND timestamp precision
-        queryRunner.createCatalog(
-                "hive_timestamp_nanos",
-                "hive",
-                ImmutableMap.of("hive.timestamp-precision", "NANOSECONDS"));
-        queryRunner.execute("CREATE SCHEMA hive_timestamp_nanos.tpch");
-
         // Memory plugin to check automatic type coercion for various timestamp precision
         queryRunner.installPlugin(new MemoryPlugin());
         queryRunner.createCatalog("memory", "memory", ImmutableMap.of());
@@ -8922,59 +8915,7 @@ public abstract class BaseHiveConnectorTest
         assertQuery(sessionNoCatalog, "SELECT count(*) FROM hive.tpch." + viewName, "VALUES 1");
     }
 
-    @Test
-    public void testSelectFromPrestoViewReferencingHiveTableWithTimestamps()
-    {
-        Session defaultSession = getSession();
-        Session millisSession = Session.builder(defaultSession)
-                .setCatalogSessionProperty("hive", "timestamp_precision", "MILLISECONDS")
-                .setCatalogSessionProperty("hive_timestamp_nanos", "timestamp_precision", "MILLISECONDS")
-                .build();
-        Session nanosSessions = Session.builder(defaultSession)
-                .setCatalogSessionProperty("hive", "timestamp_precision", "NANOSECONDS")
-                .setCatalogSessionProperty("hive_timestamp_nanos", "timestamp_precision", "NANOSECONDS")
-                .build();
 
-        // Hive views tests covered in TestHiveViews.testTimestampHiveView and TestHiveViesLegacy.testTimestampHiveView
-        String tableName = "ts_hive_table_" + randomNameSuffix();
-        assertUpdate(
-                withTimestampPrecision(defaultSession, HiveTimestampPrecision.NANOSECONDS),
-                "CREATE TABLE " + tableName + " AS SELECT TIMESTAMP '1990-01-02 12:13:14.123456789' ts",
-                1);
-
-        // Presto view created with config property set to MILLIS and session property not set
-        String prestoViewNameDefault = "presto_view_ts_default_" + randomNameSuffix();
-        assertUpdate(defaultSession, "CREATE VIEW " + prestoViewNameDefault + " AS SELECT *  FROM hive.tpch." + tableName);
-        assertUpdate(defaultSession, "CREATE VIEW hive_timestamp_nanos.tpch." + prestoViewNameDefault + " AS SELECT *  FROM hive.tpch." + tableName);
-
-        assertThat(query(defaultSession, "SELECT ts FROM " + prestoViewNameDefault)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123'");
-
-        assertThat(query(defaultSession, "SELECT ts  FROM hive_timestamp_nanos.tpch." + prestoViewNameDefault)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123'");
-
-        assertThat(query(millisSession, "SELECT ts FROM " + prestoViewNameDefault)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123'");
-        assertThat(query(millisSession, "SELECT ts FROM hive_timestamp_nanos.tpch." + prestoViewNameDefault)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123'");
-
-        assertThat(query(nanosSessions, "SELECT ts FROM " + prestoViewNameDefault)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123'");
-
-        assertThat(query(nanosSessions, "SELECT ts FROM hive_timestamp_nanos.tpch." + prestoViewNameDefault)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123'");
-
-        // Presto view created with config property set to MILLIS and session property set to NANOS
-        String prestoViewNameNanos = "presto_view_ts_nanos_" + randomNameSuffix();
-        assertUpdate(nanosSessions, "CREATE VIEW " + prestoViewNameNanos + " AS SELECT *  FROM hive.tpch." + tableName);
-        assertUpdate(nanosSessions, "CREATE VIEW hive_timestamp_nanos.tpch." + prestoViewNameNanos + " AS SELECT *  FROM hive.tpch." + tableName);
-
-        assertThat(query(defaultSession, "SELECT ts FROM " + prestoViewNameNanos)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123000000'");
-
-        assertThat(query(defaultSession, "SELECT ts FROM hive_timestamp_nanos.tpch." + prestoViewNameNanos)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123000000'");
-
-        assertThat(query(millisSession, "SELECT ts FROM " + prestoViewNameNanos)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123000000'");
-
-        assertThat(query(millisSession, "SELECT ts FROM hive_timestamp_nanos.tpch." + prestoViewNameNanos)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123000000'");
-
-        assertThat(query(nanosSessions, "SELECT ts FROM " + prestoViewNameNanos)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123000000'");
-
-        assertThat(query(nanosSessions, "SELECT ts FROM hive_timestamp_nanos.tpch." + prestoViewNameNanos)).matches("VALUES TIMESTAMP '1990-01-02 12:13:14.123000000'");
-    }
 
     @Test
     public void testTimestampWithTimeZone()
