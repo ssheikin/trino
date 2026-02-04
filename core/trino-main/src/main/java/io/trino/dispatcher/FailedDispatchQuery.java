@@ -257,7 +257,7 @@ public class FailedDispatchQuery
                 null,
                 Optional.empty(),
                 failureCause,
-                failureCause.getErrorCode(),
+                failureCause.errorCode(),
                 ImmutableList.of(),
                 ImmutableSet.of(),
                 Optional.empty(),
