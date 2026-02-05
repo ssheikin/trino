@@ -396,7 +396,7 @@ public abstract class BaseHiveConnectorTest
     @Test
     public void testCreateMultipleCatalogs()
     {
-        String connectorName = isObjectStore() ? "objectstore" : "hive";
+        String connectorName = isObjectStore() ? "great_lakes" : "hive";
         String firstCatalog = "catalog_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         String createCatalogSql = """
