@@ -145,7 +145,6 @@ public final class DistributedQueryRunner
             int workerCount,
             Map<String, String> extraProperties,
             Map<String, String> coordinatorProperties,
-            Optional<Map<String, String>> backupCoordinatorProperties,
             String environment,
             Module additionalModule,
             Optional<Path> baseDataDir,
@@ -196,8 +195,6 @@ public final class DistributedQueryRunner
 
             TestingTrinoServer coordinator = createNewCoordinator.apply(ImmutableMap.of());
             coordinators.add(coordinator);
-            Optional<TestingTrinoServer> backupCoordinator = backupCoordinatorProperties.map(properties -> createNewCoordinator.apply(properties));
-            backupCoordinator.ifPresent(coordinators::add);
 
             refreshNodes();
 
@@ -388,6 +385,18 @@ public final class DistributedQueryRunner
             createNewWorker.accept(Map.of());
         }
         refreshNodes();
+    }
+
+    public void addCoordinator(Map<String, String> extraProperties)
+    {
+        TestingTrinoServer newCoordinator = createNewCoordinator.apply(extraProperties);
+        coordinators.add(newCoordinator);
+        refreshNodes();
+    }
+
+    public void addCoordinator()
+    {
+        addCoordinator(ImmutableMap.of());
     }
 
     /**
@@ -788,7 +797,6 @@ public final class DistributedQueryRunner
         private int workerCount = 2;
         private Map<String, String> extraProperties = ImmutableMap.of();
         private Map<String, String> coordinatorProperties = ImmutableMap.of();
-        private Optional<Map<String, String>> backupCoordinatorProperties = Optional.empty();
         private Consumer<QueryRunner> additionalSetup = queryRunner -> {};
         private String environment = ENVIRONMENT;
         private Module additionalModule = EMPTY_MODULE;
@@ -872,13 +880,6 @@ public final class DistributedQueryRunner
         public SELF addCoordinatorProperty(String key, String value)
         {
             this.coordinatorProperties = addProperty(this.coordinatorProperties, key, value);
-            return self();
-        }
-
-        @CanIgnoreReturnValue
-        public SELF setBackupCoordinatorProperties(Map<String, String> backupCoordinatorProperties)
-        {
-            this.backupCoordinatorProperties = Optional.of(backupCoordinatorProperties);
             return self();
         }
 
@@ -971,15 +972,6 @@ public final class DistributedQueryRunner
         public SELF setTestingTrinoClientFactory(TestingTrinoClientFactory testingTrinoClientFactory)
         {
             this.testingTrinoClientFactory = requireNonNull(testingTrinoClientFactory, "testingTrinoClientFactory is null");
-            return self();
-        }
-
-        @CanIgnoreReturnValue
-        public SELF enableBackupCoordinator()
-        {
-            if (backupCoordinatorProperties.isEmpty()) {
-                setBackupCoordinatorProperties(ImmutableMap.of());
-            }
             return self();
         }
 
@@ -1103,7 +1095,6 @@ public final class DistributedQueryRunner
                     workerCount,
                     extraProperties,
                     coordinatorProperties,
-                    backupCoordinatorProperties,
                     environment,
                     additionalModule,
                     baseDataDir,
