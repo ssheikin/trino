@@ -147,7 +147,6 @@ public final class DistributedQueryRunner
             Map<String, String> extraProperties,
             Map<String, String> coordinatorProperties,
             Optional<Map<String, String>> backupCoordinatorProperties,
-            boolean registerBackupCoordinator,
             String environment,
             Module additionalModule,
             Optional<Path> baseDataDir,
@@ -210,12 +209,10 @@ public final class DistributedQueryRunner
                     modelConnectionSpecsLoader,
                     bindAllInterfaces));
 
-            if (registerBackupCoordinator) {
-                backupCoordinator.ifPresent(backup -> {
-                    coordinator.registerServer(backup.getCurrentNode());
-                    backup.registerServer(coordinator.getCurrentNode());
-                });
-            }
+            backupCoordinator.ifPresent(backup -> {
+                coordinator.registerServer(backup.getCurrentNode());
+                backup.registerServer(coordinator.getCurrentNode());
+            });
 
             extraCloseables.forEach(closeable -> closer.register(() -> closeUnchecked(closeable)));
 
@@ -813,7 +810,6 @@ public final class DistributedQueryRunner
         private Map<String, String> extraProperties = ImmutableMap.of();
         private Map<String, String> coordinatorProperties = ImmutableMap.of();
         private Optional<Map<String, String>> backupCoordinatorProperties = Optional.empty();
-        private boolean registerBackupCoordinator = true;
         private Consumer<QueryRunner> additionalSetup = queryRunner -> {};
         private String environment = ENVIRONMENT;
         private Module additionalModule = EMPTY_MODULE;
@@ -840,18 +836,6 @@ public final class DistributedQueryRunner
         public SELF setBindAllInterfaces(boolean bindAllInterfaces)
         {
             this.bindAllInterfaces = bindAllInterfaces;
-            return self();
-        }
-
-        /**
-         * If set to true then backup and default coordinators will cross register as nodes in each other.
-         * If set to false then backup coordinator will stay as separate entity with no direct connection to default coordinator.
-         * True by default.
-         */
-        @CanIgnoreReturnValue
-        public SELF setRegisterBackupCoordinator(boolean registerBackupCoordinator)
-        {
-            this.registerBackupCoordinator = registerBackupCoordinator;
             return self();
         }
 
@@ -1141,7 +1125,6 @@ public final class DistributedQueryRunner
                     extraProperties,
                     coordinatorProperties,
                     backupCoordinatorProperties,
-                    registerBackupCoordinator,
                     environment,
                     additionalModule,
                     baseDataDir,
