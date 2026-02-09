@@ -128,7 +128,6 @@ public final class DistributedQueryRunner
     private final Closer closer = Closer.create();
 
     private TestingTrinoClient trinoClient;
-    private Optional<TestingTrinoClient> backupTrinoClient = Optional.empty();
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicInteger concurrentQueries = new AtomicInteger();
@@ -256,9 +255,6 @@ public final class DistributedQueryRunner
                 defaultSession.getExchangeEncryptionKey());
 
         this.trinoClient = closer.register(testingTrinoClientFactory.create(coordinator, defaultSession));
-        if (backupCoordinator.isPresent()) {
-            this.backupTrinoClient = Optional.of(closer.register(testingTrinoClientFactory.create(backupCoordinator.get(), defaultSession)));
-        }
 
         log.info("Created DistributedQueryRunner in %s (unclosed instances = %s)", nanosSince(start), unclosedInstances.incrementAndGet());
     }
@@ -463,12 +459,6 @@ public final class DistributedQueryRunner
     public TestingTrinoClient getClient()
     {
         return trinoClient;
-    }
-
-    public TestingTrinoClient getBackupClient()
-    {
-        checkState(backupTrinoClient.isPresent(), "Backup client not present");
-        return backupTrinoClient.get();
     }
 
     @Override
