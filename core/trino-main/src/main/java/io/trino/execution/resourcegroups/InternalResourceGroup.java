@@ -35,6 +35,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -804,7 +805,7 @@ public class InternalResourceGroup
 
     private void stageResourceUsage()
     {
-        for (Map.Entry<ManagedQueryExecution, StagedResourceUsage> entry : runningQueries.entrySet()) {
+        for (Entry<ManagedQueryExecution, StagedResourceUsage> entry : runningQueries.entrySet()) {
             ManagedQueryExecution query = entry.getKey();
             StagedResourceUsage resourceUsage = entry.getValue();
 
@@ -915,7 +916,7 @@ public class InternalResourceGroup
         synchronized (root) {
             ResourceUsage groupUsageDelta = ZERO;
 
-            for (Map.Entry<ManagedQueryExecution, StagedResourceUsage> entry : runningQueries.entrySet()) {
+            for (Entry<ManagedQueryExecution, StagedResourceUsage> entry : runningQueries.entrySet()) {
                 StagedResourceUsage resourceUsage = entry.getValue();
                 ResourceUsage oldResourceUsage = resourceUsage.current();
                 ResourceUsage newResourceUsage = resourceUsage.staged();

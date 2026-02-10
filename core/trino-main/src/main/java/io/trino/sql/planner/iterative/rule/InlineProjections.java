@@ -32,6 +32,7 @@ import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.ProjectNode;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -89,7 +90,7 @@ public class InlineProjections
         // inline the expressions
         Assignments assignments = child.getAssignments().filter(targets::contains);
         Assignments.Builder parentAssignments = Assignments.builder();
-        for (Map.Entry<Symbol, Expression> assignment : parent.getAssignments().entrySet()) {
+        for (Entry<Symbol, Expression> assignment : parent.getAssignments().entrySet()) {
             parentAssignments.put(assignment.getKey(), inlineReferences(assignment.getValue(), assignments));
         }
 
@@ -98,12 +99,12 @@ public class InlineProjections
         Set<Symbol> inputs = child.getAssignments()
                 .entrySet().stream()
                 .filter(entry -> targets.contains(entry.getKey()))
-                .map(Map.Entry::getValue)
+                .map(Entry::getValue)
                 .flatMap(entry -> SymbolsExtractor.extractAll(entry).stream())
                 .collect(toSet());
 
         Assignments.Builder newChildAssignmentsBuilder = Assignments.builder();
-        for (Map.Entry<Symbol, Expression> assignment : child.getAssignments().entrySet()) {
+        for (Entry<Symbol, Expression> assignment : child.getAssignments().entrySet()) {
             if (!targets.contains(assignment.getKey())) {
                 newChildAssignmentsBuilder.put(assignment);
                 // If this is not an identity assignment, remove the symbol from inputs, as we don't want to reset the expression
@@ -190,7 +191,7 @@ public class InlineProjections
 
                     return true;
                 })
-                .map(Map.Entry::getKey)
+                .map(Entry::getKey)
                 .collect(toSet());
 
         return Sets.union(singletons, basicReferences);

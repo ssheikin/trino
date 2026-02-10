@@ -35,6 +35,7 @@ import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.base.Throwables.throwIfUnchecked;
@@ -92,7 +93,7 @@ public class BackpressureRestClient
     {
         Request request = toRequest(method, endpoint, headers);
         requireNonNull(params, "parameters cannot be null");
-        for (Map.Entry<String, String> entry : params.entrySet()) {
+        for (Entry<String, String> entry : params.entrySet()) {
             request.addParameter(entry.getKey(), entry.getValue());
         }
         request.setEntity(entity);
