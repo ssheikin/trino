@@ -124,6 +124,6 @@ final class ArraySubscriptPushdownUtil
 
     private static boolean isArraySubscriptOperator(Call call)
     {
-        return call.function().name().getFunctionName().equals(ARRAY_SUBSCRIPT_OPERATOR);
+        return call.function().name().functionName().equals(ARRAY_SUBSCRIPT_OPERATOR);
     }
 }
