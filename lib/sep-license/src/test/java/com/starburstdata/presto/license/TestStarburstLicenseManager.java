@@ -20,11 +20,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static com.google.common.collect.Sets.toImmutableEnumSet;
+import static com.starburstdata.presto.license.StarburstFeature.DELL;
 import static java.time.ZoneOffset.UTC;
+import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -142,5 +149,22 @@ public class TestStarburstLicenseManager
         assertThatExceptionOfType(NullPointerException.class)
                 .isThrownBy(() -> licenseManager.checkFeature(null))
                 .withMessage("feature is null");
+    }
+
+    @Test
+    public void testDellLicenseIncludesAllNonThirdPartyFeatures()
+    {
+        // DELL should include all features except itself and third-party features
+        Set<StarburstFeature> expectedFeatures = EnumSet.complementOf(EnumSet.of(DELL)).stream()
+                .filter(not(StarburstFeature::isThirdParty))
+                .collect(Collectors.toSet());
+
+        Set<StarburstFeature> thirdPartyFeatures = Arrays.stream(StarburstFeature.values())
+                .filter(StarburstFeature::isThirdParty)
+                .collect(toImmutableEnumSet());
+
+        assertThat(StarburstFeature.DELL.effectiveFeatures())
+                .containsAll(expectedFeatures)
+                .doesNotContainAnyElementsOf(thirdPartyFeatures);
     }
 }

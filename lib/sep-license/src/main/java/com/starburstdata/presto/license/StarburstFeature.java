@@ -18,32 +18,34 @@ import static java.util.Objects.requireNonNull;
 
 public enum StarburstFeature
 {
-    AGENTIC_LAYER("agentic-layer", "Agentic layer"),
-    AI_WORKFLOWS("ai-workflows", "AI workflows"),
-    DYNAMODB("dynamodb", "Starburst DynamoDB connector"),
-    MAPR("mapr", "MapR support in Hive connector"),
-    MCP("mcp", "MCP server"),
-    PORTAL("portal", "Starburst Portal"),
-    SALESFORCE("salesforce", "Starburst Salesforce connector"),
-    SPARK("spark", "Spark"),
-    SPLUNK("splunk", "Starburst Splunk connector"),
-    WARP_SPEED("warp-speed", "Warp Speed"),
-    DELL("dell", "Dell Data Lakehouse", ImmutableSet.of(AGENTIC_LAYER, AI_WORKFLOWS, MCP, SPARK, WARP_SPEED)),
+    AGENTIC_LAYER("agentic-layer", "Agentic layer", false),
+    AI_WORKFLOWS("ai-workflows", "AI workflows", false),
+    DYNAMODB("dynamodb", "Starburst DynamoDB connector", true),
+    MAPR("mapr", "MapR support in Hive connector", false),
+    MCP("mcp", "MCP server", false),
+    PORTAL("portal", "Starburst Portal", false),
+    SALESFORCE("salesforce", "Starburst Salesforce connector", true),
+    SPARK("spark", "Spark", false),
+    SPLUNK("splunk", "Starburst Splunk connector", true),
+    WARP_SPEED("warp-speed", "Warp Speed", false),
+    DELL("dell", "Dell Data Lakehouse", false, ImmutableSet.of(AGENTIC_LAYER, AI_WORKFLOWS, MAPR, MCP, PORTAL, SPARK, WARP_SPEED)),
     /**/;
 
     private final String featureName;
     private final String displayName;
+    private final boolean thirdParty;
     private final Set<StarburstFeature> includedFeatures;
 
-    StarburstFeature(String featureName, String displayName)
+    StarburstFeature(String featureName, String displayName, boolean thirdParty)
     {
-        this(featureName, displayName, ImmutableSet.of());
+        this(featureName, displayName, thirdParty, ImmutableSet.of());
     }
 
-    StarburstFeature(String featureName, String displayName, Set<StarburstFeature> includedFeatures)
+    StarburstFeature(String featureName, String displayName, boolean thirdParty, Set<StarburstFeature> includedFeatures)
     {
         this.featureName = requireNonNull(featureName, "featureName is null");
         this.displayName = requireNonNull(displayName, "displayName is null");
+        this.thirdParty = thirdParty;
         this.includedFeatures = ImmutableSet.copyOf(requireNonNull(includedFeatures, "includedFeatures is null"));
     }
 
@@ -55,6 +57,11 @@ public enum StarburstFeature
     public String getDisplayName()
     {
         return displayName;
+    }
+
+    public boolean isThirdParty()
+    {
+        return thirdParty;
     }
 
     public Set<StarburstFeature> effectiveFeatures()
