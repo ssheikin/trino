@@ -53,7 +53,6 @@ import static io.starburst.schema.discovery.models.IdentifierConstraint.VALID_IN
 import static io.trino.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.FILE;
 import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.GLUE;
-import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.GLUE_V1;
 import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.THRIFT;
 import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.UNITY;
 import static io.trino.plugin.objectstore.ObjectStoreConnectorFactoryUtil.completeConnectorFuture;
@@ -69,7 +68,6 @@ public final class InternalStarburstObjectStoreConnectorFactory
             .put(THRIFT, CatalogType.HIVE_METASTORE)
             .put(FILE, CatalogType.TESTING_FILE_METASTORE)
             .put(GLUE, CatalogType.GLUE)
-            .put(GLUE_V1, CatalogType.GLUE_V1)
             .put(UNITY, CatalogType.UNITY)
             .buildOrThrow();
 

@@ -117,7 +117,6 @@ public class LakehouseDeltaModule
             case THRIFT -> new DeltaLakeThriftMetastoreModule();
             case FILE -> new DeltaLakeFileMetastoreModule();
             case GLUE -> new DeltaLakeGlueMetastoreModule();
-            case GLUE_V1 -> innerBinder -> innerBinder.addError("GLUE v1 metastore type is not supported for Lakehouse");
             case UNITY -> new DeltaLakeUnityMetastoreModule();
             // these are not handled by Trino
             case THRIFT_CDP7, UNLOAD, ALLUXIO -> EMPTY_MODULE;

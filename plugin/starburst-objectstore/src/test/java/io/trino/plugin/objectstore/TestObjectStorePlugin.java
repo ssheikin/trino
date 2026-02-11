@@ -60,7 +60,7 @@ public class TestObjectStorePlugin
                                 .buildOrThrow(),
                         new TestingConnectorContext())
                 .shutdown())
-                .hasMessage("Invalid value 'invalid' for 'hive.metastore' configuration property. Supported values are: [THRIFT, FILE, GLUE, GLUE_V1, UNITY]");
+                .hasMessage("Invalid value 'invalid' for 'hive.metastore' configuration property. Supported values are: [THRIFT, FILE, GLUE, UNITY]");
 
         // Unsupported iceberg.catalog.type property
         assertThatThrownBy(() -> factory.create(

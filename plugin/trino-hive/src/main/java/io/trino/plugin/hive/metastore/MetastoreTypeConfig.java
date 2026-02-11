@@ -26,7 +26,6 @@ public class MetastoreTypeConfig
         THRIFT_CDP7,
         FILE,
         GLUE,
-        GLUE_V1,
         UNITY,
         UNLOAD,
         ALLUXIO,

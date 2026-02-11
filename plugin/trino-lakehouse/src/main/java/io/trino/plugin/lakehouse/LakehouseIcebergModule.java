@@ -88,7 +88,6 @@ public class LakehouseIcebergModule
             case THRIFT -> new IcebergHiveMetastoreCatalogModule();
             case FILE -> new IcebergFileMetastoreCatalogModule();
             case GLUE -> new IcebergGlueCatalogModule();
-            case GLUE_V1 -> innerBinder -> innerBinder.addError("GLUE v1 metastore type is not supported for Lakehouse");
             case UNITY -> throw new UnsupportedOperationException();
             // these are not handled by Trino
             case THRIFT_CDP7, UNLOAD, ALLUXIO -> EMPTY_MODULE;
