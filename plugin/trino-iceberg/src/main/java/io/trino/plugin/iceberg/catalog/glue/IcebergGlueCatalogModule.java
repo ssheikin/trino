@@ -24,6 +24,7 @@ import io.trino.plugin.hive.metastore.glue.GlueHiveMetastoreConfig;
 import io.trino.plugin.hive.metastore.glue.GlueMetastoreModule;
 import io.trino.plugin.iceberg.catalog.IcebergHiveMetastoreModule;
 import io.trino.plugin.iceberg.catalog.IcebergTableOperationsProvider;
+import io.trino.plugin.iceberg.catalog.MetastoreCacheInvalidator;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import software.amazon.awssdk.services.glue.model.Table;
 
@@ -53,5 +54,9 @@ public class IcebergGlueCatalogModule
         install(new IcebergHiveMetastoreModule());
         install(new GlueMetastoreModule());
         newOptionalBinder(binder, GlueClientProvider.class).setDefault().to(DefaultGlueClientProvider.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, MetastoreCacheInvalidator.class)
+                .setBinding()
+                .to(IcebergGlueMetastoreCacheInvalidator.class)
+                .in(Scopes.SINGLETON);
     }
 }
