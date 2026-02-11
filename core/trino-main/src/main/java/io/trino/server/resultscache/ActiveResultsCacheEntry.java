@@ -178,7 +178,7 @@ public class ActiveResultsCacheEntry
                         return;
                     }
                     ImmutableSet.Builder<Reference> tableReferencesBuilder = ImmutableSet.builder();
-                    inputs.forEach(entry -> tableReferencesBuilder.add(new Reference(entry.getCatalogName(), entry.getSchema(), entry.getTable(), false)));
+                    inputs.forEach(entry -> tableReferencesBuilder.add(new Reference(entry.catalogName(), entry.schema(), entry.table(), false)));
                     output.ifPresent(entry -> tableReferencesBuilder.add(new Reference(entry.getCatalogName(), entry.getSchema(), entry.getTable(), true)));
                     Set<Reference> tablesReferences = tableReferencesBuilder.build();
                     Set<Reference> viewsReferences = referencedTables.stream()
