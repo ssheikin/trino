@@ -16,12 +16,20 @@ import io.trino.client.uri.TrinoUri;
 import io.trino.plugin.jdbc.BaseJdbcConfig;
 import io.trino.plugin.jdbc.credential.CredentialPropertiesProvider;
 import io.trino.spi.security.ConnectorIdentity;
+import kotlin.jvm.functions.Function0;
+import kotlin.reflect.KClass;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Request;
+import okhttp3.Response;
+import okio.Timeout;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
 import static io.trino.client.StatementClientFactory.newStatementClient;
+import static io.trino.client.uri.HttpClientFactory.toHttpClientBuilder;
 import static java.util.Objects.requireNonNull;
 
 public class StargateClientFactory
@@ -47,7 +55,86 @@ public class StargateClientFactory
                 .source(SOURCE)
                 .encoding(Optional.of(encoding))
                 .build();
-        return newStatementClient(trinoUri, SOURCE, session, query, Optional.empty());
+
+        return newStatementClient(toHttpClientBuilder(trinoUri, SOURCE).build(), requestDropping(), session, query, Optional.empty());
+    }
+
+    private static Call.Factory requestDropping()
+    {
+        return _ -> new Call()
+        {
+            @Override
+            public Request request()
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Response execute()
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void enqueue(Callback callback)
+            {
+                // Do nothing, this will ensure that SegmentLoader doesn't try to load/ack segments while listing splits
+            }
+
+            @Override
+            public void cancel()
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isExecuted()
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isCanceled()
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Timeout timeout()
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T> T tag(KClass<T> kClass)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T> T tag(Class<? extends T> aClass)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T> T tag(KClass<T> kClass, Function0<? extends T> function0)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T> T tag(Class<T> aClass, Function0<? extends T> function0)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Call clone()
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     private static Properties toProperties(Map<String, Object> map)
