@@ -123,6 +123,7 @@ public class MockConnectorFactory
     private final ApplyJoin applyJoin;
     private final ApplyTopN applyTopN;
     private final ApplyFilter applyFilter;
+    private final ApplyPartialLimit applyPartialLimit;
     private final ApplyTableFunction applyTableFunction;
     private final ApplyTableScanRedirect applyTableScanRedirect;
     private final BiFunction<ConnectorSession, SchemaTableName, Optional<CatalogSchemaTableName>> redirectTable;
@@ -187,6 +188,7 @@ public class MockConnectorFactory
             ApplyJoin applyJoin,
             ApplyTopN applyTopN,
             ApplyFilter applyFilter,
+            ApplyPartialLimit applyPartialLimit,
             ApplyTableFunction applyTableFunction,
             ApplyTableScanRedirect applyTableScanRedirect,
             BiFunction<ConnectorSession, SchemaTableName, Optional<CatalogSchemaTableName>> redirectTable,
@@ -247,6 +249,7 @@ public class MockConnectorFactory
         this.applyJoin = requireNonNull(applyJoin, "applyJoin is null");
         this.applyTopN = requireNonNull(applyTopN, "applyTopN is null");
         this.applyFilter = requireNonNull(applyFilter, "applyFilter is null");
+        this.applyPartialLimit = requireNonNull(applyPartialLimit, "applyPartialLimit is null");
         this.applyTableFunction = requireNonNull(applyTableFunction, "applyTableFunction is null");
         this.applyTableScanRedirect = requireNonNull(applyTableScanRedirect, "applyTableScanRedirection is null");
         this.redirectTable = requireNonNull(redirectTable, "redirectTable is null");
@@ -317,6 +320,7 @@ public class MockConnectorFactory
                 applyJoin,
                 applyTopN,
                 applyFilter,
+                applyPartialLimit,
                 applyTableFunction,
                 applyTableScanRedirect,
                 redirectTable,
@@ -449,6 +453,12 @@ public class MockConnectorFactory
     }
 
     @FunctionalInterface
+    public interface ApplyPartialLimit
+    {
+        Optional<ConnectorTableHandle> apply(ConnectorSession session, ConnectorTableHandle handle, long limitHint);
+    }
+
+    @FunctionalInterface
     public interface ListRoleGrants
     {
         Set<RoleGrant> apply(ConnectorSession session, Optional<Set<String>> roles, Optional<Set<String>> grantees, OptionalLong limit);
@@ -490,6 +500,7 @@ public class MockConnectorFactory
         private Collection<String> branches = ImmutableList.of();
         private ApplyTopN applyTopN = (session, handle, topNCount, sortItems, assignments) -> Optional.empty();
         private ApplyFilter applyFilter = (session, handle, constraint) -> Optional.empty();
+        private ApplyPartialLimit applyPartialLimit = (session, handle, limitHint) -> Optional.empty();
         private ApplyTableFunction applyTableFunction = (session, handle) -> Optional.empty();
         private ApplyTableScanRedirect applyTableScanRedirect = (session, handle) -> Optional.empty();
         private BiFunction<ConnectorSession, SchemaTableName, Optional<CatalogSchemaTableName>> redirectTable = (session, tableName) -> Optional.empty();
@@ -681,6 +692,12 @@ public class MockConnectorFactory
         public Builder withApplyFilter(ApplyFilter applyFilter)
         {
             this.applyFilter = applyFilter;
+            return this;
+        }
+
+        public Builder withApplyPartialLimit(ApplyPartialLimit applyPartialLimit)
+        {
+            this.applyPartialLimit = applyPartialLimit;
             return this;
         }
 
@@ -946,6 +963,7 @@ public class MockConnectorFactory
                     applyJoin,
                     applyTopN,
                     applyFilter,
+                    applyPartialLimit,
                     applyTableFunction,
                     applyTableScanRedirect,
                     redirectTable,
