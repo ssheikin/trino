@@ -463,6 +463,7 @@ public class TestIcebergSplitSource
                 unenforcedPredicate,
                 TupleDomain.all(),
                 OptionalLong.empty(),
+                false,
                 ImmutableSet.of(),
                 Optional.empty(),
                 nationTable.location(),

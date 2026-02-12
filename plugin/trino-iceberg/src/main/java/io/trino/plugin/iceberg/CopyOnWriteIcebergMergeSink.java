@@ -251,6 +251,7 @@ public class CopyOnWriteIcebergMergeSink
                 dataSequenceNumbers.get(path.toString()),
                 supportsRowLineage(formatVersion) ? firstRowIds.get(path.toString()) : null,
                 nameMapping.map(NameMappingParser::fromJson),
-                formatVersion);
+                formatVersion,
+                false);
     }
 }
