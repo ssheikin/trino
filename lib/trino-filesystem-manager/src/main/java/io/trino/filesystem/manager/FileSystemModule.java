@@ -33,14 +33,15 @@ import io.trino.filesystem.azure.AzureFileSystemConfig;
 import io.trino.filesystem.azure.AzureFileSystemFactory;
 import io.trino.filesystem.azure.AzureFileSystemFactoryWithMultiIdp;
 import io.trino.filesystem.azure.AzureFileSystemModule;
-import io.trino.filesystem.azure.ForMultiIdp;
 import io.trino.filesystem.cache.CacheFileSystemFactory;
 import io.trino.filesystem.cache.CacheKeyProvider;
 import io.trino.filesystem.cache.CachingHostAddressProvider;
 import io.trino.filesystem.cache.DefaultCacheKeyProvider;
 import io.trino.filesystem.cache.DefaultCachingHostAddressProvider;
 import io.trino.filesystem.cache.TrinoFileSystemCache;
+import io.trino.filesystem.gcs.GcsFileSystemConfig;
 import io.trino.filesystem.gcs.GcsFileSystemFactory;
+import io.trino.filesystem.gcs.GcsFileSystemFactoryWithMultiIdp;
 import io.trino.filesystem.gcs.GcsFileSystemModule;
 import io.trino.filesystem.local.LocalFileSystemConfig;
 import io.trino.filesystem.local.LocalFileSystemFactory;
@@ -122,7 +123,7 @@ public class FileSystemModule
             if (buildConfigObject(AzureFileSystemConfig.class).isUseOauthPassthroughToken()) {
                 configBinder(binder).bindConfig(TokenPassThroughConfig.class, "hive");
                 binder.bind(TrinoFileSystemFactory.class)
-                        .annotatedWith(ForMultiIdp.class)
+                        .annotatedWith(io.trino.filesystem.azure.ForMultiIdp.class)
                         .to(AzureFileSystemFactory.class)
                         .in(Scopes.SINGLETON);
                 factories.addBinding("abfs").to(AzureFileSystemFactoryWithMultiIdp.class);
@@ -145,7 +146,17 @@ public class FileSystemModule
 
         if (config.isNativeGcsEnabled()) {
             install(new GcsFileSystemModule());
-            factories.addBinding("gs").to(GcsFileSystemFactory.class);
+            if (buildConfigObject(GcsFileSystemConfig.class).isUseOauthPassthroughToken()) {
+                configBinder(binder).bindConfig(TokenPassThroughConfig.class, "hive");
+                binder.bind(TrinoFileSystemFactory.class)
+                        .annotatedWith(io.trino.filesystem.gcs.ForMultiIdp.class)
+                        .to(GcsFileSystemFactory.class)
+                        .in(Scopes.SINGLETON);
+                factories.addBinding("gs").to(GcsFileSystemFactoryWithMultiIdp.class);
+            }
+            else {
+                factories.addBinding("gs").to(GcsFileSystemFactory.class);
+            }
         }
 
         if (config.isNativeLocalEnabled()) {

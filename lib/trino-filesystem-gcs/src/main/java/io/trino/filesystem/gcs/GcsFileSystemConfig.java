@@ -49,6 +49,7 @@ public class GcsFileSystemConfig
 
     private Optional<Boolean> useGcsAccessToken = Optional.empty();
     private Optional<AuthType> authType = Optional.empty();
+    private boolean useOauthPassthroughToken;
     private int maxRetries = 20;
     private double backoffScaleFactor = 3.0;
     private Duration maxRetryTime = new Duration(25, TimeUnit.SECONDS);
@@ -152,6 +153,19 @@ public class GcsFileSystemConfig
     public GcsFileSystemConfig setAuthType(AuthType authType)
     {
         this.authType = Optional.of(authType);
+        return this;
+    }
+
+    public boolean isUseOauthPassthroughToken()
+    {
+        return useOauthPassthroughToken;
+    }
+
+    @Config("gcs.use-oauth-passthrough-token")
+    @ConfigDescription("Enable OAuth 2.0 token pass-through when accessing Google Cloud Storage")
+    public GcsFileSystemConfig setUseOauthPassthroughToken(boolean useOauthPassthroughToken)
+    {
+        this.useOauthPassthroughToken = useOauthPassthroughToken;
         return this;
     }
 
