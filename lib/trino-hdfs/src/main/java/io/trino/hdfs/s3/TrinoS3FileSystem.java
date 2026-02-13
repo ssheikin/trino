@@ -413,7 +413,7 @@ public class TrinoS3FileSystem
                 AwsSdkTelemetry.builder(openTelemetry)
                         .setCaptureExperimentalSpanAttributes(true)
                         .build()
-                        .newRequestHandler());
+                        .createRequestHandler());
     }
 
     @Override
