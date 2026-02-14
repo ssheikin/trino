@@ -156,7 +156,7 @@ public class TestingObjectStoreConnectorFactory
             binder.bind(TrinoCatalogFactory.class).to(TrinoHiveCatalogFactory.class).in(Scopes.SINGLETON);
 
             configBinder(binder).bindConfigDefaults(CachingHiveMetastoreConfig.class, config -> {
-                // ensure caching metastore wrapper isn't created, as it's not leveraged by Iceberg
+                // caching metastore wrapper isn't created by default
                 config.setStatsCacheTtl(new Duration(0, TimeUnit.SECONDS));
             });
 
