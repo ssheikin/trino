@@ -132,6 +132,7 @@ public class AzureFileSystemConfig
     }
 
     @Config("azure.use-oauth-passthrough-token")
+    @ConfigDescription("Enable OAuth 2.0 token pass-through when accessing Azure Blob Storage")
     public AzureFileSystemConfig setUseOauthPassthroughToken(boolean useOauthPassthroughToken)
     {
         this.useOauthPassthroughToken = useOauthPassthroughToken;
