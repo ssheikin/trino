@@ -227,7 +227,7 @@ public class TestSetCatalogPropertiesTask
         }
     }
 
-    private void testSetProperties(ImmutableList<Property> initialProperties, String showInitialProperties, List<Property> updatedProperties, String showExpectedProperties)
+    private void testSetProperties(List<Property> initialProperties, String showInitialProperties, List<Property> updatedProperties, String showExpectedProperties)
     {
         String createCatalogSql = """
                 CREATE CATALOG %s USING %s
