@@ -121,7 +121,10 @@ public class FileSystemModule
             install(new AzureFileSystemModule());
             if (buildConfigObject(AzureFileSystemConfig.class).isUseOauthPassthroughToken()) {
                 configBinder(binder).bindConfig(TokenPassThroughConfig.class, "hive");
-                binder.bind(TrinoFileSystemFactory.class).annotatedWith(ForMultiIdp.class).to(AzureFileSystemFactory.class).in(Scopes.SINGLETON);
+                binder.bind(TrinoFileSystemFactory.class)
+                        .annotatedWith(ForMultiIdp.class)
+                        .to(AzureFileSystemFactory.class)
+                        .in(Scopes.SINGLETON);
                 factories.addBinding("abfs").to(AzureFileSystemFactoryWithMultiIdp.class);
                 factories.addBinding("abfss").to(AzureFileSystemFactoryWithMultiIdp.class);
             }
