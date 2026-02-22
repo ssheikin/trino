@@ -37,6 +37,7 @@ import io.trino.spi.type.RowType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import jakarta.annotation.Nullable;
+import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.types.Comparators;
 import org.apache.iceberg.types.Types;
@@ -251,8 +252,9 @@ public class PartitionStatisticsWriter
     {
         PartitionMap<PartitionStats> statsMap = PartitionMap.create(table.specs());
         Schema schema = PartitionStatsHandler.schema(partitionType, formatVersion(table));
-        for (PartitionStats partitionStats : partitionStatisticsReader.readPartitionStats(session, table, schema, schemaName, table.io().newInputFile(previousStatsFile.path()))) {
-            statsMap.put(partitionStats.specId(), partitionStats.partition(), partitionStats);
+        InputFile inputFile = table.io().newInputFile(previousStatsFile.path());
+        try (PartitionStatisticsReader.PartitionStatsIterator statsIterator = partitionStatisticsReader.readPartitionStats(session, table, schema, schemaName, inputFile)) {
+            statsIterator.forEachRemaining(partitionStats -> statsMap.put(partitionStats.specId(), partitionStats.partition(), partitionStats));
         }
 
         // incrementally compute the new stats, partition field will be written as PartitionData
