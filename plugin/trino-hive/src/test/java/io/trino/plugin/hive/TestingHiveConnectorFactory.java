@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static com.google.inject.util.Modules.EMPTY_MODULE;
@@ -51,12 +52,12 @@ public class TestingHiveConnectorFactory
     private final boolean metastoreImpersonationEnabled;
     private final Path localFileSystemRootPath;
     private final Optional<DecryptionKeyRetriever> decryptionKeyRetriever;
-    private final Module module;
+    private final Supplier<Module> module;
     private final Optional<DirectoryLister> directoryLister;
 
     public TestingHiveConnectorFactory(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional.empty(), false, Optional.empty(), EMPTY_MODULE, Optional.empty());
+        this(localFileSystemRootPath, Optional.empty(), false, Optional.empty(), () -> EMPTY_MODULE, Optional.empty());
     }
 
     @Deprecated
@@ -65,7 +66,7 @@ public class TestingHiveConnectorFactory
             Optional<HiveMetastore> metastore,
             boolean metastoreImpersonationEnabled,
             Optional<DecryptionKeyRetriever> decryptionKeyRetriever,
-            Module module,
+            Supplier<Module> module,
             Optional<DirectoryLister> directoryLister)
     {
         this.metastore = requireNonNull(metastore, "metastore is null");
@@ -86,7 +87,7 @@ public class TestingHiveConnectorFactory
     @Override
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        return createConnector(catalogName, createConfig(config), context, createAdditionalModule(catalogName), metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister);
+        return createConnector(catalogName, createConfig(config), context, () -> createAdditionalModule(catalogName, module.get()), metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister);
     }
 
     @Override
@@ -94,7 +95,7 @@ public class TestingHiveConnectorFactory
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, createAdditionalModule(catalogName), metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister, true);
+            Bootstrap app = createBootstrap(catalogName, createConfig(config), ImmutableMap.of(), context, () -> createAdditionalModule(catalogName, module.get()), metastore, metastoreImpersonationEnabled, Optional.empty(), directoryLister, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -113,14 +114,14 @@ public class TestingHiveConnectorFactory
         return configBuilder.buildOrThrow();
     }
 
-    private Module createAdditionalModule(String catalogName)
+    private Module createAdditionalModule(String catalogName, Module module)
     {
         return new AbstractConfigurationAwareModule()
         {
             @Override
             protected void setup(Binder binder)
             {
-                install(TestingHiveConnectorFactory.this.module);
+                install(module);
                 newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
                         .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
                 configBinder(binder).bindConfigDefaults(

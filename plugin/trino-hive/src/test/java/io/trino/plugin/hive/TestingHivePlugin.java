@@ -23,6 +23,7 @@ import io.trino.spi.connector.ConnectorFactory;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static java.util.Objects.requireNonNull;
@@ -34,18 +35,18 @@ public class TestingHivePlugin
     private final Optional<HiveMetastore> metastore;
     private final boolean metastoreImpersonationEnabled;
     private final Optional<DecryptionKeyRetriever> decryptionKeyRetriever;
-    private final Module module;
+    private final Supplier<Module> module;
     private final Optional<DirectoryLister> directoryLister;
 
     public TestingHivePlugin(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional.empty(), false, Optional.empty(), EMPTY_MODULE, Optional.empty());
+        this(localFileSystemRootPath, Optional.empty(), false, Optional.empty(), () -> EMPTY_MODULE, Optional.empty());
     }
 
     @Deprecated
     public TestingHivePlugin(Path localFileSystemRootPath, HiveMetastore metastore)
     {
-        this(localFileSystemRootPath, Optional.of(metastore), false, Optional.empty(), EMPTY_MODULE, Optional.empty());
+        this(localFileSystemRootPath, Optional.of(metastore), false, Optional.empty(), () -> EMPTY_MODULE, Optional.empty());
     }
 
     @Deprecated
@@ -54,7 +55,7 @@ public class TestingHivePlugin
             Optional<HiveMetastore> metastore,
             boolean metastoreImpersonationEnabled,
             Optional<DecryptionKeyRetriever> decryptionKeyRetriever,
-            Module module,
+            Supplier<Module> module,
             Optional<DirectoryLister> directoryLister)
     {
         this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");

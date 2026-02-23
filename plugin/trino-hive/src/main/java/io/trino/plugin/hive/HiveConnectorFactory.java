@@ -67,6 +67,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -93,7 +94,7 @@ public class HiveConnectorFactory
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context)
     {
         checkStrictSpiVersionMatch(context, this);
-        return createConnector(catalogName, config, context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER);
+        return createConnector(catalogName, config, context, () -> DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER);
     }
 
     @Override
@@ -101,7 +102,7 @@ public class HiveConnectorFactory
     {
         ClassLoader classLoader = HiveConnectorFactory.class.getClassLoader();
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER, true);
+            Bootstrap app = createBootstrap(catalogName, config, ImmutableMap.of(), context, () -> DEFAULT_ADDITIONAL_MODULE, DEFAULT_METASTORE, DEFAULT_METASTORE_IMPERSONATION_ENABLED, DEFAULT_FILESYSTEM_FACTORY, DEFAULT_DIRECTORY_LISTENER, true);
 
             Set<ConfigPropertyMetadata> usedProperties = app.configure();
 
@@ -113,7 +114,7 @@ public class HiveConnectorFactory
             String catalogName,
             Map<String, String> config,
             ConnectorContext context,
-            Module module,
+            Supplier<Module> module,
             Optional<HiveMetastore> metastore,
             boolean metastoreImpersonationEnabled,
             Optional<TrinoFileSystemFactory> fileSystemFactory,
@@ -128,7 +129,7 @@ public class HiveConnectorFactory
             Map<String, String> optionalConfig, // Used from Starburst ObjectStore connector. Unused properties are verified later.
             Consumer<Set<String>> usedConfigPropertiesConsumer,
             ConnectorContext context,
-            Module module,
+            Supplier<Module> module,
             Optional<HiveMetastore> metastore,
             boolean metastoreImpersonationEnabled,
             Optional<TrinoFileSystemFactory> fileSystemFactory,
@@ -201,7 +202,7 @@ public class HiveConnectorFactory
             Map<String, String> requiredConfig,
             Map<String, String> optionalConfig,
             ConnectorContext context,
-            Module module,
+            Supplier<Module> module,
             Optional<HiveMetastore> metastore,
             boolean metastoreImpersonationEnabled,
             Optional<TrinoFileSystemFactory> fileSystemFactory,
@@ -226,7 +227,7 @@ public class HiveConnectorFactory
                 new ConnectorContextModule(catalogName, context),
                 binder -> newSetBinder(binder, EventListener.class),
                 binder -> newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(HiveSessionProperties.class).in(Scopes.SINGLETON),
-                module);
+                module.get());
 
         if (quietBootstrap) {
             app.quiet()

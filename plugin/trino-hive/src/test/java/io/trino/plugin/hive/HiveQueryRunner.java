@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.google.inject.util.Modules.EMPTY_MODULE;
 import static io.airlift.log.Level.WARN;
@@ -110,7 +111,7 @@ public final class HiveQueryRunner
         private List<TpchTable<?>> initialTables = ImmutableList.of();
         private Optional<String> initialSchemasLocationBase = Optional.empty();
         private Optional<Function<DistributedQueryRunner, HiveMetastore>> metastore = Optional.empty();
-        private Module module = EMPTY_MODULE;
+        private Supplier<Module> module = () -> EMPTY_MODULE;
         private Optional<DirectoryLister> directoryLister = Optional.empty();
         private boolean metastoreImpersonationEnabled;
         private boolean tpcdsCatalogEnabled;
@@ -175,7 +176,7 @@ public final class HiveQueryRunner
         }
 
         @CanIgnoreReturnValue
-        public SELF setModule(Module module)
+        public SELF setModule(Supplier<Module> module)
         {
             this.module = requireNonNull(module, "module is null");
             return self();
