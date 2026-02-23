@@ -53,7 +53,9 @@ public class TestingHivePlugin
             Path localFileSystemRootPath,
             Optional<HiveMetastore> metastore,
             boolean metastoreImpersonationEnabled,
-            Optional<DecryptionKeyRetriever> decryptionKeyRetriever, Module module, Optional<DirectoryLister> directoryLister)
+            Optional<DecryptionKeyRetriever> decryptionKeyRetriever,
+            Module module,
+            Optional<DirectoryLister> directoryLister)
     {
         this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
