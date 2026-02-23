@@ -54,7 +54,6 @@ public class AuthToLocalModule
 
     private Module getAuthToLocalModule()
     {
-        // conditionalModule doesn't work with prefix
         AuthToLocalConfig config;
         if (authToLocalBinding.isEmpty()) {
             config = buildConfigObject(AuthToLocalConfig.class);

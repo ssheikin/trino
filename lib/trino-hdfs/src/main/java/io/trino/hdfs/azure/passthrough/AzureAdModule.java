@@ -21,7 +21,6 @@ import io.trino.plugin.base.security.passthrough.TokenPassThroughConfig;
 
 import static com.google.inject.Scopes.SINGLETON;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
-import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 
 public class AzureAdModule
@@ -31,10 +30,9 @@ public class AzureAdModule
     protected void setup(Binder binder)
     {
         configBinder(binder).bindConfig(AzureAdConfig.class);
-        install(conditionalModule(
-                AzureAdConfig.class,
-                AzureAdConfig::isOauthPassthrough,
-                this::bindPassthroughConfiguration));
+        if (buildConfigObject(AzureAdConfig.class).isOauthPassthrough()) {
+            bindPassthroughConfiguration(binder);
+        }
     }
 
     private void bindPassthroughConfiguration(Binder binder)

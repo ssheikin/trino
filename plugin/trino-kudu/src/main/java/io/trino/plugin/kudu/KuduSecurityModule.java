@@ -26,11 +26,8 @@ import org.apache.kudu.client.KuduClient;
 
 import java.util.function.Function;
 
-import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.base.util.SystemProperties.setJavaSecurityKrb5Conf;
-import static io.trino.plugin.kudu.KuduAuthenticationConfig.KuduAuthenticationType.KERBEROS;
-import static io.trino.plugin.kudu.KuduAuthenticationConfig.KuduAuthenticationType.NONE;
 import static org.apache.kudu.client.KuduClient.KuduClientBuilder;
 
 public class KuduSecurityModule
@@ -41,15 +38,10 @@ public class KuduSecurityModule
     {
         configBinder(binder).bindConfig(KuduAuthenticationConfig.class);
 
-        install(conditionalModule(
-                KuduAuthenticationConfig.class,
-                authenticationConfig -> authenticationConfig.getAuthenticationType() == NONE,
-                new NoneAuthenticationModule()));
-
-        install(conditionalModule(
-                KuduAuthenticationConfig.class,
-                authenticationConfig -> authenticationConfig.getAuthenticationType() == KERBEROS,
-                new KerberosAuthenticationModule()));
+        install(switch (buildConfigObject(KuduAuthenticationConfig.class).getAuthenticationType()) {
+            case NONE -> new NoneAuthenticationModule();
+            case KERBEROS -> new KerberosAuthenticationModule();
+        });
     }
 
     private static class NoneAuthenticationModule

@@ -24,7 +24,6 @@ import java.util.Optional;
 import static com.google.inject.Scopes.SINGLETON;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
-import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 
 public class ResultsCacheModule
@@ -33,11 +32,12 @@ public class ResultsCacheModule
     @Override
     protected void setup(Binder binder)
     {
-        install(conditionalModule(
-                CachingConfig.class,
-                CachingConfig::isResultsCacheEnabled,
-                new EnabledResultsCacheModule(),
-                new DisabledResultsCacheModule()));
+        if (buildConfigObject(CachingConfig.class).isResultsCacheEnabled()) {
+            install(new EnabledResultsCacheModule());
+        }
+        else {
+            install(new DisabledResultsCacheModule());
+        }
     }
 
     private static class EnabledResultsCacheModule
