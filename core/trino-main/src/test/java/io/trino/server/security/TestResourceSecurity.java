@@ -55,8 +55,10 @@ import okhttp3.Credentials;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.JavaNetCookieJar;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -102,8 +104,10 @@ import static io.trino.server.security.ResourceSecurity.AccessType.AUTHENTICATED
 import static io.trino.server.security.ResourceSecurity.AccessType.WEB_UI;
 import static io.trino.server.security.jwt.JwtUtil.newJwtBuilder;
 import static io.trino.server.security.jwt.JwtUtil.newJwtParserBuilder;
+import static io.trino.server.security.oauth2.CsrfTokenCookie.CSRF_COOKIE;
 import static io.trino.server.security.oauth2.NonceCookie.NONCE_COOKIE;
 import static io.trino.server.security.oauth2.OAuth2Service.NONCE;
+import static io.trino.server.security.oauth2.OAuth2TokenExchangeResource.CSRF_HIDDEN_FORM_FIELD;
 import static io.trino.server.ui.FormWebUiAuthenticationFilter.UI_LOCATION;
 import static io.trino.server.ui.OAuthIdTokenCookie.ID_TOKEN_COOKIE;
 import static io.trino.server.ui.OAuthWebUiCookie.OAUTH2_COOKIE;
@@ -116,6 +120,7 @@ import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static jakarta.ws.rs.core.HttpHeaders.LOCATION;
 import static jakarta.ws.rs.core.HttpHeaders.SET_COOKIE;
 import static jakarta.ws.rs.core.HttpHeaders.WWW_AUTHENTICATE;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.now;
@@ -858,8 +863,28 @@ public class TestResourceSecurity
             tokenServer = matcher.group(2);
         }
 
+        // GET returns confirmation page with CSRF token
+        String csrfToken;
+        HttpCookie csrfCookie;
         request = new Request.Builder()
                 .url(redirectTo)
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(SC_OK);
+            String body = response.body().string();
+            assertThat(body).contains("Confirm Authentication");
+
+            csrfToken = extractTokenFromHiddenFormField(body, CSRF_HIDDEN_FORM_FIELD);
+
+            csrfCookie = getCookie(response, CSRF_COOKIE);
+            csrfCookie.setDomain(request.url().host());
+        }
+
+        // POST triggers the actual OAuth redirect
+        request = new Request.Builder()
+                .url(redirectTo)
+                .addHeader("Cookie", csrfCookie.getName() + "=" + csrfCookie.getValue())
+                .post(RequestBody.create(CSRF_HIDDEN_FORM_FIELD + "=" + csrfToken, MediaType.parse(APPLICATION_FORM_URLENCODED)))
                 .build();
         try (Response response = client.newCall(request).execute()) {
             assertThat(response.code()).isEqualTo(SC_SEE_OTHER);
@@ -885,6 +910,111 @@ public class TestResourceSecurity
             requireNonNull(tokenServer, "tokenServer is null");
             requireNonNull(nonceCookie, "nonce is null");
         }
+    }
+
+    @Test
+    public void testOAuth2CsrfTokenValidation()
+            throws Exception
+    {
+        try (TokenServer tokenServer = new TokenServer(Optional.empty());
+                TestingTrinoServer server = TestingTrinoServer.builder()
+                        .setProperties(ImmutableMap.<String, String>builder()
+                                .putAll(SECURE_PROPERTIES)
+                                .put("web-ui.enabled", "true")
+                                .put("http-server.authentication.type", "oauth2")
+                                .putAll(getOAuth2Properties(tokenServer))
+                                .buildOrThrow())
+                        .setAdditionalModule(oauth2Module(tokenServer))
+                        .setSystemAccessControl(TestSystemAccessControl.NO_IMPERSONATION)
+                        .build()) {
+            HttpServerInfo httpServerInfo = server.getInstance(Key.get(HttpServerInfo.class));
+            URI baseUri = httpServerInfo.getHttpsUri();
+
+            // get the initiate URL from the authenticate header
+            Request request = new Request.Builder()
+                    .url(getManagementLocation(baseUri))
+                    .build();
+            String redirectTo;
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_UNAUTHORIZED);
+                String authenticateHeader = response.header(WWW_AUTHENTICATE);
+                assertThat(authenticateHeader).isNotNull();
+                Pattern oauth2BearerPattern = Pattern.compile("Bearer x_redirect_server=\"(https://127.0.0.1:[0-9]+/oauth2/token/initiate/.+)\", x_token_server=\"(https://127.0.0.1:[0-9]+/oauth2/token/.+)\"");
+                Matcher matcher = oauth2BearerPattern.matcher(authenticateHeader);
+                assertThat(matcher.matches()).isTrue();
+                redirectTo = matcher.group(1);
+            }
+
+            // POST without CSRF cookie and without CSRF_HIDDEN_FORM_FIELD should be rejected
+            request = new Request.Builder()
+                    .url(redirectTo)
+                    .post(RequestBody.create("", MediaType.parse(APPLICATION_FORM_URLENCODED)))
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_FORBIDDEN);
+            }
+
+            // GET the confirmation page with CSRF token
+            String csrfToken;
+            HttpCookie csrfCookie;
+            request = new Request.Builder()
+                    .url(redirectTo)
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_OK);
+                String body = response.body().string();
+                csrfToken = extractTokenFromHiddenFormField(body, CSRF_HIDDEN_FORM_FIELD);
+                csrfCookie = getCookie(response, CSRF_COOKIE);
+                csrfCookie.setDomain(request.url().host());
+            }
+
+            // POST with CSRF cookie but without CSRF_HIDDEN_FORM_FIELD should be rejected
+            request = new Request.Builder()
+                    .url(redirectTo)
+                    .addHeader("Cookie", csrfCookie.getName() + "=" + csrfCookie.getValue())
+                    .post(RequestBody.create("", MediaType.parse(APPLICATION_FORM_URLENCODED)))
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_FORBIDDEN);
+            }
+
+            // POST without CSRF cookie should be rejected
+            request = new Request.Builder()
+                    .url(redirectTo)
+                    .post(RequestBody.create(CSRF_HIDDEN_FORM_FIELD + "=" + csrfToken, MediaType.parse(APPLICATION_FORM_URLENCODED)))
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_FORBIDDEN);
+            }
+
+            // POST with incorrect CSRF cookie should be rejected
+            request = new Request.Builder()
+                    .url(redirectTo)
+                    .addHeader("Cookie", csrfCookie.getName() + "=" + "incorrect-csrf-token")
+                    .post(RequestBody.create(CSRF_HIDDEN_FORM_FIELD + "=" + csrfToken, MediaType.parse(APPLICATION_FORM_URLENCODED)))
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_FORBIDDEN);
+            }
+
+            // POST with correct CSRF cookie and form field should succeed
+            request = new Request.Builder()
+                    .url(redirectTo)
+                    .addHeader("Cookie", csrfCookie.getName() + "=" + csrfCookie.getValue())
+                    .post(RequestBody.create(CSRF_HIDDEN_FORM_FIELD + "=" + csrfToken, MediaType.parse(APPLICATION_FORM_URLENCODED)))
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_SEE_OTHER);
+            }
+        }
+    }
+
+    private static String extractTokenFromHiddenFormField(String body, String fieldName)
+    {
+        Pattern pattern = Pattern.compile("name=\"" + fieldName + "\" value=\"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(body);
+        assertThat(matcher.find()).isTrue();
+        return matcher.group(1);
     }
 
     @Test

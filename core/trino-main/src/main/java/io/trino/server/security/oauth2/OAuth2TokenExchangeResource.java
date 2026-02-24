@@ -25,14 +25,20 @@ import io.trino.server.security.oauth2.OAuth2TokenExchange.TokenPoll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -48,7 +54,9 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
 import static io.trino.server.AsyncResponseUtils.withFallbackAfterTimeout;
 import static io.trino.server.security.ResourceSecurity.AccessType.PUBLIC;
+import static io.trino.server.security.oauth2.CsrfTokenCookie.CSRF_COOKIE;
 import static io.trino.server.security.oauth2.OAuth2CallbackResource.CALLBACK_ENDPOINT;
+import static io.trino.server.security.oauth2.OAuth2Service.generateCsrfToken;
 import static io.trino.server.security.oauth2.OAuth2TokenExchange.MAX_POLL_TIME;
 import static io.trino.server.security.oauth2.OAuth2TokenExchange.hashAuthId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
@@ -58,6 +66,7 @@ import static java.util.Objects.requireNonNull;
 @ResourceSecurity(PUBLIC)
 public class OAuth2TokenExchangeResource
 {
+    public static final String CSRF_HIDDEN_FORM_FIELD = "_csrf";
     static final String TOKEN_ENDPOINT = "/oauth2/token/";
 
     private static final JsonCodec<Map<String, Object>> MAP_CODEC = new JsonCodecFactory().mapJsonCodec(String.class, Object.class);
@@ -78,10 +87,37 @@ public class OAuth2TokenExchangeResource
 
     @Path("initiate/{authIdHash}")
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response initiateTokenExchange(@PathParam("authIdHash") String authIdHash, @BeanParam ExternalUriInfo externalUriInfo)
+    @Produces(MediaType.TEXT_HTML)
+    public Response initiateTokenExchange(@PathParam("authIdHash") String authIdHash)
     {
-        return service.startOAuth2Challenge(externalUriInfo.absolutePath(CALLBACK_ENDPOINT), Optional.ofNullable(authIdHash));
+        // authIdHash implicitly propagated via action=""
+        // the browser POSTs to the same URL it's currently on (e.g. /oauth2/token/initiate/abc123),
+        // so the authIdHash path segment is needed here on GET to be preserved on POST later
+        String csrfToken = generateCsrfToken();
+        return Response.ok(service.getConfirmHtml(csrfToken), MediaType.TEXT_HTML)
+                .cookie(CsrfTokenCookie.create(csrfToken))
+                .build();
+    }
+
+    @Path("initiate/{authIdHash}")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response confirmTokenExchange(
+            @PathParam("authIdHash") String authIdHash,
+            @BeanParam ExternalUriInfo externalUriInfo,
+            @FormParam(CSRF_HIDDEN_FORM_FIELD) String csrfFormToken,
+            @CookieParam(CSRF_COOKIE) Cookie csrfCookie)
+    {
+        String csrfCookieValue = CsrfTokenCookie.read(csrfCookie)
+                .orElseThrow(() -> new ForbiddenException("Missing CSRF token"));
+        if (!csrfCookieValue.equals(csrfFormToken)) {
+            throw new ForbiddenException("Invalid CSRF token");
+        }
+        Response response = service.startOAuth2Challenge(externalUriInfo.absolutePath(CALLBACK_ENDPOINT), Optional.ofNullable(authIdHash));
+        return Response.fromResponse(response)
+                .cookie(CsrfTokenCookie.delete())
+                .build();
     }
 
     @Path("{authId}")

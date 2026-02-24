@@ -20,8 +20,10 @@ import io.trino.tempto.BeforeMethodWithContext;
 import io.trino.tempto.ProductTest;
 import io.trino.tests.product.TpchTableResults;
 import okhttp3.JavaNetCookieJar;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.tls.HandshakeCertificates;
 import org.testng.annotations.Test;
@@ -38,11 +40,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.trino.tempto.query.QueryResult.forResultSet;
 import static io.trino.tests.product.TestGroups.OAUTH2;
 import static io.trino.tests.product.TestGroups.PROFILE_SPECIFIC_TESTS;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +55,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestExternalAuthorizerOAuth2
         extends ProductTest
 {
+    static final String CSRF_HIDDEN_FORM_FIELD = "_csrf";
+
     @Inject
     @Named("databases.trino.jdbc_url")
     String jdbcUrl;
@@ -123,9 +130,27 @@ public class TestExternalAuthorizerOAuth2
     private void prepareHandler()
     {
         TestingRedirectHandlerInjector.setRedirectHandler(uri -> {
+            String csrfToken;
             try (Response response = httpClient.newCall(
                             new Request.Builder()
                                     .get()
+                                    .url(uri.toString())
+                                    .build())
+                    .execute()) {
+                int statusCode = response.code();
+                checkState(statusCode == 200, "Invalid status %s", statusCode);
+                requireNonNull(response.body(), "body is null");
+                String body = response.body().string();
+                checkState(body.contains("Confirm Authentication"), "Invalid response %s", body);
+                csrfToken = extractTokenFromHiddenFormField(body, CSRF_HIDDEN_FORM_FIELD);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            // imitate "Confirm Authentication" click in browser
+            try (Response response = httpClient.newCall(
+                            new Request.Builder()
+                                    .post(RequestBody.create(CSRF_HIDDEN_FORM_FIELD + "=" + csrfToken, MediaType.parse(APPLICATION_FORM_URLENCODED)))
                                     .url(uri.toString())
                                     .build())
                     .execute()) {
@@ -139,5 +164,13 @@ public class TestExternalAuthorizerOAuth2
                 throw new UncheckedIOException(e);
             }
         });
+    }
+
+    static String extractTokenFromHiddenFormField(String body, String fieldName)
+    {
+        Pattern pattern = Pattern.compile("name=\"" + fieldName + "\" value=\"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(body);
+        assertThat(matcher.find()).isTrue();
+        return matcher.group(1);
     }
 }

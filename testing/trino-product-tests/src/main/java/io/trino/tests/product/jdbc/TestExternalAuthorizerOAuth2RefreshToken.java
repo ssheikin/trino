@@ -20,8 +20,10 @@ import io.trino.tempto.BeforeMethodWithContext;
 import io.trino.tempto.ProductTest;
 import io.trino.tests.product.TpchTableResults;
 import okhttp3.JavaNetCookieJar;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.tls.HandshakeCertificates;
 import org.testng.annotations.Test;
@@ -46,6 +48,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static io.trino.tempto.query.QueryResult.forResultSet;
 import static io.trino.tests.product.TestGroups.OAUTH2_REFRESH;
 import static io.trino.tests.product.TestGroups.PROFILE_SPECIFIC_TESTS;
+import static io.trino.tests.product.jdbc.TestExternalAuthorizerOAuth2.CSRF_HIDDEN_FORM_FIELD;
+import static io.trino.tests.product.jdbc.TestExternalAuthorizerOAuth2.extractTokenFromHiddenFormField;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -178,11 +183,29 @@ public class TestExternalAuthorizerOAuth2RefreshToken
         public void accept(URI uri)
         {
             redirectCount.incrementAndGet();
+            String csrfToken;
             try (Response response = httpClient.newCall(
                     new Request.Builder()
                             .get()
                             .url(uri.toString())
                             .build())
+                    .execute()) {
+                int statusCode = response.code();
+                checkState(statusCode == 200, "Invalid status %s", statusCode);
+                requireNonNull(response.body(), "body is null");
+                String body = response.body().string();
+                checkState(body.contains("Confirm Authentication"), "Invalid response %s", body);
+                csrfToken = extractTokenFromHiddenFormField(body, CSRF_HIDDEN_FORM_FIELD);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            // imitate "Confirm Authentication" click in browser
+            try (Response response = httpClient.newCall(
+                            new Request.Builder()
+                                    .post(RequestBody.create(CSRF_HIDDEN_FORM_FIELD + "=" + csrfToken, MediaType.parse(APPLICATION_FORM_URLENCODED)))
+                                    .url(uri.toString())
+                                    .build())
                     .execute()) {
                 int statusCode = response.code();
                 checkState(statusCode == 200, "Invalid status %s", statusCode);

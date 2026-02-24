@@ -32,6 +32,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Random;
@@ -60,6 +61,7 @@ public class OAuth2Service
 
     private static final String STATE_AUDIENCE_UI = "trino_oauth_ui";
     private static final String FAILURE_REPLACEMENT_TEXT = "<!-- ERROR_MESSAGE -->";
+    private static final String CSRF_TOKEN_REPLACEMENT_TEXT = "<!-- CSRF_TOKEN -->";
     private static final Random SECURE_RANDOM = new SecureRandom();
     public static final String HANDLER_STATE_CLAIM = "handler_state";
 
@@ -69,6 +71,7 @@ public class OAuth2Service
 
     private final String successHtml;
     private final String failureHtml;
+    private final String confirmHtml;
 
     private final TemporalAmount challengeTimeout;
     private final SecretKey stateHmac;
@@ -93,7 +96,9 @@ public class OAuth2Service
         this.client = requireNonNull(client, "client is null");
         this.successHtml = readWebUiResource("/oauth2/success.html");
         this.failureHtml = readWebUiResource("/oauth2/failure.html");
+        this.confirmHtml = readWebUiResource("/oauth2/confirm.html");
         verify(failureHtml.contains(FAILURE_REPLACEMENT_TEXT), "login.html does not contain the replacement text");
+        verify(confirmHtml.contains(CSRF_TOKEN_REPLACEMENT_TEXT), "confirm.html does not contain the CSRF token replacement text");
 
         this.challengeTimeout = Duration.ofMillis(oauth2Config.getChallengeTimeout().toMillis());
         this.stateHmac = hmacShaKeyFor(oauth2Config.getStateKey()
@@ -238,6 +243,16 @@ public class OAuth2Service
         catch (RuntimeException e) {
             throw new ChallengeFailedException("State validation failed", e);
         }
+    }
+
+    public String getConfirmHtml(String csrfToken)
+    {
+        return confirmHtml.replace(CSRF_TOKEN_REPLACEMENT_TEXT, csrfToken);
+    }
+
+    public static String generateCsrfToken()
+    {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(secureRandomBytes(32));
     }
 
     public String getSuccessHtml()
