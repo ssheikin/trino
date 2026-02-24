@@ -79,7 +79,7 @@ public class TestingDataServer
                         .withBufferNodeId(nodeId)
                         .withDiscoveryBroadcast(discoveryApiModule.isPresent())
                         .build(),
-                useBlackholeStorage ? new BlackholeSpoolingStorageModule() : new SpoolingStorageModule(Optional.empty())));
+                useBlackholeStorage ? new BlackholeSpoolingStorageModule() : new SpoolingStorageModule(Optional.empty(), false)));
         discoveryApiModule.ifPresent(modules::add);
 
         Bootstrap app = new Bootstrap(modules);
