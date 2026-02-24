@@ -103,7 +103,7 @@ public class TestChunkManager
 
         public FailureInjectingS3SpoolingStorage(
                 BufferNodeId bufferNodeId,
-                ChunkManagerConfig chunkManagerConfig,
+                SpoolingDirectoryConfig spoolingDirectoryConfig,
                 S3AsyncClient s3AsyncClient,
                 MergedFileNameGenerator mergedFileNameGenerator,
                 DataServerStats dataServerStats,
@@ -112,7 +112,7 @@ public class TestChunkManager
                 Set<String> failureExchanges)
                 throws IOException
         {
-            super(bufferNodeId, chunkManagerConfig, s3AsyncClient, mergedFileNameGenerator, dataServerStats, compatibilityMode, gcsClientConfig);
+            super(bufferNodeId, spoolingDirectoryConfig, s3AsyncClient, mergedFileNameGenerator, dataServerStats, compatibilityMode, gcsClientConfig);
             this.failureExchanges = failureExchanges;
         }
 
@@ -609,7 +609,7 @@ public class TestChunkManager
                 new DataServerStats());
         SpoolingStorage failureInjectingSpoolingStorage = new FailureInjectingS3SpoolingStorage(
                 new BufferNodeId(0L),
-                new ChunkManagerConfig().setSpoolingDirectory("s3://" + minioStorage.getBucketName()),
+                new SpoolingDirectoryConfig().setSpoolingDirectory("s3://" + minioStorage.getBucketName()),
                 S3Utils.createS3Client(new S3ClientConfig()
                         .setS3AwsAccessKey(MinioStorage.ACCESS_KEY)
                         .setS3AwsSecretKey(MinioStorage.SECRET_KEY)
@@ -684,7 +684,7 @@ public class TestChunkManager
                 new DataServerStats());
         SpoolingStorage failureInjectingSpoolingStorage = new FailureInjectingS3SpoolingStorage(
                 new BufferNodeId(0L),
-                new ChunkManagerConfig().setSpoolingDirectory("s3://" + minioStorage.getBucketName()),
+                new SpoolingDirectoryConfig().setSpoolingDirectory("s3://" + minioStorage.getBucketName()),
                 S3Utils.createS3Client(new S3ClientConfig()
                         .setS3AwsAccessKey(MinioStorage.ACCESS_KEY)
                         .setS3AwsSecretKey(MinioStorage.SECRET_KEY)
@@ -1135,7 +1135,6 @@ public class TestChunkManager
                 .setChunkTargetSize(chunkTargetSize)
                 .setChunkMaxSize(chunkMaxSize)
                 .setChunkSliceSize(chunkSliceSize)
-                .setSpoolingDirectory("s3://" + minioStorage.getBucketName())
                 .setChunkSpoolInterval(succinctDuration(100, SECONDS))
                 .setChunkSpoolConcurrency(chunkSpoolConcurrency); // only manual triggering in tests
         DataServerConfig dataServerConfig = new DataServerConfig()
