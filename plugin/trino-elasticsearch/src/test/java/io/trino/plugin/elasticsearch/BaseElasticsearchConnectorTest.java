@@ -84,7 +84,7 @@ public abstract class BaseElasticsearchConnectorTest
 
     protected ElasticsearchServer server;
     protected RestHighLevelClient client;
-    private final String jmxBaseName = randomNameSuffix();
+    protected final String jmxBaseName = randomNameSuffix();
 
     BaseElasticsearchConnectorTest(ElasticsearchServer server)
     {
