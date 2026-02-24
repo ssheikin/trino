@@ -84,7 +84,7 @@ public abstract class BaseElasticsearchConnectorTest
 
     protected ElasticsearchServer server;
     protected RestHighLevelClient client;
-    private String jmxBaseName;
+    private final String jmxBaseName = randomNameSuffix();
 
     BaseElasticsearchConnectorTest(ElasticsearchServer server)
     {
@@ -96,7 +96,6 @@ public abstract class BaseElasticsearchConnectorTest
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        jmxBaseName = randomNameSuffix();
         return ElasticsearchQueryRunner.builder(server)
                 .setInitialTables(REQUIRED_TPCH_TABLES)
                 .addConnectorProperties(Map.of("jmx.base-name", jmxBaseName))
