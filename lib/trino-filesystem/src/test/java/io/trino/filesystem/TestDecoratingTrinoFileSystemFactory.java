@@ -75,11 +75,17 @@ public class TestDecoratingTrinoFileSystemFactory
         assertProperForwardingMethodsAreCalled(
                 TrinoFileSystem.class,
                 forwardingFactory.andThen(factory -> factory.create((ConnectorIdentity) null)),
-                Set.of(TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class)));
+                Set.of(
+                        TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class),
+                        // checkStartingFrom is static and cannot be overridden:
+                        TrinoFileSystem.class.getMethod("checkStartingFrom", String.class)));
 
         assertProperForwardingMethodsAreCalled(
                 TrinoFileSystem.class,
                 forwardingFactory.andThen(factory -> factory.create((ConnectorSession) null)),
-                Set.of(TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class)));
+                Set.of(
+                        TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class),
+                        // checkStartingFrom is static and cannot be overridden:
+                        TrinoFileSystem.class.getMethod("checkStartingFrom", String.class)));
     }
 }

@@ -35,6 +35,9 @@ public class TestForwardingTrinoFileSystem
         assertProperForwardingMethodsAreCalled(
                 TrinoFileSystem.class,
                 trinoFileSystem -> ForwardingTrinoFileSystem.of(() -> trinoFileSystem),
-                Set.of(TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class)));
+                Set.of(
+                        TrinoFileSystem.class.getMethod("isUnrecoverableException", Throwable.class),
+                        // checkStartingFrom is static and cannot be overridden:
+                        TrinoFileSystem.class.getMethod("checkStartingFrom", String.class)));
     }
 }
