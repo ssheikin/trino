@@ -34,6 +34,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -60,7 +61,7 @@ public class BackpressureRestClient
         this.elasticsearchClientStats = requireNonNull(elasticsearchClientStats, "elasticsearchClientStats is null");
         retryPolicy = RetryPolicy.<Response>builder()
                 .withMaxAttempts(-1)
-                .withMaxDuration(java.time.Duration.ofMillis(config.getMaxRetryTime().toMillis()))
+                .withMaxDuration(Duration.ofMillis(config.getMaxRetryTime().toMillis()))
                 .withBackoff(config.getBackoffInitDelay().toMillis(), config.getBackoffMaxDelay().toMillis(), MILLIS)
                 .withJitter(0.125)
                 .handleIf(BackpressureRestClient::isBackpressure)

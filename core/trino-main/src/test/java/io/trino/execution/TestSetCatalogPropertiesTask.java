@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -326,7 +327,7 @@ public class TestSetCatalogPropertiesTask
                 queryRunner.getPlannerContext().getMetadata(),
                 WarningCollector.NOOP,
                 createPlanOptimizersStatsCollector(),
-                new ExchangeMetricsCollector(ImmutableList::of, java.time.Duration.ofMillis(1)),
+                new ExchangeMetricsCollector(ImmutableList::of, Duration.ofMillis(1)),
                 Optional.empty(),
                 true,
                 Optional.empty(),

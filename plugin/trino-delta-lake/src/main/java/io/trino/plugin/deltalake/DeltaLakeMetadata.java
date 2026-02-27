@@ -873,7 +873,7 @@ public class DeltaLakeMetadata
                 endVersion.isPresent());
     }
 
-    public MaybeLazy<List<ColumnMetadata>> getTableColumnMetadata(ConnectorSession session, io.trino.metastore.Table table)
+    public MaybeLazy<List<ColumnMetadata>> getTableColumnMetadata(ConnectorSession session, Table table)
     {
         checkArgument(isDeltaLakeTable(table), "Not Delta table: %s", table);
         DeltaMetastoreTable deltaMetastoreTable = convertToDeltaMetastoreTable(table);
@@ -897,7 +897,7 @@ public class DeltaLakeMetadata
         });
     }
 
-    public MaybeLazy<Optional<String>> getTableComment(ConnectorSession session, io.trino.metastore.Table table)
+    public MaybeLazy<Optional<String>> getTableComment(ConnectorSession session, Table table)
     {
         checkArgument(isDeltaLakeTable(table), "Not Delta table: %s", table);
         DeltaMetastoreTable deltaMetastoreTable = convertToDeltaMetastoreTable(table);
