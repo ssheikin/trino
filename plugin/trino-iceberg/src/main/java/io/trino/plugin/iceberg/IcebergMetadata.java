@@ -3972,8 +3972,10 @@ public class IcebergMetadata
     public Optional<ConnectorPartitioningHandle> getUpdateLayout(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         Optional<ConnectorTableLayout> insertLayout = getInsertLayout(session, tableHandle);
-        if (insertLayout.isEmpty() || insertLayout.get().getPartitioning().isEmpty()) {
-            return Optional.of(new IcebergPartitioningHandle(true, List.of()));
+        if (rowLevelOperationMode(catalog.loadTable(session, ((IcebergTableHandle) tableHandle).getSchemaTableName())) == COPY_ON_WRITE) {
+            if (insertLayout.isEmpty() || insertLayout.get().getPartitioning().isEmpty()) {
+                return Optional.of(new IcebergPartitioningHandle(true, List.of()));
+            }
         }
         return insertLayout
                 .flatMap(ConnectorTableLayout::getPartitioning)
