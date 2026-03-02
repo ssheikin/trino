@@ -23,7 +23,6 @@ import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.http.server.HttpServerModule;
 import io.airlift.jaxrs.JaxrsModule;
 import io.airlift.json.JsonModule;
-import io.airlift.node.NodeModule;
 import io.trino.plugin.warp.annotation.ForWarmupRuleCloudFetcher;
 import io.trino.plugin.warp.config.CacheManagerConfig;
 import io.trino.plugin.warp.di.InitializationModule;
@@ -129,7 +128,6 @@ public class WarpExtensionModule
         HttpServerModule httpServerModule = new HttpServerModule();
         configFactory.registerConfigurationClasses(httpServerModule);
 
-        install(new NodeModule());
         install(httpServerModule);
         install(new JsonModule());
 
