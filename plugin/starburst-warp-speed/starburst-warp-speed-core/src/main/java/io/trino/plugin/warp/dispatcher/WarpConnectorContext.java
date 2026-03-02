@@ -167,4 +167,10 @@ public class WarpConnectorContext
     {
         return connectorContext.getCoordinatorLocator();
     }
+
+    @Override
+    public String getNodeEnvironment()
+    {
+        return connectorContext.getNodeEnvironment();
+    }
 }

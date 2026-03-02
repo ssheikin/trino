@@ -56,6 +56,7 @@ public class ConnectorContextInstance
     private final Metastore metastore;
     private final CoordinatorLocator coordinatorLocator;
     private final Map<String, String> serverProperties;
+    private final String nodeEnvironment;
 
     public ConnectorContextInstance(
             OpenTelemetry openTelemetry,
@@ -74,7 +75,8 @@ public class ConnectorContextInstance
             PageIndexerFactory pageIndexerFactory,
             PageStreamFactory pageStreamFactory,
             CatalogVersion catalogVersion,
-            Map<String, String> serverProperties)
+            Map<String, String> serverProperties,
+            String nodeEnvironment)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -93,6 +95,7 @@ public class ConnectorContextInstance
         this.pageStreamFactory = requireNonNull(pageStreamFactory, "pageStreamFactory is null");
         this.catalogVersion = requireNonNull(catalogVersion, "catalogVersion is null");
         this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
+        this.nodeEnvironment = requireNonNull(nodeEnvironment, "nodeEnvironment is null");
     }
 
     @Override
@@ -195,5 +198,11 @@ public class ConnectorContextInstance
     public CoordinatorLocator getCoordinatorLocator()
     {
         return coordinatorLocator;
+    }
+
+    @Override
+    public String getNodeEnvironment()
+    {
+        return nodeEnvironment;
     }
 }
