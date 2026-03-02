@@ -7324,7 +7324,8 @@ public class TestSqlParser
     @Test
     public void testSessionProperty()
     {
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 WITH SESSION
                    key = 'value',
                    catalog.key2 = DECIMAL '10.0'
@@ -7383,7 +7384,8 @@ public class TestSqlParser
     @Test
     public void testWithSessionAndFunction()
     {
-        assertThat(statement("""
+        assertThat(statement(
+                """
                 WITH SESSION
                    key = 'value'
                 WITH

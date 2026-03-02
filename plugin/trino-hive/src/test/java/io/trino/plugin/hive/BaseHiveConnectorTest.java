@@ -9685,9 +9685,7 @@ public abstract class BaseHiveConnectorTest
     }
 
     private static class RollbackException
-            extends RuntimeException
-    {
-    }
+            extends RuntimeException {}
 
     protected void testWithAllStorageFormats(BiConsumer<Session, HiveStorageFormat> test)
     {
