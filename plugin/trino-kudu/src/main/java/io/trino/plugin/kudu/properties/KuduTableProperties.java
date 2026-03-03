@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.kudu.properties;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.trino.spi.TrinoException;
@@ -59,7 +59,7 @@ public final class KuduTableProperties
     public static final String RANGE_PARTITIONS = "range_partitions";
     public static final String NUM_REPLICAS = "number_of_replicas";
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final JsonMapper mapper = new JsonMapper();
 
     private static final long DEFAULT_TIMEOUT = 20_000; // timeout for retrieving range partitions in milliseconds
 

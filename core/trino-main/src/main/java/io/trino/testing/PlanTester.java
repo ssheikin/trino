@@ -13,7 +13,7 @@
  */
 package io.trino.testing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -22,7 +22,7 @@ import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.json.JsonCodec;
 import io.airlift.json.JsonCodecFactory;
-import io.airlift.json.ObjectMapperProvider;
+import io.airlift.json.JsonMapperProvider;
 import io.airlift.node.NodeInfo;
 import io.airlift.units.Duration;
 import io.opentelemetry.api.metrics.MeterProvider;
@@ -38,7 +38,6 @@ import io.trino.cache.CacheManagerRegistry;
 import io.trino.cache.CacheMetadata;
 import io.trino.cache.CachePerformanceTracker;
 import io.trino.cache.CacheStats;
-import io.trino.block.BlockJsonSerde;
 import io.trino.connector.CatalogFactory;
 import io.trino.connector.CatalogHandle;
 import io.trino.connector.CatalogMetricsService;
@@ -93,8 +92,8 @@ import io.trino.execution.scheduler.NodeScheduler;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.execution.scheduler.UniformNodeSelectorFactory;
 import io.trino.execution.warnings.WarningCollector;
-import io.trino.memory.LocalMemoryManager;
 import io.trino.json.ir.IrJsonPath;
+import io.trino.memory.LocalMemoryManager;
 import io.trino.memory.MemoryManagerConfig;
 import io.trino.memory.NodeMemoryConfig;
 import io.trino.metadata.AnalyzePropertyManager;
@@ -440,7 +439,7 @@ public class PlanTester
                 tableFunctionRegistry,
                 typeManager,
                 catalogManager));
-        ObjectMapper mapper = new ObjectMapperProvider()
+        JsonMapper mapper = new JsonMapperProvider()
                 .withJsonDeserializers(ImmutableMap.of(
                         Type.class, new TypeDeserializer(typeManager),
                         TypeSignature.class, new TypeSignatureDeserializer(),
@@ -620,13 +619,13 @@ public class PlanTester
 
     public static JsonCodec<TupleDomain> getTupleDomainJsonCodec(BlockEncodingSerde blockEncodingSerde, TypeManager typeManager)
     {
-        ObjectMapperProvider objectMapperProvider = new ObjectMapperProvider();
-        objectMapperProvider.setJsonDeserializers(ImmutableMap.of(
+        JsonMapperProvider jsonMapperProvider = new JsonMapperProvider();
+        jsonMapperProvider.setJsonDeserializers(ImmutableMap.of(
                 Block.class, new BlockJsonSerde.Deserializer(blockEncodingSerde),
                 Type.class, new TypeDeserializer(typeManager)));
-        objectMapperProvider.setJsonSerializers(ImmutableMap.of(
+        jsonMapperProvider.setJsonSerializers(ImmutableMap.of(
                 Block.class, new BlockJsonSerde.Serializer(blockEncodingSerde)));
-        return new JsonCodecFactory(objectMapperProvider).jsonCodec(TupleDomain.class);
+        return new JsonCodecFactory(jsonMapperProvider).jsonCodec(TupleDomain.class);
     }
 
     private static SessionPropertyManager createSessionPropertyManager(

@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.hive;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -21,7 +21,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.airlift.json.JsonCodec;
 import io.airlift.json.JsonCodecFactory;
-import io.airlift.json.ObjectMapperProvider;
+import io.airlift.json.JsonMapperProvider;
 import io.airlift.units.DataSize;
 import io.trino.Session;
 import io.trino.connector.MockConnectorFactory;
@@ -9736,10 +9736,10 @@ public abstract class BaseHiveConnectorTest
 
     private JsonCodec<IoPlan> getIoPlanCodec()
     {
-        ObjectMapper objectMapper = new ObjectMapperProvider()
+        JsonMapper jsonMapper = new JsonMapperProvider()
                 .withJsonDeserializers(ImmutableMap.of(Type.class, new TypeDeserializer(getQueryRunner().getPlannerContext().getTypeManager())))
                 .get();
-        return new JsonCodecFactory(objectMapper).jsonCodec(IoPlan.class);
+        return new JsonCodecFactory(jsonMapper).jsonCodec(IoPlan.class);
     }
 
     private record TestingHiveStorageFormat(Session session, HiveStorageFormat format)
