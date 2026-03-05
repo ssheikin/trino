@@ -9,9 +9,8 @@
  */
 package io.starburst.ai.model;
 
-public enum LlmTrait
+public enum PromptCachingSupportOption
 {
-    TOOL_CALL_SUPPORT,
-    STREAMING_TOOL_CALL_SUPPORT,
-    PROMPT_CACHING_SUPPORT,
+    PROMPT_CACHING_SUPPORTED,
+    PROMPT_CACHING_NOT_SUPPORTED,
 }
