@@ -27,6 +27,9 @@ function create_principal_with_forward_and_reverse_dns_entries() {
 # Modify ticket granting ticket principal max lifetime
 /usr/sbin/kadmin.local -q "modprinc -maxlife $MAX_TICKET_LIFETIME krbtgt/STARBURSTDATA.COM@STARBURSTDATA.COM"
 
+# Clean up any existing keytab files in the /kerberos directory before creating new ones.
+rm -fv /kerberos/*.keytab
+
 create_principal_with_forward_and_reverse_dns_entries kuduservice kudu-master /kerberos/kudu-master.keytab
 
 create_principal_with_forward_and_reverse_dns_entries kuduservice kudu-tserver-0 /kerberos/kudu-tserver-0.keytab
