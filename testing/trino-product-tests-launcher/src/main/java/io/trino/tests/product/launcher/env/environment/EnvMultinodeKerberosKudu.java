@@ -99,7 +99,7 @@ public class EnvMultinodeKerberosKudu
     {
         DockerContainer container = new DockerContainer(KUDU_IMAGE, KUDU_MASTER)
                 .withCommand("master")
-                .withEnv("MASTER_ARGS", format("--fs_wal_dir=/var/lib/kudu/master --logtostderr --use_hybrid_clock=false --rpc_authentication=required --rpc_bind_addresses=%s:%s --rpc_authentication=required --principal=kuduservice/kudu-master@STARBURSTDATA.COM --keytab_file=/kerberos/kudu-master.keytab", KUDU_MASTER, KUDU_MASTER_PORT))
+                .withEnv("MASTER_ARGS", format("--fs_wal_dir=/var/lib/kudu/master --logtostderr --use_hybrid_clock=false --rpc_bind_addresses=%s:%s --rpc_authentication=required --principal=kuduservice/kudu-master@STARBURSTDATA.COM --keytab_file=/kerberos/kudu-master.keytab", KUDU_MASTER, KUDU_MASTER_PORT))
                 .withFileSystemBind(kerberosCredentialsDirectory.toString(), "/kerberos", READ_ONLY)
                 .waitingFor(forSelectedPorts(KUDU_MASTER_PORT));
 
@@ -119,7 +119,7 @@ public class EnvMultinodeKerberosKudu
             DockerContainer kuduTablet = new DockerContainer(KUDU_IMAGE, instanceName)
                     .withCommand("tserver")
                     .withEnv("KUDU_MASTERS", format("%s:%s", KUDU_MASTER, KUDU_MASTER_PORT))
-                    .withEnv("TSERVER_ARGS", format("--fs_wal_dir=/var/lib/kudu/tserver --logtostderr --use_hybrid_clock=false --rpc_authentication=required --rpc_bind_addresses=%s:%s --rpc_authentication=required --principal=kuduservice/kudu-tserver-%s@STARBURSTDATA.COM --keytab_file=/kerberos/kudu-tserver-%s.keytab", instanceName, initialKuduTserverPort, i, i))
+                    .withEnv("TSERVER_ARGS", format("--fs_wal_dir=/var/lib/kudu/tserver --logtostderr --use_hybrid_clock=false --rpc_bind_addresses=%s:%s --rpc_authentication=required --principal=kuduservice/kudu-tserver-%s@STARBURSTDATA.COM --keytab_file=/kerberos/kudu-tserver-%s.keytab", instanceName, initialKuduTserverPort, i, i))
                     .withFileSystemBind(kerberosCredentialsDirectory.toString(), "/kerberos", READ_ONLY)
                     .waitingFor(forSelectedPorts(initialKuduTserverPort))
                     .dependsOn(kuduMaster);
