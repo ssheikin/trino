@@ -44,12 +44,12 @@ public class EnvMultinodeKerberosKudu
         extends EnvironmentProvider
 {
     private static final String KUDU_IMAGE = "apache/kudu:1.15.0";
-    private static final Integer KUDU_MASTER_PORT = 7051;
-    private static final Integer NUMBER_OF_REPLICA = 3;
+    private static final int KUDU_MASTER_PORT = 7051;
+    private static final int NUMBER_OF_REPLICA = 3;
     private static final String KUDU_MASTER = "kudu-master";
     private static final String KUDU_TABLET_TEMPLATE = "kudu-tserver-%s";
 
-    private static Integer initialKuduTserverPort = 7060;
+    private static int initialKuduTserverPort = 7060;
 
     private final PortBinder portBinder;
     private final DockerFiles.ResourceProvider configDir;
