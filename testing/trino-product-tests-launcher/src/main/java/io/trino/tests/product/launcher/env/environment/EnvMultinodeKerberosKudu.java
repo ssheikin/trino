@@ -45,11 +45,10 @@ public class EnvMultinodeKerberosKudu
 {
     private static final String KUDU_IMAGE = "apache/kudu:1.15.0";
     private static final int KUDU_MASTER_PORT = 7051;
+    private static final int INITIAL_KUDU_TSERVER_PORT = 7060;
     private static final int NUMBER_OF_REPLICA = 3;
     private static final String KUDU_MASTER = "kudu-master";
     private static final String KUDU_TABLET_TEMPLATE = "kudu-tserver-%s";
-
-    private static int initialKuduTserverPort = 7060;
 
     private final PortBinder portBinder;
     private final DockerFiles.ResourceProvider configDir;
@@ -114,21 +113,21 @@ public class EnvMultinodeKerberosKudu
     {
         List<DockerContainer> tabletContainers = new ArrayList<>();
 
-        for (int i = 0; i < NUMBER_OF_REPLICA; i++) {
-            String instanceName = format(KUDU_TABLET_TEMPLATE, i);
+        for (int replicaIndex = 0; replicaIndex < NUMBER_OF_REPLICA; replicaIndex++) {
+            String instanceName = format(KUDU_TABLET_TEMPLATE, replicaIndex);
+            int kuduTserverPort = INITIAL_KUDU_TSERVER_PORT + replicaIndex;
             DockerContainer kuduTablet = new DockerContainer(KUDU_IMAGE, instanceName)
                     .withCommand("tserver")
                     .withEnv("KUDU_MASTERS", format("%s:%s", KUDU_MASTER, KUDU_MASTER_PORT))
-                    .withEnv("TSERVER_ARGS", format("--fs_wal_dir=/var/lib/kudu/tserver --logtostderr --use_hybrid_clock=false --rpc_bind_addresses=%s:%s --rpc_authentication=required --principal=kuduservice/kudu-tserver-%s@STARBURSTDATA.COM --keytab_file=/kerberos/kudu-tserver-%s.keytab", instanceName, initialKuduTserverPort, i, i))
+                    .withEnv("TSERVER_ARGS", format("--fs_wal_dir=/var/lib/kudu/tserver --logtostderr --use_hybrid_clock=false --rpc_bind_addresses=%s:%s --rpc_authentication=required --principal=kuduservice/kudu-tserver-%s@STARBURSTDATA.COM --keytab_file=/kerberos/kudu-tserver-%s.keytab", instanceName, kuduTserverPort, replicaIndex, replicaIndex))
                     .withFileSystemBind(kerberosCredentialsDirectory.toString(), "/kerberos", READ_ONLY)
-                    .waitingFor(forSelectedPorts(initialKuduTserverPort))
+                    .waitingFor(forSelectedPorts(kuduTserverPort))
                     .dependsOn(kuduMaster);
 
             addKrb5(kuduTablet);
 
-            portBinder.exposePort(kuduTablet, initialKuduTserverPort);
+            portBinder.exposePort(kuduTablet, kuduTserverPort);
             tabletContainers.add(kuduTablet);
-            initialKuduTserverPort += 1;
         }
 
         return tabletContainers;
