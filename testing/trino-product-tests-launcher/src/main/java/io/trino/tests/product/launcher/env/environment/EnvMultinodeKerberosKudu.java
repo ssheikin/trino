@@ -46,7 +46,7 @@ public class EnvMultinodeKerberosKudu
     private static final String KUDU_IMAGE = "apache/kudu:1.15.0";
     private static final int KUDU_MASTER_PORT = 7051;
     private static final int INITIAL_KUDU_TSERVER_PORT = 7060;
-    private static final int NUMBER_OF_REPLICA = 3;
+    private static final int NUMBER_OF_REPLICAS = 3;
     private static final String KUDU_MASTER = "kudu-master";
     private static final String KUDU_TABLET_TEMPLATE = "kudu-tserver-%s";
 
@@ -113,7 +113,7 @@ public class EnvMultinodeKerberosKudu
     {
         List<DockerContainer> tabletContainers = new ArrayList<>();
 
-        for (int replicaIndex = 0; replicaIndex < NUMBER_OF_REPLICA; replicaIndex++) {
+        for (int replicaIndex = 0; replicaIndex < NUMBER_OF_REPLICAS; replicaIndex++) {
             String instanceName = format(KUDU_TABLET_TEMPLATE, replicaIndex);
             int kuduTserverPort = INITIAL_KUDU_TSERVER_PORT + replicaIndex;
             DockerContainer kuduTablet = new DockerContainer(KUDU_IMAGE, instanceName)
