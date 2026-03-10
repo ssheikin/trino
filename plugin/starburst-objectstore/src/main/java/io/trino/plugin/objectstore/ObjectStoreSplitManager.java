@@ -70,18 +70,12 @@ public class ObjectStoreSplitManager
     @Override
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorTableHandle table, DynamicFilter dynamicFilter, Constraint constraint)
     {
-        return getSplits(transactionHandle, session, table, dynamicFilter, false, constraint);
-    }
-
-    @Override
-    public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorTableHandle table, DynamicFilter dynamicFilter, boolean preferDeterministicSplits, Constraint constraint)
-    {
         ObjectStoreTransactionHandle transaction = (ObjectStoreTransactionHandle) transactionHandle;
         return switch (table) {
-            case HiveTableHandle _ -> hiveSplitManager.getSplits(transaction.getHiveHandle(), unwrap(HIVE, session), table, dynamicFilter, preferDeterministicSplits, constraint);
-            case IcebergTableHandle _ -> icebergSplitManager.getSplits(transaction.getIcebergHandle(), unwrap(ICEBERG, session), table, dynamicFilter, preferDeterministicSplits, constraint);
-            case DeltaLakeTableHandle _ -> deltaSplitManager.getSplits(transaction.getDeltaHandle(), unwrap(DELTA, session), table, dynamicFilter, preferDeterministicSplits, constraint);
-            case HudiTableHandle _ -> hudiSplitManager.getSplits(transaction.getHudiHandle(), unwrap(HUDI, session), table, dynamicFilter, preferDeterministicSplits, constraint);
+            case HiveTableHandle _ -> hiveSplitManager.getSplits(transaction.getHiveHandle(), unwrap(HIVE, session), table, dynamicFilter, constraint);
+            case IcebergTableHandle _ -> icebergSplitManager.getSplits(transaction.getIcebergHandle(), unwrap(ICEBERG, session), table, dynamicFilter, constraint);
+            case DeltaLakeTableHandle _ -> deltaSplitManager.getSplits(transaction.getDeltaHandle(), unwrap(DELTA, session), table, dynamicFilter, constraint);
+            case HudiTableHandle _ -> hudiSplitManager.getSplits(transaction.getHudiHandle(), unwrap(HUDI, session), table, dynamicFilter, constraint);
             default -> throw new VerifyException("Unhandled class: " + table.getClass().getName());
         };
     }

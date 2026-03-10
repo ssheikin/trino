@@ -58,18 +58,6 @@ public class DecoratingConnectorSplitManager
     public ConnectorSplitSource getSplits(
             ConnectorTransactionHandle transaction,
             ConnectorSession session,
-            ConnectorTableHandle table,
-            DynamicFilter dynamicFilter,
-            boolean preferDeterministicSplits,
-            Constraint constraint)
-    {
-        return delegate.getSplits(transaction, session, table, dynamicFilter, preferDeterministicSplits, constraint);
-    }
-
-    @Override
-    public ConnectorSplitSource getSplits(
-            ConnectorTransactionHandle transaction,
-            ConnectorSession session,
             ConnectorTableFunctionHandle function)
     {
         return delegate.getSplits(transaction, session, function);
