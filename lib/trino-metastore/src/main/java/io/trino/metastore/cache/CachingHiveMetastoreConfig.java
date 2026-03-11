@@ -20,8 +20,8 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.Comparators.max;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.function.Predicate.not;
 
@@ -136,7 +136,7 @@ public class CachingHiveMetastoreConfig
 
     public boolean isCacheMissingPartitions()
     {
-        return firstNonNull(cacheMissingPartitions, cacheMissing);
+        return requireNonNullElse(cacheMissingPartitions, cacheMissing);
     }
 
     @Config("hive.metastore-cache.cache-missing-partitions")
@@ -148,7 +148,7 @@ public class CachingHiveMetastoreConfig
 
     public boolean isCacheMissingStats()
     {
-        return firstNonNull(cacheMissingStats, cacheMissing);
+        return requireNonNullElse(cacheMissingStats, cacheMissing);
     }
 
     @Config("hive.metastore-cache.cache-missing-stats")
