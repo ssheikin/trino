@@ -781,7 +781,7 @@ public abstract class AbstractTestQueryFramework
                 .tasks()
                 .getFirst()
                 .stats()
-                .getPipelines()
+                .pipelines()
                 .stream()
                 .filter(pipelineStats -> pipelineStats.getPipelineId() == operatorStats.getPipelineId())
                 .flatMap(pipelineStats -> pipelineStats.getOperatorSummaries().stream())
