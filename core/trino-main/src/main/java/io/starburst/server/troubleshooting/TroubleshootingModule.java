@@ -110,6 +110,7 @@ public class TroubleshootingModule
             switch (catalogMangerKind) {
                 case STATIC -> binder.bind(CatalogConfigProvider.class).to(StaticCatalogConfigProvider.class).in(Scopes.SINGLETON);
                 case DYNAMIC -> binder.bind(CatalogConfigProvider.class).to(EmptyCatalogConfigProvider.class).in(Scopes.SINGLETON);
+                case LIVE -> binder.bind(CatalogConfigProvider.class).to(EmptyCatalogConfigProvider.class).in(Scopes.SINGLETON);
             }
             return;
         }
@@ -117,6 +118,7 @@ public class TroubleshootingModule
         switch (catalogMangerKind) {
             case STATIC -> binder.bind(CatalogConfigProvider.class).to(StaticCatalogConfigProvider.class).in(Scopes.SINGLETON);
             case DYNAMIC -> binder.bind(CatalogConfigProvider.class).to(CoordinatorDynamicCatalogConfigProvider.class).in(Scopes.SINGLETON);
+            case LIVE -> binder.bind(CatalogConfigProvider.class).to(EmptyCatalogConfigProvider.class).in(Scopes.SINGLETON);
         }
 
         configBinder(binder).bindConfig(TroubleshootingConfig.class);

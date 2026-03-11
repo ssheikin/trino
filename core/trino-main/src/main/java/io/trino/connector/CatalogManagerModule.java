@@ -42,6 +42,7 @@ public class CatalogManagerModule
         switch (config.getCatalogMangerKind()) {
             case STATIC -> install(new StaticCatalogManagerModule());
             case DYNAMIC -> install(new DynamicCatalogManagerModule());
+            case LIVE -> {}
         }
 
         install(new CatalogServiceProviderModule());

@@ -78,7 +78,7 @@ public class DynamicCatalogManagerModule
         }
     }
 
-    private static class WorkerLazyRegister
+    public static class WorkerLazyRegister
     {
         @Inject
         public WorkerLazyRegister(
