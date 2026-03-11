@@ -276,7 +276,7 @@ public class KuduMetadata
         if (saveMode == REPLACE) {
             throw new TrinoException(NOT_SUPPORTED, "This connector does not support replacing tables");
         }
-        if (tableMetadata.getColumns().stream().anyMatch(column -> column.getComment() != null)) {
+        if (tableMetadata.getColumns().stream().map(ColumnMetadata::getComment).anyMatch(Optional::isPresent)) {
             throw new TrinoException(NOT_SUPPORTED, "This connector does not support creating tables with column comment");
         }
         clientSession.createTable(session, tableMetadata, saveMode == IGNORE);

@@ -1550,7 +1550,7 @@ public class HiveMetadata
         HiveTableHandle handle = (HiveTableHandle) tableHandle;
         failIfAvroSchemaIsSet(session, handle);
 
-        getMetastore(session).addColumn(handle.getSchemaName(), handle.getTableName(), column.getName(), toHiveType(column.getType()), column.getComment());
+        getMetastore(session).addColumn(handle.getSchemaName(), handle.getTableName(), column.getName(), toHiveType(column.getType()), column.getComment().orElse(null));
     }
 
     @Override
@@ -3965,7 +3965,7 @@ public class HiveMetadata
         }
 
         List<Column> dataColumns = tableMetadata.getColumns().stream()
-                .map(columnMetadata -> new Column(columnMetadata.getName(), toHiveType(columnMetadata.getType()), Optional.ofNullable(columnMetadata.getComment()), ImmutableMap.of()))
+                .map(columnMetadata -> new Column(columnMetadata.getName(), toHiveType(columnMetadata.getType()), columnMetadata.getComment(), ImmutableMap.of()))
                 .collect(toImmutableList());
         if (!isSupportedBucketing(bucketInfo.get().bucketedBy(), dataColumns, tableMetadata.getTable().getTableName())) {
             throw new TrinoException(NOT_SUPPORTED, "Cannot create a table bucketed on an unsupported type");
@@ -4018,7 +4018,7 @@ public class HiveMetadata
                     toHiveType(column.getType()),
                     column.getType(),
                     columnType,
-                    Optional.ofNullable(column.getComment())));
+                    column.getComment()));
             ordinal++;
         }
 

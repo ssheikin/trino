@@ -76,7 +76,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -361,7 +360,7 @@ public class KuduClientSession
             ColumnSchemaBuilder builder = new ColumnSchemaBuilder(column.getName(), type)
                     .nullable(true)
                     .defaultValue(null)
-                    .comment(nullToEmpty(column.getComment())); // Kudu doesn't allow null comment
+                    .comment(column.getComment().orElse("")); // Kudu doesn't allow null comment
             setTypeAttributes(column, builder);
             alterOptions.addColumn(builder.build());
             client.alterTable(rawName, alterOptions);
