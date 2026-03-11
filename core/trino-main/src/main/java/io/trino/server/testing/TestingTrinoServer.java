@@ -101,6 +101,7 @@ import io.trino.server.security.CertificateAuthenticatorManager;
 import io.trino.server.security.ServerSecurityModule;
 import io.trino.server.testing.ai.TestingModelConnectionSpecsResource;
 import io.trino.spi.ErrorType;
+import io.trino.spi.NodeVersion;
 import io.trino.spi.Plugin;
 import io.trino.spi.QueryId;
 import io.trino.spi.catalog.CatalogName;
@@ -348,6 +349,7 @@ public class TestingTrinoServer
                     newSetBinder(binder, Filter.class)
                             .addBinding()
                             .to(TracingServletFilter.class);
+                    binder.bind(NodeVersion.class).toInstance(new NodeVersion(VERSION));
                     binder.bind(EventListenerConfig.class).in(Scopes.SINGLETON);
                     binder.bind(ExchangeManagerConfig.class).in(Scopes.SINGLETON);
                     binder.bind(AccessControlConfig.class).in(Scopes.SINGLETON);
