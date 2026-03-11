@@ -814,7 +814,7 @@ public class QueryStateMachine
 
         ImmutableList.Builder<OperatorStats> operatorStatsSummary = ImmutableList.builder();
         for (StageInfo stageInfo : allStages) {
-            StageStats stageStats = stageInfo.getStageStats();
+            StageStats stageStats = stageInfo.stageStats();
             totalTasks += stageStats.getTotalTasks();
             runningTasks += stageStats.getRunningTasks();
             completedTasks += stageStats.getCompletedTasks();
@@ -837,7 +837,7 @@ public class QueryStateMachine
             totalCpuTime += stageStats.getTotalCpuTime().roundTo(MILLISECONDS);
             failedCpuTime += stageStats.getFailedCpuTime().roundTo(MILLISECONDS);
             totalBlockedTime += stageStats.getTotalBlockedTime().roundTo(MILLISECONDS);
-            if (!stageInfo.getState().isDone()) {
+            if (!stageInfo.state().isDone()) {
                 fullyBlocked &= stageStats.isFullyBlocked();
                 blockedReasons.addAll(stageStats.getBlockedReasons());
             }
@@ -854,7 +854,7 @@ public class QueryStateMachine
             internalNetworkInputPositions += stageStats.getInternalNetworkInputPositions();
             failedInternalNetworkInputPositions += stageStats.getFailedInternalNetworkInputPositions();
 
-            PlanFragment plan = stageInfo.getPlan();
+            PlanFragment plan = stageInfo.plan();
             if (plan != null && plan.containsTableScanNode()) {
                 processedInputDataSize += stageStats.getProcessedInputDataSize().toBytes();
                 failedProcessedInputDataSize += stageStats.getFailedProcessedInputDataSize().toBytes();
@@ -873,8 +873,8 @@ public class QueryStateMachine
 
             stageGcStatistics.add(stageStats.getGcInfo());
 
-            List<OperatorStats> operatorStats = stageInfo.getStageStats().getOperatorSummaries();
-            Map<PlanNodeId, Metrics> splitSourceMetrics = stageInfo.getStageStats().getSplitSourceMetrics();
+            List<OperatorStats> operatorStats = stageInfo.stageStats().getOperatorSummaries();
+            Map<PlanNodeId, Metrics> splitSourceMetrics = stageInfo.stageStats().getSplitSourceMetrics();
             for (OperatorStats stats : operatorStats) {
                 if (stats.getSourceId().isPresent()) {
                     Metrics metrics = splitSourceMetrics.get(stats.getSourceId().get());
@@ -887,7 +887,7 @@ public class QueryStateMachine
         }
 
         if (rootStage.isPresent()) {
-            StageStats outputStageStats = rootStage.get().getStageStats();
+            StageStats outputStageStats = rootStage.get().stageStats();
             outputDataSize += outputStageStats.getOutputDataSize().toBytes();
             failedOutputDataSize += outputStageStats.getFailedOutputDataSize().toBytes();
             outputPositions += outputStageStats.getOutputPositions();
@@ -901,7 +901,7 @@ public class QueryStateMachine
             // Unlike pipelined execution, fault tolerant execution doesn't execute stages all at
             // once and some stages will be in PLANNED state in the middle of execution.
             scheduled = rootStage.isPresent() && allStages.stream()
-                    .map(StageInfo::getState)
+                    .map(StageInfo::state)
                     .anyMatch(StageState::isScheduled);
             if (!scheduled || totalDrivers == 0) {
                 progressPercentage = OptionalDouble.empty();
@@ -916,16 +916,16 @@ public class QueryStateMachine
                 queue.add(rootStage.get());
                 while (!queue.isEmpty()) {
                     StageInfo stage = queue.poll();
-                    if (!processedStages.add(stage.getStageId())) {
+                    if (!processedStages.add(stage.stageId())) {
                         continue;
                     }
-                    StageStats stageStats = stage.getStageStats();
+                    StageStats stageStats = stage.stageStats();
                     totalStages++;
-                    if (stage.getState().isScheduled()) {
+                    if (stage.state().isScheduled()) {
                         completedPercentageSum += 100.0 * stageStats.getCompletedDrivers() / stageStats.getTotalDrivers();
                         runningPercentageSum += 100.0 * stageStats.getRunningDrivers() / stageStats.getTotalDrivers();
                     }
-                    queue.addAll(stages.orElseThrow().getSubStages(stage.getStageId()));
+                    queue.addAll(stages.orElseThrow().getSubStages(stage.stageId()));
                 }
                 progressPercentage = OptionalDouble.of(min(100, completedPercentageSum / totalStages));
                 runningPercentage = OptionalDouble.of(min(100, runningPercentageSum / totalStages));
@@ -933,7 +933,7 @@ public class QueryStateMachine
         }
         else {
             scheduled = rootStage.isPresent() && allStages.stream()
-                    .map(StageInfo::getState)
+                    .map(StageInfo::state)
                     .allMatch(StageState::isScheduled);
             if (!scheduled || totalDrivers == 0) {
                 progressPercentage = OptionalDouble.empty();
@@ -1598,18 +1598,18 @@ public class QueryStateMachine
         StageInfo outputStageInfo = stages.getOutputStage();
 
         return new StagesInfo(
-                outputStageInfo.getStageId(),
+                outputStageInfo.stageId(),
                 ImmutableList.of(new StageInfo(
-                        outputStageInfo.getStageId(),
-                        outputStageInfo.getState(),
+                        outputStageInfo.stageId(),
+                        outputStageInfo.state(),
                         null, // Remove the plan
-                        outputStageInfo.isCoordinatorOnly(),
-                        outputStageInfo.getTypes(),
-                        outputStageInfo.getStageStats(),
+                        outputStageInfo.coordinatorOnly(),
+                        outputStageInfo.types(),
+                        outputStageInfo.stageStats(),
                         ImmutableList.of(), // Remove the tasks
                         ImmutableList.of(), // Remove the substages
                         ImmutableMap.of(), // Remove tables
-                        outputStageInfo.getFailureCause())));
+                        outputStageInfo.failureCause())));
     }
 
     private static QueryStats pruneQueryStats(QueryStats queryStats)
