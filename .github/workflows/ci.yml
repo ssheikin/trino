@@ -431,7 +431,7 @@ jobs:
     timeout-minutes: 30
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * *') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'google-sheets')) || (github.event_name == 'workflow_dispatch')"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -515,7 +515,7 @@ jobs:
     timeout-minutes: 90
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * *') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'redshift')) || (github.event_name == 'workflow_dispatch')"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -627,7 +627,7 @@ jobs:
     timeout-minutes: 90
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * *') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'redshift')) || (github.event_name == 'workflow_dispatch')"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -739,7 +739,7 @@ jobs:
     timeout-minutes: 30
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * *') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'salesforce')) || (github.event_name == 'workflow_dispatch')"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -831,7 +831,7 @@ jobs:
     timeout-minutes: 90
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * 6') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'synapse'))"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -924,7 +924,7 @@ jobs:
     timeout-minutes: 30
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * *' && !startsWith(github.ref, 'refs/heads/release-')) || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'synapse'))"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -1026,7 +1026,7 @@ jobs:
     timeout-minutes: 90
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * 6') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'snowflake'))"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -1158,7 +1158,7 @@ jobs:
     timeout-minutes: 30
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * *' && !startsWith(github.ref, 'refs/heads/release-')) || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'snowflake'))"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
