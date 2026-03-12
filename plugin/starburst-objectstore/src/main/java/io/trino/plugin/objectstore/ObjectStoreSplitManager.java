@@ -77,37 +77,25 @@ public class ObjectStoreSplitManager
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorTableHandle table, DynamicFilter dynamicFilter, boolean preferDeterministicSplits, Constraint constraint)
     {
         ObjectStoreTransactionHandle transaction = (ObjectStoreTransactionHandle) transactionHandle;
-        if (table instanceof HiveTableHandle) {
-            return hiveSplitManager.getSplits(transaction.getHiveHandle(), unwrap(HIVE, session), table, dynamicFilter, preferDeterministicSplits, constraint);
-        }
-        if (table instanceof IcebergTableHandle) {
-            return icebergSplitManager.getSplits(transaction.getIcebergHandle(), unwrap(ICEBERG, session), table, dynamicFilter, preferDeterministicSplits, constraint);
-        }
-        if (table instanceof DeltaLakeTableHandle) {
-            return deltaSplitManager.getSplits(transaction.getDeltaHandle(), unwrap(DELTA, session), table, dynamicFilter, preferDeterministicSplits, constraint);
-        }
-        if (table instanceof HudiTableHandle) {
-            return hudiSplitManager.getSplits(transaction.getHudiHandle(), unwrap(HUDI, session), table, dynamicFilter, preferDeterministicSplits, constraint);
-        }
-        throw new VerifyException("Unhandled class: " + table.getClass().getName());
+        return switch (table) {
+            case HiveTableHandle _ -> hiveSplitManager.getSplits(transaction.getHiveHandle(), unwrap(HIVE, session), table, dynamicFilter, preferDeterministicSplits, constraint);
+            case IcebergTableHandle _ -> icebergSplitManager.getSplits(transaction.getIcebergHandle(), unwrap(ICEBERG, session), table, dynamicFilter, preferDeterministicSplits, constraint);
+            case DeltaLakeTableHandle _ -> deltaSplitManager.getSplits(transaction.getDeltaHandle(), unwrap(DELTA, session), table, dynamicFilter, preferDeterministicSplits, constraint);
+            case HudiTableHandle _ -> hudiSplitManager.getSplits(transaction.getHudiHandle(), unwrap(HUDI, session), table, dynamicFilter, preferDeterministicSplits, constraint);
+            default -> throw new VerifyException("Unhandled class: " + table.getClass().getName());
+        };
     }
 
     @Override
     public Optional<CacheSplitId> getCacheSplitId(ConnectorSplit split)
     {
-        if (split instanceof HiveSplit) {
-            return hiveSplitManager.getCacheSplitId(split);
-        }
-        if (split instanceof IcebergSplit) {
-            return icebergSplitManager.getCacheSplitId(split);
-        }
-        if (split instanceof DeltaLakeSplit) {
-            return deltaSplitManager.getCacheSplitId(split);
-        }
-        if (split instanceof HudiSplit) {
-            return hudiSplitManager.getCacheSplitId(split);
-        }
-        throw new VerifyException("Unhandled class: " + split.getClass().getName());
+        return switch (split) {
+            case HiveSplit _ -> hiveSplitManager.getCacheSplitId(split);
+            case IcebergSplit _ -> icebergSplitManager.getCacheSplitId(split);
+            case DeltaLakeSplit _ -> deltaSplitManager.getCacheSplitId(split);
+            case HudiSplit _ -> hudiSplitManager.getCacheSplitId(split);
+            default -> throw new VerifyException("Unhandled class: " + split.getClass().getName());
+        };
     }
 
     private ConnectorSession unwrap(TableType tableType, ConnectorSession session)
@@ -122,12 +110,10 @@ public class ObjectStoreSplitManager
             ConnectorTableFunctionHandle function)
     {
         ObjectStoreTransactionHandle transactionHandle = (ObjectStoreTransactionHandle) transaction;
-        if (function instanceof TableChangesTableFunctionHandle) {
-            return deltaSplitManager.getSplits(transactionHandle.getDeltaHandle(), sessionProperties.unwrap(DELTA, session), function);
-        }
-        if (function instanceof io.trino.plugin.iceberg.functions.tablechanges.TableChangesFunctionHandle) {
-            return icebergSplitManager.getSplits(transactionHandle.getIcebergHandle(), sessionProperties.unwrap(ICEBERG, session), function);
-        }
-        throw new VerifyException("Unhandled class: " + function.getClass().getName());
+        return switch (function) {
+            case TableChangesTableFunctionHandle _ -> deltaSplitManager.getSplits(transactionHandle.getDeltaHandle(), sessionProperties.unwrap(DELTA, session), function);
+            case io.trino.plugin.iceberg.functions.tablechanges.TableChangesFunctionHandle _ -> icebergSplitManager.getSplits(transactionHandle.getIcebergHandle(), sessionProperties.unwrap(ICEBERG, session), function);
+            default -> throw new VerifyException("Unhandled class: " + function.getClass().getName());
+        };
     }
 }
