@@ -135,7 +135,7 @@ public class DispatcherMetadataTest
                         // Deprecated methods
                         ConnectorMetadata.class.getMethod("streamTableColumns", ConnectorSession.class, SchemaTablePrefix.class),
                         ConnectorMetadata.class.getMethod("listTableColumns", ConnectorSession.class, SchemaTablePrefix.class)
-                        /* divergence from Cork: delegateMaterializedViewRefreshToConnector and refreshMaterializedView are still used */));
+                        /* divergence from Cork: refreshMaterializedView is still used */));
     }
 
     @Test

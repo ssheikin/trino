@@ -579,7 +579,6 @@ public class DispatcherMetadata
         return proxiedConnectorMetadata.finishInsert(session, insertHandle, sourceTableHandles, fragments, computedStatistics);
     }
 
-    // divergence from Cork: this method is still used by StatementAnalyzer for refresh MV
     @SuppressWarnings("removal")
     @Override
     public boolean delegateMaterializedViewRefreshToConnector(ConnectorSession session, SchemaTableName viewName)
