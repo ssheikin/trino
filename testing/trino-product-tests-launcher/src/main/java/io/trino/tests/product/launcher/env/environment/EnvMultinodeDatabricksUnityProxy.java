@@ -18,6 +18,7 @@ import io.trino.tests.product.launcher.docker.DockerFiles;
 import io.trino.tests.product.launcher.env.DockerContainer;
 import io.trino.tests.product.launcher.env.Environment;
 import io.trino.tests.product.launcher.env.EnvironmentProvider;
+import io.trino.tests.product.launcher.env.common.MitmProxy;
 import io.trino.tests.product.launcher.env.common.StandardMultinode;
 import io.trino.tests.product.launcher.env.common.TestsEnvironment;
 
@@ -27,25 +28,32 @@ import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 import static io.trino.tests.product.launcher.env.EnvironmentContainers.TESTS;
 import static io.trino.tests.product.launcher.env.EnvironmentContainers.configureTempto;
 import static io.trino.tests.product.launcher.env.EnvironmentContainers.isTrinoContainer;
+import static io.trino.tests.product.launcher.env.common.MitmProxy.MITMPROXY_CONTAINER_NAME;
+import static io.trino.tests.product.launcher.env.common.MitmProxy.MITMPROXY_PASSWORD;
+import static io.trino.tests.product.launcher.env.common.MitmProxy.MITMPROXY_PORT;
+import static io.trino.tests.product.launcher.env.common.MitmProxy.MITMPROXY_USERNAME;
 import static io.trino.tests.product.launcher.env.common.Standard.CONTAINER_TRINO_ETC;
+import static io.trino.tests.product.launcher.env.common.Standard.CONTAINER_TRINO_JVM_CONFIG;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.testcontainers.utility.MountableFile.forHostPath;
 
 @TestsEnvironment
-public class EnvMultinodeDatabricksUnity
+public class EnvMultinodeDatabricksUnityProxy
         extends EnvironmentProvider
 {
     private static final File DATABRICKS_JDBC_PROVIDER = new File("testing/trino-product-tests-launcher/target/databricks-jdbc.jar");
 
+    private final MitmProxy mitmProxy;
     private final DockerFiles.ResourceProvider configDir;
 
     @Inject
-    public EnvMultinodeDatabricksUnity(StandardMultinode standardMultinode, DockerFiles dockerFiles)
+    public EnvMultinodeDatabricksUnityProxy(StandardMultinode standardMultinode, MitmProxy mitmProxy, DockerFiles dockerFiles)
     {
-        super(standardMultinode);
+        super(standardMultinode, mitmProxy);
         requireNonNull(dockerFiles, "dockerFiles is null");
-        configDir = dockerFiles.getDockerFilesHostDirectory("conf/environment/multinode-databricks-unity");
+        this.mitmProxy = requireNonNull(mitmProxy, "mitmProxy is null");
+        configDir = dockerFiles.getDockerFilesHostDirectory("conf/environment/multinode-databricks-unity-proxy");
     }
 
     @Override
@@ -62,7 +70,14 @@ public class EnvMultinodeDatabricksUnity
                         .withEnv("AWS_REGION", awsRegion)
                         .withEnv("DATABRICKS_TOKEN", databricksTestToken)
                         .withEnv("DATABRICKS_HOST", requireEnv("DATABRICKS_HOST"))
-                        .withEnv("DATABRICKS_UNITY_CATALOG_NAME", requireEnv("DATABRICKS_UNITY_CATALOG_NAME"));
+                        .withEnv("DATABRICKS_UNITY_CATALOG_NAME", requireEnv("DATABRICKS_UNITY_CATALOG_NAME"))
+                        .withEnv("PROXY_HOST", MITMPROXY_CONTAINER_NAME)
+                        .withEnv("PROXY_PORT", Integer.toString(MITMPROXY_PORT))
+                        .withEnv("PROXY_USERNAME", MITMPROXY_USERNAME)
+                        .withEnv("PROXY_PASSWORD", MITMPROXY_PASSWORD)
+                        // Setup the mitmproxy certificate
+                        .withCopyFileToContainer(forHostPath(mitmProxy.getCertificatePath()), CONTAINER_TRINO_ETC + "/cert/mitmproxy.jks")
+                        .withCopyFileToContainer(forHostPath(configDir.getPath("jvm.config")), CONTAINER_TRINO_JVM_CONFIG);
             }
         });
 

@@ -13,6 +13,7 @@
  */
 package io.trino.plugin.hive.metastore.unity;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 
@@ -22,39 +23,36 @@ import static io.airlift.configuration.testing.ConfigAssertions.assertFullMappin
 import static io.airlift.configuration.testing.ConfigAssertions.assertRecordedDefaults;
 import static io.airlift.configuration.testing.ConfigAssertions.recordDefaults;
 
-final class TestUnityMetastoreConfig
+final class TestUnityMetastoreProxyConfig
 {
     @Test
     void testDefaults()
     {
-        assertRecordedDefaults(recordDefaults(UnityMetastoreConfig.class)
-                .setCatalogName(null)
-                .setToken(null)
-                .setHost(null)
-                .setCatalogManagedTableEnabled(false)
-                .setVendedCredentialsEnabled(false)
-                .setProxyEnabled(false));
+        assertRecordedDefaults(recordDefaults(UnityMetastoreProxyConfig.class)
+                .setProxyHost(null)
+                .setProxyPort(-1)
+                .setUsername(null)
+                .setPassword(null)
+                .setNonProxyHosts(ImmutableList.of()));
     }
 
     @Test
     void testExplicitPropertyMappings()
     {
         Map<String, String> properties = ImmutableMap.<String, String>builder()
-                .put("hive.metastore.unity.catalog-name", "catalog")
-                .put("hive.metastore.unity.token", "token")
-                .put("hive.metastore.unity.host", "host")
-                .put("hive.metastore.unity.catalog-managed-table-enabled", "true")
-                .put("hive.metastore.unity.vended-credentials-enabled", "true")
-                .put("hive.metastore.unity.proxy.enabled", "true")
+                .put("hive.metastore.unity.proxy.host", "proxy.example.com")
+                .put("hive.metastore.unity.proxy.port", "8080")
+                .put("hive.metastore.unity.proxy.username", "user")
+                .put("hive.metastore.unity.proxy.password", "secret")
+                .put("hive.metastore.unity.proxy.non-proxy-hosts", "localhost,127.0.0.1")
                 .buildOrThrow();
 
-        UnityMetastoreConfig expected = new UnityMetastoreConfig()
-                .setCatalogName("catalog")
-                .setToken("token")
-                .setHost("host")
-                .setCatalogManagedTableEnabled(true)
-                .setVendedCredentialsEnabled(true)
-                .setProxyEnabled(true);
+        UnityMetastoreProxyConfig expected = new UnityMetastoreProxyConfig()
+                .setProxyHost("proxy.example.com")
+                .setProxyPort(8080)
+                .setUsername("user")
+                .setPassword("secret")
+                .setNonProxyHosts(ImmutableList.of("localhost", "127.0.0.1"));
 
         assertFullMapping(properties, expected);
     }
