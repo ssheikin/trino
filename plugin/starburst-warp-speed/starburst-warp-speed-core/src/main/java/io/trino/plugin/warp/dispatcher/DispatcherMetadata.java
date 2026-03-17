@@ -628,7 +628,8 @@ public class DispatcherMetadata
             Collection<ComputedStatistics> computedStatistics,
             List<ConnectorTableHandle> sourceTableHandles,
             boolean hasForeignSourceTables,
-            boolean hasSourceTableFunctions)
+            boolean hasSourceTableFunctions,
+            boolean hasNonDeterministicFunctions)
     {
         return proxiedConnectorMetadata.finishRefreshMaterializedView(
                 session,
@@ -645,7 +646,8 @@ public class DispatcherMetadata
                         })
                         .collect(Collectors.toList()),
                 hasForeignSourceTables,
-                hasSourceTableFunctions);
+                hasSourceTableFunctions,
+                hasNonDeterministicFunctions);
     }
 
     @Override
