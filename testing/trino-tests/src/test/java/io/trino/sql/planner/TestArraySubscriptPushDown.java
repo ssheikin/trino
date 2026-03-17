@@ -44,7 +44,6 @@ import static io.trino.SystemSessionProperties.ALLOW_UNSAFE_PUSHDOWN;
 import static io.trino.SystemSessionProperties.FILTERING_SEMI_JOIN_TO_INNER;
 import static io.trino.SystemSessionProperties.PUSH_FILTER_INTO_VALUES_MAX_ROW_COUNT;
 import static io.trino.spi.type.BigintType.BIGINT;
-import static io.trino.spi.type.DoubleType.DOUBLE;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static io.trino.sql.ir.Comparison.Operator.EQUAL;
@@ -72,7 +71,7 @@ public class TestArraySubscriptPushDown
     private static final TestingFunctionResolution FUNCTIONS = new TestingFunctionResolution();
     private static final ResolvedFunction ARRAY_SUBSCRIPT = FUNCTIONS.resolveOperator(OperatorType.SUBSCRIPT, ImmutableList.of(ARRAY_TYPE, BIGINT));
     private static final ResolvedFunction ADD_INTEGER = FUNCTIONS.resolveOperator(OperatorType.ADD, ImmutableList.of(INTEGER, INTEGER));
-    private static final ResolvedFunction IS_FINITE = FUNCTIONS.resolveFunction("is_finite", fromTypes(DOUBLE));
+    private static final ResolvedFunction IS_FINITE = FUNCTIONS.resolveFunction("is_finite", fromTypes(BIGINT));
 
     public TestArraySubscriptPushDown()
     {
@@ -219,7 +218,7 @@ public class TestArraySubscriptPushDown
                                 filter(
                                         new Logical(OR, ImmutableList.of(
                                                 new Comparison(EQUAL, new Reference(INTEGER, "arr_3"), new Constant(INTEGER, 2L)),
-                                                new Call(IS_FINITE, ImmutableList.of(new Cast(new Reference(INTEGER, "arr_4"), DOUBLE))))),
+                                                new Call(IS_FINITE, ImmutableList.of(new Cast(new Reference(INTEGER, "arr_4"), BIGINT))))),
                                         values(
                                                 ImmutableList.of("arr_2", "arr_4", "arr_1", "arr_3"),
                                                 ImmutableList.of(ImmutableList.of(
