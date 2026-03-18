@@ -164,7 +164,7 @@ public abstract class BaseMySqlConnectorTest
         return new TestTable(
                 onRemoteDatabase(),
                 "tpch.test_unsupported_column_present",
-                "(one bigint, two decimal(50,0), three varchar(10))");
+                "(one bigint, two bit(10), three varchar(10))");
     }
 
     @Test
@@ -334,7 +334,7 @@ public abstract class BaseMySqlConnectorTest
     public void testCreateTableWithUnsupportedKey()
     {
         verifyTableDefinitionWithUnsupportedKey(
-                "(a decimal(50,0), b bigint, c bigint, PRIMARY KEY(a))",
+                "(a bit(10), b bigint, c bigint, PRIMARY KEY(a))",
                 """
                 CREATE TABLE %s.%s.%s (
                    b bigint,
@@ -344,7 +344,7 @@ public abstract class BaseMySqlConnectorTest
         );
 
         verifyTableDefinitionWithUnsupportedKey(
-                "(a decimal(50,0), b bigint, c bigint, PRIMARY KEY(a, b))",
+                "(a bit(10), b bigint, c bigint, PRIMARY KEY(a, b))",
                 """
                 CREATE TABLE %s.%s.%s (
                    b bigint NOT NULL,
@@ -357,7 +357,7 @@ public abstract class BaseMySqlConnectorTest
         );
 
         verifyTableDefinitionWithUnsupportedKey(
-                "(a decimal(50,0), b bigint, c bigint, d bigint, PRIMARY KEY(a, b, c))",
+                "(a bit(10), b bigint, c bigint, d bigint, PRIMARY KEY(a, b, c))",
                 """
                 CREATE TABLE %s.%s.%s (
                    b bigint NOT NULL,
@@ -371,7 +371,7 @@ public abstract class BaseMySqlConnectorTest
         );
 
         verifyTableDefinitionWithUnsupportedKey(
-                "(a decimal(50,0), b bigint, c bigint, d bigint, PRIMARY KEY(a, c, b))",
+                "(a bit(10), b bigint, c bigint, d bigint, PRIMARY KEY(a, c, b))",
                 """
                 CREATE TABLE %s.%s.%s (
                    b bigint NOT NULL,
@@ -385,7 +385,7 @@ public abstract class BaseMySqlConnectorTest
         );
 
         verifyTableDefinitionWithUnsupportedKey(
-                "(a decimal(50,0), b bigint, c decimal(50,0), d bigint, PRIMARY KEY(a, b, c))",
+                "(a bit(10), b bigint, c bit(10), d bigint, PRIMARY KEY(a, b, c))",
                 """
                 CREATE TABLE %s.%s.%s (
                    b bigint NOT NULL,
