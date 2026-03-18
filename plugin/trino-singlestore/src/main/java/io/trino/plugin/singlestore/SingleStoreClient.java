@@ -368,6 +368,11 @@ public class SingleStoreClient
 
         switch (typeHandle.jdbcType()) {
             case Types.BIT:
+                if (typeHandle.requiredColumnSize() == 1) {
+                    return Optional.of(booleanColumnMapping());
+                }
+                break;
+
             case Types.BOOLEAN:
                 return Optional.of(booleanColumnMapping());
             case Types.TINYINT:
