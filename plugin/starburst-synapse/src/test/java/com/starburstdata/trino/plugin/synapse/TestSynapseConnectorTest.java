@@ -37,10 +37,10 @@ import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.MoreCollectors.toOptional;
-import static com.starburstdata.trino.plugin.synapse.SynapseQueryRunner.TEST_SCHEMA;
 import static com.starburstdata.trino.plugin.synapse.SynapseQueryRunner.createSynapseQueryRunner;
 import static com.starburstdata.trino.plugin.synapse.SynapseServer.JDBC_URL;
 import static com.starburstdata.trino.plugin.synapse.SynapseServer.PASSWORD;
+import static com.starburstdata.trino.plugin.synapse.SynapseServer.TEST_SCHEMA;
 import static com.starburstdata.trino.plugin.synapse.SynapseServer.USERNAME;
 import static io.trino.plugin.jdbc.JdbcWriteSessionProperties.NON_TRANSACTIONAL_INSERT;
 import static io.trino.plugin.sqlserver.SqlServerSessionProperties.BULK_COPY_FOR_WRITE;
@@ -957,7 +957,8 @@ public class TestSynapseConnectorTest
     public void testSelectFromProcedureFunctionWithOutputParameter()
     {
         assertThatThrownBy(super::testSelectFromProcedureFunctionWithOutputParameter)
-                .hasMessageMatching("\\QFailed to execute statement: [    CREATE PROCEDURE dbo.procedure\\E\\w+ @row_count bigint OUTPUT(?s:.*)");
+                // Match a failed statement that starts with "CREATE PROCEDURE <schema>.procedure" for any <schema> of word chars (a-zA-Z0-9_)
+                .hasMessageMatching("\\QFailed to execute statement:     CREATE PROCEDURE \\E\\w+\\.procedure\\w+ @row_count bigint OUTPUT(?s:.*)");
         abort("procedure() PTF not registered");
     }
 
@@ -1146,5 +1147,19 @@ public class TestSynapseConnectorTest
     public void testExecuteProcedureWithNamedArgument()
     {
         // TODO (https://github.com/starburstdata/cork/issues/984) Enable this test
+    }
+
+    @Test
+    @Override
+    public void testNativeLargeIn()
+    {
+        abort("This test hardcodes a schema name that doesn't match the schema used by SynapseServer (https://starburstdata.atlassian.net/browse/ENG-9000)");
+    }
+
+    @Test
+    @Override
+    public void testNativeMultipleInClauses()
+    {
+        abort("This test hardcodes a schema name that doesn't match the schema used by SynapseServer (https://starburstdata.atlassian.net/browse/ENG-9000)");
     }
 }
