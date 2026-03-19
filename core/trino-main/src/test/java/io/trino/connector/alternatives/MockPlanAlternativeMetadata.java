@@ -1131,6 +1131,12 @@ public class MockPlanAlternativeMetadata
     }
 
     @Override
+    public WriterScalingOptions getMergeWriterScalingOptions(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        return delegate.getMergeWriterScalingOptions(session, getDelegate(tableHandle));
+    }
+
+    @Override
     public Optional<ConnectorTableCredentials> getTableCredentials(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         return delegate.getTableCredentials(session, tableHandle);

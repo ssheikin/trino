@@ -1074,6 +1074,12 @@ public class MockConnector
             return writerScalingOptions;
         }
 
+        @Override
+        public WriterScalingOptions getMergeWriterScalingOptions(ConnectorSession session, ConnectorTableHandle tableHandle)
+        {
+            return writerScalingOptions;
+        }
+
         private MockConnectorAccessControl getMockAccessControl()
         {
             return (MockConnectorAccessControl) getAccessControl();
