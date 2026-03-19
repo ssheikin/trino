@@ -274,7 +274,7 @@ public class QueryStateMachine
             PlanOptimizersStatsCollector queryStatsCollector,
             ExchangeMetricsCollector exchangeMetricsCollector,
             Optional<QueryType> queryType,
-            boolean faultTolerantExecutionExchangeEncryptionEnabled,
+            boolean externalExchangeEncryptionEnabled,
             Optional<SessionPropertiesApplier> sessionPropertiesApplier,
             NodeVersion version)
     {
@@ -295,7 +295,7 @@ public class QueryStateMachine
                 queryStatsCollector,
                 exchangeMetricsCollector,
                 queryType,
-                faultTolerantExecutionExchangeEncryptionEnabled,
+                externalExchangeEncryptionEnabled,
                 sessionPropertiesApplier,
                 version);
     }
@@ -317,7 +317,7 @@ public class QueryStateMachine
             PlanOptimizersStatsCollector queryStatsCollector,
             ExchangeMetricsCollector exchangeMetricsCollector,
             Optional<QueryType> queryType,
-            boolean faultTolerantExecutionExchangeEncryptionEnabled,
+            boolean externalExchangeEncryptionEnabled,
             Optional<SessionPropertiesApplier> sessionPropertiesApplier,
             NodeVersion version)
     {
@@ -341,7 +341,7 @@ public class QueryStateMachine
         }
 
         boolean externalExchangesInUse = getRetryPolicy(session) == TASK || isReuseCommonSubqueriesEnabled(session);
-        if (externalExchangesInUse && faultTolerantExecutionExchangeEncryptionEnabled) {
+        if (externalExchangesInUse && externalExchangeEncryptionEnabled) {
             // encryption is mandatory for fault tolerant execution with CTE-reuse as those rely on an external storage to store intermediate data generated during an exchange
             session = session.withExchangeEncryption(serializeAesEncryptionKey(createRandomAesEncryptionKey()));
         }
@@ -449,10 +449,15 @@ public class QueryStateMachine
 
     private void collectExchangeMetrics()
     {
-        Map<ExchangeId, Metrics> metrics = exchangeMetricsCollector.collectMetrics(queryId);
-        this.exchangeMetrics.set(
-                metrics.entrySet().stream()
-                        .collect(toMap(entry -> entry.getKey().getId(), Map.Entry::getValue)));
+        try {
+            Map<ExchangeId, Metrics> metrics = exchangeMetricsCollector.collectMetrics(queryId);
+            this.exchangeMetrics.set(
+                    metrics.entrySet().stream()
+                            .collect(toMap(entry -> entry.getKey().getId(), Map.Entry::getValue)));
+        }
+        catch (RuntimeException e) {
+            QUERY_STATE_LOG.error(e, "Error collecting query exchange metrics: %s", queryId);
+        }
     }
 
     public QueryId getQueryId()
