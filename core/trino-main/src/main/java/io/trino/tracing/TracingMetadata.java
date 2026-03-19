@@ -62,7 +62,6 @@ import io.trino.spi.connector.ColumnPosition;
 import io.trino.spi.connector.ConnectorCapabilities;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.connector.ConnectorOutputMetadata;
-import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.ConstraintApplicationResult;
@@ -84,7 +83,6 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.SortItem;
 import io.trino.spi.connector.SystemTable;
 import io.trino.spi.connector.TableColumnsMetadata;
-import io.trino.spi.connector.TableCredentials;
 import io.trino.spi.connector.TableFunctionApplicationResult;
 import io.trino.spi.connector.TableScanRedirectApplicationResult;
 import io.trino.spi.connector.TopNApplicationResult;
@@ -1752,15 +1750,6 @@ public class TracingMetadata
         }
     }
 
-    @Override
-    public Optional<TableCredentials> getTableCredentials(Session session, CatalogHandle catalogHandle, ConnectorTableHandle tableHandle)
-    {
-        Span span = startSpan("getTableCredentials", catalogHandle, tableHandle);
-        try (var _ = scopedSpan(span)) {
-            return delegate.getTableCredentials(session, catalogHandle, tableHandle);
-        }
-    }
-
     private Span startSpan(String methodName)
     {
         return tracer.spanBuilder("Metadata." + methodName)
@@ -1843,16 +1832,6 @@ public class TracingMetadata
         if (span.isRecording()) {
             span.setAttribute(TrinoAttributes.CATALOG, handle.catalogHandle().getCatalogName().toString());
             span.setAttribute(TrinoAttributes.HANDLE, handle.connectorHandle().toString());
-        }
-        return span;
-    }
-
-    private Span startSpan(String methodName, CatalogHandle catalogHandle, ConnectorTableHandle tableHandle)
-    {
-        Span span = startSpan(methodName);
-        if (span.isRecording()) {
-            span.setAttribute(TrinoAttributes.CATALOG, catalogHandle.getCatalogName().toString());
-            span.setAttribute(TrinoAttributes.HANDLE, tableHandle.toString());
         }
         return span;
     }

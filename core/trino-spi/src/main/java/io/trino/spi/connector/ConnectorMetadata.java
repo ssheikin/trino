@@ -1890,9 +1890,4 @@ public interface ConnectorMetadata
     {
         return Optional.empty();
     }
-
-    default Optional<TableCredentials> getTableCredentials(ConnectorSession session, ConnectorTableHandle tableHandle)
-    {
-        return Optional.empty();
-    }
 }
