@@ -23,7 +23,7 @@ import io.airlift.units.Duration;
 import io.trino.metadata.QualifiedObjectName;
 
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -82,7 +82,7 @@ public record MaxSplitsPerTableSpec(@JsonProperty("limits") List<MaxSplitsPerTab
                 return ImmutableMap.of();
             }
             try {
-                return parseJson(Files.readAllBytes(Paths.get(queryMaxSplitsPerTableConfigFilePath)), MaxSplitsPerTableSpec.class)
+                return parseJson(Files.readAllBytes(Path.of(queryMaxSplitsPerTableConfigFilePath)), MaxSplitsPerTableSpec.class)
                         .limits()
                         .stream()
                         .collect(toImmutableMap(rule -> QualifiedObjectName.valueOf(rule.table()), MaxSplitsPerTableRule::limit));

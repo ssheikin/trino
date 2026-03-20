@@ -27,7 +27,7 @@ import io.trino.plugin.base.authtolocal.ForwardingAuthToLocal;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.security.ConnectorIdentity;
 
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
@@ -106,6 +106,6 @@ public class RuleBasedAuthToLocalModule
     @VisibleForTesting
     static RuleBasedAuthToLocal createAuthToLocal(String configFile)
     {
-        return parseJson(Paths.get(configFile), RuleBasedAuthToLocal.class);
+        return parseJson(Path.of(configFile), RuleBasedAuthToLocal.class);
     }
 }

@@ -36,7 +36,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -152,7 +152,7 @@ public class TestQueryTracker
             throws IOException
     {
         File tmpFile = Files.createTempFile("prefix", "suffix").toFile();
-        Files.copy(Paths.get(getResourceFilePath("max_allowed_split_count.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(Path.of(getResourceFilePath("max_allowed_split_count.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         MaxSplitsPerTableConfig maxSplitsPerTableConfig = new MaxSplitsPerTableConfig();
         maxSplitsPerTableConfig.setRefreshPeriod(new Duration(60, TimeUnit.SECONDS));
@@ -162,7 +162,7 @@ public class TestQueryTracker
         MaxSplitsPerTableSpec.MaxSplitsPerTableSpecProvider provider = new MaxSplitsPerTableSpec.MaxSplitsPerTableSpecProvider(ticker, maxSplitsPerTableConfig);
         assertThat(provider.getMaxAllowedSplitCountPerTable()).isNotEmpty();
 
-        Files.copy(Paths.get(getResourceFilePath("max_allowed_split_count_invalid.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(Path.of(getResourceFilePath("max_allowed_split_count_invalid.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         ticker.increment(120, TimeUnit.SECONDS);
         assertThat(provider.getMaxAllowedSplitCountPerTable()).isNotEmpty();
@@ -173,7 +173,7 @@ public class TestQueryTracker
             throws IOException
     {
         File tmpFile = Files.createTempFile("prefix", "suffix").toFile();
-        Files.copy(Paths.get(getResourceFilePath("max_allowed_split_count.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(Path.of(getResourceFilePath("max_allowed_split_count.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         MaxSplitsPerTableConfig maxSplitsPerTableConfig = new MaxSplitsPerTableConfig();
         maxSplitsPerTableConfig.setRefreshPeriod(new Duration(60, TimeUnit.SECONDS));
@@ -184,7 +184,7 @@ public class TestQueryTracker
         assertThat(provider.getMaxAllowedSplitCountPerTable().get(QualifiedObjectName.valueOf("blackhole.default.t2"))).isEqualTo(100L);
 
         ticker.increment(120, TimeUnit.SECONDS);
-        Files.copy(Paths.get(getResourceFilePath("max_allowed_split_count_2.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(Path.of(getResourceFilePath("max_allowed_split_count_2.json")), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         assertThat(provider.getMaxAllowedSplitCountPerTable().get(QualifiedObjectName.valueOf("blackhole.default.t2"))).isEqualTo(200L);
     }
 

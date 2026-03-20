@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
@@ -155,7 +154,7 @@ public class TestDynamoDbConnectorTest
 
     private static void createDir(String absoluteDirPath)
     {
-        Path path = Paths.get(absoluteDirPath);
+        Path path = Path.of(absoluteDirPath);
         try {
             Files.createDirectories(path);
         }
