@@ -24,7 +24,7 @@ import io.trino.spi.security.ConnectorIdentity;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.trino.filesystem.gcs.GcsFileSystemConstants.EXTRA_CREDENTIALS_OAUTH_TOKEN_PROPERTY;
+import static io.trino.filesystem.gcs.GcsFileSystemConstants.EXTRA_CREDENTIALS_GCS_OAUTH_TOKEN_PROPERTY;
 import static io.trino.plugin.base.security.passthrough.TokenPassThrough.getToken;
 import static java.util.Objects.requireNonNull;
 
@@ -46,7 +46,7 @@ public class GcsFileSystemFactoryWithMultiIdp
     {
         Map<String, String> extraCredentials = ImmutableMap.<String, String>builder()
                 .putAll(identity.getExtraCredentials())
-                .put(EXTRA_CREDENTIALS_OAUTH_TOKEN_PROPERTY, getToken(identity, idpName))
+                .put(EXTRA_CREDENTIALS_GCS_OAUTH_TOKEN_PROPERTY, getToken(identity, idpName))
                 .buildKeepingLast();
 
         return delegate.create(ConnectorIdentity
