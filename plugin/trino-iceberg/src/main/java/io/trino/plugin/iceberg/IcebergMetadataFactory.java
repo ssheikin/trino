@@ -24,6 +24,7 @@ import io.trino.metastore.RawHiveMetastoreFactory;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.plugin.iceberg.delete.DeletionVectorWriter;
 import io.trino.plugin.iceberg.delete.OptimizePositionDeletes;
+import io.trino.plugin.iceberg.delete.RemoveDanglingDeleteFiles;
 import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.security.LocationAccessControl;
@@ -64,6 +65,7 @@ public class IcebergMetadataFactory
     private final int materializedViewRefreshMaxSnapshotsToExpire;
     private final Duration materializedViewRefreshSnapshotRetentionPeriod;
     private final DeletionVectorWriter deletionVectorWriter;
+    private final RemoveDanglingDeleteFiles removeDanglingDeleteFiles;
 
     @Inject
     public IcebergMetadataFactory(
@@ -78,6 +80,7 @@ public class IcebergMetadataFactory
             PartitionStatisticsWriter partitionStatisticsWriter,
             DeletionVectorWriter deletionVectorWriter,
             OptimizePositionDeletes optimizePositionDeletes,
+            RemoveDanglingDeleteFiles removeDanglingDeleteFiles,
             @RawHiveMetastoreFactory Optional<HiveMetastoreFactory> metastoreFactory,
             @ForIcebergSplitManager ExecutorService icebergScanExecutor,
             @ForIcebergMetadata ExecutorService metadataExecutorService,
@@ -116,6 +119,7 @@ public class IcebergMetadataFactory
         }
         this.icebergPlanningExecutor = requireNonNull(icebergPlanningExecutor, "icebergPlanningExecutor is null");
         this.icebergFileDeleteExecutor = requireNonNull(icebergFileDeleteExecutor, "icebergFileDeleteExecutor is null");
+        this.removeDanglingDeleteFiles = requireNonNull(removeDanglingDeleteFiles, "removeDanglingDeleteFiles is null");
         this.materializedViewRefreshMaxSnapshotsToExpire = config.getMaterializedViewRefreshMaxSnapshotsToExpire();
         this.materializedViewRefreshSnapshotRetentionPeriod = config.getMaterializedViewRefreshSnapshotRetentionPeriod();
     }
@@ -135,6 +139,7 @@ public class IcebergMetadataFactory
                 partitionStatisticsWriter,
                 deletionVectorWriter,
                 optimizePositionDeletes,
+                removeDanglingDeleteFiles,
                 metastoreFactory,
                 maxFormatVersion,
                 addFilesProcedureEnabled,

@@ -13,17 +13,5 @@
  */
 package io.trino.plugin.iceberg.procedure;
 
-public enum IcebergTableProcedureId
-{
-    OPTIMIZE,
-    OPTIMIZE_MANIFESTS,
-    OPTIMIZE_POSITION_DELETES,
-    REMOVE_DANGLING_DELETE_FILES,
-    DROP_EXTENDED_STATS,
-    ROLLBACK_TO_SNAPSHOT,
-    EXPIRE_SNAPSHOTS,
-    REMOVE_ORPHAN_FILES,
-    ADD_FILES,
-    ADD_FILES_FROM_TABLE,
-    GENERATE_EMBEDDINGS,
-}
+public record IcebergRemoveDanglingDeleteFilesHandle()
+        implements IcebergProcedureHandle {}

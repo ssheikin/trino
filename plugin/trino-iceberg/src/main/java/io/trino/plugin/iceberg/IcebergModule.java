@@ -45,6 +45,7 @@ import io.trino.plugin.iceberg.catalog.NoopMetastoreCacheInvalidator;
 import io.trino.plugin.iceberg.delete.DefaultDeletionVectorWriter;
 import io.trino.plugin.iceberg.delete.DeletionVectorWriter;
 import io.trino.plugin.iceberg.delete.OptimizePositionDeletes;
+import io.trino.plugin.iceberg.delete.RemoveDanglingDeleteFiles;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.plugin.iceberg.functions.IcebergFunctionProvider;
 import io.trino.plugin.iceberg.functions.tablechanges.TableChangesFunctionProcessorProviderFactory;
@@ -59,6 +60,7 @@ import io.trino.plugin.iceberg.procedure.OptimizeManifestsTableProcedure;
 import io.trino.plugin.iceberg.procedure.OptimizePositionDeletesTableProcedure;
 import io.trino.plugin.iceberg.procedure.OptimizeTableProcedure;
 import io.trino.plugin.iceberg.procedure.RegisterTableProcedure;
+import io.trino.plugin.iceberg.procedure.RemoveDanglingDeleteFilesTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveOrphanFilesTableProcedure;
 import io.trino.plugin.iceberg.procedure.RollbackToSnapshotProcedure;
 import io.trino.plugin.iceberg.procedure.RollbackToSnapshotTableProcedure;
@@ -125,6 +127,7 @@ public class IcebergModule
         binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
         binder.bind(PartitionStatisticsReader.class).in(Scopes.SINGLETON);
         binder.bind(PartitionStatisticsWriter.class).in(Scopes.SINGLETON);
+        binder.bind(RemoveDanglingDeleteFiles.class).in(Scopes.SINGLETON);
         binder.bind(DeletionVectorWriter.class).to(DefaultDeletionVectorWriter.class).in(Scopes.SINGLETON);
         binder.bind(OptimizePositionDeletes.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, Key.get(HiveMetastoreFactory.class, RawHiveMetastoreFactory.class));
@@ -170,6 +173,7 @@ public class IcebergModule
         tableProcedures.addBinding().toProvider(AddFilesTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(AddFilesTableFromTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(IcebergGenerateEmbeddingsProcedure.class).in(Scopes.SINGLETON);
+        tableProcedures.addBinding().toProvider(RemoveDanglingDeleteFilesTableProcedure.class).in(Scopes.SINGLETON);
 
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(TableChangesFunctionProvider.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, FunctionProvider.class).setDefault().to(IcebergFunctionProvider.class).in(Scopes.SINGLETON);
