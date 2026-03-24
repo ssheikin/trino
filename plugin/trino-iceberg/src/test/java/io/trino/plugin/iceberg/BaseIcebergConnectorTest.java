@@ -9301,7 +9301,7 @@ public abstract class BaseIcebergConnectorTest
     }
 
     @Test
-    void testCommitMetrics()
+    public void testCommitMetrics()
     {
         try (TestTable table = newTrinoTable(
                 "test_commit_metrics",
