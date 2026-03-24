@@ -1926,11 +1926,17 @@ public interface ConnectorMetadata
         return Optional.empty();
     }
 
+    /**
+     * Returns credentials that can be used in {@link ConnectorPageSourceProvider}.
+     */
     default Optional<ConnectorTableCredentials> getTableCredentials(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         return Optional.empty();
     }
 
+    /**
+     * Returns credentials that can be used in {@link ConnectorPageSinkProvider}.
+     */
     default Optional<ConnectorTableCredentials> getTableCredentials(ConnectorSession session, ConnectorWritableTableHandle tableHandle)
     {
         return Optional.empty();
