@@ -102,6 +102,7 @@ import static io.trino.server.security.ResourceSecurity.AccessType.AUTHENTICATED
 import static io.trino.server.security.ResourceSecurity.AccessType.WEB_UI;
 import static io.trino.server.security.jwt.JwtUtil.newJwtBuilder;
 import static io.trino.server.security.jwt.JwtUtil.newJwtParserBuilder;
+import static io.trino.server.security.oauth2.NonceCookie.NONCE_COOKIE;
 import static io.trino.server.security.oauth2.OAuth2Service.NONCE;
 import static io.trino.server.ui.FormWebUiAuthenticationFilter.UI_LOCATION;
 import static io.trino.server.ui.OAuthIdTokenCookie.ID_TOKEN_COOKIE;
@@ -870,7 +871,7 @@ public class TestResourceSecurity
                     .describedAs(format("Invalid location header.\nExpected: %s\nPattern: %s", expectedRedirect, locationPattern))
                     .isTrue();
 
-            HttpCookie nonceCookie = HttpCookie.parse(requireNonNull(response.header(SET_COOKIE))).get(0);
+            HttpCookie nonceCookie = getCookie(response, NONCE_COOKIE);
             nonceCookie.setDomain(request.url().host());
             return new OAuthBearer(matcher.group(1), tokenServer, nonceCookie);
         }
@@ -1519,6 +1520,16 @@ public class TestResourceSecurity
                 .filter(cookie -> cookie.getName().equals(cookieName))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    private static HttpCookie getCookie(Response response, String cookieName)
+    {
+        return response.headers().values(SET_COOKIE).stream()
+                .filter(h -> h.contains(cookieName))
+                .findFirst()
+                .map(HttpCookie::parse)
+                .map(List::getFirst)
+                .orElseThrow(() -> new AssertionError(cookieName + " cookie not found"));
     }
 
     private static String hashNonce(String nonce)
