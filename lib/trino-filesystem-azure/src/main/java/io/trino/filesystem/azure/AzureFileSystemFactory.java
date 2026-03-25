@@ -32,12 +32,16 @@ import io.trino.spi.security.ConnectorIdentity;
 import jakarta.annotation.PreDestroy;
 import reactor.netty.resources.ConnectionProvider;
 
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
+import static io.trino.filesystem.azure.AzureFileSystemConstants.EXTRA_CREDENTIALS_AZURE_SAS_TOKEN_PREFIX;
 import static io.trino.filesystem.azure.AzureFileSystemConstants.OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
@@ -152,19 +156,23 @@ public class AzureFileSystemFactory
     @Override
     public TrinoFileSystem create(ConnectorIdentity identity)
     {
-        String accessToken = nullToEmpty(identity.getExtraCredentials().get(OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL));
-        return new AzureFileSystem(
-                httpClient,
-                concurrencyPolicy,
-                uploadExecutor,
-                tracingOptions,
-                useOauthPassthroughToken ? new AzureAuthCustomToken(new AzureCustomTokenCredential(accessToken), authType) : auth,
-                endpoint,
-                readBlockSize,
-                writeBlockSize,
-                maxWriteConcurrency,
-                maxSingleUploadSize,
-                multipart);
+        AzureAuth effectiveAuth = getEffectiveAuth(identity);
+        return new AzureFileSystem(httpClient, concurrencyPolicy, uploadExecutor, tracingOptions, effectiveAuth, endpoint, readBlockSize, writeBlockSize, maxWriteConcurrency, maxSingleUploadSize, multipart);
+    }
+
+    private AzureAuth getEffectiveAuth(ConnectorIdentity identity)
+    {
+        Map<String, String> sasTokens = identity.getExtraCredentials().entrySet().stream()
+                .filter(e -> e.getKey().startsWith(EXTRA_CREDENTIALS_AZURE_SAS_TOKEN_PREFIX))
+                .collect(toImmutableMap(e -> e.getKey().substring(EXTRA_CREDENTIALS_AZURE_SAS_TOKEN_PREFIX.length()), Entry::getValue));
+        if (!sasTokens.isEmpty()) {
+            return new AzureAuthSasToken(sasTokens);
+        }
+        if (useOauthPassthroughToken) {
+            String accessToken = nullToEmpty(identity.getExtraCredentials().get(OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL));
+            return new AzureAuthCustomToken(new AzureCustomTokenCredential(accessToken), authType);
+        }
+        return auth;
     }
 
     public static HttpClient createAzureHttpClient(ConnectionProvider connectionProvider, EventLoopGroup eventLoopGroup, HttpClientOptions clientOptions)

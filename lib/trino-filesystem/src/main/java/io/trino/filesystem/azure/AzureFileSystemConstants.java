@@ -16,6 +16,7 @@ package io.trino.filesystem.azure;
 public class AzureFileSystemConstants
 {
     public static final String OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL = "starburst.$internal.oauth2.access_token.passthrough";
+    public static final String EXTRA_CREDENTIALS_AZURE_SAS_TOKEN_PREFIX = "internal$azure_sas_token_";
 
     private AzureFileSystemConstants() {}
 }
