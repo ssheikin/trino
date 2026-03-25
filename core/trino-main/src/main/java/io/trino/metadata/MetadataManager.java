@@ -3327,4 +3327,12 @@ public final class MetadataManager
         }
         return ImmutableSet.of();
     }
+
+    @Override
+    public boolean useRemoteSplitsGeneration(Session session, TableHandle tableHandle)
+    {
+        CatalogHandle catalogHandle = tableHandle.catalogHandle();
+        ConnectorMetadata metadata = getMetadata(session, catalogHandle);
+        return metadata.useRemoteSplitsGeneration(session.toConnectorSession(catalogHandle), tableHandle.connectorHandle());
+    }
 }

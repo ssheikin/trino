@@ -1458,4 +1458,12 @@ public class ClassLoaderSafeConnectorMetadata
             return delegate.getTableCredentials(session, tableFunctionHandle);
         }
     }
+
+    @Override
+    public boolean useRemoteSplitsGeneration(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
+            return delegate.useRemoteSplitsGeneration(session, tableHandle);
+        }
+    }
 }

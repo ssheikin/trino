@@ -1240,4 +1240,10 @@ public abstract class AbstractMockMetadata
     {
         return Optional.empty();
     }
+
+    @Override
+    public boolean useRemoteSplitsGeneration(Session session, TableHandle tableHandle)
+    {
+        return false;
+    }
 }

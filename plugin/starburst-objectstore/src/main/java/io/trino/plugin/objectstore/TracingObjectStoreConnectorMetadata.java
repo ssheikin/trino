@@ -1647,6 +1647,15 @@ public class TracingObjectStoreConnectorMetadata<T extends ConnectorMetadata>
         }
     }
 
+    @Override
+    public boolean useRemoteSplitsGeneration(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        Span span = startSpan("useRemoteSplitsGeneration", tableHandle);
+        try (var _ = scopedSpan(span)) {
+            return delegate.useRemoteSplitsGeneration(session, tableHandle);
+        }
+    }
+
     private Span startSpan(String methodName)
     {
         return tracer.spanBuilder("ObjectStoreConnectorMetadata." + connectorClassName + "." + methodName)
