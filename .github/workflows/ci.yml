@@ -437,7 +437,7 @@ jobs:
     timeout-minutes: 60
     if: "(github.event_name == 'schedule' && github.event.schedule == '0 0 * * *') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bigquery')) || (github.event_name == 'workflow_dispatch')"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits, as the build result depends on `git describe` equivalent
       - name: Set up AWS code-artifacts login
@@ -498,7 +498,7 @@ jobs:
           name=$(echo -n "plugin/trino-bigquery, ${{ matrix.profiles }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -577,7 +577,7 @@ jobs:
           name=$(echo -n "plugin/trino-google-sheets" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -690,7 +690,7 @@ jobs:
           name=$(echo -n "${{ matrix.modules }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -802,7 +802,7 @@ jobs:
           name=$(echo -n "${{ matrix.modules }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -894,7 +894,7 @@ jobs:
           name=$(echo -n "${{ matrix.modules }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -986,7 +986,7 @@ jobs:
           name=$(echo -n "${{ matrix.modules }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -1079,7 +1079,7 @@ jobs:
           name=$(echo -n "${{ matrix.modules }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -1219,7 +1219,7 @@ jobs:
           name=$(echo -n "${{ matrix.modules }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -1326,7 +1326,7 @@ jobs:
           name=$(echo -n "${{ matrix.modules }}" | sed -e 's/[":<>|\*\?\\\/]/_/g')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results ${{ env.ARTIFACT_NAME }}
@@ -1508,7 +1508,7 @@ jobs:
       github.event_name == 'push' && github.ref == 'refs/heads/master' ||
       github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ai')
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # checkout all commits to be able to determine merge base for GIB
           ref: |
@@ -2194,7 +2194,7 @@ jobs:
           echo "Impacted plugin features:"
           cat impacted-features.log
       - name: Product tests artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: product tests and server tarball
           path: |
@@ -2445,7 +2445,7 @@ jobs:
           secret-id: ${{ vars.SEP_SECRETS_AWS_ID }}
           login-docker: true
       - name: Product tests artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: product tests and server tarball
       - name: Fix artifact permissions
