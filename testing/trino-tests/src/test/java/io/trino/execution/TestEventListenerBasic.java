@@ -119,6 +119,7 @@ public class TestEventListenerBasic
     private static final String VARCHAR_TYPE = "varchar(15)";
     private static final String BIGINT_TYPE = BIGINT.getDisplayName();
     private static final Metrics TEST_METRICS = new Metrics(ImmutableMap.of("test_metrics", new LongCount(1)));
+    private static final Metrics TEST_SPLIT_SOURCE_METRICS = new Metrics(ImmutableMap.of("test_split_source_metrics", new LongCount(2)));
 
     private EventsAwaitingQueries queries;
 
@@ -265,6 +266,12 @@ public class TestEventListenerBasic
                         .withMetrics(schemaTableName -> {
                             if (schemaTableName.equals(new SchemaTableName("tiny", "nation"))) {
                                 return TEST_METRICS;
+                            }
+                            return EMPTY;
+                        })
+                        .withSplitSourceMetrics(schemaTableName -> {
+                            if (schemaTableName.equals(new SchemaTableName("tiny", "nation"))) {
+                                return TEST_SPLIT_SOURCE_METRICS;
                             }
                             return EMPTY;
                         })
@@ -1430,7 +1437,7 @@ public class TestEventListenerBasic
         List<Metrics> connectorMetrics = event.getIoMetadata().getInputs().stream()
                 .map(QueryInputMetadata::getConnectorMetrics)
                 .collect(toImmutableList());
-        assertThat(connectorMetrics).containsExactly(TEST_METRICS);
+        assertThat(connectorMetrics).containsExactly(TEST_METRICS.mergeWith(TEST_SPLIT_SOURCE_METRICS));
     }
 
     @Test
