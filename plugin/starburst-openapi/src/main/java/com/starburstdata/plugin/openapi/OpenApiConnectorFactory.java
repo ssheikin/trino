@@ -16,6 +16,8 @@ package com.starburstdata.plugin.openapi;
 import com.google.inject.Injector;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
+import io.airlift.json.JsonModule;
+import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.config.ConfigUtils;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -42,7 +44,7 @@ public class OpenApiConnectorFactory
     {
         requireNonNull(requiredConfig, "requiredConfig is null");
 
-        Bootstrap bootstrap = createBootstrap(catalogName, requiredConfig);
+        Bootstrap bootstrap = createBootstrap(catalogName, requiredConfig, context);
 
         Injector injector = bootstrap
                 .initialize();
@@ -53,7 +55,7 @@ public class OpenApiConnectorFactory
     @Override
     public Set<String> getSecuritySensitivePropertyNames(String catalogName, Map<String, String> config, ConnectorContext context)
     {
-        Bootstrap app = createBootstrap(catalogName, config);
+        Bootstrap app = createBootstrap(catalogName, config, context);
 
         Set<ConfigPropertyMetadata> usedProperties = app
                 .quiet()
@@ -63,10 +65,12 @@ public class OpenApiConnectorFactory
         return ConfigUtils.getSecuritySensitivePropertyNames(config, usedProperties);
     }
 
-    private static Bootstrap createBootstrap(String catalogName, Map<String, String> requiredConfig)
+    private static Bootstrap createBootstrap(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
                 "io.trino.bootstrap.catalog." + catalogName,
+                new ConnectorContextModule(catalogName, context),
+                new JsonModule(),
                 new OpenApiModule());
 
         return app
