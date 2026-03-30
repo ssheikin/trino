@@ -867,8 +867,6 @@ public class DeltaLakeMetadata
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
                 tableSnapshot.getVersion(),
                 endVersion.isPresent());
     }
@@ -4146,8 +4144,6 @@ public class DeltaLakeMetadata
                 Sets.union(tableHandle.getConstraintColumns(), newConstraintColumns),
                 tableHandle.getWriteType(),
                 tableHandle.getProjectedColumns(),
-                tableHandle.getUpdatedColumns(),
-                tableHandle.getUpdateRowIdColumns(),
                 Optional.empty(),
                 false,
                 false,
@@ -4197,8 +4193,6 @@ public class DeltaLakeMetadata
                 emptySet(),
                 firstTable.getWriteType(),
                 Optional.of(Sets.union(firstTable.getProjectedColumns().get(), secondTable.getProjectedColumns().get())),
-                firstTable.getUpdatedColumns(),
-                firstTable.getUpdateRowIdColumns(),
                 firstTable.getAnalyzeHandle(),
                 firstTable.isRecordScannedFiles(),
                 firstTable.isOptimize(),
@@ -4290,8 +4284,6 @@ public class DeltaLakeMetadata
                 Objects.equals(first.getMetadataEntry(), second.getMetadataEntry()) &&
                 Objects.equals(first.getProtocolEntry(), second.getProtocolEntry()) &&
                 Objects.equals(first.getWriteType(), second.getWriteType()) &&
-                Objects.equals(first.getUpdatedColumns(), second.getUpdatedColumns()) &&
-                Objects.equals(first.getUpdateRowIdColumns(), second.getUpdateRowIdColumns()) &&
                 Objects.equals(first.getAnalyzeHandle(), second.getAnalyzeHandle()) &&
                 first.isOptimize() == second.isOptimize() &&
                 Objects.equals(first.getMaxScannedFileSize(), second.getMaxScannedFileSize()) &&
@@ -4577,8 +4569,6 @@ public class DeltaLakeMetadata
                 handle.getProtocolEntry(),
                 TupleDomain.all(),
                 TupleDomain.all(),
-                Optional.empty(),
-                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.of(analyzeHandle),
