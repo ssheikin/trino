@@ -39,14 +39,7 @@ final class HdfsFileSystemLoader
     private final HdfsClassLoader classLoader;
     private final Object manager;
 
-    public HdfsFileSystemLoader(
-            Map<String, String> config,
-            boolean azureEnabled,
-            boolean gcsEnabled,
-            boolean s3Enabled,
-            String catalogName,
-            ConnectorContext context,
-            boolean quietBootstrap)
+    public HdfsFileSystemLoader(Map<String, String> config, String catalogName, ConnectorContext context, boolean quietBootstrap)
     {
         Class<?> clazz = tryLoadExistingHdfsManager();
 
@@ -74,8 +67,8 @@ final class HdfsFileSystemLoader
         }
 
         try (var _ = new ThreadContextClassLoader(classLoader)) {
-            manager = clazz.getConstructor(Map.class, boolean.class, boolean.class, boolean.class, String.class, ConnectorContext.class, boolean.class)
-                    .newInstance(config, azureEnabled, gcsEnabled, s3Enabled, catalogName, context, quietBootstrap);
+            manager = clazz.getConstructor(Map.class, String.class, ConnectorContext.class, boolean.class)
+                    .newInstance(config, catalogName, context, quietBootstrap);
         }
         catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);

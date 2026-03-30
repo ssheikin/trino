@@ -48,7 +48,6 @@ final class TestHudiPlugin
                 "non-existent-property", "value",
                 "fs.hadoop.enabled", "true",
                 "hive.azure.abfs.oauth.client-id", "test-client-id", // security-sensitive property from trino-hdfs
-                "hive.azure.adl-proxy-host", "proxy-host:9800", // non-sensitive property from trino-hdfs
                 "hive.dfs-timeout", "invalidValue", // property from trino-hdfs with invalid value
                 "hive.metastore.uri", "thrift://foo:1234",
                 "hive.metastore.thrift.client.ssl.key-password", "password",
