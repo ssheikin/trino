@@ -864,7 +864,7 @@ public class DeltaLakeMetadata
                 protocolEntry,
                 TupleDomain.all(),
                 TupleDomain.all(),
-                Optional.empty(),
+                false,
                 Optional.empty(),
                 Optional.empty(),
                 tableSnapshot.getVersion(),
@@ -4142,7 +4142,7 @@ public class DeltaLakeMetadata
                         .intersect(newUnenforcedConstraint)
                         .simplify(domainCompactionThreshold),
                 Sets.union(tableHandle.getConstraintColumns(), newConstraintColumns),
-                tableHandle.getWriteType(),
+                tableHandle.isMerge(),
                 tableHandle.getProjectedColumns(),
                 Optional.empty(),
                 false,
@@ -4191,7 +4191,7 @@ public class DeltaLakeMetadata
                 TupleDomain.all(),
                 TupleDomain.all(),
                 emptySet(),
-                firstTable.getWriteType(),
+                firstTable.isMerge(),
                 Optional.of(Sets.union(firstTable.getProjectedColumns().get(), secondTable.getProjectedColumns().get())),
                 firstTable.getAnalyzeHandle(),
                 firstTable.isRecordScannedFiles(),
@@ -4283,7 +4283,7 @@ public class DeltaLakeMetadata
                 Objects.equals(first.getLocation(), second.getLocation()) &&
                 Objects.equals(first.getMetadataEntry(), second.getMetadataEntry()) &&
                 Objects.equals(first.getProtocolEntry(), second.getProtocolEntry()) &&
-                Objects.equals(first.getWriteType(), second.getWriteType()) &&
+                first.isMerge() == second.isMerge() &&
                 Objects.equals(first.getAnalyzeHandle(), second.getAnalyzeHandle()) &&
                 first.isOptimize() == second.isOptimize() &&
                 Objects.equals(first.getMaxScannedFileSize(), second.getMaxScannedFileSize()) &&
@@ -4569,7 +4569,7 @@ public class DeltaLakeMetadata
                 handle.getProtocolEntry(),
                 TupleDomain.all(),
                 TupleDomain.all(),
-                Optional.empty(),
+                false,
                 Optional.empty(),
                 Optional.of(analyzeHandle),
                 handle.getReadVersion(),
