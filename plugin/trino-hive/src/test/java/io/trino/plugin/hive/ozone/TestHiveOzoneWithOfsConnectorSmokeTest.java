@@ -50,7 +50,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-final class HiveOzoneConnectorSmokeTest
+final class TestHiveOzoneWithOfsConnectorSmokeTest
         extends TestHiveConnectorSmokeTest
 {
     private static final String CATALOG_NAME = "hive";
