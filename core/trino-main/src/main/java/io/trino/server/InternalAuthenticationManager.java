@@ -191,7 +191,7 @@ public class InternalAuthenticationManager
         }
     }
 
-    public static SecretKey expandKey(String sharedSecret)
+    private static SecretKey expandKey(String sharedSecret)
     {
         try {
             KDF hkdf = KDF.getInstance("HKDF-SHA256");
