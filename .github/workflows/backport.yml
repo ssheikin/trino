@@ -1,0 +1,54 @@
+# Automatically create backport PRs to LTS release branches when a PR is merged to master
+# with the 'requires_backport' label.
+#
+# This workflow:
+# - Triggers when a PR is closed (merged) on master
+# - Checks if the PR has the 'requires_backport' label
+# - Creates backport PRs to all configured LTS branches
+# - Copies all commits from the original PR to each target branch
+# - Can be manually triggered for any closed PR (merged or cancelled) by providing the PR number
+#
+# LTS branches are configured via the 'supportedLTSBranches' repository variable
+#
+# Usage:
+#   - Automatic: Add the 'requires_backport' label to any PR before merging to master
+#   - Manual: Use the "Run workflow" button in the Actions tab and provide the PR number
+
+name: Backport PR to LTS branches
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to backport (for any closed PR to master, merged or cancelled)'
+        required: true
+        type: number
+
+jobs:
+  backport:
+    name: Backport PR
+    runs-on: [self-hosted, gha-fleet-ec2-2cpu-8gb-amd64, latest]
+    # Run on:
+    # - Automatic trigger: merged PRs to master that have the requires_backport label
+    # - Manual trigger: any workflow_dispatch event (PR validation done in the action)
+    if: |
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'master' &&
+       contains(github.event.pull_request.labels.*.name, 'requires_backport')) ||
+      github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Token for git actions, e.g. git push
+          token: ${{ secrets.GITHUBACCESSTOKEN }}
+      # Branches to backport to are configured in the action's supportedLTSBranches input.
+      - uses: starburstdata/sep-cicd/actions/backport-to-lts@main
+        with:
+          accessToken: ${{ secrets.GITHUBACCESSTOKEN }}
+          pr_number: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}
