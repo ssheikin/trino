@@ -20,7 +20,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.elasticsearch.client.AwsSecurityRestClientConfigurator;
-import io.trino.plugin.elasticsearch.client.BackpressureRestHighLevelClient;
+import io.trino.plugin.elasticsearch.client.BackpressureRestClient;
 import io.trino.plugin.elasticsearch.client.BasicSecurityRestClientConfigurator;
 import io.trino.plugin.elasticsearch.client.ElasticRestClientConfigurator;
 import io.trino.plugin.elasticsearch.client.ElasticsearchClient;
@@ -72,7 +72,7 @@ public class ElasticsearchConnectorModule
         // To be backward compatible.
         newExporter(binder).export(ElasticsearchClientStats.class).as(objectNameGenerator -> objectNameGenerator.generatedNameOf(ElasticsearchClient.class));
 
-        binder.bind(BackpressureRestHighLevelClient.class).in(Scopes.SINGLETON);
+        binder.bind(BackpressureRestClient.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(ElasticsearchConfig.class);
 
         newOptionalBinder(binder, AwsSecurityConfig.class);
@@ -100,7 +100,7 @@ public class ElasticsearchConnectorModule
 
     @Provides
     @Singleton
-    public RestClientBuilder createRestClientBuilder(
+    public RestClient createRestClientBuilder(
             ElasticsearchConfig config,
             Set<ElasticRestClientConfigurator> clientConfigurators)
     {
@@ -140,7 +140,7 @@ public class ElasticsearchConnectorModule
             return clientBuilder;
         });
 
-        return builder;
+        return builder.build();
     }
 
     private static Optional<SSLContext> buildSslContext(

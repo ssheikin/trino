@@ -35,7 +35,7 @@ public class DefaultElasticsearchClientFactory
     public DefaultElasticsearchClientFactory(
             ElasticsearchConfig config,
             ElasticsearchClientStats elasticsearchClientStats,
-            BackpressureRestHighLevelClient client)
+            BackpressureRestClient client)
     {
         this.client = new ElasticsearchClient(config, client, ImmutableList.of(), elasticsearchClientStats, Optional.of(executor));
     }
