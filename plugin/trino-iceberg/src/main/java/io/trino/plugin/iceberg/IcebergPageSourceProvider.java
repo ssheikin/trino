@@ -85,7 +85,6 @@ import io.trino.spi.connector.EmptyPageSource;
 import io.trino.spi.connector.FixedPageSource;
 import io.trino.spi.connector.SourcePage;
 import io.trino.spi.connector.SystemColumnHandle;
-import io.trino.spi.connector.SystemTableHandle;
 import io.trino.spi.connector.TableCredentials;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.NullableValue;
@@ -229,7 +228,7 @@ public class IcebergPageSourceProvider
     // TODO (https://github.com/trinodb/trino/issues/16824) allow connector to return pages of arbitrary row count and handle this gracefully in engine
     private static final int MAX_RLE_PAGE_SIZE = DEFAULT_MAX_PAGE_SIZE_IN_BYTES / SIZE_OF_LONG;
 
-    private final IcebergFileSystemFactory doNotUseDirectlyFileSystemFactory;
+    private final IcebergFileSystemFactory fileSystemFactory;
     private final ForwardingFileIoFactory fileIoFactory;
     private final FileFormatDataSourceStats fileFormatDataSourceStats;
     private final OrcReaderOptions orcReaderOptions;
@@ -249,7 +248,7 @@ public class IcebergPageSourceProvider
             DateTimeZone dateTimeZone,
             TypeManager typeManager)
     {
-        this.doNotUseDirectlyFileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.fileIoFactory = requireNonNull(fileIoFactory, "fileIoFactory is null");
         this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
         this.orcReaderOptions = requireNonNull(orcReaderOptions, "orcReaderOptions is null");
@@ -270,10 +269,9 @@ public class IcebergPageSourceProvider
             DynamicFilter dynamicFilter)
     {
         if (connectorSplit instanceof FilesTableSplit filesTableSplit) {
-            SystemTableHandle tableHandle = (SystemTableHandle) connectorTable;
             return new FilesTablePageSource(
                     typeManager,
-                    createFileSystem(session, tableHandle.schemaName(), tableHandle.tableName(), filesTableSplit.fileIoProperties()),
+                    fileSystemFactory.create(session.getIdentity(), filesTableSplit.fileIoProperties()),
                     fileIoFactory,
                     columns.stream().map(SystemColumnHandle.class::cast).map(SystemColumnHandle::columnName).collect(toImmutableList()),
                     filesTableSplit);
@@ -294,8 +292,6 @@ public class IcebergPageSourceProvider
                 session,
                 icebergColumns,
                 schema,
-                tableHandle.getSchemaName(),
-                tableHandle.getTableName(),
                 partitionSpec,
                 PartitionData.fromJson(split.getPartitionDataJson(), partitionColumnTypes),
                 split.getDeletes(),
@@ -328,8 +324,6 @@ public class IcebergPageSourceProvider
             ConnectorSession session,
             List<IcebergColumnHandle> icebergColumns,
             Schema tableSchema,
-            String schemaName,
-            String tableName,
             PartitionSpec partitionSpec,
             PartitionData partitionData,
             List<DeleteFile> deletes,
@@ -363,7 +357,7 @@ public class IcebergPageSourceProvider
 
         // exit early when only reading partition keys from a simple split
         String partition = partitionSpec.partitionToPath(partitionData);
-        TrinoFileSystem fileSystem = createFileSystem(session, schemaName, tableName, fileIoProperties);
+        TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity(), fileIoProperties);
         TrinoInputFile inputFile = isUseFileSizeFromMetadata(session)
                 ? fileSystem.newInputFile(Location.of(path), fileSize)
                 : fileSystem.newInputFile(Location.of(path));
@@ -486,11 +480,6 @@ public class IcebergPageSourceProvider
             pageSource = transformerBuilder.build(pageSource);
         }
         return pageSource;
-    }
-
-    protected TrinoFileSystem createFileSystem(ConnectorSession session, String schema, String table, Map<String, String> fileIoProperties)
-    {
-        return doNotUseDirectlyFileSystemFactory.create(session.getIdentity(), fileIoProperties);
     }
 
     protected DeletePageSourceProvider deletePageSourceProvider(ConnectorSession session, TrinoFileSystem fileSystem, int formatVersion)

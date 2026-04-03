@@ -112,7 +112,7 @@ public class PartitionStatisticsWriter
         this.planningExecutor = requireNonNull(planningExecutor, "planningExecutor is null");
     }
 
-    public Optional<PartitionStatisticsFile> writePartitionStats(ConnectorSession session, String schemaName, Table table, long snapshotId)
+    public Optional<PartitionStatisticsFile> writePartitionStats(ConnectorSession session, Table table, long snapshotId)
     {
         if (!isPartitionStatisticsCollectOnWrite(session) || table.spec().isUnpartitioned() || table.currentSnapshot() == null) {
             return Optional.empty();
@@ -132,7 +132,7 @@ public class PartitionStatisticsWriter
                 log.debug("Returning existing statistics file for snapshot: %s", snapshotId);
                 return Optional.of(statisticsFile);
             }
-            stats = computeAndMergeStatsIncremental(session, schemaName, table, snapshot, partitionType, statisticsFile);
+            stats = computeAndMergeStatsIncremental(session, table, snapshot, partitionType, statisticsFile);
         }
         if (stats.isEmpty()) {
             return Optional.empty();
@@ -244,7 +244,6 @@ public class PartitionStatisticsWriter
 
     private Collection<PartitionStats> computeAndMergeStatsIncremental(
             ConnectorSession session,
-            String schemaName,
             Table table,
             Snapshot snapshot,
             StructType partitionType,
@@ -253,7 +252,7 @@ public class PartitionStatisticsWriter
         PartitionMap<PartitionStats> statsMap = PartitionMap.create(table.specs());
         Schema schema = PartitionStatsHandler.schema(partitionType, formatVersion(table));
         InputFile inputFile = table.io().newInputFile(previousStatsFile.path(), previousStatsFile.fileSizeInBytes());
-        try (PartitionStatisticsReader.PartitionStatsIterator statsIterator = partitionStatisticsReader.readPartitionStats(session, table, schema, schemaName, inputFile)) {
+        try (PartitionStatisticsReader.PartitionStatsIterator statsIterator = partitionStatisticsReader.readPartitionStats(session, table, schema, inputFile)) {
             statsIterator.forEachRemaining(partitionStats -> statsMap.put(partitionStats.specId(), partitionStats.partition(), partitionStats));
         }
 

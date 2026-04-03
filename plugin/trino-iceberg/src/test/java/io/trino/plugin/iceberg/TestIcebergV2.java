@@ -1235,7 +1235,6 @@ public class TestIcebergV2
             TableStatistics withNoFilter = TableStatisticsReader.makeTableStatistics(
                     SESSION,
                     TESTING_TYPE_MANAGER,
-                    getQueryRunner().getDefaultSession().getSchema().orElseThrow(),
                     table,
                     snapshotId,
                     TupleDomain.all(),
@@ -1248,7 +1247,6 @@ public class TestIcebergV2
             TableStatistics withPartitionFilter = TableStatisticsReader.makeTableStatistics(
                     SESSION,
                     TESTING_TYPE_MANAGER,
-                    getQueryRunner().getDefaultSession().getSchema().orElseThrow(),
                     table,
                     snapshotId,
                     TupleDomain.withColumnDomains(ImmutableMap.of(
@@ -1264,7 +1262,6 @@ public class TestIcebergV2
             TableStatistics withUnenforcedFilter = TableStatisticsReader.makeTableStatistics(
                     SESSION,
                     TESTING_TYPE_MANAGER,
-                    getQueryRunner().getDefaultSession().getSchema().orElseThrow(),
                     table,
                     snapshotId,
                     TupleDomain.all(),
@@ -1290,7 +1287,6 @@ public class TestIcebergV2
             TableStatistics withNoProjectedColumns = TableStatisticsReader.makeTableStatistics(
                     SESSION,
                     TESTING_TYPE_MANAGER,
-                    getQueryRunner().getDefaultSession().getSchema().orElseThrow(),
                     table,
                     snapshotId,
                     TupleDomain.all(),
@@ -1305,7 +1301,6 @@ public class TestIcebergV2
             TableStatistics withProjectedColumns = TableStatisticsReader.makeTableStatistics(
                     SESSION,
                     TESTING_TYPE_MANAGER,
-                    getQueryRunner().getDefaultSession().getSchema().orElseThrow(),
                     table,
                     snapshotId,
                     TupleDomain.all(),
@@ -1325,7 +1320,6 @@ public class TestIcebergV2
             TableStatistics withPartitionFilterAndProjectedColumn = TableStatisticsReader.makeTableStatistics(
                     SESSION,
                     TESTING_TYPE_MANAGER,
-                    getQueryRunner().getDefaultSession().getSchema().orElseThrow(),
                     table,
                     snapshotId,
                     TupleDomain.all(),

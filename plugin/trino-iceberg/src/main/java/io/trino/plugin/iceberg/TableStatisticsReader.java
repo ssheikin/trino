@@ -123,7 +123,6 @@ public final class TableStatisticsReader
         return makeTableStatistics(
                 session,
                 typeManager,
-                tableHandle.getSchemaName(),
                 icebergTable,
                 tableHandle.getSnapshotId(),
                 tableHandle.getEnforcedPredicate(),
@@ -137,7 +136,6 @@ public final class TableStatisticsReader
     public static TableStatistics makeTableStatistics(
             ConnectorSession session,
             TypeManager typeManager,
-            String schemaName,
             Table icebergTable,
             Optional<Long> snapshot,
             TupleDomain<IcebergColumnHandle> enforcedConstraint,
@@ -174,7 +172,7 @@ public final class TableStatisticsReader
                 Types.StructType partitionType = Partitioning.partitionType(icebergTable);
                 Schema schema = PartitionStatsHandler.schema(partitionType, formatVersion(icebergTable));
                 InputFile inputFile = icebergTable.io().newInputFile(statsFile.path(), statsFile.fileSizeInBytes());
-                try (PartitionStatisticsReader.PartitionStatsIterator statsIterator = partitionStatisticsReader.readPartitionStats(session, icebergTable, schema, schemaName, inputFile)) {
+                try (PartitionStatisticsReader.PartitionStatsIterator statsIterator = partitionStatisticsReader.readPartitionStats(session, icebergTable, schema, inputFile)) {
                     while (statsIterator.hasNext()) {
                         PartitionStats stat = statsIterator.next();
                         if (!enforcedConstraint.isAll()) {

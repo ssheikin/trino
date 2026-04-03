@@ -67,7 +67,7 @@ public final class PartitionStatisticsReader
     }
 
     @MustBeClosed
-    public PartitionStatsIterator readPartitionStats(ConnectorSession session, Table table, Schema schema, String schemaName, InputFile inputFile)
+    public PartitionStatsIterator readPartitionStats(ConnectorSession session, Table table, Schema schema, InputFile inputFile)
     {
         FileFormat fileFormat = FileFormat.fromFileName(inputFile.location());
         IcebergPageSourceProvider pageSourceProvider = pageSourceProviderFactory.createPageSourceProvider();
@@ -80,8 +80,6 @@ public final class PartitionStatisticsReader
                 session,
                 projectedColumns,
                 schema,
-                schemaName,
-                table.name(),
                 unpartitioned(),
                 new PartitionData(new Object[] {}),
                 ImmutableList.of(),

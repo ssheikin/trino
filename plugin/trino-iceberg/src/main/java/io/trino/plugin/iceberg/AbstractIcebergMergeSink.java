@@ -56,8 +56,6 @@ public abstract class AbstractIcebergMergeSink
     protected final IcebergFileFormat fileFormat;
     protected final Map<String, String> storageProperties;
     protected final Schema schema;
-    protected final String schemaName;
-    protected final String tableName;
     protected final Map<Integer, PartitionSpec> partitionsSpecs;
     protected final ConnectorPageSink insertPageSink;
     protected final Optional<ConnectorPageSink> updateInsertPageSink;
@@ -83,8 +81,6 @@ public abstract class AbstractIcebergMergeSink
             IcebergFileFormat fileFormat,
             Map<String, String> storageProperties,
             Schema schema,
-            String schemaName,
-            String tableName,
             Map<Integer, PartitionSpec> partitionsSpecs,
             ConnectorPageSink insertPageSink,
             Optional<ConnectorPageSink> updateInsertPageSink,
@@ -107,8 +103,6 @@ public abstract class AbstractIcebergMergeSink
         this.fileFormat = requireNonNull(fileFormat, "fileFormat is null");
         this.storageProperties = ImmutableMap.copyOf(storageProperties);
         this.schema = requireNonNull(schema, "schema is null");
-        this.schemaName = requireNonNull(schemaName, "schemaName is null");
-        this.tableName = requireNonNull(tableName, "tableName is null");
         this.partitionsSpecs = ImmutableMap.copyOf(partitionsSpecs);
         this.insertPageSink = requireNonNull(insertPageSink, "insertPageSink is null");
         this.updateInsertPageSink = requireNonNull(updateInsertPageSink, "updateInsertPageSink is null");

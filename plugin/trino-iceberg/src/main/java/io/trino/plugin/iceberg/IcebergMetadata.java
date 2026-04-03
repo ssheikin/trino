@@ -1910,7 +1910,7 @@ public class IcebergMetadata
             transaction.updateStatistics()
                     .setStatistics(statisticsFile)
                     .commit();
-            partitionStatisticsWriter.writePartitionStats(session, table.name().getSchemaName(), icebergTable, newSnapshotId).ifPresent(partitionStatisticsFile -> {
+            partitionStatisticsWriter.writePartitionStats(session, icebergTable, newSnapshotId).ifPresent(partitionStatisticsFile -> {
                 transaction.updatePartitionStatistics()
                         .setPartitionStatistics(partitionStatisticsFile)
                         .commit();
@@ -2432,7 +2432,7 @@ public class IcebergMetadata
         transaction.updateStatistics()
                 .setStatistics(newStatsFile)
                 .commit();
-        partitionStatisticsWriter.writePartitionStats(session, executeHandle.schemaTableName().getSchemaName(), icebergTable, newSnapshotId).ifPresent(partitionStatisticsFile -> {
+        partitionStatisticsWriter.writePartitionStats(session, icebergTable, newSnapshotId).ifPresent(partitionStatisticsFile -> {
             transaction.updatePartitionStatistics()
                     .setPartitionStatistics(partitionStatisticsFile)
                     .commit();
@@ -2510,7 +2510,7 @@ public class IcebergMetadata
                     .setStatistics(newStatsFile)
                     .commit();
 
-        partitionStatisticsWriter.writePartitionStats(session, executeHandle.schemaTableName().getSchemaName(), icebergTable, newSnapshotId).ifPresent(partitionStatisticsFile -> {
+        partitionStatisticsWriter.writePartitionStats(session, icebergTable, newSnapshotId).ifPresent(partitionStatisticsFile -> {
             transaction.updatePartitionStatistics()
                     .setPartitionStatistics(partitionStatisticsFile)
                     .commit();
@@ -4012,7 +4012,7 @@ public class IcebergMetadata
                 .setStatistics(statisticsFile)
                 .commit();
 
-        partitionStatisticsWriter.writePartitionStats(session, handle.getSchemaName(), table, snapshotId).ifPresent(partitionStatisticsFile -> {
+        partitionStatisticsWriter.writePartitionStats(session, table, snapshotId).ifPresent(partitionStatisticsFile -> {
             transaction.updatePartitionStatistics()
                     .setPartitionStatistics(partitionStatisticsFile)
                     .commit();
@@ -5184,7 +5184,7 @@ public class IcebergMetadata
             transaction.updateStatistics()
                     .setStatistics(statisticsFile)
                     .commit();
-            partitionStatisticsWriter.writePartitionStats(session, table.name().getSchemaName(), icebergTable, snapshotId)
+            partitionStatisticsWriter.writePartitionStats(session, icebergTable, snapshotId)
                     .ifPresent(partitionStatisticsFile -> transaction.updatePartitionStatistics()
                             .setPartitionStatistics(partitionStatisticsFile)
                             .commit());

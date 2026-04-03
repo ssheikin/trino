@@ -117,8 +117,6 @@ public class TableChangesFunctionProcessor
                 session,
                 functionHandle.columns(),
                 tableSchema,
-                functionHandle.schemaTableName().getSchemaName(),
-                functionHandle.schemaTableName().getTableName(),
                 partitionSpec,
                 PartitionData.fromJson(split.partitionDataJson(), partitionColumnTypes),
                 ImmutableList.of(),
