@@ -1176,35 +1176,6 @@ jobs:
         with:
           github-access-token: ${{ secrets.GITHUBACCESSTOKEN }}
   # --------------------------------------------------------------
-  # After synapse tests finish, tear down SQL pool
-  # --------------------------------------------------------------
-  synapse-stop-pool:
-    name: synapse-stop-pool
-    permissions:
-      id-token: write
-      contents: read
-    runs-on: [ self-hosted, gha-fleet-ec2-2cpu-8gb-amd64, latest ]
-    # Run *after* the pool is started and the tests are done
-    needs: [ synapse-start-pool, synapse-weekly-tests, synapse-nightly-tests ]
-    # Ignore status of tests, but only stop the pool if it was started
-    if: "${{ always() && needs.synapse-start-pool.outputs.sql-pool-name != '' }}"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Azure Login
-        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
-        with:
-          client-id: ${{ secrets.SYNAPSE_CLIENT_ID }}
-          tenant-id: ${{ secrets.SYNAPSE_TENANT_ID }}
-          subscription-id: ${{ secrets.SYNAPSE_SUBSCRIPTION_ID }}
-      - name: Stop Pool
-        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
-        env:
-          SYNAPSE_SQL_POOL: ${{ needs.synapse-start-pool.outputs.sql-pool-name }}
-          SYNAPSE_RESOURCE_GROUP: ${{ vars.SYNAPSE_RESOURCE_GROUP }}
-          SYNAPSE_WORKSPACE: ${{ vars.SYNAPSE_WORKSPACE }}
-        with:
-          inlineScript: "$GITHUB_WORKSPACE/.github/bin/synapse/stop-sql-pool.sh"
-  # --------------------------------------------------------------
   # Weekly run all snowflake tests, labeled PRs to limit CI costs
   # --------------------------------------------------------------
   snowflake-weekly-tests:
@@ -2518,13 +2489,13 @@ jobs:
     runs-on: ${{ matrix.runners != null && matrix.runners || fromJSON('["self-hosted", "gha-fleet-ec2-4cpu-16gb-amd64", "latest" ]') }}
     # explicitly define the name to avoid adding the value of the `ignore exclusion if` matrix item
     name: pt (${{ matrix.config }}, ${{ matrix.suite }}, ${{ matrix.jdk }})
-    if: needs.build-pt.outputs.matrix != '{}'
+    if: always() && needs.build-pt.outputs.matrix != '{}'
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.build-pt.outputs.matrix) }}
     # PT Launcher's timeout defaults to 2h, add some margin
     timeout-minutes: 130
-    needs: build-pt
+    needs: [ build-pt, synapse-start-pool ]
     env:
       REPORT_TEST_SESSION_NAME: pt
       REPORT_SERVICE_NAME: ${{ matrix.suite }}-${{ matrix.config }}
@@ -2596,6 +2567,7 @@ jobs:
           SYNAPSE_ENDPOINT: ${{ vars.SYNAPSE_ENDPOINT }}
           SYNAPSE_USER: ${{ vars.SYNAPSE_USER }}
           SYNAPSE_PASSWORD: ${{ env.SEP_CI_SEP_SYNAPSE_PASSWORD }}
+          SYNAPSE_DATABASE: ${{ needs.synapse-start-pool.outputs.sql-pool-name }}
           SNOWFLAKE_ACCOUNT_NAME: ${{ vars.SNOWFLAKE_ACCOUNT_NAME }}
           GCP_CREDENTIALS_KEY: ${{ secrets.GCP_CREDENTIALS_KEY }}
           GCP_STORAGE_BUCKET: ${{ vars.GCP_STORAGE_BUCKET }}
@@ -2685,6 +2657,36 @@ jobs:
         uses: starburstdata/ai-flake-fixer/.github/actions/launch-ai-flake@main
         with:
           github-access-token: ${{ secrets.GITHUBACCESSTOKEN }}
+
+  # --------------------------------------------------------------
+  # After synapse tests finish (including PT), tear down SQL pool
+  # --------------------------------------------------------------
+  synapse-stop-pool:
+    name: synapse-stop-pool
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: [ self-hosted, gha-fleet-ec2-2cpu-8gb-amd64, latest ]
+    # Run *after* the pool is started and the tests are done
+    needs: [ synapse-start-pool, synapse-weekly-tests, synapse-nightly-tests, pt ]
+    # Ignore status of tests, but only stop the pool if it was started
+    if: "${{ always() && needs.synapse-start-pool.outputs.sql-pool-name != '' }}"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure Login
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
+        with:
+          client-id: ${{ secrets.SYNAPSE_CLIENT_ID }}
+          tenant-id: ${{ secrets.SYNAPSE_TENANT_ID }}
+          subscription-id: ${{ secrets.SYNAPSE_SUBSCRIPTION_ID }}
+      - name: Stop Pool
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
+        env:
+          SYNAPSE_SQL_POOL: ${{ needs.synapse-start-pool.outputs.sql-pool-name }}
+          SYNAPSE_RESOURCE_GROUP: ${{ vars.SYNAPSE_RESOURCE_GROUP }}
+          SYNAPSE_WORKSPACE: ${{ vars.SYNAPSE_WORKSPACE }}
+        with:
+          inlineScript: "$GITHUB_WORKSPACE/.github/bin/synapse/stop-sql-pool.sh"
 
   build-success:
     if: ${{ always() }} # if `failure()` would not work for cancellations, `!success()` would not work for skipped jobs
