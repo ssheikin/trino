@@ -1164,12 +1164,6 @@ public abstract class AbstractMockMetadata
     }
 
     @Override
-    public Optional<TableHandle> applyPartialLimit(Session session, TableHandle tableHandle, long limitHint)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Optional<ApplyPartialTopNResult<TableHandle>> applyPartialTopN(
             Session session,
             TableHandle tableHandle,
