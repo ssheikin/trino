@@ -649,6 +649,13 @@
                                     <new>method boolean io.trino.spi.block.ValueBlock::isNullUnchecked(int)</new>
                                     <justification>Added to enable performance optimizations</justification>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeChanged</code>
+                                    <old>method void io.trino.spi.connector.ConnectorMetadata::finishTableExecute(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableExecuteHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.List&lt;java.lang.Object&gt;)</old>
+                                    <new>method java.util.Map&lt;java.lang.String, java.lang.Long&gt; io.trino.spi.connector.ConnectorMetadata::finishTableExecute(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableExecuteHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.List&lt;java.lang.Object&gt;)</new>
+                                    <justification>Allows distributed table procedures to output metrics in result</justification>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
