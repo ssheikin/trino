@@ -43,6 +43,7 @@ public class IcebergRestCatalogModule
             case OAUTH2_PASSTHROUGH -> EMPTY_MODULE;
         });
 
+        binder.bind(IcebergRestCatalogPropertiesProvider.class).in(Scopes.SINGLETON);
         binder.bind(TrinoCatalogFactory.class).to(TrinoIcebergRestCatalogFactory.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, IcebergFileSystemFactory.class).setBinding().to(IcebergRestCatalogFileSystemFactory.class).in(Scopes.SINGLETON);
 
