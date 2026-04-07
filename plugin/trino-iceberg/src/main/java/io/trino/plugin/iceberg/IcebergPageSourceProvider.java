@@ -752,10 +752,10 @@ public class IcebergPageSourceProvider
                     nameMapping,
                     partition,
                     dataColumns,
-                    partitionKeys,
                     dataSequenceNumber,
                     firstRowId,
-                    formatVersion);
+                    formatVersion,
+                    partitionKeys);
         };
     }
 
@@ -1361,10 +1361,10 @@ public class IcebergPageSourceProvider
             Optional<NameMapping> nameMapping,
             String partition,
             List<IcebergColumnHandle> columns,
-            Map<Integer, Optional<String>> partitionKeys,
             Long dataSequenceNumber,
             Long firstRowId,
-            int formatVersion)
+            int formatVersion,
+            Map<Integer, Optional<String>> partitionKeys)
     {
         InputFile file = new ForwardingInputFile(inputFile);
         OptionalLong fileModifiedTime = OptionalLong.empty();
