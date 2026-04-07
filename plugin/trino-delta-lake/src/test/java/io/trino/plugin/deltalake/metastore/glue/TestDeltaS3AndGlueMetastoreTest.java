@@ -188,6 +188,7 @@ public class TestDeltaS3AndGlueMetastoreTest
     public void testCatalogSetProperties()
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
+        String dynamicSchema = "test_dynamic_" + randomNameSuffix();
         String createCatalogSql = """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
@@ -211,10 +212,10 @@ public class TestDeltaS3AndGlueMetastoreTest
                       "fs.native-s3.enabled" = 'true'
                     """
                     .formatted(catalog));
-            assertUpdate("CREATE SCHEMA %s.test_dynamic".formatted(catalog));
+            assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, dynamicSchema));
         }
         finally {
-            assertUpdate("DROP SCHEMA IF EXISTS %s.test_dynamic".formatted(catalog));
+            assertUpdate("DROP SCHEMA IF EXISTS %s.%s".formatted(catalog, dynamicSchema));
             assertUpdate("DROP CATALOG IF EXISTS " + catalog);
         }
     }

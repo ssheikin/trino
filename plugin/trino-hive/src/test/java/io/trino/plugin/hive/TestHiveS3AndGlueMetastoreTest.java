@@ -509,6 +509,7 @@ public class TestHiveS3AndGlueMetastoreTest
     public void testCatalogSetProperties()
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
+        String dynamicSchema = "test_dynamic_" + randomNameSuffix();
         @Language("SQL") String createCatalogSql = getCreateCatalogSqlUsingHive(catalog, schemaPath());
 
         try {
@@ -520,7 +521,7 @@ public class TestHiveS3AndGlueMetastoreTest
                        "hive.security" = 'read-only'
                     """
                     .formatted(catalog));
-            assertThatThrownBy(() -> assertUpdate("CREATE SCHEMA %s.test_dynamic".formatted(catalog))).hasMessageContaining("Access Denied: Cannot create schema test_dynamic");
+            assertThatThrownBy(() -> assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, dynamicSchema))).hasMessageContaining("Access Denied: Cannot create schema " + dynamicSchema);
             assertUpdate("""
                     ALTER CATALOG %s SET PROPERTIES
                       "hive.security" = 'allow-all',
@@ -528,10 +529,10 @@ public class TestHiveS3AndGlueMetastoreTest
                       "fs.native-s3.enabled" = 'true'
                     """
                     .formatted(catalog));
-            assertUpdate("CREATE SCHEMA %s.test_dynamic".formatted(catalog));
+            assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, dynamicSchema));
         }
         finally {
-            assertUpdate("DROP SCHEMA IF EXISTS %s.test_dynamic".formatted(catalog));
+            assertUpdate("DROP SCHEMA IF EXISTS %s.%s".formatted(catalog, dynamicSchema));
             assertUpdate("DROP CATALOG IF EXISTS " + catalog);
         }
     }
