@@ -28,6 +28,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class TestExamplePlugin
 {
     @Test
+    void testCreateConnector()
+    {
+        ExamplePlugin plugin = new ExamplePlugin();
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
+        factory.create(
+                        "test",
+                        Map.of("metadata-uri", "/tmp"),
+                        new TestingConnectorContext())
+                .shutdown();
+    }
+
+    @Test
     void testGetSecuritySensitivePropertyNames()
     {
         Plugin plugin = new ExamplePlugin();
