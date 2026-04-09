@@ -11,14 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.spi.connector;
+package io.trino.spi.gpu;
 
-public interface ConnectorPageSourceProviderFactory
+public class EmptyGpuPageSource
+        implements ConnectorGpuPageSource
 {
-    default boolean supportsConnectorGpuPageSource(ConnectorTableHandle connectorTableHandle)
+    @Override
+    public Result readNext()
     {
-        return false;
+        return new Finished();
     }
 
-    ConnectorPageSourceProvider createPageSourceProvider();
+    @Override
+    public void close() {}
 }

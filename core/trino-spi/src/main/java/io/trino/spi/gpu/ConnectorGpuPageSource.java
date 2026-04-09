@@ -11,26 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.gpu;
+package io.trino.spi.gpu;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import io.trino.annotation.NotThreadSafe;
-import io.trino.operator.Operator;
-import io.trino.spi.gpu.GpuPage;
-import io.trino.spi.gpu.RuntimeCloseable;
 import io.trino.spi.gpu.borrow.Move;
 import io.trino.spi.gpu.borrow.Own;
 
+import java.util.concurrent.CompletableFuture;
+
 import static java.util.Objects.requireNonNull;
 
-/**
- * GPU operation typically in a pull-based execution pipeline.
- *
- * @see Operator
- * @see io.trino.operator.WorkProcessor
- */
-@NotThreadSafe
-public interface GpuOperation
+public interface ConnectorGpuPageSource
         extends RuntimeCloseable
 {
     /**
@@ -39,7 +29,7 @@ public interface GpuOperation
      * @see Result
      */
     @Move
-    Result execute();
+    Result readNext();
 
     /**
      * {@inheritDoc}
@@ -60,7 +50,7 @@ public interface GpuOperation
      * Caller should wait on the future before retrying execute().
      * The future completes when the blocking condition is resolved.
      */
-    record Blocked(ListenableFuture<Void> future)
+    record Blocked(CompletableFuture<Void> future)
             implements Result
     {
         public Blocked
@@ -95,10 +85,5 @@ public interface GpuOperation
         {
             requireNonNull(page, "page is null");
         }
-    }
-
-    interface Factory
-    {
-        GpuOperation create(GpuOperation source);
     }
 }
