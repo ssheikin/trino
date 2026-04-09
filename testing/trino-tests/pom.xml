@@ -524,6 +524,13 @@
             <artifactId>sdk-core</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>tools.profiler</groupId>
+            <artifactId>async-profiler</artifactId>
+            <version>4.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
