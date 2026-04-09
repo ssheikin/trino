@@ -20,6 +20,18 @@
 
     <dependencies>
         <dependency>
+            <groupId>ai.rapids</groupId>
+            <artifactId>cudf</artifactId>
+            <exclusions>
+                <exclusion>
+                    <!-- Avoid polluting plugins' dependencies. trino-maven-plugin doesn't recognize trino-spi's transitive dependencies. -->
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
@@ -1241,6 +1253,13 @@
                                     <code>java.class.externalClassExposedInAPI</code>
                                     <new>interface io.opentelemetry.api.trace.TraceFlagsBuilder</new>
                                     <justification>New OpenTelemetry API version</justification>
+                                </item>
+                                <item>
+                                    <regex>true</regex>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <newArchive>ai\.rapids:cudf:.*</newArchive>
+                                    <justification>Usage of cuDF is explicit, not merely an implementation detail</justification>
                                 </item>
                             </differences>
                         </revapi.differences>
