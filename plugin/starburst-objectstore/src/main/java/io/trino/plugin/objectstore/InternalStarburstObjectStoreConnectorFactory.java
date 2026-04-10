@@ -19,7 +19,6 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
-import io.trino.connector.CatalogHandle;
 import io.trino.filesystem.manager.FileSystemModule;
 import io.trino.metastore.HiveMetastore;
 import io.trino.plugin.base.ConnectorContextModule;
@@ -30,7 +29,6 @@ import io.trino.plugin.hudi.HudiConnectorFactory;
 import io.trino.plugin.iceberg.CatalogType;
 import io.trino.plugin.iceberg.IcebergConnectorFactory;
 import io.trino.plugin.objectstore.hive.schemadiscovery.HiveSchemaDiscoveryModule;
-import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -50,7 +48,6 @@ import static io.airlift.concurrent.Threads.threadsNamed;
 import static io.airlift.configuration.ConfigurationAwareModule.combine;
 import static io.starburst.schema.discovery.models.IdentifierConstraint.VALID_IN_HIVE_AND_TRINO;
 import static io.starburst.schema.discovery.models.IdentifierConstraint.VALID_IN_TRINO;
-import static io.trino.connector.CatalogHandle.createRootCatalogHandle;
 import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.FILE;
 import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.GLUE;
 import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.THRIFT;
@@ -166,11 +163,7 @@ public final class InternalStarburstObjectStoreConnectorFactory
                     new ObjectStoreModule(),
                     new GalaxyLocationSecurityModule(),
                     new FileSystemModule(catalogName, context, false, quietBootstrap),
-                    new ConnectorContextModule(catalogName, context),
-                    binder -> {
-                        CatalogName name = new CatalogName(catalogName);
-                        binder.bind(CatalogHandle.class).toInstance(createRootCatalogHandle(name, context.getCatalogVersion()));
-                    });
+                    new ConnectorContextModule(catalogName, context));
         }
     }
 
