@@ -23,6 +23,7 @@ import io.trino.connector.ThrowingManagedStatisticsClient;
 import io.trino.execution.buffer.PagesSerdeStreamFactory;
 import io.trino.metadata.BlockEncodingManager;
 import io.trino.metadata.InternalBlockEncodingSerde;
+import io.trino.metadata.InternalFunctionBundleFactory;
 import io.trino.operator.FlatHashStrategyCompiler;
 import io.trino.operator.GroupByHashPageIndexerFactory;
 import io.trino.operator.NullSafeHashCompiler;
@@ -45,6 +46,7 @@ import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
+import io.trino.spi.function.FunctionBundleFactory;
 import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
@@ -253,5 +255,11 @@ public final class TestingConnectorContext
                     pageSorter,
                     pageIndexerFactory);
         }
+    }
+
+    @Override
+    public FunctionBundleFactory getFunctionBundleFactory()
+    {
+        return new InternalFunctionBundleFactory();
     }
 }

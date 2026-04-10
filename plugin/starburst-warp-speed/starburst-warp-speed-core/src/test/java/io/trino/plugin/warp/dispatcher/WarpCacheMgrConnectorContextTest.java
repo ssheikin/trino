@@ -47,7 +47,8 @@ public class WarpCacheMgrConnectorContextTest
                         ConnectorContext.class.getMethod("getCoordinatorLocator"),
                         ConnectorContext.class.getMethod("getManagedStatisticsClient"),
                         ConnectorContext.class.getMethod("getLocationAccessControl"),
-                        ConnectorContext.class.getMethod("getNodeEnvironment")));
+                        ConnectorContext.class.getMethod("getNodeEnvironment"),
+                        ConnectorContext.class.getMethod("getFunctionBundleFactory")));
 
         assertAllMethodsOverridden(
                 WarpContext.class,

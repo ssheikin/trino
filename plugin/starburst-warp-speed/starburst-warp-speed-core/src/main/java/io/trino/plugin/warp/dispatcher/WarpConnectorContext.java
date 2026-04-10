@@ -29,6 +29,7 @@ import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
+import io.trino.spi.function.FunctionBundleFactory;
 import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
@@ -173,6 +174,12 @@ public class WarpConnectorContext
     public String getNodeEnvironment()
     {
         return connectorContext.getNodeEnvironment();
+    }
+
+    @Override
+    public FunctionBundleFactory getFunctionBundleFactory()
+    {
+        return connectorContext.getFunctionBundleFactory();
     }
 
     @Override

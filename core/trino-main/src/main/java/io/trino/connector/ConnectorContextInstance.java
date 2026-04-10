@@ -29,6 +29,7 @@ import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
+import io.trino.spi.function.FunctionBundleFactory;
 import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
@@ -58,6 +59,7 @@ public class ConnectorContextInstance
     private final CoordinatorLocator coordinatorLocator;
     private final Map<String, String> serverProperties;
     private final String nodeEnvironment;
+    private final FunctionBundleFactory functionBundleFactory;
     private final ManagedStatisticsClient managedStatisticsClient;
 
     public ConnectorContextInstance(
@@ -79,6 +81,7 @@ public class ConnectorContextInstance
             CatalogVersion catalogVersion,
             Map<String, String> serverProperties,
             String nodeEnvironment,
+            FunctionBundleFactory functionBundleFactory,
             ManagedStatisticsClient managedStatisticsClient)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
@@ -99,6 +102,7 @@ public class ConnectorContextInstance
         this.catalogVersion = requireNonNull(catalogVersion, "catalogVersion is null");
         this.serverProperties = ImmutableMap.copyOf(requireNonNull(serverProperties, "serverProperties is null"));
         this.nodeEnvironment = requireNonNull(nodeEnvironment, "nodeEnvironment is null");
+        this.functionBundleFactory = requireNonNull(functionBundleFactory, "functionBundleFactory is null");
         this.managedStatisticsClient = requireNonNull(managedStatisticsClient, "managedStatisticsClient is null");
     }
 
@@ -208,6 +212,12 @@ public class ConnectorContextInstance
     public String getNodeEnvironment()
     {
         return nodeEnvironment;
+    }
+
+    @Override
+    public FunctionBundleFactory getFunctionBundleFactory()
+    {
+        return functionBundleFactory;
     }
 
     @Override

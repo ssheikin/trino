@@ -26,6 +26,7 @@ import io.trino.connector.system.SystemConnector;
 import io.trino.connector.system.SystemTablesProvider;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.memory.LocalMemoryManager;
+import io.trino.metadata.InternalFunctionBundleFactory;
 import io.trino.metadata.Metadata;
 import io.trino.node.DefaultCoordinatorLocator;
 import io.trino.node.InternalCoordinatorLocator;
@@ -282,6 +283,7 @@ public class DefaultCatalogFactory
                 catalogVersion,
                 serverProperties,
                 nodeInfo.getEnvironment(),
+                new InternalFunctionBundleFactory(),
                 managedStatisticsClient);
     }
 
