@@ -63,7 +63,7 @@ public class TestHiveS3AndGlueMetastoreTest
                 .addHiveProperty("hive.metastore.glue.default-warehouse-dir", schemaPath())
                 .addHiveProperty("hive.security", "allow-all")
                 .addHiveProperty("hive.non-managed-table-writes-enabled", "true")
-                .addHiveProperty("fs.native-s3.enabled", "true")
+                .addHiveProperty("fs.s3.enabled", "true")
                 .addHiveProperty("hive.metastore-cache-ttl", "0s")
                 .build();
         queryRunner.execute("CREATE SCHEMA " + schemaName + " WITH (location = '" + schemaPath() + "')");
@@ -526,7 +526,7 @@ public class TestHiveS3AndGlueMetastoreTest
                     ALTER CATALOG %s SET PROPERTIES
                       "hive.security" = 'allow-all',
                       "fs.hadoop.enabled" = 'false',
-                      "fs.native-s3.enabled" = 'true'
+                      "fs.s3.enabled" = 'true'
                     """
                     .formatted(catalog));
             assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, dynamicSchema));

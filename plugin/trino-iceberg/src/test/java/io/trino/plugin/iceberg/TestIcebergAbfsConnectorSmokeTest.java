@@ -89,7 +89,7 @@ public class TestIcebergAbfsConnectorSmokeTest
                                 .put("iceberg.catalog.type", "HIVE_METASTORE")
                                 .put("hive.metastore.uri", hiveHadoop.getHiveMetastoreEndpoint().toString())
                                 .put("hive.metastore.thrift.client.read-timeout", "1m") // read timed out sometimes happens with the default timeout
-                                .put("fs.native-azure.enabled", "true")
+                                .put("fs.azure.enabled", "true")
                                 .put("azure.auth-type", "ACCESS_KEY")
                                 .put("azure.access-key", accessKey)
                                 .put("iceberg.register-table-procedure.enabled", "true")
@@ -129,8 +129,8 @@ public class TestIcebergAbfsConnectorSmokeTest
                 WITH (
                    "azure.access-key" = '%s',
                    "azure.auth-type" = 'ACCESS_KEY',
+                   "fs.azure.enabled" = 'true',
                    "fs.hadoop.enabled" = 'false',
-                   "fs.native-azure.enabled" = 'true',
                    "hive.metastore.uri" = '%s',
                    "iceberg.catalog.type" = 'HIVE_METASTORE',
                    "iceberg.file-format" = '%%s'

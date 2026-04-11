@@ -28,7 +28,7 @@ public class TestHiveOzoneS3GatewayWithNativeS3ConnectorSmokeTest
     {
         return ImmutableMap.<String, String>builder()
                 .put("fs.hadoop.enabled", "false")
-                .put("fs.native-s3.enabled", "true")
+                .put("fs.s3.enabled", "true")
                 .put("s3.aws-access-key", DUMMY_ACCESS_KEY)
                 .put("s3.aws-secret-key", DUMMY_SECRET_KEY)
                 .put("s3.endpoint", hiveOzoneS3Gateway.getApacheOzoneContainer().getS3EndpointAddress())
@@ -43,7 +43,7 @@ public class TestHiveOzoneS3GatewayWithNativeS3ConnectorSmokeTest
                 ALTER CATALOG %1$s SET PROPERTIES
                   "hive.security" = 'allow-all',
                   "fs.hadoop.enabled" = 'false',
-                  "fs.native-s3.enabled" = 'true',
+                  "fs.s3.enabled" = 'true',
                   "s3.aws-access-key" = '%2$s',
                   "s3.aws-secret-key" = '%3$s',
                   "s3.endpoint" = '%4$s',

@@ -35,7 +35,7 @@ public class TestHiveAbfsPassthroughMultiIdpNativeFilesystem
                         .put("hive.idp-name", AZURE_AD_IDP_NAME.toString())
                         .put("hive.security", "allow-all")
                         .put("fs.hadoop.enabled", "false")
-                        .put("fs.native-azure.enabled", "true")
+                        .put("fs.azure.enabled", "true")
                         .put("azure.use-oauth-passthrough-token", "true")
                         .buildOrThrow())
                 .build();

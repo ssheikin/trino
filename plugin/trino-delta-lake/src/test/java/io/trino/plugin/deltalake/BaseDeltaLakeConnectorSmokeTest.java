@@ -400,14 +400,14 @@ public abstract class BaseDeltaLakeConnectorSmokeTest
                     ALTER CATALOG %1$s SET PROPERTIES
                       "hive.metastore.uri" = '%2$s',
                       "fs.hadoop.enabled" = 'true',
-                      "fs.native-s3.enabled" = 'false'
+                      "fs.s3.enabled" = 'false'
                     """
                     .formatted(catalog, hiveHadoop.getHiveMetastoreEndpoint().toString()));
             String updatedCreateCatalog = """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                    "fs.hadoop.enabled" = 'true',
-                   "fs.native-s3.enabled" = 'false',
+                   "fs.s3.enabled" = 'false',
                    "hive.metastore" = 'thrift',
                    "hive.metastore.uri" = '%2$s'
                 )""";

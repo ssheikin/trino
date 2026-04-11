@@ -122,7 +122,7 @@ public class TestIcebergS3VendingRestCatalogConnectorSmokeTest
                                 .put("iceberg.rest-catalog.uri", "http://" + restCatalogBackendContainer.getRestCatalogEndpoint())
                                 .put("iceberg.rest-catalog.vended-credentials-enabled", "true")
                                 .put("iceberg.writer-sort-buffer-size", "1MB")
-                                .put("fs.native-s3.enabled", "true")
+                                .put("fs.s3.enabled", "true")
                                 .put("s3.region", MINIO_REGION)
                                 .put("s3.endpoint", minio.getMinioAddress())
                                 .put("s3.path-style-access", "true")
@@ -138,7 +138,7 @@ public class TestIcebergS3VendingRestCatalogConnectorSmokeTest
                 CREATE CATALOG %%s USING iceberg
                 WITH (
                    "fs.hadoop.enabled" = 'false',
-                   "fs.native-s3.enabled" = 'true',
+                   "fs.s3.enabled" = 'true',
                    "iceberg.catalog.type" = 'rest',
                    "iceberg.file-format" = '%%s',
                    "iceberg.rest-catalog.uri" = '%s',

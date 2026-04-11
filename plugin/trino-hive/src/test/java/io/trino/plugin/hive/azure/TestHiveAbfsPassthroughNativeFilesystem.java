@@ -31,7 +31,7 @@ public class TestHiveAbfsPassthroughNativeFilesystem
                         .put("hive.metastore", "thrift")
                         .put("hive.metastore.uri", hiveHadoop.getHiveMetastoreEndpoint().toString())
                         .put("fs.hadoop.enabled", "false")
-                        .put("fs.native-azure.enabled", "true")
+                        .put("fs.azure.enabled", "true")
                         .put("azure.use-oauth-passthrough-token", "true")
                         .put("hive.security", "allow-all")
                         .buildOrThrow())
