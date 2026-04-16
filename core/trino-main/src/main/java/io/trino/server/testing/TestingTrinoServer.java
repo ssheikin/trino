@@ -121,6 +121,7 @@ import io.trino.sql.PlannerContext;
 import io.trino.sql.analyzer.AnalyzerFactory;
 import io.trino.sql.analyzer.QueryExplainer;
 import io.trino.sql.analyzer.QueryExplainerFactory;
+import io.trino.sql.newir.Program;
 import io.trino.sql.planner.NodePartitioningManager;
 import io.trino.sql.planner.Plan;
 import io.trino.testing.ProcedureTester;
@@ -546,6 +547,11 @@ public class TestingTrinoServer
     public Optional<Plan> getQueryPlan(QueryId queryId)
     {
         return queryManager.getOldIrQueryPlan(queryId);
+    }
+
+    public Optional<Program> getNewIrPlan(QueryId queryId)
+    {
+        return queryManager.getNewIrQueryPlan(queryId);
     }
 
     public QueryInfo getFullQueryInfo(QueryId queryId)
