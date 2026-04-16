@@ -1261,6 +1261,42 @@
                                     <newArchive>ai\.rapids:cudf:.*</newArchive>
                                     <justification>Usage of cuDF is explicit, not merely an implementation detail</justification>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method short[] io.trino.spi.block.ShortArrayBlock::getRawValues()</old>
+                                    <new>method short[] io.trino.spi.block.ShortArrayBlock::getRawValues()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>Exposed to make GPU support more efficient</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int io.trino.spi.block.ShortArrayBlock::getRawValuesOffset()</old>
+                                    <new>method int io.trino.spi.block.ShortArrayBlock::getRawValuesOffset()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>Exposed to make GPU support more efficient</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int io.trino.spi.block.VariableWidthBlock::getRawArrayBase()</old>
+                                    <new>method int io.trino.spi.block.VariableWidthBlock::getRawArrayBase()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>Exposed to make GPU support more efficient</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int[] io.trino.spi.block.VariableWidthBlock::getRawOffsets()</old>
+                                    <new>method int[] io.trino.spi.block.VariableWidthBlock::getRawOffsets()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>Exposed to make GPU support more efficient</justification>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
