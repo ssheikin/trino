@@ -314,14 +314,14 @@ public interface AccessControl
      *
      * @throws AccessDeniedException if not allowed
      */
-    void checkCanInsertIntoTable(SecurityContext context, QualifiedObjectName tableName);
+    void checkCanInsertIntoTable(SecurityContext context, QualifiedObjectName tableName, Optional<String> branch);
 
     /**
      * Check if identity is allowed to delete from the specified table.
      *
      * @throws AccessDeniedException if not allowed
      */
-    void checkCanDeleteFromTable(SecurityContext context, QualifiedObjectName tableName);
+    void checkCanDeleteFromTable(SecurityContext context, QualifiedObjectName tableName, Optional<String> branch);
 
     /**
      * Check if identity is allowed to truncate the specified table.
@@ -335,7 +335,7 @@ public interface AccessControl
      *
      * @throws AccessDeniedException if not allowed
      */
-    void checkCanUpdateTableColumns(SecurityContext context, QualifiedObjectName tableName, Set<String> updatedColumnNames);
+    void checkCanUpdateTableColumns(SecurityContext context, QualifiedObjectName tableName, Optional<String> branch, Set<String> updatedColumnNames);
 
     /**
      * Check if identity is allowed to create the specified view.
@@ -370,7 +370,7 @@ public interface AccessControl
      *
      * @throws AccessDeniedException if not allowed
      */
-    void checkCanCreateViewWithSelectFromColumns(SecurityContext context, QualifiedObjectName tableName, Set<String> columnNames);
+    void checkCanCreateViewWithSelectFromColumns(SecurityContext context, QualifiedObjectName tableName, Optional<String> branch, Set<String> columnNames);
 
     /**
      * Check if identity is allowed to create the specified materialized view.
@@ -510,7 +510,7 @@ public interface AccessControl
      *
      * @throws AccessDeniedException if not allowed
      */
-    void checkCanSelectFromColumns(SecurityContext context, QualifiedObjectName tableName, Set<String> columnNames);
+    void checkCanSelectFromColumns(SecurityContext context, QualifiedObjectName tableName, Optional<String> branch, Set<String> columnNames);
 
     /**
      * Check if identity is allowed to create the specified role.

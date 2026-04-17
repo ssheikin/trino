@@ -306,17 +306,38 @@ public abstract class ForwardingSystemAccessControl
     }
 
     @Override
+    public void checkCanSelectFromColumns(SystemSecurityContext context, CatalogSchemaTableName table, Optional<String> branch, Set<String> columns)
+    {
+        delegate().checkCanSelectFromColumns(context, table, branch, columns);
+    }
+
+    @Deprecated
+    @Override
     public void checkCanSelectFromColumns(SystemSecurityContext context, CatalogSchemaTableName table, Set<String> columns)
     {
         delegate().checkCanSelectFromColumns(context, table, columns);
     }
 
     @Override
+    public void checkCanInsertIntoTable(SystemSecurityContext context, CatalogSchemaTableName table, Optional<String> branch)
+    {
+        delegate().checkCanInsertIntoTable(context, table, branch);
+    }
+
+    @Deprecated
+    @Override
     public void checkCanInsertIntoTable(SystemSecurityContext context, CatalogSchemaTableName table)
     {
         delegate().checkCanInsertIntoTable(context, table);
     }
 
+    @Override
+    public void checkCanDeleteFromTable(SystemSecurityContext context, CatalogSchemaTableName table, Optional<String> branch)
+    {
+        delegate().checkCanDeleteFromTable(context, table, branch);
+    }
+
+    @Deprecated
     @Override
     public void checkCanDeleteFromTable(SystemSecurityContext context, CatalogSchemaTableName table)
     {
@@ -329,6 +350,13 @@ public abstract class ForwardingSystemAccessControl
         delegate().checkCanTruncateTable(context, table);
     }
 
+    @Override
+    public void checkCanUpdateTableColumns(SystemSecurityContext context, CatalogSchemaTableName table, Optional<String> branch, Set<String> updatedColumnNames)
+    {
+        delegate().checkCanUpdateTableColumns(context, table, branch, updatedColumnNames);
+    }
+
+    @Deprecated
     @Override
     public void checkCanUpdateTableColumns(SystemSecurityContext context, CatalogSchemaTableName table, Set<String> updatedColumnNames)
     {
@@ -365,6 +393,13 @@ public abstract class ForwardingSystemAccessControl
         delegate().checkCanDropView(context, view);
     }
 
+    @Override
+    public void checkCanCreateViewWithSelectFromColumns(SystemSecurityContext context, CatalogSchemaTableName table, Optional<String> branch, Set<String> columns)
+    {
+        delegate().checkCanCreateViewWithSelectFromColumns(context, table, branch, columns);
+    }
+
+    @Deprecated
     @Override
     public void checkCanCreateViewWithSelectFromColumns(SystemSecurityContext context, CatalogSchemaTableName table, Set<String> columns)
     {
