@@ -13,19 +13,19 @@
  */
 package io.trino.spi.block;
 
-public interface PreSizedBlockBuilder
+import com.google.errorprone.annotations.FormatMethod;
+
+import static java.lang.String.format;
+
+final class Preconditions
 {
-    void appendNull();
+    private Preconditions() {}
 
-    /**
-     * Append the specified value.
-     */
-    void append(ValueBlock block, int position);
-
-    Block build();
-
-    /**
-     * Creates a new block builder of the same type based on the current usage statistics of this block builder.
-     */
-    PreSizedBlockBuilder newBlockBuilderLike(int expectedEntries);
+    @FormatMethod
+    static void checkArgument(boolean condition, String message, Object... messageArgs)
+    {
+        if (!condition) {
+            throw new IllegalArgumentException(format(message, messageArgs));
+        }
+    }
 }
