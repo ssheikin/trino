@@ -686,6 +686,7 @@
                                 <exclude>**/TestBenchmarkClickBenchGpu.java</exclude>
                                 <exclude>**/TestDistributedGpuEngineOnlyQueries.java</exclude>
                                 <exclude>**/TestGpuAggregations.java</exclude>
+                                <exclude>**/TestGpuOrderByQueries.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -706,6 +707,7 @@
                                 <!--<include>**/TestBenchmarkClickBenchGpu.java</include>-->
                                 <include>**/TestDistributedGpuEngineOnlyQueries.java</include>
                                 <include>**/TestGpuAggregations.java</include>
+                                <include>**/TestGpuOrderByQueries.java</include>
                             </includes>
                         </configuration>
                     </plugin>
