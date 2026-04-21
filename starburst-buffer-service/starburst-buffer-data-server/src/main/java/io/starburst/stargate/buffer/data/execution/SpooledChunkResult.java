@@ -9,7 +9,14 @@
  */
 package io.starburst.stargate.buffer.data.execution;
 
-public sealed interface ChunkDataResult
-        permits ChunkContentResult, SpooledChunkResult
+import io.starburst.stargate.buffer.data.client.spooling.SpooledChunk;
+
+import static java.util.Objects.requireNonNull;
+
+public record SpooledChunkResult(SpooledChunk spooledChunk)
+        implements ChunkDataResult
 {
+    public SpooledChunkResult {
+        requireNonNull(spooledChunk, "spooledChunk is null");
+    }
 }
