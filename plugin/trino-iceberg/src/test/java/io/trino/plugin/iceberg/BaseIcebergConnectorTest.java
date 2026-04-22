@@ -5531,7 +5531,7 @@ public abstract class BaseIcebergConnectorTest
                                         nCopies(100, testSetup.getHighValueLiteral()).stream())
                                 .map(value -> "(" + value + ", rand())")
                                 .collect(joining(", "));
-                assertUpdate(withSmallRowGroups(getSession()), "INSERT INTO " + tableName + " VALUES " + values, 200);
+                assertUpdate(withSplitPruningRowGroups(getSession()), "INSERT INTO " + tableName + " VALUES " + values, 200);
 
                 String query = "SELECT * FROM " + tableName + " WHERE col = " + testSetup.getSampleValueLiteral();
                 verifyPredicatePushdownDataRead(query, supportsRowGroupStatistics(testSetup.getTrinoTypeName()));
@@ -5540,6 +5540,13 @@ public abstract class BaseIcebergConnectorTest
     }
 
     protected abstract boolean supportsRowGroupStatistics(String typeName);
+
+    private static Session withSplitPruningRowGroups(Session session)
+    {
+        return Session.builder(withSmallRowGroups(session))
+                .setCatalogSessionProperty("iceberg", "parquet_writer_block_size", "256B")
+                .build();
+    }
 
     private void verifySplitCount(String query, int expectedSplitCount)
     {
