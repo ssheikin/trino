@@ -182,6 +182,8 @@ public class Server
                 injector.getInstance(BufferNodeStateManager.class).transitionState(STARTED);
             }
 
+            additionalStartup(injector);
+
             log.info("Server startup completed in %s", Duration.nanosSince(startTime).convertToMostSuccinctTimeUnit());
             log.info("======== SERVER STARTED ========");
         }
@@ -216,6 +218,11 @@ public class Server
     protected Iterable<? extends Module> getAdditionalModules()
     {
         return ImmutableList.of();
+    }
+
+    protected void additionalStartup(Injector injector)
+    {
+        // do nothing;
     }
 
     private static void logLocation(Logger log, String name, Path path)
