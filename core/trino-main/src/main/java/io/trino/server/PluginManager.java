@@ -80,6 +80,7 @@ public class PluginManager
             .add("io.starburst.ai.model.")
             .add("io.opentelemetry.api.")
             .add("io.opentelemetry.context.")
+            .add("ai.rapids.")
             .build();
 
     private static final Logger log = Logger.get(PluginManager.class);
