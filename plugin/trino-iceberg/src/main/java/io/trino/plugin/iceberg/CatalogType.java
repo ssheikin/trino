@@ -25,5 +25,4 @@ public enum CatalogType
     EMBEDDED,
     NESSIE,
     SNOWFLAKE,
-    /**/;
 }

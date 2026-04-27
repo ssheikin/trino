@@ -491,6 +491,5 @@ public class DockerContainer
         DISCARD,
         WRITE,
         PRINT_WRITE,
-        /**/;
     }
 }
