@@ -138,16 +138,16 @@ import static java.util.Objects.requireNonNull;
 public class TestingAccessControlManager
         extends AccessControlManager
 {
-    private static final BiPredicate<Identity, String> IDENTITY_TABLE_TRUE = (identity, table) -> true;
-    private static final BiPredicate<Identity, String> IDENTITY_FUNCTION_TRUE = (identity, function) -> true;
+    private static final BiPredicate<Identity, String> IDENTITY_TABLE_TRUE = (_, _) -> true;
+    private static final BiPredicate<Identity, String> IDENTITY_FUNCTION_TRUE = (_, _) -> true;
     private static final BiPredicate<ConnectorIdentity, String> LOCATION_ALLOW_ALL = (_, _) -> true;
 
     private final Set<TestingPrivilege> denyPrivileges = new HashSet<>();
     private final Map<RowFilterKey, List<ViewExpression>> rowFilters = new HashMap<>();
     private final Map<ColumnMaskKey, ViewExpression> columnMasks = new HashMap<>();
-    private Predicate<String> deniedCatalogs = s -> true;
-    private Predicate<String> deniedSchemas = s -> true;
-    private Predicate<SchemaTableName> deniedTables = s -> true;
+    private Predicate<String> deniedCatalogs = _ -> true;
+    private Predicate<String> deniedSchemas = _ -> true;
+    private Predicate<SchemaTableName> deniedTables = _ -> true;
     private BiPredicate<Identity, String> denyIdentityTable = IDENTITY_TABLE_TRUE;
     private BiPredicate<Identity, String> denyIdentityFunction = IDENTITY_FUNCTION_TRUE;
     private AtomicReference<BiPredicate<ConnectorIdentity, String>> deniedLocations = new AtomicReference<>(LOCATION_ALLOW_ALL);
@@ -204,7 +204,7 @@ public class TestingAccessControlManager
 
     public void rowFilter(QualifiedObjectName table, String identity, ViewExpression filter)
     {
-        rowFilters.computeIfAbsent(new RowFilterKey(identity, table), key -> new ArrayList<>())
+        rowFilters.computeIfAbsent(new RowFilterKey(identity, table), _ -> new ArrayList<>())
                 .add(filter);
     }
 
@@ -216,9 +216,9 @@ public class TestingAccessControlManager
     public void reset()
     {
         denyPrivileges.clear();
-        deniedCatalogs = s -> true;
-        deniedSchemas = s -> true;
-        deniedTables = s -> true;
+        deniedCatalogs = _ -> true;
+        deniedSchemas = _ -> true;
+        deniedTables = _ -> true;
         denyIdentityTable = IDENTITY_TABLE_TRUE;
         deniedLocations.set(LOCATION_ALLOW_ALL);
         rowFilters.clear();
@@ -885,7 +885,7 @@ public class TestingAccessControlManager
 
         public TestingPrivilege(Optional<String> actorName, Predicate<String> entityPredicate, TestingPrivilegeType type)
         {
-            this(actorName, (entity, branch) -> entityPredicate.test(entity), type);
+            this(actorName, (entity, _) -> entityPredicate.test(entity), type);
         }
 
         public TestingPrivilege(Optional<String> actorName, BiPredicate<String, Optional<String>> entityPredicate, TestingPrivilegeType type)
