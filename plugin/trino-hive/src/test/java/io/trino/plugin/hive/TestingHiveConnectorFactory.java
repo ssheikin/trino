@@ -71,7 +71,8 @@ public class TestingHiveConnectorFactory
     {
         this.metastore = requireNonNull(metastore, "metastore is null");
         this.metastoreImpersonationEnabled = metastoreImpersonationEnabled;
-        boolean ignored = localFileSystemRootPath.toFile().mkdirs();
+        var rootPath = localFileSystemRootPath.toFile();
+        var _ = rootPath.mkdirs();
         this.localFileSystemRootPath = localFileSystemRootPath;
         this.decryptionKeyRetriever = requireNonNull(decryptionKeyRetriever, "decryptionKeyRetriever is null");
         this.module = requireNonNull(module, "module is null");

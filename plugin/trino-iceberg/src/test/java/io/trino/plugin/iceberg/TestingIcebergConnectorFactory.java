@@ -55,7 +55,8 @@ public class TestingIcebergConnectorFactory
             Supplier<Optional<Module>> icebergCatalogModule)
     {
         this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");
-        boolean ignored = localFileSystemRootPath.toFile().mkdirs();
+        var rootPath = localFileSystemRootPath.toFile();
+        var _ = rootPath.mkdirs();
         this.icebergCatalogModule = requireNonNull(icebergCatalogModule, "icebergCatalogModule is null");
     }
 
