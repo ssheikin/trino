@@ -163,6 +163,9 @@ databases:
     broker:
       host: kafka
       port: 9092
+      retries: 2147483647 # Integer.MAX_VALUE — delivery.timeout.ms bounds the retry window
+      delivery.timeout.ms: 120000 # Kafka default; must be >= linger.ms (default 5) + request.timeout.ms (default 30000)
+      retry.backoff.ms: 1000
     zookeeper:
       host: zookeeper
       port: 2181
