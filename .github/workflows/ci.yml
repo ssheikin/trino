@@ -957,7 +957,12 @@ jobs:
       id-token: write
       contents: read
     runs-on: [ self-hosted, gha-fleet-ec2-2cpu-8gb-amd64, latest ]
-    if: "github.event_name == 'schedule' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'synapse'))"
+    needs: [ path-filters ]
+    # Run whenever PT runs, or if the PR has label 'synapse'
+    if: |
+      github.event_name != 'pull_request' ||
+      needs.path-filters.outputs.non_docs == 'true' ||
+      contains(github.event.pull_request.labels.*.name, 'synapse')
     outputs:
       sql-pool-name: ${{ steps.start-pool.outputs.SYNAPSE_SQL_POOL }}
     steps:
