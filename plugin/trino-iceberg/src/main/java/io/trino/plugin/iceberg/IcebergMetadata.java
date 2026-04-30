@@ -2917,7 +2917,7 @@ public class IcebergMetadata
             try (var _ = icebergTable.io()) {
                 DanglingDeleteFilesResult danglingDeleteFilesResult = removeDanglingDeleteFiles.collectDanglingDeleteFiles(icebergTable);
 
-                if (danglingDeleteFilesResult.dangingDeleteFiles().isEmpty()) {
+                if (danglingDeleteFilesResult.danglingDeleteFiles().isEmpty()) {
                     return ImmutableMap.of(
                             "removed_delete_files_count", 0L,
                             "dangling_equality_delete_files_count", 0L,
@@ -2930,7 +2930,7 @@ public class IcebergMetadata
                 Snapshot currentSnapshot = icebergTable.currentSnapshot();
                 beginTransaction(icebergTable);
                 RowDelta rowDelta = transaction.newRowDelta();
-                for (DeleteFile file : danglingDeleteFilesResult.dangingDeleteFiles()) {
+                for (DeleteFile file : danglingDeleteFilesResult.danglingDeleteFiles()) {
                     rowDelta.removeDeletes(file);
                 }
                 rowDelta.validateFromSnapshot(currentSnapshot.snapshotId());
@@ -2939,7 +2939,7 @@ public class IcebergMetadata
                 transaction = null;
 
                 return ImmutableMap.of(
-                        "removed_delete_files_count", (long) danglingDeleteFilesResult.dangingDeleteFiles().size(),
+                        "removed_delete_files_count", (long) danglingDeleteFilesResult.danglingDeleteFiles().size(),
                         "dangling_equality_delete_files_count", danglingDeleteFilesResult.metrics().getDanglingEqualityDeleteFilesCount(),
                         "dangling_position_delete_files_count", danglingDeleteFilesResult.metrics().getDanglingPositionDeleteFilesCount(),
                         "dangling_dv_files_count", danglingDeleteFilesResult.metrics().getDanglingDvFilesCount(),
