@@ -11,27 +11,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.gpu.expression;
+package io.trino.sql.ir;
 
-import io.trino.sql.ir.Expression;
-import io.trino.sql.ir.IrVisitor;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
 import static io.trino.testing.InterfaceTestUtils.assertAllMethodsOverridden;
 
-/**
- * @see io.trino.operator.gpu.TestGpuExpressions for tests covering expression execution
- */
-class TestGpuExpressionCompiler
+class TestDefaultTraversalVisitor
 {
     @Test
-    void testEveryExpressionConsidered()
+    void testEverythingImplemented()
             throws Exception
     {
-        assertAllMethodsOverridden(IrVisitor.class, GpuExpressionCompiler.CompilationVisitor.class, Set.of(
-                // has good default
+        assertAllMethodsOverridden(IrVisitor.class, DefaultTraversalVisitor.class, Set.of(
+                // process(..) have reasonable defaults
+                IrVisitor.class.getMethod("process", Expression.class),
                 IrVisitor.class.getMethod("process", Expression.class, Object.class /*context*/)));
     }
 }
