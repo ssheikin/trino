@@ -887,7 +887,8 @@ class AstBuilder
     @Override
     public Node visitAddColumn(SqlBaseParser.AddColumnContext context)
     {
-        return new AddColumn(getLocation(context),
+        return new AddColumn(
+                getLocation(context),
                 getQualifiedName(context.qualifiedName()),
                 (ColumnDefinition) visit(context.columnDefinition()),
                 toColumnPosition(context),
@@ -957,7 +958,8 @@ class AstBuilder
     @Override
     public Node visitDropColumn(SqlBaseParser.DropColumnContext context)
     {
-        return new DropColumn(getLocation(context),
+        return new DropColumn(
+                getLocation(context),
                 getQualifiedName(context.tableName),
                 getQualifiedName(context.column),
                 context.EXISTS().stream().anyMatch(node -> node.getSymbol().getTokenIndex() < context.COLUMN().getSymbol().getTokenIndex()),
@@ -1615,7 +1617,8 @@ class AstBuilder
     @Override
     public Node visitShowCatalogs(SqlBaseParser.ShowCatalogsContext context)
     {
-        return new ShowCatalogs(getLocation(context),
+        return new ShowCatalogs(
+                getLocation(context),
                 visitIfPresent(context.pattern, StringLiteral.class).map(StringLiteral::getValue),
                 visitIfPresent(context.escape, StringLiteral.class).map(StringLiteral::getValue));
     }
@@ -2485,9 +2488,10 @@ class AstBuilder
     {
         return new FunctionCall(
                 getLocation(context.CONCAT()),
-                QualifiedName.of("concat"), ImmutableList.of(
-                (Expression) visit(context.left),
-                (Expression) visit(context.right)));
+                QualifiedName.of("concat"),
+                ImmutableList.of(
+                        (Expression) visit(context.left),
+                        (Expression) visit(context.right)));
     }
 
     @Override
@@ -2533,7 +2537,8 @@ class AstBuilder
     @Override
     public Node visitFieldConstructor(SqlBaseParser.FieldConstructorContext context)
     {
-        return new Row.Field(getLocation(context),
+        return new Row.Field(
+                getLocation(context),
                 visitIfPresent(context.identifier(), Identifier.class),
                 (Expression) visit(context.expression()));
     }

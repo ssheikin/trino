@@ -2428,7 +2428,8 @@ public class TestSqlParser
                         new NodeLocation(1, 1),
                         QualifiedName.of("bar"),
                         ImmutableList.of(
-                                new LikeClause(QualifiedName.of("like_table"),
+                                new LikeClause(
+                                        QualifiedName.of("like_table"),
                                         Optional.empty())),
                         IGNORE,
                         ImmutableList.of(),
@@ -2441,7 +2442,8 @@ public class TestSqlParser
                         QualifiedName.of("bar"),
                         ImmutableList.of(
                                 new ColumnDefinition(QualifiedName.of("c"), simpleType(location(1, 35), "VARCHAR"), true, emptyList(), Optional.empty()),
-                                new LikeClause(QualifiedName.of("like_table"),
+                                new LikeClause(
+                                        QualifiedName.of("like_table"),
                                         Optional.empty())),
                         IGNORE,
                         ImmutableList.of(),
@@ -2454,7 +2456,8 @@ public class TestSqlParser
                         QualifiedName.of("bar"),
                         ImmutableList.of(
                                 new ColumnDefinition(QualifiedName.of("c"), simpleType(location(1, 35), "VARCHAR"), true, emptyList(), Optional.empty()),
-                                new LikeClause(QualifiedName.of("like_table"),
+                                new LikeClause(
+                                        QualifiedName.of("like_table"),
                                         Optional.empty()),
                                 new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 63), "BIGINT"), true, emptyList(), Optional.empty())),
                         IGNORE,
@@ -2462,10 +2465,12 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertStatement("CREATE TABLE IF NOT EXISTS bar (LIKE like_table INCLUDING PROPERTIES)",
-                new CreateTable(new NodeLocation(1, 1),
+                new CreateTable(
+                        new NodeLocation(1, 1),
                         QualifiedName.of("bar"),
                         ImmutableList.of(
-                                new LikeClause(QualifiedName.of("like_table"),
+                                new LikeClause(
+                                        QualifiedName.of("like_table"),
                                         Optional.of(LikeClause.PropertiesOption.INCLUDING))),
                         IGNORE,
                         ImmutableList.of(),
@@ -2478,7 +2483,8 @@ public class TestSqlParser
                         QualifiedName.of("bar"),
                         ImmutableList.of(
                                 new ColumnDefinition(QualifiedName.of("c"), simpleType(location(1, 35), "VARCHAR"), true, emptyList(), Optional.empty()),
-                                new LikeClause(QualifiedName.of("like_table"),
+                                new LikeClause(
+                                        QualifiedName.of("like_table"),
                                         Optional.of(LikeClause.PropertiesOption.EXCLUDING))),
                         IGNORE,
                         ImmutableList.of(),
@@ -2491,7 +2497,8 @@ public class TestSqlParser
                         QualifiedName.of("bar"),
                         ImmutableList.of(
                                 new ColumnDefinition(QualifiedName.of("c"), simpleType(location(1, 35), "VARCHAR"), true, emptyList(), Optional.empty()),
-                                new LikeClause(QualifiedName.of("like_table"),
+                                new LikeClause(
+                                        QualifiedName.of("like_table"),
                                         Optional.of(LikeClause.PropertiesOption.EXCLUDING))),
                         IGNORE,
                         ImmutableList.of(),
@@ -2536,7 +2543,8 @@ public class TestSqlParser
                         location(1, 1),
                         qualifiedName(location(1, 14), "foo"),
                         ImmutableList.of(
-                                new ColumnDefinition(location,
+                                new ColumnDefinition(
+                                        location,
                                         qualifiedName(location, "a"),
                                         type,
                                         Optional.of(defaultValue),
@@ -2581,25 +2589,28 @@ public class TestSqlParser
     public void testCreateTableAsSelect()
     {
         assertThat(statement("CREATE TABLE foo AS SELECT * FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 14), "foo"), new Query(
-                        location(1, 21),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 14), "foo"),
+                        new Query(
                                 location(1, 21),
-                                new Select(location(1, 21), false, ImmutableList.of(new AllColumns(location(1, 28), Optional.empty(), ImmutableList.of()))),
-                                Optional.of(new Table(location(1, 35), qualifiedName(location(1, 35), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 21),
+                                        new Select(location(1, 21), false, ImmutableList.of(new AllColumns(location(1, 28), Optional.empty(), ImmutableList.of()))),
+                                        Optional.of(new Table(location(1, 35), qualifiedName(location(1, 35), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         FAIL,
                         ImmutableList.of(),
                         true,
@@ -2607,25 +2618,28 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE foo(x) AS SELECT a FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 14), "foo"), new Query(
-                        location(1, 24),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 14), "foo"),
+                        new Query(
                                 location(1, 24),
-                                new Select(location(1, 24), false, ImmutableList.of(new SingleColumn(location(1, 31), new Identifier(location(1, 31), "a", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 38), qualifiedName(location(1, 38), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 24),
+                                        new Select(location(1, 24), false, ImmutableList.of(new SingleColumn(location(1, 31), new Identifier(location(1, 31), "a", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 38), qualifiedName(location(1, 38), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         FAIL,
                         ImmutableList.of(),
                         true,
@@ -2633,27 +2647,30 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE foo(x,y) AS SELECT a,b FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 14), "foo"), new Query(
-                        location(1, 26),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 14), "foo"),
+                        new Query(
                                 location(1, 26),
-                                new Select(location(1, 26), false, ImmutableList.of(
-                                        new SingleColumn(location(1, 33), new Identifier(location(1, 33), "a", false), Optional.empty()),
-                                        new SingleColumn(location(1, 35), new Identifier(location(1, 35), "b", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 42), qualifiedName(location(1, 42), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 26),
+                                        new Select(location(1, 26), false, ImmutableList.of(
+                                                new SingleColumn(location(1, 33), new Identifier(location(1, 33), "a", false), Optional.empty()),
+                                                new SingleColumn(location(1, 35), new Identifier(location(1, 35), "b", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 42), qualifiedName(location(1, 42), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         FAIL,
                         ImmutableList.of(),
                         true,
@@ -2663,25 +2680,28 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE OR REPLACE TABLE foo AS SELECT * FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 25), "foo"), new Query(
-                        location(1, 32),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 25), "foo"),
+                        new Query(
                                 location(1, 32),
-                                new Select(location(1, 32), false, ImmutableList.of(new AllColumns(location(1, 39), Optional.empty(), ImmutableList.of()))),
-                                Optional.of(new Table(location(1, 46), qualifiedName(location(1, 46), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 32),
+                                        new Select(location(1, 32), false, ImmutableList.of(new AllColumns(location(1, 39), Optional.empty(), ImmutableList.of()))),
+                                        Optional.of(new Table(location(1, 46), qualifiedName(location(1, 46), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         REPLACE,
                         ImmutableList.of(),
                         true,
@@ -2689,25 +2709,28 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE OR REPLACE TABLE foo(x) AS SELECT a FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 25), "foo"), new Query(
-                        location(1, 35),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 25), "foo"),
+                        new Query(
                                 location(1, 35),
-                                new Select(location(1, 35), false, ImmutableList.of(new SingleColumn(location(1, 42), new Identifier(location(1, 42), "a", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 49), qualifiedName(location(1, 49), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 35),
+                                        new Select(location(1, 35), false, ImmutableList.of(new SingleColumn(location(1, 42), new Identifier(location(1, 42), "a", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 49), qualifiedName(location(1, 49), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         REPLACE,
                         ImmutableList.of(),
                         true,
@@ -2715,27 +2738,30 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE OR REPLACE TABLE foo(x,y) AS SELECT a,b FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 25), "foo"), new Query(
-                        location(1, 37),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 25), "foo"),
+                        new Query(
                                 location(1, 37),
-                                new Select(location(1, 37), false, ImmutableList.of(
-                                        new SingleColumn(location(1, 44), new Identifier(location(1, 44), "a", false), Optional.empty()),
-                                        new SingleColumn(location(1, 46), new Identifier(location(1, 46), "b", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 53), qualifiedName(location(1, 53), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 37),
+                                        new Select(location(1, 37), false, ImmutableList.of(
+                                                new SingleColumn(location(1, 44), new Identifier(location(1, 44), "a", false), Optional.empty()),
+                                                new SingleColumn(location(1, 46), new Identifier(location(1, 46), "b", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 53), qualifiedName(location(1, 53), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         REPLACE,
                         ImmutableList.of(),
                         true,
@@ -2745,25 +2771,28 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE IF NOT EXISTS foo AS SELECT * FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 28), "foo"), new Query(
-                        location(1, 35),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 28), "foo"),
+                        new Query(
                                 location(1, 35),
-                                new Select(location(1, 35), false, ImmutableList.of(new AllColumns(location(1, 42), Optional.empty(), ImmutableList.of()))),
-                                Optional.of(new Table(location(1, 49), qualifiedName(location(1, 49), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 35),
+                                        new Select(location(1, 35), false, ImmutableList.of(new AllColumns(location(1, 42), Optional.empty(), ImmutableList.of()))),
+                                        Optional.of(new Table(location(1, 49), qualifiedName(location(1, 49), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         IGNORE,
                         ImmutableList.of(),
                         true,
@@ -2771,25 +2800,28 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE IF NOT EXISTS foo(x) AS SELECT a FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 28), "foo"), new Query(
-                        location(1, 38),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 28), "foo"),
+                        new Query(
                                 location(1, 38),
-                                new Select(location(1, 38), false, ImmutableList.of(new SingleColumn(location(1, 45), new Identifier(location(1, 45), "a", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 52), qualifiedName(location(1, 52), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 38),
+                                        new Select(location(1, 38), false, ImmutableList.of(new SingleColumn(location(1, 45), new Identifier(location(1, 45), "a", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 52), qualifiedName(location(1, 52), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         IGNORE,
                         ImmutableList.of(),
                         true,
@@ -2797,27 +2829,30 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE IF NOT EXISTS foo(x,y) AS SELECT a,b FROM t"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 28), "foo"), new Query(
-                        location(1, 40),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 28), "foo"),
+                        new Query(
                                 location(1, 40),
-                                new Select(location(1, 40), false, ImmutableList.of(
-                                        new SingleColumn(location(1, 47), new Identifier(location(1, 47), "a", false), Optional.empty()),
-                                        new SingleColumn(location(1, 49), new Identifier(location(1, 49), "b", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 56), qualifiedName(location(1, 56), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 40),
+                                        new Select(location(1, 40), false, ImmutableList.of(
+                                                new SingleColumn(location(1, 47), new Identifier(location(1, 47), "a", false), Optional.empty()),
+                                                new SingleColumn(location(1, 49), new Identifier(location(1, 49), "b", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 56), qualifiedName(location(1, 56), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         IGNORE,
                         ImmutableList.of(),
                         true,
@@ -2827,25 +2862,28 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE foo AS SELECT * FROM t WITH NO DATA"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 14), "foo"), new Query(
-                        location(1, 21),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 14), "foo"),
+                        new Query(
                                 location(1, 21),
-                                new Select(location(1, 21), false, ImmutableList.of(new AllColumns(location(1, 28), Optional.empty(), ImmutableList.of()))),
-                                Optional.of(new Table(location(1, 35), qualifiedName(location(1, 35), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 21),
+                                        new Select(location(1, 21), false, ImmutableList.of(new AllColumns(location(1, 28), Optional.empty(), ImmutableList.of()))),
+                                        Optional.of(new Table(location(1, 35), qualifiedName(location(1, 35), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         FAIL,
                         ImmutableList.of(),
                         false,
@@ -2853,25 +2891,28 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE foo(x) AS SELECT a FROM t WITH NO DATA"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 14), "foo"), new Query(
-                        location(1, 24),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 14), "foo"),
+                        new Query(
                                 location(1, 24),
-                                new Select(location(1, 24), false, ImmutableList.of(new SingleColumn(location(1, 31), new Identifier(location(1, 31), "a", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 38), qualifiedName(location(1, 38), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 24),
+                                        new Select(location(1, 24), false, ImmutableList.of(new SingleColumn(location(1, 31), new Identifier(location(1, 31), "a", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 38), qualifiedName(location(1, 38), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         FAIL,
                         ImmutableList.of(),
                         false,
@@ -2879,27 +2920,30 @@ public class TestSqlParser
                         Optional.empty()));
 
         assertThat(statement("CREATE TABLE foo(x,y) AS SELECT a,b FROM t WITH NO DATA"))
-                .isEqualTo(new CreateTableAsSelect(location(1, 1), qualifiedName(location(1, 14), "foo"), new Query(
-                        location(1, 26),
-                        ImmutableList.of(),
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        new QuerySpecification(
+                .isEqualTo(new CreateTableAsSelect(
+                        location(1, 1),
+                        qualifiedName(location(1, 14), "foo"),
+                        new Query(
                                 location(1, 26),
-                                new Select(location(1, 26), false, ImmutableList.of(
-                                        new SingleColumn(location(1, 33), new Identifier(location(1, 33), "a", false), Optional.empty()),
-                                        new SingleColumn(location(1, 35), new Identifier(location(1, 35), "b", false), Optional.empty()))),
-                                Optional.of(new Table(location(1, 42), qualifiedName(location(1, 42), "t"))),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
                                 ImmutableList.of(),
+                                ImmutableList.of(),
+                                Optional.empty(),
+                                new QuerySpecification(
+                                        location(1, 26),
+                                        new Select(location(1, 26), false, ImmutableList.of(
+                                                new SingleColumn(location(1, 33), new Identifier(location(1, 33), "a", false), Optional.empty()),
+                                                new SingleColumn(location(1, 35), new Identifier(location(1, 35), "b", false), Optional.empty()))),
+                                        Optional.of(new Table(location(1, 42), qualifiedName(location(1, 42), "t"))),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        ImmutableList.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()),
                         FAIL,
                         ImmutableList.of(),
                         false,
@@ -3505,10 +3549,12 @@ public class TestSqlParser
         Table table = new Table(QualifiedName.of("a", "b/c", "d"));
         Query query = simpleQuery(selectList(new AllColumns()), table(QualifiedName.of("t")));
 
-        assertStatement("INSERT INTO a.\"b/c\".d SELECT * FROM t",
+        assertStatement(
+                "INSERT INTO a.\"b/c\".d SELECT * FROM t",
                 new Insert(location(1, 1), table, Optional.empty(), query));
 
-        assertStatement("INSERT INTO a.\"b/c\".d (c1, c2) SELECT * FROM t",
+        assertStatement(
+                "INSERT INTO a.\"b/c\".d (c1, c2) SELECT * FROM t",
                 new Insert(location(1, 1), table, Optional.of(ImmutableList.of(identifier("c1"), identifier("c2"))), query));
 
         assertThat(statement("INSERT INTO t @ dev VALUES 1"))
@@ -3607,9 +3653,9 @@ public class TestSqlParser
                         location,
                         new AliasedRelation(
                                 new Table(
-                                    location(1, 1),
-                                    QualifiedName.of(List.of(new Identifier(location(1, 12), "inventory", false))),
-                                    Optional.of(new Identifier(location(1, 24), "dev", false))),
+                                        location(1, 1),
+                                        QualifiedName.of(List.of(new Identifier(location(1, 12), "inventory", false))),
+                                        Optional.of(new Identifier(location(1, 24), "dev", false))),
                                 new Identifier(location(1, 31), "i", false),
                                 null),
                         new AliasedRelation(
@@ -3618,7 +3664,7 @@ public class TestSqlParser
                                 new Identifier(location(2, 20), "c", false),
                                 null),
                         new BooleanLiteral(location(3, 6), "true"),
-                    ImmutableList.of(new MergeDelete(location(4, 1), Optional.empty()))));
+                        ImmutableList.of(new MergeDelete(location(4, 1), Optional.empty()))));
     }
 
     @Test
@@ -3975,8 +4021,8 @@ public class TestSqlParser
         assertThat(statement("EXPLAIN ANALYZE ANALYZE foo")).isEqualTo(
                 new ExplainAnalyze(
                         location(1, 1),
-                        new Analyze(location(1, 17), QualifiedName.of(ImmutableList.of(new Identifier(location(1, 25), "foo", false))), ImmutableList.of()), false
-                ));
+                        new Analyze(location(1, 17), QualifiedName.of(ImmutableList.of(new Identifier(location(1, 25), "foo", false))), ImmutableList.of()),
+                        false));
     }
 
     @Test
@@ -3987,7 +4033,10 @@ public class TestSqlParser
                 .isEqualTo(new AddColumn(
                         new NodeLocation(1, 1),
                         QualifiedName.of("foo", "t"),
-                        new ColumnDefinition(QualifiedName.of("c"), simpleType(location(1, 31), "bigint"), true, emptyList(), Optional.empty()), Optional.empty(), false, false));
+                        new ColumnDefinition(QualifiedName.of("c"), simpleType(location(1, 31), "bigint"), true, emptyList(), Optional.empty()),
+                        Optional.empty(),
+                        false,
+                        false));
 
         // default column values
         assertThat(statement("ALTER TABLE foo.t ADD COLUMN c bigint DEFAULT 123"))
@@ -4048,28 +4097,40 @@ public class TestSqlParser
                 .isEqualTo(new AddColumn(
                         location(1, 1),
                         QualifiedName.of("foo", "t"),
-                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()), Optional.empty(), false, false));
+                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()),
+                        Optional.empty(),
+                        false,
+                        false));
 
         assertThat(statement("ALTER TABLE IF EXISTS foo.t ADD COLUMN d double NOT NULL"))
                 .ignoringLocation()
                 .isEqualTo(new AddColumn(
                         location(1, 1),
                         QualifiedName.of("foo", "t"),
-                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()), Optional.empty(), true, false));
+                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()),
+                        Optional.empty(),
+                        true,
+                        false));
 
         assertThat(statement("ALTER TABLE foo.t ADD COLUMN IF NOT EXISTS d double NOT NULL"))
                 .ignoringLocation()
                 .isEqualTo(new AddColumn(
                         location(1, 1),
                         QualifiedName.of("foo", "t"),
-                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()), Optional.empty(), false, true));
+                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()),
+                        Optional.empty(),
+                        false,
+                        true));
 
         assertThat(statement("ALTER TABLE IF EXISTS foo.t ADD COLUMN IF NOT EXISTS d double NOT NULL"))
                 .ignoringLocation()
                 .isEqualTo(new AddColumn(
                         location(1, 1),
                         QualifiedName.of("foo", "t"),
-                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()), Optional.empty(), true, true));
+                        new ColumnDefinition(QualifiedName.of("d"), simpleType(location(1, 31), "double"), false, emptyList(), Optional.empty()),
+                        Optional.empty(),
+                        true,
+                        true));
 
         assertThat(statement("ALTER TABLE foo.t ADD COLUMN c bigint FIRST"))
                 .ignoringLocation()
@@ -4804,7 +4865,9 @@ public class TestSqlParser
                                 location(1, 1),
                                 Optional.of(new IntervalLiteral(
                                         location(1, 15),
-                                        "10", Sign.POSITIVE, new SimpleIntervalQualifier(location(1, 29), OptionalInt.empty(), new IntervalField.Hour())))));
+                                        "10",
+                                        Sign.POSITIVE,
+                                        new SimpleIntervalQualifier(location(1, 29), OptionalInt.empty(), new IntervalField.Hour())))));
         assertThat(statement("SET TIME ZONE INTERVAL -'08:00' HOUR TO MINUTE"))
                 .isEqualTo(
                         new SetTimeZone(
@@ -4860,7 +4923,8 @@ public class TestSqlParser
         assertStatement("SELECT * FROM a, b",
                 simpleQuery(
                         selectList(new AllColumns()),
-                        new Join(Join.Type.IMPLICIT,
+                        new Join(
+                                Join.Type.IMPLICIT,
                                 new Table(QualifiedName.of("a")),
                                 new Table(QualifiedName.of("b")),
                                 Optional.empty())));
@@ -4869,7 +4933,8 @@ public class TestSqlParser
     @Test
     public void testExplain()
     {
-        assertStatement("EXPLAIN SELECT * FROM t",
+        assertStatement(
+                "EXPLAIN SELECT * FROM t",
                 new Explain(location(1, 1), simpleQuery(selectList(new AllColumns()), table(QualifiedName.of("t"))), ImmutableList.of()));
         assertStatement("EXPLAIN (TYPE LOGICAL) SELECT * FROM t",
                 new Explain(
@@ -4894,10 +4959,12 @@ public class TestSqlParser
     @Test
     public void testExplainAnalyze()
     {
-        assertStatement("EXPLAIN ANALYZE SELECT * FROM t",
+        assertStatement(
+                "EXPLAIN ANALYZE SELECT * FROM t",
                 new ExplainAnalyze(location(1, 1), simpleQuery(selectList(new AllColumns()), table(QualifiedName.of("t"))), false));
 
-        assertStatement("EXPLAIN ANALYZE VERBOSE SELECT * FROM t",
+        assertStatement(
+                "EXPLAIN ANALYZE VERBOSE SELECT * FROM t",
                 new ExplainAnalyze(location(1, 1), simpleQuery(selectList(new AllColumns()), table(QualifiedName.of("t"))), true));
 
         assertStatementIsInvalid("EXPLAIN ANALYZE (type DISTRIBUTED) SELECT * FROM t")
@@ -5558,7 +5625,8 @@ public class TestSqlParser
                     createShowStats(qualifiedName,
                             ImmutableList.of(new AllColumns()),
                             Optional.of(
-                                    new ComparisonExpression(ComparisonExpression.Operator.GREATER_THAN,
+                                    new ComparisonExpression(
+                                            ComparisonExpression.Operator.GREATER_THAN,
                                             new Identifier("field"),
                                             new LongLiteral("0")))));
 
@@ -5568,10 +5636,12 @@ public class TestSqlParser
                             ImmutableList.of(new AllColumns()),
                             Optional.of(
                                     LogicalExpression.or(
-                                            new ComparisonExpression(ComparisonExpression.Operator.GREATER_THAN,
+                                            new ComparisonExpression(
+                                                    ComparisonExpression.Operator.GREATER_THAN,
                                                     new Identifier("field"),
                                                     new LongLiteral("0")),
-                                            new ComparisonExpression(ComparisonExpression.Operator.LESS_THAN,
+                                            new ComparisonExpression(
+                                                    ComparisonExpression.Operator.LESS_THAN,
                                                     new Identifier("field"),
                                                     new LongLiteral("0"))))));
         }
@@ -5714,7 +5784,8 @@ public class TestSqlParser
     {
         return new ShowStats(
                 location(1, 1),
-                new TableSubquery(simpleQuery(new Select(false, selects),
+                new TableSubquery(simpleQuery(
+                        new Select(false, selects),
                         new Table(name),
                         where,
                         Optional.empty())));
@@ -7550,8 +7621,7 @@ public class TestSqlParser
                                 Optional.empty()),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.empty()
-                ));
+                        Optional.empty()));
     }
 
     @Test
@@ -7615,8 +7685,7 @@ public class TestSqlParser
                                 Optional.empty()),
                         Optional.empty(),
                         Optional.empty(),
-                        Optional.empty()
-                ));
+                        Optional.empty()));
     }
 
     @Test
