@@ -5436,7 +5436,7 @@ public abstract class BaseHiveConnectorTest
                 queryStats -> {
                     assertThat(queryStats.getProcessedInputDataSize().toBytes()).isGreaterThan(0);
                 },
-                results -> {});
+                _ -> {});
     }
 
     @Test
@@ -5483,7 +5483,7 @@ public abstract class BaseHiveConnectorTest
                 queryStats -> {
                     assertThat(queryStats.getProcessedInputDataSize().toBytes()).isGreaterThan(0);
                 },
-                results -> {});
+                _ -> {});
     }
 
     private static String formatTimestamp(LocalDateTime timestamp)
@@ -6577,7 +6577,7 @@ public abstract class BaseHiveConnectorTest
 
         executeExclusively(() -> {
             try {
-                getQueryRunner().getAccessControl().denyTables(table -> false);
+                getQueryRunner().getAccessControl().denyTables(_ -> false);
                 assertQueryReturnsEmptyResult(testSession, showViews);
             }
             finally {

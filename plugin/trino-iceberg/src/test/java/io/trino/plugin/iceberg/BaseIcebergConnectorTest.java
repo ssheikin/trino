@@ -4332,7 +4332,7 @@ public abstract class BaseIcebergConnectorTest
                 .collect(joining(", ")), 5);
 
         assertUpdate("INSERT INTO test_partitioned_table_statistics VALUES " + IntStream.rangeClosed(6, 10)
-                .mapToObj(i -> "(NULL, 10)")
+                .mapToObj(_ -> "(NULL, 10)")
                 .collect(joining(", ")), 5);
 
         result = computeActual("SHOW STATS FOR iceberg.tpch.test_partitioned_table_statistics");
@@ -4367,7 +4367,7 @@ public abstract class BaseIcebergConnectorTest
         assertThat(row2.getField(4)).isEqualTo(12.0);
 
         assertUpdate("INSERT INTO test_partitioned_table_statistics VALUES " + IntStream.rangeClosed(6, 10)
-                .mapToObj(i -> "(100, NULL)")
+                .mapToObj(_ -> "(100, NULL)")
                 .collect(joining(", ")), 5);
 
         result = computeActual("SHOW STATS FOR iceberg.tpch.test_partitioned_table_statistics");
