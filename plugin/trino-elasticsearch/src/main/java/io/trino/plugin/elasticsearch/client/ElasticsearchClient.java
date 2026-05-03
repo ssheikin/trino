@@ -381,7 +381,7 @@ public class ElasticsearchClient
             String name = field.getKey();
             JsonNode value = field.getValue();
 
-            //default type is object
+            // default type is object
             String type = "object";
             boolean mappingConflictField = false;
             if (value.has("type")) {
