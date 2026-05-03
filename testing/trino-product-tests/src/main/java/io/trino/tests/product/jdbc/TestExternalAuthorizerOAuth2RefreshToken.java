@@ -185,10 +185,10 @@ public class TestExternalAuthorizerOAuth2RefreshToken
             redirectCount.incrementAndGet();
             String csrfToken;
             try (Response response = httpClient.newCall(
-                    new Request.Builder()
-                            .get()
-                            .url(uri.toString())
-                            .build())
+                            new Request.Builder()
+                                    .get()
+                                    .url(uri.toString())
+                                    .build())
                     .execute()) {
                 int statusCode = response.code();
                 checkState(statusCode == 200, "Invalid status %s", statusCode);
