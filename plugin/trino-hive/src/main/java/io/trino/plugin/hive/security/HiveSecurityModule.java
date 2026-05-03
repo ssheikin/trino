@@ -37,7 +37,6 @@ public class HiveSecurityModule
         DEPRECATED_RANGER,
         LAKE_FORMATION,
         STARBURST,
-        /**/
     }
 
     @Override

@@ -37,7 +37,6 @@ public class DeltaLakeSecurityModule
         DEPRECATED_RANGER,
         STARBURST,
         UNITY,
-        /**/
     }
 
     @Override

@@ -58,7 +58,6 @@ public class CassandraClientConfig
         NONE,
         PASSWORD,
         KERBEROS,
-        /**/
     }
 
     private ConsistencyLevel consistencyLevel = ConsistencyLevel.ONE;

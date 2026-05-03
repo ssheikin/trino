@@ -50,7 +50,7 @@ public class IcebergRestCatalogConfig
     public enum SessionType
     {
         NONE,
-        USER
+        USER,
     }
 
     private URI restUri;
