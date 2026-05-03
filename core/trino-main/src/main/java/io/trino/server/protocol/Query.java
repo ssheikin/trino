@@ -682,7 +682,7 @@ class Query
                         estimateJsonSize(mapBlock.getValueBlock());
             }
             default -> {
-                                return block.getSizeInBytes();
+                return block.getSizeInBytes();
             }
         }
     }
