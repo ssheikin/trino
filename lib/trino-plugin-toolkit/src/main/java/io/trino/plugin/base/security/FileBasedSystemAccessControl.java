@@ -985,7 +985,8 @@ public class FileBasedSystemAccessControl
     }
 
     @Override
-    public void checkCanGrantRoles(SystemSecurityContext context,
+    public void checkCanGrantRoles(
+            SystemSecurityContext context,
             Set<String> roles,
             Set<TrinoPrincipal> grantees,
             boolean adminOption,
@@ -995,7 +996,8 @@ public class FileBasedSystemAccessControl
     }
 
     @Override
-    public void checkCanRevokeRoles(SystemSecurityContext context,
+    public void checkCanRevokeRoles(
+            SystemSecurityContext context,
             Set<String> roles,
             Set<TrinoPrincipal> grantees,
             boolean adminOption,
