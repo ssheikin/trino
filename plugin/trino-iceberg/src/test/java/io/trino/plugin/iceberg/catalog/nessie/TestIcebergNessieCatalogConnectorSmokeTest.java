@@ -90,7 +90,9 @@ public class TestIcebergNessieCatalogConnectorSmokeTest
         tempDir = Files.createTempDirectory("test_trino_nessie_catalog");
 
         restApiUri = nessieContainer.getRestApiUri();
-        catalog = (NessieCatalog) buildIcebergCatalog("tpch", ImmutableMap.<String, String>builder()
+        catalog = (NessieCatalog) buildIcebergCatalog(
+                "tpch",
+                ImmutableMap.<String, String>builder()
                         .put(CATALOG_IMPL, NessieCatalog.class.getName())
                         .put(URI, restApiUri)
                         .put(WAREHOUSE_LOCATION, tempDir.toString())
