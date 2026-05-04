@@ -812,8 +812,7 @@ public class TestEventListenerBasic
             throws Exception
     {
         QueryEvents queryEvents = runQueryAndWaitForEvents(
-                "CREATE TABLE mock.default.create_table_with_referring_mask AS SELECT test_varchar, test_bigint FROM mock.default.test_table_with_column_mask"
-        ).getQueryEvents();
+                "CREATE TABLE mock.default.create_table_with_referring_mask AS SELECT test_varchar, test_bigint FROM mock.default.test_table_with_column_mask").getQueryEvents();
 
         QueryCompletedEvent event = queryEvents.getQueryCompletedEvent();
 
@@ -1518,10 +1517,10 @@ public class TestEventListenerBasic
         TypeManager typeManager = getQueryRunner().getPlannerContext().getTypeManager();
         JsonMapper jsonMapper = new JsonMapperProvider()
                 .withKeyDeserializers(ImmutableMap.of(
-                    Symbol.class, new SymbolKeyDeserializer(typeManager),
-                    TypeSignature.class, new TypeSignatureKeyDeserializer()))
+                        Symbol.class, new SymbolKeyDeserializer(typeManager),
+                        TypeSignature.class, new TypeSignatureKeyDeserializer()))
                 .withJsonDeserializers(ImmutableMap.of(
-                    Type.class, new TypeDeserializer(typeManager)))
+                        Type.class, new TypeDeserializer(typeManager)))
                 .get();
 
         JsonCodec<StatsAndCosts> codec = new JsonCodecFactory(jsonMapper).jsonCodec(StatsAndCosts.class);
