@@ -54,11 +54,11 @@ public class TestMongoPlugin
     {
         ConnectorFactory factory = getOnlyElement(new MongoPlugin().getConnectorFactories());
         factory.create(
-                "test",
-                ImmutableMap.of(
-                        "mongodb.connection-url", "mongodb+srv://localhost",
-                        "bootstrap.quiet", "true"),
-                new TestingConnectorContext())
+                        "test",
+                        ImmutableMap.of(
+                                "mongodb.connection-url", "mongodb+srv://localhost",
+                                "bootstrap.quiet", "true"),
+                        new TestingConnectorContext())
                 .shutdown();
     }
 
