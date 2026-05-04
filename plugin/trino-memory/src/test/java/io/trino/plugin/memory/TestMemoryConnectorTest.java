@@ -223,7 +223,8 @@ public class TestMemoryConnectorTest
                     "SELECT * FROM lineitem JOIN orders ON lineitem.orderkey = orders.orderkey AND orders.totalprice < 0",
                     noJoinReordering(joinDistributionType),
                     0,
-                    0, ORDERS_COUNT);
+                    0,
+                    ORDERS_COUNT);
         }
     }
 
@@ -239,7 +240,8 @@ public class TestMemoryConnectorTest
                     sql,
                     noJoinReordering(joinDistributionType),
                     expectedRowCount,
-                    60139, ORDERS_COUNT);
+                    60139,
+                    ORDERS_COUNT);
         }
     }
 
@@ -259,14 +261,16 @@ public class TestMemoryConnectorTest
                     "SELECT * FROM lineitem JOIN orders ON lineitem.orderkey = orders.orderkey AND orders.comment = 'nstructions sleep furiously among '",
                     noJoinReordering(joinDistributionType),
                     6,
-                    6, ORDERS_COUNT);
+                    6,
+                    ORDERS_COUNT);
 
             // Join lineitem with a single row of part
             assertDynamicFiltering(
                     "SELECT l.comment FROM  lineitem l, part p WHERE p.partkey = l.partkey AND p.comment = 'onic deposits'",
                     noJoinReordering(joinDistributionType),
                     39,
-                    39, PART_COUNT);
+                    39,
+                    PART_COUNT);
         }
     }
 
@@ -279,7 +283,8 @@ public class TestMemoryConnectorTest
                 "SELECT * FROM coerce_test l JOIN orders o ON l.orderkey_int = o.orderkey AND o.comment = 'nstructions sleep furiously among '",
                 noJoinReordering(BROADCAST),
                 6,
-                6, ORDERS_COUNT);
+                6,
+                ORDERS_COUNT);
     }
 
     @Test
@@ -294,7 +299,8 @@ public class TestMemoryConnectorTest
                             " WHERE l.orderkey = o.orderkey AND o.comment = 'nstructions sleep furiously among '",
                     noJoinReordering(joinDistributionType),
                     6,
-                    6, ORDERS_COUNT);
+                    6,
+                    ORDERS_COUNT);
         }
     }
 
@@ -308,7 +314,8 @@ public class TestMemoryConnectorTest
                     "SELECT * FROM lineitem WHERE lineitem.orderkey IN (SELECT orders.orderkey FROM orders WHERE orders.totalprice < 0)",
                     noJoinReordering(joinDistributionType),
                     0,
-                    0, ORDERS_COUNT);
+                    0,
+                    ORDERS_COUNT);
         }
     }
 
@@ -326,7 +333,8 @@ public class TestMemoryConnectorTest
                     sql,
                     noJoinReordering(joinDistributionType),
                     expectedRowCount,
-                    60139, ORDERS_COUNT);
+                    60139,
+                    ORDERS_COUNT);
         }
     }
 
@@ -340,14 +348,16 @@ public class TestMemoryConnectorTest
                     "SELECT * FROM lineitem WHERE lineitem.orderkey IN (SELECT orders.orderkey FROM orders WHERE orders.comment = 'nstructions sleep furiously among ')",
                     noJoinReordering(joinDistributionType),
                     6,
-                    6, ORDERS_COUNT);
+                    6,
+                    ORDERS_COUNT);
 
             // Join lineitem with a single row of part
             assertDynamicFiltering(
                     "SELECT l.comment FROM lineitem l WHERE l.partkey IN (SELECT p.partkey FROM part p WHERE p.comment = 'onic deposits')",
                     noJoinReordering(joinDistributionType),
                     39,
-                    39, PART_COUNT);
+                    39,
+                    PART_COUNT);
         }
     }
 
@@ -363,7 +373,9 @@ public class TestMemoryConnectorTest
                             "WHERE t.partkey IN (SELECT p.partkey FROM part p WHERE p.comment = 'onic deposits')",
                     noJoinReordering(joinDistributionType),
                     1,
-                    1, ORDERS_COUNT, PART_COUNT);
+                    1,
+                    ORDERS_COUNT,
+                    PART_COUNT);
         }
     }
 
@@ -441,7 +453,8 @@ public class TestMemoryConnectorTest
                 "SELECT * FROM orders o, customer c WHERE o.custkey < c.custkey AND c.name < 'Customer#000001000' AND o.custkey > 1000",
                 noJoinReordering(BROADCAST),
                 0,
-                9894, CUSTOMER_COUNT);
+                9894,
+                CUSTOMER_COUNT);
     }
 
     @Test
