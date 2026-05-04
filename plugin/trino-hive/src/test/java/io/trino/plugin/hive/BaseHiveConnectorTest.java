@@ -9032,8 +9032,6 @@ public abstract class BaseHiveConnectorTest
         assertQuery(sessionNoCatalog, "SELECT count(*) FROM hive.tpch." + viewName, "VALUES 1");
     }
 
-
-
     @Test
     public void testTimestampWithTimeZone()
     {
