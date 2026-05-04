@@ -7960,7 +7960,8 @@ public class TestAnalyzer
     }
 
     @Test
-    public void testSelectColumnsLineageInfoAggregateFunction() {
+    public void testSelectColumnsLineageInfoAggregateFunction()
+    {
         String sql = "SELECT SUM(a) FROM t1 WHERE b > 1";
 
         Analysis analysis = analyze(sql);
