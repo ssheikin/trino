@@ -345,7 +345,8 @@ public class TestPostgreSqlClient
     public void testConvertIsNull()
     {
         // c_varchar IS NULL
-        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(SESSION,
+        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(
+                        SESSION,
                         translateToConnectorExpression(
                                 new IsNull(
                                         new Reference(VARCHAR, "c_varchar_symbol"))),
@@ -359,7 +360,8 @@ public class TestPostgreSqlClient
     public void testConvertIsNotNull()
     {
         // c_varchar IS NOT NULL
-        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(SESSION,
+        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(
+                        SESSION,
                         translateToConnectorExpression(
                                 not(FUNCTIONS.getMetadata(), new IsNull(new Reference(VARCHAR, "c_varchar_symbol")))),
                         Map.of("c_varchar_symbol", VARCHAR_COLUMN))
@@ -372,7 +374,8 @@ public class TestPostgreSqlClient
     public void testConvertNullIf()
     {
         // nullif(a_varchar, b_varchar)
-        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(SESSION,
+        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(
+                        SESSION,
                         translateToConnectorExpression(
                                 new NullIf(
                                         new Reference(VARCHAR, "a_varchar_symbol"),
@@ -387,7 +390,8 @@ public class TestPostgreSqlClient
     public void testConvertNotExpression()
     {
         // NOT(expression)
-        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(SESSION,
+        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(
+                        SESSION,
                         translateToConnectorExpression(
                                 not(
                                         FUNCTIONS.getMetadata(),
@@ -421,7 +425,8 @@ public class TestPostgreSqlClient
     public void testConvertCoalesce()
     {
         // COALESCE(varchar, varchar)
-        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(SESSION,
+        ParameterizedExpression converted = JDBC_CLIENT.convertPredicate(
+                        SESSION,
                         translateToConnectorExpression(
                                 new Coalesce(
                                         new Reference(VARCHAR, "c_varchar_symbol"),
@@ -432,7 +437,8 @@ public class TestPostgreSqlClient
         assertThat(converted.parameters()).isEqualTo(List.of());
 
         // COALESCE(bigint, bigint, bigint)
-        converted = JDBC_CLIENT.convertPredicate(SESSION,
+        converted = JDBC_CLIENT.convertPredicate(
+                        SESSION,
                         translateToConnectorExpression(
                                 new Coalesce(
                                         new Reference(BIGINT, "c_bigint_symbol"),
