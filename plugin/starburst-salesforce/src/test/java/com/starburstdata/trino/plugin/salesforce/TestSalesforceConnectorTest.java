@@ -582,7 +582,7 @@ public class TestSalesforceConnectorTest
                 {200},
                 {500},
                 {1000},
-                {5000}
+                {5000},
         };
     }
 

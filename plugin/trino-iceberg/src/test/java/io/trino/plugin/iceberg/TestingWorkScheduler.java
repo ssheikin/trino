@@ -69,13 +69,13 @@ public class TestingWorkScheduler
     @Override
     public synchronized boolean updateJobSchedule(ConnectorSession session, String jobId, RefreshSchedule schedule)
     {
-        return jobs.computeIfPresent(jobId, (key, existing) -> existing.withSchedule(schedule)) != null;
+        return jobs.computeIfPresent(jobId, (_, existing) -> existing.withSchedule(schedule)) != null;
     }
 
     @Override
     public synchronized boolean updateMaterializedViewName(ConnectorSession session, String jobId, String materializedViewName)
     {
-        return jobs.computeIfPresent(jobId, (key, existing) -> existing.withMaterializedViewName(materializedViewName)) != null;
+        return jobs.computeIfPresent(jobId, (_, existing) -> existing.withMaterializedViewName(materializedViewName)) != null;
     }
 
     @Override
