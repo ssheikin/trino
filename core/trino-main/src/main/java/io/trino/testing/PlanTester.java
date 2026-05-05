@@ -47,6 +47,7 @@ import io.trino.connector.CoordinatorDynamicCatalogManager;
 import io.trino.connector.DefaultCatalogFactory;
 import io.trino.connector.InMemoryCatalogStore;
 import io.trino.connector.LazyCatalogFactory;
+import io.trino.connector.ThrowingManagedStatisticsClient;
 import io.trino.connector.system.AnalyzePropertiesSystemTable;
 import io.trino.connector.system.CatalogSystemTable;
 import io.trino.connector.system.ColumnPropertiesSystemTable;
@@ -478,6 +479,7 @@ public class PlanTester
                 accessControlManager,
                 AiModelAccessControl.ALLOW_ALL,
                 EMPTY_LOADER,
+                new ThrowingManagedStatisticsClient(),
                 optimizerConfig,
                 new ConfigurationFactory(ImmutableMap.of()),
                 new LocalMemoryManager(new NodeMemoryConfig(), Optional.empty()),

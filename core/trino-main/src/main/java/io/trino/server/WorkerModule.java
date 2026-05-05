@@ -18,6 +18,7 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
+import io.trino.connector.ThrowingManagedStatisticsClient;
 import io.trino.execution.resourcegroups.NoOpResourceGroupManager;
 import io.trino.execution.resourcegroups.ResourceGroupManager;
 import io.trino.failuredetector.FailureDetector;
@@ -28,6 +29,7 @@ import io.trino.server.buffer.EmbeddedBufferServiceConfig;
 import io.trino.server.buffer.EmbeddedBufferServiceDataModule;
 import io.trino.server.ui.NoWebUiAuthenticationFilter;
 import io.trino.server.ui.WebUiAuthenticationFilter;
+import io.trino.spi.connector.ManagedStatisticsClient;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 
@@ -56,6 +58,9 @@ public class WorkerModule
         binder.bind(LanguageFunctionProvider.class).to(WorkerLanguageFunctionProvider.class).in(Scopes.SINGLETON);
 
         binder.bind(WebUiAuthenticationFilter.class).to(NoWebUiAuthenticationFilter.class).in(Scopes.SINGLETON);
+
+        // managed statistics: not used on workers but binding has to be present for ConnectorContext
+        binder.bind(ManagedStatisticsClient.class).to(ThrowingManagedStatisticsClient.class).in(Scopes.SINGLETON);
     }
 
     @Provides

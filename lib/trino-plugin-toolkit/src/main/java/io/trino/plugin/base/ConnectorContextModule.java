@@ -29,6 +29,7 @@ import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.LocationAccessControl;
@@ -69,6 +70,7 @@ public class ConnectorContextModule
         binder.bind(LocationAccessControl.class).toInstance(context.getLocationAccessControl());
         binder.bind(AiModelAccessControl.class).toInstance(context.getAiModelAccessControl());
         binder.bind(CoordinatorLocator.class).toInstance(context.getCoordinatorLocator());
+        binder.bind(ManagedStatisticsClient.class).toInstance(context.getManagedStatisticsClient());
         // Note: ModelConnectionSpecsLoader is bound conditionally depending on the catalog configuration in AiClientModule
     }
 }

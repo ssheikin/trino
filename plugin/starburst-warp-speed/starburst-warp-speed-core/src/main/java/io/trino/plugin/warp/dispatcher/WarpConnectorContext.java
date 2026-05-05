@@ -25,6 +25,7 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
@@ -172,5 +173,11 @@ public class WarpConnectorContext
     public String getNodeEnvironment()
     {
         return connectorContext.getNodeEnvironment();
+    }
+
+    @Override
+    public ManagedStatisticsClient getManagedStatisticsClient()
+    {
+        return connectorContext.getManagedStatisticsClient();
     }
 }

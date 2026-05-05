@@ -19,6 +19,7 @@ import io.airlift.tracing.Tracing;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import io.trino.FeaturesConfig;
+import io.trino.connector.ThrowingManagedStatisticsClient;
 import io.trino.execution.buffer.PagesSerdeStreamFactory;
 import io.trino.metadata.BlockEncodingManager;
 import io.trino.metadata.InternalBlockEncodingSerde;
@@ -39,6 +40,7 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
@@ -192,6 +194,12 @@ public final class TestingConnectorContext
     public CoordinatorLocator getCoordinatorLocator()
     {
         return () -> ImmutableSet.of(CURRENT_NODE.getInternalUri());
+    }
+
+    @Override
+    public ManagedStatisticsClient getManagedStatisticsClient()
+    {
+        return new ThrowingManagedStatisticsClient();
     }
 
     public static final class Builder

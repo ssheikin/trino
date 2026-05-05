@@ -45,6 +45,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
+import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.security.AiModelAccessControl;
@@ -90,6 +91,7 @@ public class DefaultCatalogFactory
     private final LocationAccessControl locationAccessControl;
     private final AiModelAccessControl aiModelAccessControl;
     private final ModelConnectionSpecsLoader modelConnectionSpecsLoader;
+    private final ManagedStatisticsClient managedStatisticsClient;
 
     private final Map<String, String> serverProperties;
     private final ConcurrentMap<ConnectorName, ConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
@@ -117,6 +119,7 @@ public class DefaultCatalogFactory
             LocationAccessControl locationAccessControl,
             AiModelAccessControl aiModelAccessControl,
             ModelConnectionSpecsLoader modelConnectionSpecsLoader,
+            ManagedStatisticsClient managedStatisticsClient,
             OptimizerConfig optimizerConfig,
             ConfigurationFactory configurationFactory,
             LocalMemoryManager localMemoryManager,
@@ -141,6 +144,7 @@ public class DefaultCatalogFactory
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
         this.modelConnectionSpecsLoader = requireNonNull(modelConnectionSpecsLoader, "modelConnectionSpecsLoader is null");
+        this.managedStatisticsClient = requireNonNull(managedStatisticsClient, "managedStatisticsClient is null");
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.serverProperties = requireNonNull(configurationFactory, "configurationFactory is null").getProperties();
         this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
@@ -277,7 +281,8 @@ public class DefaultCatalogFactory
                 pageStreamFactory,
                 catalogVersion,
                 serverProperties,
-                nodeInfo.getEnvironment());
+                nodeInfo.getEnvironment(),
+                managedStatisticsClient);
     }
 
     private Tracer createTracer(CatalogName catalogName)
