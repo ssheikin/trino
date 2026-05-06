@@ -6,6 +6,7 @@ on:
       - master
       - release-*-e
   pull_request:
+  merge_group:
   repository_dispatch:
     types: [test-with-secrets-command]
   workflow_dispatch:
