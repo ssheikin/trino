@@ -313,7 +313,6 @@ public interface SystemAccessControl
      * Check if identity is allowed to change the specified schema's user/role.
      *
      * @throws AccessDeniedException if not allowed
-     *
      * @deprecated {Use {@link #checkCanSetEntityAuthorization}
      */
     @Deprecated(forRemoval = true)
@@ -526,7 +525,6 @@ public interface SystemAccessControl
      * Check if identity is allowed to change the specified table's user/role.
      *
      * @throws AccessDeniedException if not allowed
-     *
      * @deprecated {Use {@link #checkCanSetEntityAuthorization}
      */
     @Deprecated(forRemoval = true)
@@ -655,7 +653,6 @@ public interface SystemAccessControl
      * Check if identity is allowed to change the specified view's user/role.
      *
      * @throws AccessDeniedException if not allowed
-     *
      * @deprecated {Use {@link #checkCanSetEntityAuthorization}
      */
     @Deprecated(forRemoval = true)
@@ -678,7 +675,6 @@ public interface SystemAccessControl
      * Check if identity is allowed to change the specified materialized view's user/role.
      *
      * @throws AccessDeniedException if not allowed
-     *
      * @deprecated {Use {@link #checkCanSetEntityAuthorization}
      */
     @Deprecated(forRemoval = true)
