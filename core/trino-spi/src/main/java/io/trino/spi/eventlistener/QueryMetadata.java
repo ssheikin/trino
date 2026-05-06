@@ -68,8 +68,7 @@ public class QueryMetadata
             Optional<String> jsonPlan,
             Optional<String> payload)
     {
-        this(
-                queryId,
+        this(queryId,
                 transactionId,
                 encoding,
                 query,
