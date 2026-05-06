@@ -148,6 +148,7 @@ public final class DistributedQueryRunner
             int workerCount,
             Map<String, String> extraProperties,
             Map<String, String> coordinatorProperties,
+            Map<String, String> workerProperties,
             String environment,
             Supplier<Module> additionalModule,
             Optional<Path> baseDataDir,
@@ -209,6 +210,7 @@ public final class DistributedQueryRunner
                         false,
                         ImmutableMap.<String, String>builder()
                                 .putAll(extraProperties)
+                                .putAll(workerProperties)
                                 .putAll(additionalWorkerProperties)
                                 .buildOrThrow(),
                         environment,
@@ -818,6 +820,7 @@ public final class DistributedQueryRunner
         private int workerCount = 2;
         private Map<String, String> extraProperties = ImmutableMap.of();
         private Map<String, String> coordinatorProperties = ImmutableMap.of();
+        private Map<String, String> workerProperties = ImmutableMap.of();
         private Consumer<QueryRunner> additionalSetup = queryRunner -> {};
         private String environment = ENVIRONMENT;
         private Supplier<Module> additionalModule = () -> EMPTY_MODULE;
@@ -902,6 +905,13 @@ public final class DistributedQueryRunner
         public SELF addCoordinatorProperty(String key, String value)
         {
             this.coordinatorProperties = addProperty(this.coordinatorProperties, key, value);
+            return self();
+        }
+
+        @CanIgnoreReturnValue
+        public SELF addWorkerProperty(String key, String value)
+        {
+            this.workerProperties = addProperty(this.workerProperties, key, value);
             return self();
         }
 
@@ -1133,6 +1143,7 @@ public final class DistributedQueryRunner
                     workerCount,
                     extraProperties,
                     coordinatorProperties,
+                    workerProperties,
                     environment,
                     additionalModule,
                     baseDataDir,
