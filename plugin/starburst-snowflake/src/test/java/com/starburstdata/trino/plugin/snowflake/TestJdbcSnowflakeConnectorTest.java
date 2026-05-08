@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.starburstdata.trino.plugin.snowflake.SnowflakeConnectorFlavour.JDBC;
+import static com.starburstdata.trino.plugin.snowflake.SnowflakeConnectorFlavour.DEPRECATED_JDBC;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.TEST_SCHEMA;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.impersonationDisabled;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.jdbcBuilder;
@@ -43,7 +43,7 @@ public class TestJdbcSnowflakeConnectorTest
     @Override
     protected SnowflakeConnectorFlavour connectorFlavour()
     {
-        return JDBC;
+        return DEPRECATED_JDBC;
     }
 
     @Override

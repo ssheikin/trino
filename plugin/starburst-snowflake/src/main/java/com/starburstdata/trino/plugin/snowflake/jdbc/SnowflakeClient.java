@@ -123,7 +123,7 @@ import static com.google.common.base.Throwables.getRootCause;
 import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.starburstdata.trino.plugin.snowflake.SnowflakeConnectorFlavour.JDBC;
+import static com.starburstdata.trino.plugin.snowflake.SnowflakeConnectorFlavour.DEPRECATED_JDBC;
 import static com.starburstdata.trino.plugin.snowflake.jdbc.DatabaseSchemaName.parseDatabaseSchemaName;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.trino.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
@@ -488,7 +488,7 @@ public class SnowflakeClient
     public boolean isTopNGuaranteed(ConnectorSession session)
     {
         // The data returned conforms to TopN requirements, but can be returned out of order
-        return connectorFlavour == JDBC;
+        return connectorFlavour == DEPRECATED_JDBC;
     }
 
     @Override
