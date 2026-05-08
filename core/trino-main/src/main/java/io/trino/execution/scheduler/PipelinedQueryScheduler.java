@@ -233,6 +233,7 @@ public class PipelinedQueryScheduler
             ExecutorService queryExecutor,
             ScheduledExecutorService schedulerExecutor,
             InternalNodeManager nodeManager,
+            boolean forceSingleNodeQuery,
             NodeTaskMap nodeTaskMap,
             ExecutionPolicy executionPolicy,
             Tracer tracer,
@@ -270,6 +271,7 @@ public class PipelinedQueryScheduler
         stageManager = StageManager.create(
                 queryStateMachine,
                 metadata,
+                forceSingleNodeQuery,
                 remoteTaskFactory,
                 nodeTaskMap,
                 tracer,

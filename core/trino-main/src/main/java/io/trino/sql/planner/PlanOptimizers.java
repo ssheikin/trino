@@ -300,6 +300,7 @@ public class PlanOptimizers
     public PlanOptimizers(
             PlannerContext plannerContext,
             TaskManagerConfig taskManagerConfig,
+            OptimizerConfig optimizerConfig,
             SplitManager splitManager,
             PageSourceManager pageSourceManager,
             StatsCalculator statsCalculator,
@@ -313,7 +314,7 @@ public class PlanOptimizers
     {
         this(plannerContext,
                 taskManagerConfig,
-                false,
+                optimizerConfig.isForceSingleNodeQuery(),
                 splitManager,
                 pageSourceManager,
                 statsCalculator,

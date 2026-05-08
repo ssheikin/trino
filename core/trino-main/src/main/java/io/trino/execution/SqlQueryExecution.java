@@ -74,6 +74,7 @@ import io.trino.sql.planner.InputExtractor;
 import io.trino.sql.planner.LogicalPlanner;
 import io.trino.sql.planner.LogicalPlanner.PlanOptions;
 import io.trino.sql.planner.NodePartitioningManager;
+import io.trino.sql.planner.OptimizerConfig;
 import io.trino.sql.planner.Plan;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.sql.planner.PlanFragmenter;
@@ -85,6 +86,7 @@ import io.trino.sql.planner.optimizations.AdaptivePlanOptimizer;
 import io.trino.sql.planner.optimizations.PlanOptimizer;
 import io.trino.sql.planner.plan.OutputNode;
 import io.trino.sql.planner.sanity.ForAlternatives;
+import io.trino.sql.planner.sanity.PlanSanityChecker;
 import io.trino.sql.tree.ExplainAnalyze;
 import io.trino.sql.tree.Query;
 import io.trino.sql.tree.Statement;
@@ -114,7 +116,6 @@ import static io.trino.execution.QueryState.FAILED;
 import static io.trino.execution.QueryState.PLANNING;
 import static io.trino.server.DynamicFilterService.DynamicFiltersStats;
 import static io.trino.spi.StandardErrorCode.STACK_OVERFLOW;
-import static io.trino.sql.planner.sanity.PlanSanityChecker.DISTRIBUTED_PLAN_SANITY_CHECKER;
 import static io.trino.tracing.ScopedSpan.scopedSpan;
 import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
@@ -147,6 +148,7 @@ public class SqlQueryExecution
     private final ExecutorService queryExecutor;
     private final ScheduledExecutorService schedulerExecutor;
     private final InternalNodeManager nodeManager;
+    private final boolean forceSingleNodeQuery;
 
     private final AtomicReference<QueryScheduler> queryScheduler = new AtomicReference<>();
     private final AtomicReference<EffectivePlan> queryPlan = new AtomicReference<>();
@@ -193,6 +195,7 @@ public class SqlQueryExecution
             ExecutorService queryExecutor,
             ScheduledExecutorService schedulerExecutor,
             InternalNodeManager nodeManager,
+            boolean forceSingleNodeQuery,
             NodeTaskMap nodeTaskMap,
             ExecutionPolicy executionPolicy,
             SplitSchedulerStats schedulerStats,
@@ -229,6 +232,7 @@ public class SqlQueryExecution
             this.queryExecutor = requireNonNull(queryExecutor, "queryExecutor is null");
             this.schedulerExecutor = requireNonNull(schedulerExecutor, "schedulerExecutor is null");
             this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
+            this.forceSingleNodeQuery = forceSingleNodeQuery;
             this.nodeTaskMap = requireNonNull(nodeTaskMap, "nodeTaskMap is null");
             this.executionPolicy = requireNonNull(executionPolicy, "executionPolicy is null");
             this.schedulerStats = requireNonNull(schedulerStats, "schedulerStats is null");
@@ -551,6 +555,7 @@ public class SqlQueryExecution
         LogicalPlanner logicalPlanner = new LogicalPlanner(stateMachine.getSession(),
                 planOptimizers,
                 alternativeOptimizers,
+                new PlanSanityChecker(forceSingleNodeQuery),
                 idAllocator,
                 plannerContext,
                 statsCalculator,
@@ -566,7 +571,7 @@ public class SqlQueryExecution
         if (planOptions.newIrProgram().isPresent()) {
             Optional<SubPlan> optionalFragmentedPlan = Optional.empty();
             try (var _ = scopedSpan(tracer, "fragment-plan-new-ir")) {
-                optionalFragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planOptions.newIrProgram().get(), false, stateMachine.getWarningCollector());
+                optionalFragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planOptions.newIrProgram().get(), forceSingleNodeQuery, stateMachine.getWarningCollector());
             }
             catch (RuntimeException e) {
                 LOG.warn(e, "Exception thrown while fragmenting the new IR plan, falling back to old IR plan");
@@ -585,7 +590,7 @@ public class SqlQueryExecution
         }
         if (fragmentedPlan == null) {
             try (var _ = scopedSpan(tracer, "fragment-plan-old-ir")) {
-                fragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planOptions.oldIrPlan(), false, stateMachine.getWarningCollector());
+                fragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planOptions.oldIrPlan(), forceSingleNodeQuery, stateMachine.getWarningCollector());
                 queryPlan.set(new EffectivePlan(planOptions.oldIrPlan()));
             }
         }
@@ -627,6 +632,7 @@ public class SqlQueryExecution
                     queryExecutor,
                     schedulerExecutor,
                     nodeManager,
+                    forceSingleNodeQuery,
                     nodeTaskMap,
                     executionPolicy,
                     tracer,
@@ -665,7 +671,8 @@ public class SqlQueryExecution
                             plannerContext,
                             adaptivePlanOptimizers,
                             planFragmenter,
-                            DISTRIBUTED_PLAN_SANITY_CHECKER,
+                            forceSingleNodeQuery,
+                            new PlanSanityChecker(forceSingleNodeQuery),
                             stateMachine.getWarningCollector(),
                             planOptimizersStatsCollector,
                             tableStatsProvider),
@@ -908,6 +915,7 @@ public class SqlQueryExecution
         private final ExchangeMetricsCollector exchangeMetricsCollector;
         private final EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory;
         private final TaskDescriptorStorage taskDescriptorStorage;
+        private final boolean forceSingleNodeQuery;
         private final FormatOptions formatOptions;
 
         @Inject
@@ -944,6 +952,7 @@ public class SqlQueryExecution
                 ExchangeMetricsCollector exchangeMetricsCollector,
                 EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory,
                 TaskDescriptorStorage taskDescriptorStorage,
+                OptimizerConfig optimizerConfig,
                 FormatOptions formatOptions)
         {
             this.tracer = requireNonNull(tracer, "tracer is null");
@@ -980,6 +989,7 @@ public class SqlQueryExecution
             this.exchangeMetricsCollector = requireNonNull(exchangeMetricsCollector, "exchangeMetricsCollector is null");
             this.eventDrivenTaskSourceFactory = requireNonNull(eventDrivenTaskSourceFactory, "eventDrivenTaskSourceFactory is null");
             this.taskDescriptorStorage = requireNonNull(taskDescriptorStorage, "taskDescriptorStorage is null");
+            this.forceSingleNodeQuery = optimizerConfig.isForceSingleNodeQuery();
             this.formatOptions = requireNonNull(formatOptions, "formatOptions is null");
         }
 
@@ -1020,6 +1030,7 @@ public class SqlQueryExecution
                     queryExecutor,
                     schedulerExecutor,
                     nodeManager,
+                    forceSingleNodeQuery,
                     nodeTaskMap,
                     executionPolicy,
                     schedulerStats,
