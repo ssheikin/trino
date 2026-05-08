@@ -692,6 +692,12 @@
                                     <new>method java.util.concurrent.CompletableFuture&lt;java.util.List&lt;io.trino.spi.connector.ConnectorSplit&gt;&gt; io.trino.spi.connector.FixedSplitSource::getNextBatch(int, io.trino.spi.connector.DynamicFilterSnapshot)</new>
                                     <justification>Method is now abstract — split sources must implement it</justification>
                                 </item>
+                                <item>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>method io.trino.spi.function.FunctionMetadata io.trino.spi.function.FunctionMetadata::fromJson(io.trino.spi.function.FunctionId, io.trino.spi.function.Signature, java.lang.String, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.function.FunctionNullability, boolean, boolean, boolean, java.lang.String, io.trino.spi.function.FunctionKind, boolean)</old>
+                                    <new>method io.trino.spi.function.FunctionMetadata io.trino.spi.function.FunctionMetadata::fromJson(io.trino.spi.function.FunctionId, io.trino.spi.function.Signature, java.lang.String, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.function.FunctionNullability, boolean, boolean, boolean, java.lang.String, io.trino.spi.function.FunctionKind, boolean, java.util.Optional&lt;io.trino.spi.type.TypeSignature&gt;)</new>
+                                    <justification>Add receiverType to support SQL:2023 static method invocation</justification>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
