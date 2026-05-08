@@ -1298,6 +1298,12 @@
                                     <newVisibility>public</newVisibility>
                                     <justification>Exposed to make GPU support more efficient</justification>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method boolean io.trino.spi.block.ValueBlock::isNullUnchecked(int)</new>
+                                    <justification>Added to enable performance optimizations</justification>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
