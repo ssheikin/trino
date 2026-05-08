@@ -3218,7 +3218,7 @@ public class TestDeltaLakeConnectorTest
                     partitioned_by = ARRAY['part_boolean', 'part_tinyint', 'part_smallint', 'part_int', 'part_bigint', 'part_decimal_5_2', 'part_decimal_21_3', 'part_double', 'part_float', 'part_varchar', 'part_date', 'part_timestamp'],
                     column_mapping_mode = '%s',
                     checkpoint_interval = 3
-                )\
+                )
                 """.formatted(tableName, mode));
 
         assertUpdate(
@@ -3237,8 +3237,8 @@ public class TestDeltaLakeConnectorTest
                    REAL '0',
                    'a',
                    DATE '2020-08-21',
-                   TIMESTAMP '2020-10-21 01:00:00.123 UTC')\
-                   """.formatted(tableName), 1);
+                   TIMESTAMP '2020-10-21 01:00:00.123 UTC')
+                """.formatted(tableName), 1);
         assertUpdate(
                 """
                 INSERT INTO %s
@@ -3255,8 +3255,8 @@ public class TestDeltaLakeConnectorTest
                         REAL '0',
                         'b',
                         DATE '2020-08-22',
-                        TIMESTAMP '2020-10-22 02:00:00.456 UTC')\
-                        """.formatted(tableName), 1);
+                        TIMESTAMP '2020-10-22 02:00:00.456 UTC')
+                """.formatted(tableName), 1);
         assertUpdate(
                 """
                 INSERT INTO %s
@@ -3273,8 +3273,8 @@ public class TestDeltaLakeConnectorTest
                         NULL,
                         NULL,
                         NULL,
-                        NULL)\
-                        """.formatted(tableName), 1);
+                        NULL)
+                """.formatted(tableName), 1);
 
         // Make sure that the checkpoint is being processed
         assertUpdate("CALL system.flush_metadata_cache(schema_name => CURRENT_SCHEMA, table_name => '" + tableName + "')");
