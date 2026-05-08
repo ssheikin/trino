@@ -188,19 +188,19 @@ public class TestArraySubscriptPushDown
                         join(INNER, builder -> builder
                                 .left(
                                         project(
-                                                filter(
-                                                        new Comparison(EQUAL, new Reference(INTEGER, "a_arr_2"), new Constant(INTEGER, 2L)),
-                                                        values(
-                                                                ImmutableList.of("a_arr_2"),
-                                                                ImmutableList.of(ImmutableList.of(new Constant(INTEGER, 2L)))))))
-                                .right(
-                                        project(
                                                 ImmutableMap.of("b_arr_1", expression(new Reference(INTEGER, "b_arr_1"))),
                                                 filter(
                                                         new Comparison(EQUAL, new Reference(INTEGER, "b_arr_3"), new Constant(INTEGER, 2L)),
                                                         values(
                                                                 ImmutableList.of("b_arr_3", "b_arr_1"),
-                                                                ImmutableList.of(ImmutableList.of(new Constant(INTEGER, 2L), new Constant(INTEGER, 1L))))))))));
+                                                                ImmutableList.of(ImmutableList.of(new Constant(INTEGER, 2L), new Constant(INTEGER, 1L)))))))
+                                .right(
+                                        project(
+                                                filter(
+                                                        new Comparison(EQUAL, new Reference(INTEGER, "a_arr_2"), new Constant(INTEGER, 2L)),
+                                                        values(
+                                                                ImmutableList.of("a_arr_2"),
+                                                                ImmutableList.of(ImmutableList.of(new Constant(INTEGER, 2L))))))))));
     }
 
     @Test
