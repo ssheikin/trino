@@ -24,11 +24,12 @@ public enum StarburstFeature
     MAPR("mapr", "MapR support in Hive connector", false),
     MCP("mcp", "MCP server", false),
     PORTAL("portal", "Starburst Portal", false),
+    ROUTING("routing", "Starburst Routing", false),
     SALESFORCE("salesforce", "Starburst Salesforce connector", true),
     SPARK("spark", "Spark", false),
     SPLUNK("splunk", "Starburst Splunk connector", true),
     WARP_SPEED("warp-speed", "Warp Speed", false),
-    DELL("dell", "Dell Data Lakehouse", false, ImmutableSet.of(AGENTIC_LAYER, AI_WORKFLOWS, MAPR, MCP, PORTAL, SPARK, WARP_SPEED)),
+    DELL("dell", "Dell Data Lakehouse", false, ImmutableSet.of(AGENTIC_LAYER, AI_WORKFLOWS, MAPR, MCP, PORTAL, ROUTING, SPARK, WARP_SPEED)),
     /**/;
 
     private final String featureName;
