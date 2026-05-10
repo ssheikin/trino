@@ -54,6 +54,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.base.Throwables.getCausalChain;
 import static com.google.common.collect.ImmutableMultiset.toImmutableMultiset;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static io.trino.plugin.bigquery.BigQueryQueryRunner.BIGQUERY_CREDENTIALS_KEY;
@@ -87,6 +88,12 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 public abstract class BaseBigQueryConnectorTest
         extends BaseConnectorTest
 {
+    private static final RetryPolicy<Object> BIGQUERY_TRANSIENT_FAILURE_RETRY_POLICY = RetryPolicy.builder()
+            .handleIf(BaseBigQueryConnectorTest::isTransientBigQueryFailure)
+            .withDelay(java.time.Duration.ofSeconds(10))
+            .withMaxAttempts(3)
+            .build();
+
     private static final String CREATE_CATALOG_SQL_TEMPLATE = """
             CREATE CATALOG %s USING bigquery
             WITH (
@@ -1630,6 +1637,13 @@ public abstract class BaseBigQueryConnectorTest
 
     private void onBigQuery(@Language("SQL") String sql)
     {
-        bigQuerySqlExecutor.execute(sql);
+        Failsafe.with(BIGQUERY_TRANSIENT_FAILURE_RETRY_POLICY)
+                .run(() -> bigQuerySqlExecutor.execute(sql));
+    }
+
+    private static boolean isTransientBigQueryFailure(Throwable throwable)
+    {
+        return getCausalChain(throwable).stream().anyMatch(cause ->
+                nullToEmpty(cause.getMessage()).contains("Visibility check was unavailable"));
     }
 }
