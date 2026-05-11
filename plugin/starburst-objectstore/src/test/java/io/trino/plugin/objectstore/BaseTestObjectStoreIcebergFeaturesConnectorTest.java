@@ -1836,13 +1836,6 @@ public abstract class BaseTestObjectStoreIcebergFeaturesConnectorTest
 
     @Test
     @Override
-    public void testShowSchemasLikeWithEscape()
-    {
-        skipDuplicateTestCoverage("testShowSchemasLikeWithEscape");
-    }
-
-    @Test
-    @Override
     public void testShowTables()
     {
         skipDuplicateTestCoverage("testShowTables");
