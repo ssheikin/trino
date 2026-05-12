@@ -30,6 +30,7 @@ import io.trino.spi.WorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.security.AiModelAccessControl;
@@ -75,5 +76,6 @@ public class ConnectorContextModule
         binder.bind(ManagedStatisticsClient.class).toInstance(context.getManagedStatisticsClient());
         // Note: ModelConnectionSpecsLoader is bound conditionally depending on the catalog configuration in AiClientModule
         binder.bind(BlocksHashFactory.class).toInstance(context.getBlocksHashFactory());
+        binder.bind(ConnectorExpressionEvaluator.class).toInstance(context.getExpressionEvaluator());
     }
 }

@@ -26,6 +26,7 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.connector.ManagedStatisticsClient;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
@@ -63,6 +64,7 @@ public class ConnectorContextInstance
     private final FunctionBundleFactory functionBundleFactory;
     private final ManagedStatisticsClient managedStatisticsClient;
     private final BlocksHashFactory blocksHashFactory;
+    private final ConnectorExpressionEvaluator evaluator;
 
     public ConnectorContextInstance(
             OpenTelemetry openTelemetry,
@@ -85,7 +87,8 @@ public class ConnectorContextInstance
             String nodeEnvironment,
             FunctionBundleFactory functionBundleFactory,
             ManagedStatisticsClient managedStatisticsClient,
-            BlocksHashFactory blocksHashFactory)
+            BlocksHashFactory blocksHashFactory,
+            ConnectorExpressionEvaluator evaluator)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -108,6 +111,7 @@ public class ConnectorContextInstance
         this.functionBundleFactory = requireNonNull(functionBundleFactory, "functionBundleFactory is null");
         this.managedStatisticsClient = requireNonNull(managedStatisticsClient, "managedStatisticsClient is null");
         this.blocksHashFactory = requireNonNull(blocksHashFactory, "blocksHashFactory is null");
+        this.evaluator = requireNonNull(evaluator, "evaluator is null");
     }
 
     @Override
@@ -234,5 +238,11 @@ public class ConnectorContextInstance
     public BlocksHashFactory getBlocksHashFactory()
     {
         return blocksHashFactory;
+    }
+
+    @Override
+    public ConnectorExpressionEvaluator getExpressionEvaluator()
+    {
+        return evaluator;
     }
 }

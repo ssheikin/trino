@@ -46,6 +46,7 @@ import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
 import io.trino.spi.connector.ManagedStatisticsClient;
@@ -227,7 +228,8 @@ public class DefaultCatalogFactory
                         currentNode,
                         metadata,
                         accessControl,
-                        maxPrefetchedInformationSchemaPrefixes));
+                        maxPrefetchedInformationSchemaPrefixes,
+                        ConnectorExpressionEvaluator.NO_OP));
 
         SystemTablesProvider systemTablesProvider = new SystemTablesProvider(
                 transactionManager,
@@ -290,7 +292,8 @@ public class DefaultCatalogFactory
                 nodeInfo.getEnvironment(),
                 new InternalFunctionBundleFactory(),
                 managedStatisticsClient,
-                blocksHashFactory);
+                blocksHashFactory,
+                ConnectorExpressionEvaluator.NO_OP);
     }
 
     private Tracer createTracer(CatalogName catalogName)
