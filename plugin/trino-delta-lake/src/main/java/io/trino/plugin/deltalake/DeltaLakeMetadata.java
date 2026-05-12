@@ -112,6 +112,7 @@ import io.trino.spi.connector.ColumnNotFoundException;
 import io.trino.spi.connector.ColumnPosition;
 import io.trino.spi.connector.ConnectorAccessControl;
 import io.trino.spi.connector.ConnectorAnalyzeMetadata;
+import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.connector.ConnectorInsertTableHandle;
 import io.trino.spi.connector.ConnectorMaterializedViewDefinition;
 import io.trino.spi.connector.ConnectorMergeTableHandle;
@@ -149,6 +150,7 @@ import io.trino.spi.connector.UnificationResult;
 import io.trino.spi.connector.ViewNotFoundException;
 import io.trino.spi.connector.WriterScalingOptions;
 import io.trino.spi.expression.ConnectorExpression;
+import io.trino.spi.expression.Constant;
 import io.trino.spi.expression.Variable;
 import io.trino.spi.function.table.ConnectorTableFunctionHandle;
 import io.trino.spi.predicate.Domain;
@@ -369,7 +371,6 @@ import static io.trino.spi.StandardErrorCode.UNSUPPORTED_TABLE_TYPE;
 import static io.trino.spi.connector.RetryMode.NO_RETRIES;
 import static io.trino.spi.connector.RowChangeParadigm.DELETE_ROW_AND_INSERT_ROW;
 import static io.trino.spi.connector.SchemaTableName.schemaTableName;
-import static io.trino.spi.expression.Constant.TRUE;
 import static io.trino.spi.predicate.Range.greaterThanOrEqual;
 import static io.trino.spi.predicate.Range.lessThanOrEqual;
 import static io.trino.spi.predicate.Range.range;
@@ -534,6 +535,7 @@ public class DeltaLakeMetadata
     private final DateTimeZone dateTimeZone;
     private final DeltaLakeTableCredentialsProvider tableCredentialsProvider;
     private final Map<VendedCredentialsHandle, Optional<DeltaLakeTableCredentials>> tableCredentialsMap = new ConcurrentHashMap<>();
+    private final ConnectorExpressionEvaluator evaluator;
 
     private record QueriedTable(SchemaTableName schemaTableName, long version)
     {
@@ -571,7 +573,8 @@ public class DeltaLakeMetadata
             Executor metadataFetchingExecutor,
             TransactionLogReaderFactory transactionLogReaderFactory,
             boolean logRetentionDurationEnabled,
-            DeltaLakeTableCredentialsProvider tableCredentialsProvider)
+            DeltaLakeTableCredentialsProvider tableCredentialsProvider,
+            ConnectorExpressionEvaluator evaluator)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
@@ -602,6 +605,7 @@ public class DeltaLakeMetadata
         this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory");
         this.logRetentionDurationEnabled = logRetentionDurationEnabled;
         this.tableCredentialsProvider = requireNonNull(tableCredentialsProvider, "tableCredentialsProvider is null");
+        this.evaluator = requireNonNull(evaluator, "evaluator is null");
     }
 
     public static boolean isCatalogManagedTable(ProtocolEntry protocolEntry)
@@ -4287,8 +4291,10 @@ public class DeltaLakeMetadata
             predicate = constraint.getSummary();
             connectorExpression = constraint.getExpression();
         }
+        Map<String, ColumnHandle> assignments = constraint.getAssignments();
+        ConnectorExpressionEvaluator.Prepared prepared = evaluator.prepare(session, constraint.getExpression());
 
-        if (predicate.isAll() && constraint.getPredicateColumns().isEmpty()) {
+        if (predicate.isAll() && Constant.TRUE.equals(constraint.getExpression())) {
             return Optional.empty();
         }
 
@@ -4301,8 +4307,8 @@ public class DeltaLakeMetadata
             newEnforcedConstraint = TupleDomain.none();
             newUnenforcedConstraint = TupleDomain.all();
             newRemainingConstraint = TupleDomain.all();
-            newConstraintColumns = constraint.getPredicateColumns().stream()
-                    .flatMap(Collection::stream)
+            newConstraintColumns = prepared.getArguments().stream()
+                    .map(assignments::get)
                     .map(DeltaLakeColumnHandle.class::cast)
                     .collect(toImmutableSet());
         }
@@ -4316,8 +4322,8 @@ public class DeltaLakeMetadata
             ImmutableSet.Builder<DeltaLakeColumnHandle> constraintColumns = ImmutableSet.builder();
             // We need additional field to track partition columns used in queries as enforceDomains seem to be not catching
             // cases when partition columns is used within complex filter as 'partitionColumn % 2 = 0'
-            constraint.getPredicateColumns().stream()
-                    .flatMap(Collection::stream)
+            prepared.getArguments().stream()
+                    .map(assignments::get)
                     .map(DeltaLakeColumnHandle.class::cast)
                     .forEach(constraintColumns::add);
             for (Entry<ColumnHandle, Domain> domainEntry : constraintDomains.entrySet()) {
@@ -4480,7 +4486,7 @@ public class DeltaLakeMetadata
                 secondCompensationFilter.transformKeys(ColumnHandle.class::cast),
                 new UnificationResult.Properties(
                         unified.getEnforcedPartitionConstraint().transformKeys(ColumnHandle.class::cast),
-                        TRUE,
+                        Constant.TRUE,
                         emptyMap(),
                         OptionalLong.empty()))); // Deltalake doesn't support limit pushdown
     }

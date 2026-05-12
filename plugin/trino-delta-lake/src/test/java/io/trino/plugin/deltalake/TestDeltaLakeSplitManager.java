@@ -46,6 +46,7 @@ import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.plugin.hive.parquet.ParquetWriterConfig;
 import io.trino.spi.NodeVersion;
 import io.trino.spi.SplitWeight;
+import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -245,7 +246,8 @@ public class TestDeltaLakeSplitManager
                 newDirectExecutorService(),
                 new MetastoreTypeConfig(),
                 transactionLogReaderFactory,
-                new NoOpTableCredentialsProvider());
+                new NoOpTableCredentialsProvider(),
+                ConnectorExpressionEvaluator.NO_OP);
 
         ConnectorSession session = testingConnectorSessionWithConfig(deltaLakeConfig);
         DeltaLakeTransactionManager deltaLakeTransactionManager = new DeltaLakeTransactionManager(metadataFactory);
@@ -259,7 +261,8 @@ public class TestDeltaLakeSplitManager
                 new DefaultDeltaLakeFileSystemFactory(HDFS_FILE_SYSTEM_FACTORY, new NoOpTableCredentialsProvider()),
                 createJsonCodec(DeltaLakeCacheSplitId.class),
                 deltaLakeTransactionManager,
-                new NoopSplitAffinityProvider());
+                new NoopSplitAffinityProvider(),
+                ConnectorExpressionEvaluator.NO_OP);
     }
 
     private AddFileEntry addFileEntryOfSize(String path, long fileSize)

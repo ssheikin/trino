@@ -33,6 +33,7 @@ import io.trino.plugin.hive.security.AccessControlMetadata;
 import io.trino.plugin.hive.security.UsingSystemSecurity;
 import io.trino.spi.Node;
 import io.trino.spi.NodeVersion;
+import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
@@ -79,6 +80,7 @@ public class DeltaLakeMetadataFactory
     private final TransactionLogReaderFactory transactionLogReaderFactory;
     private final boolean logRetentionDurationEnabled;
     private final DeltaLakeTableCredentialsProvider tableCredentialsProvider;
+    private final ConnectorExpressionEvaluator evaluator;
 
     @Inject
     public DeltaLakeMetadataFactory(
@@ -103,7 +105,8 @@ public class DeltaLakeMetadataFactory
             @ForDeltaLakeMetadata ExecutorService executorService,
             MetastoreTypeConfig metastoreTypeConfig,
             TransactionLogReaderFactory transactionLogReaderFactory,
-            DeltaLakeTableCredentialsProvider tableCredentialsProvider)
+            DeltaLakeTableCredentialsProvider tableCredentialsProvider,
+            ConnectorExpressionEvaluator evaluator)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.hiveMetastoreFactory = requireNonNull(hiveMetastoreFactory, "hiveMetastore is null");
@@ -139,6 +142,7 @@ public class DeltaLakeMetadataFactory
         this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory is null");
         this.logRetentionDurationEnabled = deltaLakeConfig.isLogRetentionDurationEnabled();
         this.tableCredentialsProvider = requireNonNull(tableCredentialsProvider, "tableCredentialsProvider is null");
+        this.evaluator = requireNonNull(evaluator, "evaluator is null");
     }
 
     @Override
@@ -189,7 +193,8 @@ public class DeltaLakeMetadataFactory
                 metadataFetchingExecutor,
                 transactionLogReaderFactory,
                 logRetentionDurationEnabled,
-                tableCredentialsProvider);
+                tableCredentialsProvider,
+                evaluator);
     }
 
     @Override
