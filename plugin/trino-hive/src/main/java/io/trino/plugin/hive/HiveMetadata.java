@@ -610,7 +610,7 @@ public class HiveMetadata
 
             handle = handle.withAnalyzePartitionValues(list);
             HivePartitionResult partitions = partitionManager.getPartitions(handle, list);
-            handle = partitionManager.applyPartitionResult(handle, partitions, alwaysTrue());
+            handle = partitionManager.applyPartitionResult(handle, partitions, alwaysTrue(), partitions.getPrepared());
         }
 
         if (analyzeColumnNames.isPresent()) {
@@ -965,7 +965,7 @@ public class HiveMetadata
 
         Map<String, Type> columnTypes = columns.entrySet().stream()
                 .collect(toImmutableMap(Entry::getKey, entry -> getColumnMetadata(session, tableHandle, entry.getValue()).getType()));
-        HivePartitionResult partitionResult = partitionManager.getPartitions(getMetastore(session), tableHandle, new Constraint(hiveTableHandle.getEnforcedConstraint()));
+        HivePartitionResult partitionResult = partitionManager.getPartitions(getMetastore(session), tableHandle, new Constraint(hiveTableHandle.getEnforcedConstraint()), session);
         // If partitions are not loaded, then don't generate table statistics.
         // Note that the computation is not persisted in the table handle, so can be redone many times
         // TODO: https://github.com/trinodb/trino/issues/10980.
@@ -3076,7 +3076,7 @@ public class HiveMetadata
             getMetastore(session).truncateUnpartitionedTable(session, handle.getSchemaName(), handle.getTableName());
         }
         else {
-            Iterator<HivePartition> partitions = partitionManager.getPartitions(getMetastore(session), handle);
+            Iterator<HivePartition> partitions = partitionManager.getPartitions(getMetastore(session), handle, session);
             List<String> partitionIds = new ArrayList<>();
             while (partitions.hasNext()) {
                 partitionIds.add(partitions.next().getPartitionId());
@@ -3114,7 +3114,7 @@ public class HiveMetadata
                         // We load the partitions to compute the predicates enforced by the table.
                         // Note that the computation is not persisted in the table handle, so can be redone many times
                         // TODO: https://github.com/trinodb/trino/issues/10980.
-                        HivePartitionResult partitionResult = partitionManager.getPartitions(getMetastore(session), table, new Constraint(hiveTable.getEnforcedConstraint()));
+                        HivePartitionResult partitionResult = partitionManager.getPartitions(getMetastore(session), table, new Constraint(hiveTable.getEnforcedConstraint()), session);
                         return partitionManager.tryLoadPartitions(partitionResult);
                     });
 
@@ -3174,8 +3174,8 @@ public class HiveMetadata
         HiveTableHandle handle = (HiveTableHandle) tableHandle;
         checkArgument(handle.getAnalyzePartitionValues().isEmpty() || constraint.getSummary().isAll(), "Analyze should not have a constraint");
 
-        HivePartitionResult partitionResult = partitionManager.getPartitions(getMetastore(session), handle, constraint);
-        HiveTableHandle newHandle = partitionManager.applyPartitionResult(handle, partitionResult, constraint);
+        HivePartitionResult partitionResult = partitionManager.getPartitions(getMetastore(session), handle, constraint, session);
+        HiveTableHandle newHandle = partitionManager.applyPartitionResult(handle, partitionResult, constraint, partitionResult.getPrepared());
 
         if (handle.getPartitions().equals(newHandle.getPartitions()) &&
                 handle.getPartitionNames().equals(newHandle.getPartitionNames()) &&
