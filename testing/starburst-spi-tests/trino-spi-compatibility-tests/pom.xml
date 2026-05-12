@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.trino</groupId>
         <artifactId>starburst-spi-tests</artifactId>
-        <version>481-e.0.1-SNAPSHOT</version>
+        <version>481-e.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>trino-spi-compatibility-tests</artifactId>
