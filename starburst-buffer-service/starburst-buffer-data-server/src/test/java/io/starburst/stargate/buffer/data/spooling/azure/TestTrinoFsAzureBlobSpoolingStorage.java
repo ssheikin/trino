@@ -12,21 +12,21 @@ package io.starburst.stargate.buffer.data.spooling.azure;
 import io.starburst.stargate.buffer.data.client.spooling.SpooledChunkReader;
 import io.starburst.stargate.buffer.data.spooling.SpoolingStorage;
 
-import static io.starburst.stargate.buffer.data.spooling.SpoolTestHelper.createAzureBlobSpooledChunkReader;
-import static io.starburst.stargate.buffer.data.spooling.SpoolTestHelper.createAzureBlobSpoolingStorage;
+import static io.starburst.stargate.buffer.data.spooling.SpoolTestHelper.createTrinoFsAzureBlobSpooledChunkReader;
+import static io.starburst.stargate.buffer.data.spooling.SpoolTestHelper.createTrinoFsAzureBlobSpoolingStorage;
 
-public class TestAzureBlobSpoolingStorage
+public class TestTrinoFsAzureBlobSpoolingStorage
         extends AbstractTestAzureBlobSpoolingStorage
 {
     @Override
     protected SpoolingStorage createSpoolingStorage()
     {
-        return createAzureBlobSpoolingStorage(blobServiceAsyncClient, containerName);
+        return createTrinoFsAzureBlobSpoolingStorage(azuriteBlobStorage, containerName);
     }
 
     @Override
     protected SpooledChunkReader createSpooledChunkReader()
     {
-        return createAzureBlobSpooledChunkReader(blobServiceAsyncClient);
+        return createTrinoFsAzureBlobSpooledChunkReader(azuriteBlobStorage);
     }
 }
