@@ -66,6 +66,7 @@ public class KdbConnectorFactory
     private static Bootstrap createBootstrap(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
     {
         Bootstrap app = new Bootstrap(
+                "io.trino.bootstrap.catalog." + catalogName,
                 new JsonModule(),
                 new ConnectorContextModule(catalogName, context),
                 new KdbModule());
