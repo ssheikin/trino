@@ -4434,7 +4434,7 @@ public class DeltaLakeMetadata
         Optional<ConstraintApplicationResult<ConnectorTableHandle>> partitionResult = applyFilter(
                 session,
                 unified,
-                new Constraint(unionedPartitionConstraint, unionedPartitionConstraint.asPredicate(), unionedPartitionConstraint.getDomains().map(Map::keySet).orElse(ImmutableSet.of())));
+                new Constraint(unionedPartitionConstraint));
         if (partitionResult.isPresent()) {
             unified = (DeltaLakeTableHandle) partitionResult.get().getHandle();
         }
@@ -4451,7 +4451,7 @@ public class DeltaLakeMetadata
         Optional<ConstraintApplicationResult<ConnectorTableHandle>> nonPartitionResult = applyFilter(
                 session,
                 unified,
-                new Constraint(unionedNonPartitionConstraint, unionedNonPartitionConstraint.asPredicate(), unionedNonPartitionConstraint.getDomains().map(Map::keySet).orElse(ImmutableSet.of())));
+                new Constraint(unionedNonPartitionConstraint));
         if (nonPartitionResult.isPresent()) {
             unified = (DeltaLakeTableHandle) nonPartitionResult.get().getHandle();
         }
