@@ -73,6 +73,7 @@ public class KdbConnectorFactory
 
         return app
                 .doNotInitializeLogging()
+                .disableSystemProperties()
                 .setRequiredConfigurationProperties(requiredConfig);
     }
 }
