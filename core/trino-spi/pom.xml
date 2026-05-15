@@ -662,6 +662,15 @@
                                     <old>field io.trino.spi.function.OperatorType.MODULUS</old>
                                     <justification>Fixes an incorrect operator name</justification>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method io.trino.spi.predicate.SortedRangeSet io.trino.spi.predicate.SortedRangeSet::fromUnorderedValuesBlock(io.trino.spi.type.Type, io.trino.spi.block.Block)</old>
+                                    <new>method io.trino.spi.predicate.SortedRangeSet io.trino.spi.predicate.SortedRangeSet::fromUnorderedValuesBlock(io.trino.spi.type.Type, io.trino.spi.block.Block)</new>
+                                    <oldVisibility>private</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>Exposed to make GPU support more efficient</justification>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>
