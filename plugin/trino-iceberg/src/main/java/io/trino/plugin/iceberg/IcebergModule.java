@@ -107,6 +107,7 @@ public class IcebergModule
         binder.bind(IcebergTransactionManager.class).in(Scopes.SINGLETON);
 
         configBinder(binder).bindConfig(IcebergConfig.class);
+        configBinder(binder).bindConfig(IcebergIncrementalMvRefreshConfig.class);
         configBinder(binder).bindConfig(IcebergScheduledMvRefreshConfig.class);
         configBinder(binder).bindConfig(SortingFileWriterConfig.class, "iceberg");
 

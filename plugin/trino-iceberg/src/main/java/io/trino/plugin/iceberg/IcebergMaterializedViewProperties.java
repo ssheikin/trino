@@ -34,6 +34,7 @@ public class IcebergMaterializedViewProperties
     public static final String REFRESH_SCHEDULE_TIMEZONE = "refresh_schedule_timezone";
     public static final String STORAGE_SCHEMA = "storage_schema";
     public static final String SUBSTITUTION_ENABLED = "substitution_enabled";
+    public static final String INCREMENTAL_COLUMN = "incremental_column";
 
     private final List<PropertyMetadata<?>> materializedViewProperties;
 
@@ -41,6 +42,7 @@ public class IcebergMaterializedViewProperties
     public IcebergMaterializedViewProperties(
             IcebergConfig icebergConfig,
             IcebergScheduledMvRefreshConfig icebergScheduledMvRefreshConfig,
+            IcebergIncrementalMvRefreshConfig icebergIncrementalMvRefreshConfig,
             WorkScheduler workScheduler,
             IcebergTableProperties tableProperties)
     {
@@ -69,6 +71,13 @@ public class IcebergMaterializedViewProperties
                     null,
                     false));
         }
+        if (icebergIncrementalMvRefreshConfig.isMaterializedViewIncrementalColumnRefreshEnabled()) {
+            materializedViewProperties.add(stringProperty(
+                    INCREMENTAL_COLUMN,
+                    "Column for incremental-column MV refresh: only rows whose value is greater than the current MV maximum are appended. The column values need to be monotonically increasing with each new record.",
+                    null,
+                    false));
+        }
         this.materializedViewProperties = materializedViewProperties.build();
     }
 
@@ -94,5 +103,10 @@ public class IcebergMaterializedViewProperties
     public static Optional<Boolean> isSubstitutionEnabled(Map<String, Object> materializedViewProperties)
     {
         return Optional.ofNullable((Boolean) materializedViewProperties.get(SUBSTITUTION_ENABLED));
+    }
+
+    public static Optional<String> getIncrementalColumn(Map<String, Object> materializedViewProperties)
+    {
+        return Optional.ofNullable((String) materializedViewProperties.get(INCREMENTAL_COLUMN));
     }
 }
