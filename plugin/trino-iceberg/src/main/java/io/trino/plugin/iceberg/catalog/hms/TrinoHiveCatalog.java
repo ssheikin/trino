@@ -109,10 +109,12 @@ import static io.trino.plugin.hive.util.HiveUtil.isIcebergTable;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewDefinition.encodeMaterializedViewData;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewDefinition.fromConnectorMaterializedViewDefinition;
+import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.INCREMENTAL_COLUMN;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE_TIMEZONE;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.STORAGE_SCHEMA;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.SUBSTITUTION_ENABLED;
+import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.getIncrementalColumn;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.isSubstitutionEnabled;
 import static io.trino.plugin.iceberg.IcebergSchemaProperties.LOCATION_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isUseFileSizeFromMetadata;
@@ -151,6 +153,7 @@ public class TrinoHiveCatalog
     private final boolean deleteSchemaLocationsFallback;
     private final boolean hideMaterializedViewStorageTable;
     private final boolean scheduledMaterializedViewRefreshEnabled;
+    private final boolean isIncrementalColumnMvRefreshEnabled;
     private final Executor metadataFetchingExecutor;
 
     private final Cache<SchemaTableName, TableMetadata> tableMetadataCache = EvictableCacheBuilder.newBuilder()
@@ -171,6 +174,7 @@ public class TrinoHiveCatalog
             boolean deleteSchemaLocationsFallback,
             boolean hideMaterializedViewStorageTable,
             boolean scheduledMaterializedViewRefreshEnabled,
+            boolean isIncrementalColumnMvRefreshEnabled,
             Executor metadataFetchingExecutor)
     {
         super(catalogName, useUniqueTableLocation, typeManager, tableOperationsProvider, workScheduler, fileSystemFactory, fileIoFactory);
@@ -180,6 +184,7 @@ public class TrinoHiveCatalog
         this.deleteSchemaLocationsFallback = deleteSchemaLocationsFallback;
         this.hideMaterializedViewStorageTable = hideMaterializedViewStorageTable;
         this.scheduledMaterializedViewRefreshEnabled = scheduledMaterializedViewRefreshEnabled;
+        this.isIncrementalColumnMvRefreshEnabled = isIncrementalColumnMvRefreshEnabled;
         this.metadataFetchingExecutor = requireNonNull(metadataFetchingExecutor, "metadataFetchingExecutor is null");
     }
 
@@ -620,8 +625,9 @@ public class TrinoHiveCatalog
         if (hideMaterializedViewStorageTable) {
             Location storageMetadataLocation = createMaterializedViewStorage(session, viewName, definition, materializedViewProperties);
             Optional<String> refreshJobId = createOrUpdateMaterializedViewRefreshJob(session, viewName, materializedViewProperties, existing.map(Table::getParameters));
+            Optional<String> incrementalColumn = getIncrementalColumn(materializedViewProperties);
 
-            Map<String, String> viewProperties = createMaterializedViewProperties(session, storageMetadataLocation, refreshJobId, isSubstitutionEnabled(materializedViewProperties));
+            Map<String, String> viewProperties = createMaterializedViewProperties(session, storageMetadataLocation, refreshJobId, isSubstitutionEnabled(materializedViewProperties), incrementalColumn);
             Column dummyColumn = new Column("dummy", HIVE_STRING, Optional.empty(), ImmutableMap.of());
             Table.Builder tableBuilder = Table.builder()
                     .setDatabaseName(viewName.getSchemaName())
@@ -676,9 +682,10 @@ public class TrinoHiveCatalog
     {
         SchemaTableName storageTable = createMaterializedViewStorageTable(session, viewName, definition, materializedViewProperties);
         Optional<String> refreshJobId = createOrUpdateMaterializedViewRefreshJob(session, viewName, materializedViewProperties, existing.map(Table::getParameters));
+        Optional<String> incrementalColumn = getIncrementalColumn(materializedViewProperties);
 
         // Create a view indicating the storage table
-        Map<String, String> viewProperties = createMaterializedViewProperties(session, storageTable, refreshJobId, isSubstitutionEnabled(materializedViewProperties));
+        Map<String, String> viewProperties = createMaterializedViewProperties(session, storageTable, refreshJobId, isSubstitutionEnabled(materializedViewProperties), incrementalColumn);
         Column dummyColumn = new Column("dummy", HIVE_STRING, Optional.empty(), Map.of());
 
         Table.Builder tableBuilder = Table.builder()
@@ -897,6 +904,10 @@ public class TrinoHiveCatalog
         }
         if (materializedView.getParameters().containsKey(SUBSTITUTION_ENABLED)) {
             properties.put(SUBSTITUTION_ENABLED, parseBoolean(materializedView.getParameters().get(SUBSTITUTION_ENABLED)));
+        }
+        if (isIncrementalColumnMvRefreshEnabled) {
+            Optional.ofNullable(materializedView.getParameters().get(INCREMENTAL_COLUMN_PROPERTY))
+                    .ifPresent(column -> properties.put(INCREMENTAL_COLUMN, column));
         }
         return properties.buildOrThrow();
     }

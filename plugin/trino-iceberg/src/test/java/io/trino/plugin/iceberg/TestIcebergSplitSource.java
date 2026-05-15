@@ -146,6 +146,7 @@ public class TestIcebergSplitSource
                 false,
                 new IcebergConfig().isHideMaterializedViewStorageTable(),
                 new IcebergScheduledMvRefreshConfig().isScheduledMaterializedViewRefreshEnabled(),
+                new IcebergIncrementalMvRefreshConfig().isMaterializedViewIncrementalColumnRefreshEnabled(),
                 directExecutor());
         this.icebergMetadata = new IcebergMetadata(
                 LocationAccessControl.ALLOW_ALL,
