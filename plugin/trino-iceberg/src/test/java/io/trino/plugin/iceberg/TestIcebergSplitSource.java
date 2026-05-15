@@ -174,7 +174,8 @@ public class TestIcebergSplitSource
                 newDirectExecutorService(),
                 0,
                 ZERO,
-                ConnectorExpressionEvaluator.NO_OP);
+                ConnectorExpressionEvaluator.NO_OP,
+                false);
 
         return queryRunner;
     }
