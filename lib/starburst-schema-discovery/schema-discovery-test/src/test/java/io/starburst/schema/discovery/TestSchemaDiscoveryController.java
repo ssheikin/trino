@@ -284,7 +284,7 @@ public class TestSchemaDiscoveryController
     {
         return new Object[][] {
                 {IdentifierConstraint.ENFORCED_ALPHANUMERIC, Set.of("under_top_schema_1.child_schema_1", "under_top_schema_2.child_schema_2")},
-                {IdentifierConstraint.VALID_IN_TRINO, Set.of("under-top-schema-1.child-schema-1", "under-top-schema-2.child-schema-2")}
+                {IdentifierConstraint.VALID_IN_TRINO, Set.of("under-top-schema-1.child-schema-1", "under-top-schema-2.child-schema-2")},
         };
     }
 
