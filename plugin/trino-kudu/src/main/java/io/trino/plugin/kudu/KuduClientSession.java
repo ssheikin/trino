@@ -422,12 +422,8 @@ public class KuduClientSession
             PartialRow upperBound = KuduTableProperties.toRangeBoundToPartialRow(schema, definition, rangePartition.upper());
             AlterTableOptions alterOptions = new AlterTableOptions();
             switch (change) {
-                case ADD:
-                    alterOptions.addRangePartition(lowerBound, upperBound);
-                    break;
-                case DROP:
-                    alterOptions.dropRangePartition(lowerBound, upperBound);
-                    break;
+                case ADD -> alterOptions.addRangePartition(lowerBound, upperBound);
+                case DROP -> alterOptions.dropRangePartition(lowerBound, upperBound);
             }
             client.alterTable(rawName, alterOptions);
         }

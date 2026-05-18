@@ -69,25 +69,23 @@ public class TestKuduIntegrationIntegerColumns
         assertThat(result.getRowCount()).isEqualTo(1);
         Object obj = result.getMaterializedRows().get(0).getField(1);
         switch (test.bits) {
-            case 64:
+            case 64 -> {
                 assertThat(obj).isInstanceOf(Long.class);
                 assertThat(((Long) obj).longValue()).isEqualTo(casted);
-                break;
-            case 32:
+            }
+            case 32 -> {
                 assertThat(obj).isInstanceOf(Integer.class);
                 assertThat(((Integer) obj).longValue()).isEqualTo(casted);
-                break;
-            case 16:
+            }
+            case 16 -> {
                 assertThat(obj).isInstanceOf(Short.class);
                 assertThat(((Short) obj).longValue()).isEqualTo(casted);
-                break;
-            case 8:
+            }
+            case 8 -> {
                 assertThat(obj).isInstanceOf(Byte.class);
                 assertThat(((Byte) obj).longValue()).isEqualTo(casted);
-                break;
-            default:
-                fail("Unexpected bits: " + test.bits);
-                break;
+            }
+            default -> fail("Unexpected bits: " + test.bits);
         }
     }
 

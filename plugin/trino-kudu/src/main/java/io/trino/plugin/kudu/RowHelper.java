@@ -27,40 +27,18 @@ public final class RowHelper
     {
         for (int i = 0; i < schema.getPrimaryKeyColumnCount(); i++) {
             switch (schema.getColumnByIndex(i).getType()) {
-                case STRING:
-                    to.addStringUtf8(i, from.getString(i).getBytes(StandardCharsets.UTF_8));
-                    break;
-                case INT64:
-                case UNIXTIME_MICROS:
-                    to.addLong(i, from.getLong(i));
-                    break;
-                case INT32:
-                    to.addInt(i, from.getInt(i));
-                    break;
-                case INT16:
-                    to.addShort(i, from.getShort(i));
-                    break;
-                case INT8:
-                    to.addByte(i, from.getByte(i));
-                    break;
-                case DOUBLE:
-                    to.addDouble(i, from.getDouble(i));
-                    break;
-                case FLOAT:
-                    to.addFloat(i, from.getFloat(i));
-                    break;
-                case DECIMAL:
-                    to.addDecimal(i, from.getDecimal(i));
-                    break;
-                case BOOL:
-                    to.addBoolean(i, from.getBoolean(i));
-                    break;
-                case BINARY:
-                    to.addBinary(i, from.getBinary(i));
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown type " + schema.getColumnByIndex(i).getType()
-                            + " for column " + schema.getColumnByIndex(i).getName());
+                case STRING -> to.addStringUtf8(i, from.getString(i).getBytes(StandardCharsets.UTF_8));
+                case INT64, UNIXTIME_MICROS -> to.addLong(i, from.getLong(i));
+                case INT32 -> to.addInt(i, from.getInt(i));
+                case INT16 -> to.addShort(i, from.getShort(i));
+                case INT8 -> to.addByte(i, from.getByte(i));
+                case DOUBLE -> to.addDouble(i, from.getDouble(i));
+                case FLOAT -> to.addFloat(i, from.getFloat(i));
+                case DECIMAL -> to.addDecimal(i, from.getDecimal(i));
+                case BOOL -> to.addBoolean(i, from.getBoolean(i));
+                case BINARY -> to.addBinary(i, from.getBinary(i));
+                default -> throw new IllegalStateException("Unknown type " + schema.getColumnByIndex(i).getType()
+                                                           + " for column " + schema.getColumnByIndex(i).getName());
             }
         }
     }
@@ -69,40 +47,18 @@ public final class RowHelper
     {
         for (int i = 0; i < schema.getPrimaryKeyColumnCount(); i++) {
             switch (schema.getColumnByIndex(i).getType()) {
-                case STRING:
-                    to.addStringUtf8(i, from.getString(i).getBytes(StandardCharsets.UTF_8));
-                    break;
-                case INT64:
-                case UNIXTIME_MICROS:
-                    to.addLong(i, from.getLong(i));
-                    break;
-                case INT32:
-                    to.addInt(i, from.getInt(i));
-                    break;
-                case INT16:
-                    to.addShort(i, from.getShort(i));
-                    break;
-                case INT8:
-                    to.addByte(i, from.getByte(i));
-                    break;
-                case DOUBLE:
-                    to.addDouble(i, from.getDouble(i));
-                    break;
-                case FLOAT:
-                    to.addFloat(i, from.getFloat(i));
-                    break;
-                case DECIMAL:
-                    to.addDecimal(i, from.getDecimal(i));
-                    break;
-                case BOOL:
-                    to.addBoolean(i, from.getBoolean(i));
-                    break;
-                case BINARY:
-                    to.addBinary(i, from.getBinary(i));
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown type " + schema.getColumnByIndex(i).getType()
-                            + " for column " + schema.getColumnByIndex(i).getName());
+                case STRING -> to.addStringUtf8(i, from.getString(i).getBytes(StandardCharsets.UTF_8));
+                case INT64, UNIXTIME_MICROS -> to.addLong(i, from.getLong(i));
+                case INT32 -> to.addInt(i, from.getInt(i));
+                case INT16 -> to.addShort(i, from.getShort(i));
+                case INT8 -> to.addByte(i, from.getByte(i));
+                case DOUBLE -> to.addDouble(i, from.getDouble(i));
+                case FLOAT -> to.addFloat(i, from.getFloat(i));
+                case DECIMAL -> to.addDecimal(i, from.getDecimal(i));
+                case BOOL -> to.addBoolean(i, from.getBoolean(i));
+                case BINARY -> to.addBinary(i, from.getBinary(i));
+                default -> throw new IllegalStateException("Unknown type " + schema.getColumnByIndex(i).getType()
+                                                           + " for column " + schema.getColumnByIndex(i).getName());
             }
         }
     }

@@ -23,7 +23,7 @@ public class KuduAuthenticationConfig
     public enum KuduAuthenticationType
     {
         NONE,
-        KERBEROS;
+        KERBEROS,
     }
 
     public KuduAuthenticationType getAuthenticationType()

@@ -99,36 +99,22 @@ public final class TypeHelper
 
     private static Type fromKuduClientType(org.apache.kudu.Type ktype, ColumnTypeAttributes attributes)
     {
-        switch (ktype) {
-            case BOOL:
-                return BooleanType.BOOLEAN;
-            case INT8:
-                return TinyintType.TINYINT;
-            case INT16:
-                return SmallintType.SMALLINT;
-            case INT32:
-                return IntegerType.INTEGER;
-            case INT64:
-                return BigintType.BIGINT;
-            case FLOAT:
-                return RealType.REAL;
-            case DOUBLE:
-                return DoubleType.DOUBLE;
-            case DECIMAL:
-                return DecimalType.createDecimalType(attributes.getPrecision(), attributes.getScale());
-            case STRING:
-                return VarcharType.VARCHAR;
-            case BINARY:
-                return VarbinaryType.VARBINARY;
-            case DATE:
-                return DateType.DATE;
-            case UNIXTIME_MICROS:
-                return TIMESTAMP_MILLIS;
+        return switch (ktype) {
+            case BOOL -> BooleanType.BOOLEAN;
+            case INT8 -> TinyintType.TINYINT;
+            case INT16 -> SmallintType.SMALLINT;
+            case INT32 -> IntegerType.INTEGER;
+            case INT64 -> BigintType.BIGINT;
+            case FLOAT -> RealType.REAL;
+            case DOUBLE -> DoubleType.DOUBLE;
+            case DECIMAL -> DecimalType.createDecimalType(attributes.getPrecision(), attributes.getScale());
+            case STRING -> VarcharType.VARCHAR;
+            case BINARY -> VarbinaryType.VARBINARY;
+            case DATE -> DateType.DATE;
+            case UNIXTIME_MICROS -> TIMESTAMP_MILLIS;
             // TODO: add support for varchar types: https://github.com/trinodb/trino/issues/11009
-            case VARCHAR:
-                break;
-        }
-        throw new IllegalStateException("Kudu type not implemented for " + ktype);
+            case VARCHAR -> throw new IllegalStateException("Kudu type not implemented for " + ktype);
+        };
     }
 
     public static Object getJavaValue(Type type, Object nativeValue)

@@ -297,35 +297,24 @@ public final class KuduTableProperties
     private static Object toValue(Schema schema, PartialRow bound, Integer idx)
     {
         Type type = schema.getColumnByIndex(idx).getType();
-        switch (type) {
-            case UNIXTIME_MICROS:
+        // TODO unsupported
+        return switch (type) {
+            case UNIXTIME_MICROS -> {
                 long millis = bound.getLong(idx) / 1000;
-                return ISODateTimeFormat.dateTime().withZone(DateTimeZone.UTC).print(millis);
-            case STRING:
-                return bound.getString(idx);
-            case INT64:
-                return bound.getLong(idx);
-            case INT32:
-                return bound.getInt(idx);
-            case INT16:
-                return bound.getShort(idx);
-            case INT8:
-                return (short) bound.getByte(idx);
-            case FLOAT:
-            case DOUBLE:
-            case DECIMAL:
-                // TODO unsupported
-                break;
-            case BOOL:
-                return bound.getBoolean(idx);
-            case BINARY:
-                return bound.getBinaryCopy(idx);
+                yield ISODateTimeFormat.dateTime().withZone(DateTimeZone.UTC).print(millis);
+            }
+            case STRING -> bound.getString(idx);
+            case INT64 -> bound.getLong(idx);
+            case INT32 -> bound.getInt(idx);
+            case INT16 -> bound.getShort(idx);
+            case INT8 -> (short) bound.getByte(idx);
+            case FLOAT, DOUBLE, DECIMAL ->
+                    throw new IllegalStateException("Unhandled type " + type + " for range partition");
+            case BOOL -> bound.getBoolean(idx);
+            case BINARY -> bound.getBinaryCopy(idx);
             // TODO: add support for varchar and date types: https://github.com/trinodb/trino/issues/11009
-            case VARCHAR:
-            case DATE:
-                break;
-        }
-        throw new IllegalStateException("Unhandled type " + type + " for range partition");
+            case VARCHAR, DATE -> throw new IllegalStateException("Unhandled type " + type + " for range partition");
+        };
     }
 
     public static PartitionDesign getPartitionDesign(KuduTable table)
@@ -379,53 +368,51 @@ public final class KuduTableProperties
         Number n;
 
         switch (type) {
-            case STRING:
+            case STRING -> {
                 if (obj instanceof String string) {
                     partialRow.addString(idx, string);
                 }
                 else {
                     handleInvalidValue(name, type, obj);
                 }
-                break;
-            case INT64:
+            }
+            case INT64 -> {
                 n = toNumber(obj, type, name);
                 partialRow.addLong(idx, n.longValue());
-                break;
-            case INT32:
+            }
+            case INT32 -> {
                 n = toNumber(obj, type, name);
                 partialRow.addInt(idx, n.intValue());
-                break;
-            case INT16:
+            }
+            case INT16 -> {
                 n = toNumber(obj, type, name);
                 partialRow.addShort(idx, n.shortValue());
-                break;
-            case INT8:
+            }
+            case INT8 -> {
                 n = toNumber(obj, type, name);
                 partialRow.addByte(idx, n.byteValue());
-                break;
-            case DOUBLE:
+            }
+            case DOUBLE -> {
                 n = toNumber(obj, type, name);
                 partialRow.addDouble(idx, n.doubleValue());
-                break;
-            case FLOAT:
+            }
+            case FLOAT -> {
                 n = toNumber(obj, type, name);
                 partialRow.addFloat(idx, n.floatValue());
-                break;
-            case UNIXTIME_MICROS:
+            }
+            case UNIXTIME_MICROS -> {
                 long l = toUnixTimeMicros(obj, type, name);
                 partialRow.addLong(idx, l);
-                break;
-            case BOOL:
+            }
+            case BOOL -> {
                 boolean b = toBoolean(obj, type, name);
                 partialRow.addBoolean(idx, b);
-                break;
-            case BINARY:
+            }
+            case BINARY -> {
                 byte[] bytes = toByteArray(obj, type, name);
                 partialRow.addBinary(idx, bytes);
-                break;
-            default:
-                handleInvalidValue(name, type, obj);
-                break;
+            }
+            default -> handleInvalidValue(name, type, obj);
         }
     }
 
