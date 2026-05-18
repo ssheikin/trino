@@ -838,7 +838,8 @@ public class TestHiveAndDeltaLakeRedirect
 
         List<Row> expected = List.of(
                 row("delta.minReaderVersion", "1"),
-                row("delta.minWriterVersion", "2"));
+                row("delta.minWriterVersion", "2"),
+                row("location", locationForTable(tableName)));
 
         try {
             assertThat(onTrino().executeQuery(format("SELECT * FROM delta.default.\"%s$properties\"", tableName))).containsOnly(expected);
