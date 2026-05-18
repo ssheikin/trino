@@ -97,6 +97,6 @@ public class DeltaLakeProxiedConnectorInitializer
 
     private static Module createAdditionalModule(Optional<Module> optionalProxyModule)
     {
-        return optionalProxyModule.orElse(ignored -> {});
+        return optionalProxyModule.orElse(_ -> {});
     }
 }

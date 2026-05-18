@@ -397,7 +397,7 @@ public class TestMultiSourcePartitionedScheduler
                 dynamicFilterService,
                 () -> true,
                 15,
-                splitSources.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> Optional.empty())),
+                splitSources.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, _ -> Optional.empty())),
                 new ScheduledSplitsPerTableTracker());
 
         SymbolAllocator symbolAllocator = new SymbolAllocator();
@@ -444,7 +444,7 @@ public class TestMultiSourcePartitionedScheduler
                 new DynamicFilterService(metadata, functionManager, typeOperators, new DynamicFilterConfig()),
                 () -> true,
                 200,
-                splitSources.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> Optional.empty())),
+                splitSources.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, _ -> Optional.empty())),
                 new ScheduledSplitsPerTableTracker());
         // the queues of 3 running nodes should be full
         ScheduleResult scheduleResult = scheduler.schedule();
@@ -545,7 +545,7 @@ public class TestMultiSourcePartitionedScheduler
                 new DynamicFilterService(metadata, functionManager, typeOperators, new DynamicFilterConfig()),
                 () -> false,
                 splitBatchSize,
-                splitSources.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> Optional.empty())),
+                splitSources.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, _ -> Optional.empty())),
                 new ScheduledSplitsPerTableTracker());
     }
 

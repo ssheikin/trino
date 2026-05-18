@@ -69,7 +69,7 @@ public class TestMaterializedViewsOperation
                 new MockConnectorPlugin(
                         MockConnectorFactory.builder()
                                 .withListSchemaNames(_ -> ImmutableList.of("analysis", "default"))
-                                .withRowFilter(schemaTableName -> null)
+                                .withRowFilter(_ -> null)
                                 .withGetColumns(schemaTableName -> {
                                     if (schemaTableName.getSchemaName().equals("analysis")) {
                                         return ImmutableList.of(
@@ -104,7 +104,7 @@ public class TestMaterializedViewsOperation
                                     }
                                     return new MockConnectorTableHandle(schemaTableName);
                                 })
-                                .withGetMaterializedViews((connectorSession, schemaTablePrefix) -> ImmutableMap.of(
+                                .withGetMaterializedViews((_, _) -> ImmutableMap.of(
                                         new SchemaTableName("default", "materialized_view_with_no_owner_and_should_use_invoker"),
                                         new ConnectorMaterializedViewDefinition(
                                                 "SELECT * FROM mock.default.default_table",

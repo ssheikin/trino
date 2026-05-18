@@ -285,7 +285,7 @@ public class SqlQueryExecution
                 //     the resultsCacheState member to what was passed by the Dispatcher.
                 //   If a filter criterion is met, a FilteredResultCacheEntry will be returned that can be registered
                 //     with the QueryStateMachine in order to report this in QueryInfo.
-                Optional<FilteredResultsCacheEntry> filteredResultsCacheEntry = potentialResultsCacheState.flatMap(state ->
+                Optional<FilteredResultsCacheEntry> filteredResultsCacheEntry = potentialResultsCacheState.flatMap(_ ->
                         resultsCacheAnalyzer.isStatementCacheable(stateMachine.getQueryId(), preparedQuery, analysis));
 
                 if (filteredResultsCacheEntry.isPresent()) {

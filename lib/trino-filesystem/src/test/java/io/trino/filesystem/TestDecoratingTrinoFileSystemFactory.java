@@ -70,7 +70,7 @@ public class TestDecoratingTrinoFileSystemFactory
                         return undecorated;
                     }
                 },
-                ImmutableSet.of(decoratedFileSystem -> fileSystem));
+                ImmutableSet.of(_ -> fileSystem));
 
         assertProperForwardingMethodsAreCalled(
                 TrinoFileSystem.class,

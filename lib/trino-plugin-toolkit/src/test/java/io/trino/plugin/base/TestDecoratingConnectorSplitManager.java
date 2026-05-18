@@ -45,6 +45,6 @@ public class TestDecoratingConnectorSplitManager
                 ConnectorSplitManager.class,
                 splitManager -> new DecoratingConnectorSplitManager(
                         new ConnectorSplitManager() {},
-                        ImmutableSet.of(decoratedSplitManager -> splitManager)));
+                        ImmutableSet.of(_ -> splitManager)));
     }
 }

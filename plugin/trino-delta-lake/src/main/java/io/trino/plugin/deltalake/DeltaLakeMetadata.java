@@ -4012,7 +4012,7 @@ public class DeltaLakeMetadata
         }
         SchemaTableName tableName = prefix.toSchemaTableName();
         return metastore.getTable(tableName.getSchemaName(), tableName.getTableName())
-                .map(table -> ImmutableList.of(tableName))
+                .map(_ -> ImmutableList.of(tableName))
                 .orElse(ImmutableList.of());
     }
 

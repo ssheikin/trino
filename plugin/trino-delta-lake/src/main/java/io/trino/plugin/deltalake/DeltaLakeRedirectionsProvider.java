@@ -20,7 +20,7 @@ import java.util.Optional;
 
 public interface DeltaLakeRedirectionsProvider
 {
-    DeltaLakeRedirectionsProvider NOOP = (session, tableHandle) -> Optional.empty();
+    DeltaLakeRedirectionsProvider NOOP = (_, _) -> Optional.empty();
 
     Optional<TableScanRedirectApplicationResult> getTableScanRedirection(ConnectorSession session, DeltaLakeTableHandle tableHandle);
 }

@@ -49,7 +49,7 @@ public class IcebergGlueCatalogModule
         // Required to inject HiveMetastoreFactory for migrate procedure
         binder.bind(Key.get(boolean.class, HideDeltaLakeTables.class)).toInstance(false);
         newOptionalBinder(binder, Key.get(new TypeLiteral<Predicate<Table>>() {}, ForGlueHiveMetastore.class))
-                .setBinding().toInstance(table -> true);
+                .setBinding().toInstance(_ -> true);
 
         install(new IcebergHiveMetastoreModule());
         install(new GlueMetastoreModule());

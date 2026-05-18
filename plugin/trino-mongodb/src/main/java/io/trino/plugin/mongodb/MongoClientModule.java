@@ -57,7 +57,7 @@ public class MongoClientModule
         }
 
         if (clientConfig.isAllowLocalScheduling()) {
-            binder.bind(MongoServerDetailsProvider.class).toInstance(identity -> ImmutableList.of());
+            binder.bind(MongoServerDetailsProvider.class).toInstance(_ -> ImmutableList.of());
         }
         else {
             binder.bind(MongoServerDetailsProvider.class).to(SessionBasedMongoServerDetailsProvider.class).in(Scopes.SINGLETON);

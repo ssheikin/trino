@@ -773,7 +773,7 @@ public class TestResourceSecurity
 
             String oauthToken = getOauthToken(client, bearer.tokenServer());
             OkHttpClient clientWithOAuthToken = client.newBuilder()
-                    .authenticator((route, response) -> response.request().newBuilder()
+                    .authenticator((_, response) -> response.request().newBuilder()
                             .header(AUTHORIZATION, "Bearer " + oauthToken)
                             .build())
                     .build();

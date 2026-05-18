@@ -46,7 +46,7 @@ public class TestLocationAccessControl
                 .build();
         queryRunner.installPlugin(new MockConnectorPlugin(MockConnectorFactory.builder()
                 .withTableProperties(() -> ImmutableList.of(stringProperty("location", "table location", null, false)))
-                .withGetTableHandle((connectorSession, schemaTableName) -> null)
+                .withGetTableHandle((_, _) -> null)
                 .withLocationAccessControl(Optional.of(new LocationAccessControl() {
                     @Override
                     public void checkCanUseLocation(ConnectorIdentity identity, String location, String queryI)
