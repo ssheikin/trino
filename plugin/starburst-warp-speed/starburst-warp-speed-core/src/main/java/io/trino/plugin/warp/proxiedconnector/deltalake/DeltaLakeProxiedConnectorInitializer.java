@@ -60,7 +60,8 @@ public class DeltaLakeProxiedConnectorInitializer
     {
         try {
             Map<String, String> deltaLakeConfig = getDeltaLakeFilteredConfig(config);
-            return DeltaLakeConnectorFactory.createConnector(catalogName,
+            return DeltaLakeConnectorFactory.createConnector(
+                    catalogName,
                     deltaLakeConfig,
                     context,
                     DEFAULT_METASTORE_MODULE,

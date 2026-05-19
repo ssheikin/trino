@@ -269,9 +269,13 @@ public class TestWarpSpeedWithIcebergProxiedConnectorTest
             return Optional.of(setup.withNewValueLiteral("TIMESTAMP '2020-02-12 14:03:00.123000 +00:00'"));
         }
         return switch ("%s -> %s".formatted(setup.sourceColumnType(), setup.newColumnType())) {
-            case "row(x integer) -> row(\"y\" integer)" ->
-                // TODO https://github.com/trinodb/trino/issues/15822 The connector returns incorrect NULL when a field in row type doesn't exist in Parquet files
-                Optional.of(setup.withNewValueLiteral("NULL"));
+            // TODO https://github.com/trinodb/trino/issues/15822 The connector returns incorrect NULL when a field in row type doesn't exist in Parquet files
+            case "row(x integer) -> row(\"y\" integer)" -> Optional.of(setup.withNewValueLiteral("NULL"));
+            // Iceberg allows updating column types if the update is safe. Safe updates are:
+            // - int to bigint
+            // - float to double
+            // - decimal(P,S) to decimal(P2,S) when P2 > P (scale cannot change)
+            // https://iceberg.apache.org/docs/latest/spark-ddl/#alter-table--alter-column
             case "tinyint -> smallint",
                  "bigint -> integer",
                  "bigint -> smallint",
@@ -282,16 +286,9 @@ public class TestWarpSpeedWithIcebergProxiedConnectorTest
                  "time(6) -> time(3)",
                  "timestamp(6) -> timestamp(3)",
                  // Iceberg cannot update map keys
-                 "map(integer, varchar) -> map(bigint, varchar)" ->
-                // Iceberg allows updating column types if the update is safe. Safe updates are:
-                // - int to bigint
-                // - float to double
-                // - decimal(P,S) to decimal(P2,S) when P2 > P (scale cannot change)
-                // https://iceberg.apache.org/docs/latest/spark-ddl/#alter-table--alter-column
-                Optional.of(setup.asUnsupported());
-            case "varchar(100) -> varchar(50)" ->
-                // Iceberg connector ignores the varchar length
-                Optional.empty();
+                 "map(integer, varchar) -> map(bigint, varchar)" -> Optional.of(setup.asUnsupported());
+            // Iceberg connector ignores the varchar length
+            case "varchar(100) -> varchar(50)" -> Optional.empty();
             default -> Optional.of(setup);
         };
     }
@@ -314,11 +311,15 @@ public class TestWarpSpeedWithIcebergProxiedConnectorTest
             return Optional.of(setup.withNewValueLiteral("TIMESTAMP '2020-02-12 14:03:00.123000 +00:00'"));
         }
         return switch ("%s -> %s".formatted(setup.sourceColumnType(), setup.newColumnType())) {
-            case "row(x integer) -> row(\"y\" integer)" ->
-                // TODO https://github.com/trinodb/trino/issues/15822 The connector returns incorrect NULL when a field in row type doesn't exist in Parquet files
-                // Skip this test entirely, as the newValueLiteral is always wrapped in a row
-                Optional.empty();
+            // TODO https://github.com/trinodb/trino/issues/15822 The connector returns incorrect NULL when a field in row type doesn't exist in Parquet files
+            // Skip this test entirely, as the newValueLiteral is always wrapped in a row
+            case "row(x integer) -> row(\"y\" integer)" -> Optional.empty();
 
+            // Iceberg allows updating column types if the update is safe. Safe updates are:
+            // - int to bigint
+            // - float to double
+            // - decimal(P,S) to decimal(P2,S) when P2 > P (scale cannot change)
+            // https://iceberg.apache.org/docs/latest/spark-ddl/#alter-table--alter-column
             case "tinyint -> smallint",
                  "bigint -> integer",
                  "bigint -> smallint",
@@ -329,16 +330,9 @@ public class TestWarpSpeedWithIcebergProxiedConnectorTest
                  "time(6) -> time(3)",
                  "timestamp(6) -> timestamp(3)",
                  // Iceberg cannot update map keys
-                 "map(integer, varchar) -> map(bigint, varchar)" ->
-                // Iceberg allows updating column types if the update is safe. Safe updates are:
-                // - int to bigint
-                // - float to double
-                // - decimal(P,S) to decimal(P2,S) when P2 > P (scale cannot change)
-                // https://iceberg.apache.org/docs/latest/spark-ddl/#alter-table--alter-column
-                Optional.of(setup.asUnsupported());
-            case "varchar(100) -> varchar(50)" ->
-                // Iceberg connector ignores the varchar length
-                Optional.empty();
+                 "map(integer, varchar) -> map(bigint, varchar)" -> Optional.of(setup.asUnsupported());
+            // Iceberg connector ignores the varchar length
+            case "varchar(100) -> varchar(50)" -> Optional.empty();
             default -> Optional.of(setup);
         };
     }

@@ -109,13 +109,16 @@ final class HiveOzoneConnectorSmokeTest
     public void testSchemaLocation()
     {
         assertThat((String) computeScalar("SHOW CREATE SCHEMA " + SCHEMA_NAME))
-                .isEqualTo("""
+                .isEqualTo(
+                        """
                         CREATE SCHEMA %s.%s
                         WITH (
                            location = '%s/%s'
                         )""".formatted(
-                        CATALOG_NAME, SCHEMA_NAME,
-                        pathToBucket, SCHEMA_NAME));
+                                CATALOG_NAME,
+                                SCHEMA_NAME,
+                                pathToBucket,
+                                SCHEMA_NAME));
     }
 
     @Test
@@ -169,7 +172,8 @@ final class HiveOzoneConnectorSmokeTest
     public void testShowCreateTable()
     {
         assertThat((String) computeScalar("SHOW CREATE TABLE region"))
-                .matches("""
+                .matches(
+                        """
                         CREATE TABLE \\w+\\.\\w+\\.region \\Q(
                            regionkey bigint,
                            name varchar(25),

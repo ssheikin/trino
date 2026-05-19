@@ -63,7 +63,8 @@ public class HiveProxiedConnectorInitializer
         try {
             // copy from HiveConnectorFactory::create - hive create a new classloader when calling the create method. we want to use the same classloader as the dispatcher
             Map<String, String> hiveConfig = getHiveFilteredConfig(config);
-            return HiveConnectorFactory.createConnector(catalogName,
+            return HiveConnectorFactory.createConnector(
+                    catalogName,
                     hiveConfig,
                     context,
                     () -> DEFAULT_ADDITIONAL_MODULE,

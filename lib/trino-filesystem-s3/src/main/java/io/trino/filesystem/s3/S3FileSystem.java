@@ -343,10 +343,9 @@ public final class S3FileSystem
                 .ifNoneMatch("*")
                 .applyMutation(builder ->
                         key.ifPresentOrElse(
-                                encryption ->
-                                        builder.sseCustomerKeyMD5(md5Checksum(encryption))
-                                                .sseCustomerAlgorithm(encryption.algorithm())
-                                                .sseCustomerKey(encoded(encryption)),
+                                encryption -> builder.sseCustomerKeyMD5(md5Checksum(encryption))
+                                        .sseCustomerAlgorithm(encryption.algorithm())
+                                        .sseCustomerKey(encoded(encryption)),
                                 () -> setEncryptionSettings(builder, context.s3SseContext())))
                 .build();
 

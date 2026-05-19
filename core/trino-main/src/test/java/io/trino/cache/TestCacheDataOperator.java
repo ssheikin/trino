@@ -359,7 +359,7 @@ public class TestCacheDataOperator
 
     private Function<Integer, OperatorFactory> preparePassThroughOperator(Page page)
     {
-        return (operatorId) -> new PassThroughOperator.PassThroughOperatorFactory(operatorId, planNodeIdAllocator.getNextId(), page);
+        return operatorId -> new PassThroughOperator.PassThroughOperatorFactory(operatorId, planNodeIdAllocator.getNextId(), page);
     }
 
     private static class TestPageSourceProviderFactory
@@ -440,9 +440,7 @@ public class TestCacheDataOperator
             }
 
             @Override
-            public void noMoreOperators()
-            {
-            }
+            public void noMoreOperators() {}
 
             @Override
             public OperatorFactory duplicate()

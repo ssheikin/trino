@@ -56,7 +56,8 @@ public class IcebergProxiedConnectorInitializer
     {
         try {
             Map<String, String> icebergConfig = getIcebergFilteredConfig(config);
-            return IcebergConnectorFactory.createConnector(catalogName,
+            return IcebergConnectorFactory.createConnector(
+                    catalogName,
                     icebergConfig,
                     context,
                     DEFAULT_ADDITIONAL_MODULE,

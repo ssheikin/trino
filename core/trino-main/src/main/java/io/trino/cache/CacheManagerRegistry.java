@@ -118,7 +118,8 @@ public class CacheManagerRegistry
     }
 
     @VisibleForTesting
-    CacheManagerRegistry(CacheConfig cacheConfig,
+    CacheManagerRegistry(
+            CacheConfig cacheConfig,
             LocalMemoryManager localMemoryManager,
             ExecutorService executor,
             BlockEncodingSerde blockEncodingSerde,
@@ -194,7 +195,8 @@ public class CacheManagerRegistry
                     }
 
                     return memoryPool.tryReserveRevocable(bytes);
-                }, memoryPool::freeRevocable), 0)
+                }, memoryPool::freeRevocable),
+                0)
                 .newLocalMemoryContext("CacheManager");
         CacheManagerContext context = new CacheManagerContext()
         {
@@ -218,13 +220,13 @@ public class CacheManagerRegistry
                     @Override
                     public Set<Node> getAllNodes()
                     {
-                        return internalNodeManager.getAllNodes().activeNodes().stream().map((node) -> (Node) node).collect(Collectors.toSet());
+                        return internalNodeManager.getAllNodes().activeNodes().stream().map(node -> (Node) node).collect(Collectors.toSet());
                     }
 
                     @Override
                     public Set<Node> getWorkerNodes()
                     {
-                        return this.getAllNodes().stream().filter((node) -> !node.isCoordinator()).collect(Collectors.toSet());
+                        return this.getAllNodes().stream().filter(node -> !node.isCoordinator()).collect(Collectors.toSet());
                     }
 
                     @Override

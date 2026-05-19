@@ -92,11 +92,11 @@ public class TestStarburstOracleConnectorTest
     {
         return switch (connectorBehavior) {
             case SUPPORTS_AGGREGATION_PUSHDOWN,
-                    SUPPORTS_AGGREGATION_PUSHDOWN_STDDEV,
-                    SUPPORTS_AGGREGATION_PUSHDOWN_VARIANCE,
-                    SUPPORTS_AGGREGATION_PUSHDOWN_COVARIANCE,
-                    SUPPORTS_AGGREGATION_PUSHDOWN_COUNT_DISTINCT,
-                    SUPPORTS_TOPN_PUSHDOWN -> true;
+                 SUPPORTS_AGGREGATION_PUSHDOWN_STDDEV,
+                 SUPPORTS_AGGREGATION_PUSHDOWN_VARIANCE,
+                 SUPPORTS_AGGREGATION_PUSHDOWN_COVARIANCE,
+                 SUPPORTS_AGGREGATION_PUSHDOWN_COUNT_DISTINCT,
+                 SUPPORTS_TOPN_PUSHDOWN -> true;
             default -> super.hasBehavior(connectorBehavior);
         };
     }
@@ -140,7 +140,8 @@ public class TestStarburstOracleConnectorTest
     public void testStringComparisonConstantPushdown()
     {
         assertThat(query("SELECT regionkey, nationkey, name FROM nation WHERE nationkey = 1 OR name = 'ROMANIA'"))
-                .matches("""
+                .matches(
+                        """
                         VALUES (CAST(1 AS DECIMAL(19,0)), CAST(1 AS DECIMAL(19,0)), CAST('ARGENTINA' AS varchar(25))),
                                (CAST(3 AS DECIMAL(19,0)), CAST(19 AS DECIMAL(19,0)), CAST('ROMANIA' AS varchar(25)))""")
                 .isFullyPushedDown();

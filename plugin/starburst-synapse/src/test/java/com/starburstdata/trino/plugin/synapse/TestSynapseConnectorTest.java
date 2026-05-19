@@ -81,12 +81,12 @@ public class TestSynapseConnectorTest
         return switch (connectorBehavior) {
             // Overriden because Synapse disables connector expression pushdown due to correctness issues with varchar pushdown because of default case-insensitive collation
             case SUPPORTS_PREDICATE_EXPRESSION_PUSHDOWN,
-                    SUPPORTS_PREDICATE_PUSHDOWN_WITH_VARCHAR_EQUALITY,
-                    SUPPORTS_PREDICATE_PUSHDOWN_WITH_VARCHAR_INEQUALITY -> false;
+                 SUPPORTS_PREDICATE_PUSHDOWN_WITH_VARCHAR_EQUALITY,
+                 SUPPORTS_PREDICATE_PUSHDOWN_WITH_VARCHAR_INEQUALITY -> false;
             case SUPPORTS_PREDICATE_ARITHMETIC_EXPRESSION_PUSHDOWN,
-                    SUPPORTS_JOIN_PUSHDOWN_WITH_VARCHAR_EQUALITY -> true;
+                 SUPPORTS_JOIN_PUSHDOWN_WITH_VARCHAR_EQUALITY -> true;
             case SUPPORTS_MERGE,
-                    SUPPORTS_ROW_LEVEL_UPDATE -> false;
+                 SUPPORTS_ROW_LEVEL_UPDATE -> false;
             default -> super.hasBehavior(connectorBehavior);
         };
     }
@@ -417,7 +417,8 @@ public class TestSynapseConnectorTest
         // TODO refactor BaseJdbcConnectorTest.testAggregationPushdown to be executed on copy of tpch table with case sensitive collation
         String caseSensitiveNation = "cs_nation" + randomNameSuffix();
         try {
-            createTableAdjustCollation("nation",
+            createTableAdjustCollation(
+                    "nation",
                     caseSensitiveNation,
                     "name",
                     "NVARCHAR(25)",
@@ -530,12 +531,14 @@ public class TestSynapseConnectorTest
             String caseSensitiveNation = "cs_nation" + randomNameSuffix();
             String caseSensitiveCustomer = "cs_customer" + randomNameSuffix();
             try {
-                createTableAdjustCollation("nation",
+                createTableAdjustCollation(
+                        "nation",
                         caseSensitiveNation,
                         "name",
                         "NVARCHAR(25)",
                         "Latin1_General_CS_AS");
-                createTableAdjustCollation("customer",
+                createTableAdjustCollation(
+                        "customer",
                         caseSensitiveCustomer,
                         "address",
                         "NVARCHAR(40)",
@@ -687,7 +690,8 @@ public class TestSynapseConnectorTest
         // TODO refactor BaseSqlServerConnectorTest.testPredicatePushdown to be executed on copy of tpch table with case sensitive collation
         String caseSensitiveNation = "cs_nation" + randomNameSuffix();
         try {
-            createTableAdjustCollation("nation",
+            createTableAdjustCollation(
+                    "nation",
                     caseSensitiveNation,
                     "name",
                     "NVARCHAR(25)",
@@ -849,7 +853,8 @@ public class TestSynapseConnectorTest
         adjustCollation(destinationTableName, column, columnType, collation);
     }
 
-    private void adjustCollation(String tableName,
+    private void adjustCollation(
+            String tableName,
             String column,
             String columnType,
             String collation)
@@ -1000,7 +1005,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithIfElseStatement()
     {
         assertThatThrownBy(super::testProcedureWithIfElseStatement)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"
@@ -1015,7 +1021,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithMultipleResultSet()
     {
         assertThatThrownBy(super::testProcedureWithMultipleResultSet)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"
@@ -1030,7 +1037,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithCreateOperation()
     {
         assertThatThrownBy(super::testProcedureWithCreateOperation)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"
@@ -1045,7 +1053,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithDropOperation()
     {
         assertThatThrownBy(super::testProcedureWithDropOperation)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"
@@ -1060,7 +1069,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithInsertOperation()
     {
         assertThatThrownBy(super::testProcedureWithInsertOperation)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"
@@ -1075,7 +1085,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithDeleteOperation()
     {
         assertThatThrownBy(super::testProcedureWithDeleteOperation)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"
@@ -1090,7 +1101,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithUpdateOperation()
     {
         assertThatThrownBy(super::testProcedureWithUpdateOperation)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"
@@ -1105,7 +1117,8 @@ public class TestSynapseConnectorTest
     public void testProcedureWithMergeOperation()
     {
         assertThatThrownBy(super::testProcedureWithMergeOperation)
-                .hasMessageStartingWith("""
+                .hasMessageStartingWith(
+                        """
 
                         Expecting message:
                           "line 1:21: Table function 'system.procedure' not registered"

@@ -391,7 +391,8 @@ public class DispatcherMetadata
     @Override
     public void setColumnType(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column, Type type)
     {
-        proxiedConnectorMetadata.setColumnType(session,
+        proxiedConnectorMetadata.setColumnType(
+                session,
                 ((DispatcherTableHandle) tableHandle).getProxyConnectorTableHandle(),
                 column,
                 type);
@@ -634,7 +635,8 @@ public class DispatcherMetadata
     }
 
     @Override
-    public Optional<ConnectorOutputMetadata> finishRefreshMaterializedView(ConnectorSession session,
+    public Optional<ConnectorOutputMetadata> finishRefreshMaterializedView(
+            ConnectorSession session,
             ConnectorTableHandle tableHandle,
             ConnectorInsertTableHandle insertHandle,
             Collection<Slice> fragments,
@@ -759,7 +761,8 @@ public class DispatcherMetadata
     }
 
     @Override
-    public Optional<ConnectorResolvedIndex> resolveIndex(ConnectorSession session,
+    public Optional<ConnectorResolvedIndex> resolveIndex(
+            ConnectorSession session,
             ConnectorTableHandle tableHandle,
             Set<ColumnHandle> indexableColumns,
             Set<ColumnHandle> outputColumns,
@@ -972,7 +975,8 @@ public class DispatcherMetadata
         DispatcherTableHandle dispatcherTableHandle = (DispatcherTableHandle) tableHandle;
 
         if (logger.isDebugEnabled()) {
-            logger.debug("ApplyFilter - Input tupleDomain: %s, expression: %s",
+            logger.debug(
+                    "ApplyFilter - Input tupleDomain: %s, expression: %s",
                     constraint.getSummary().toString(),
                     constraint.getExpression().toString());
         }
@@ -988,7 +992,8 @@ public class DispatcherMetadata
 
         Optional<WarpExpression> warpExpression = dispatcherTableHandle.getWarpExpression();
         if (warpExpression.isEmpty()) {
-            warpExpression = expressionService.convertToWarpExpression(session,
+            warpExpression = expressionService.convertToWarpExpression(
+                    session,
                     constraint.getExpression(),
                     constraint.getAssignments(),
                     customStats);
@@ -1121,7 +1126,8 @@ public class DispatcherMetadata
             double sampleRatio)
     {
         DispatcherTableHandle dispatcherTableHandle = (DispatcherTableHandle) handle;
-        return proxiedConnectorMetadata.applySample(session,
+        return proxiedConnectorMetadata.applySample(
+                        session,
                         dispatcherTableHandle.getProxyConnectorTableHandle(),
                         sampleType,
                         sampleRatio)
@@ -1661,7 +1667,8 @@ public class DispatcherMetadata
                         .columnsNotFitForDictionary(getColumnsNotFitForDictionary(schemaTableName, session, proxiedConnectorTableHandle)));
     }
 
-    private Set<String> getColumnsNotFitForDictionary(SchemaTableName schemaTableName,
+    private Set<String> getColumnsNotFitForDictionary(
+            SchemaTableName schemaTableName,
             ConnectorSession session,
             ConnectorTableHandle proxiedConnectorTableHandle)
     {

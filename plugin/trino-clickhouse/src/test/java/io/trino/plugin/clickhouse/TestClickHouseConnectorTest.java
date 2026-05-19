@@ -622,8 +622,7 @@ public class TestClickHouseConnectorTest
                 }
                 yield Optional.of(dataMappingTestSetup);
             }
-            case "time", "time(6)", "timestamp(3) with time zone", "timestamp(6) with time zone" ->
-                Optional.of(dataMappingTestSetup.asUnsupported());
+            case "time", "time(6)", "timestamp(3) with time zone", "timestamp(6) with time zone" -> Optional.of(dataMappingTestSetup.asUnsupported());
             default -> Optional.of(dataMappingTestSetup);
         };
     }
@@ -1679,22 +1678,21 @@ public class TestClickHouseConnectorTest
                 onRemoteDatabase(),
                 "tpch.test_timestamp_extraction_pushdown_",
                 """
-                        (c_date Nullable(Date),
-                         c_date32 Nullable(Date32),
-                         c_datetime Nullable(DateTime),
-                         c_datetime_tz Nullable(DateTime('Europe/Vilnius')),
-                         c_datetime64 Nullable(DateTime64),
-                         c_datetime64_0 Nullable(DateTime64(0)),
-                         c_datetime64_5 Nullable(DateTime64(5)),
-                         c_datetime64_3_tz Nullable(DateTime64(3, 'Pacific/Apia')),
-                         c_datetime64_9_tz Nullable(DateTime64(9, 'Asia/Kathmandu'))) ENGINE = Log""",
+                (c_date Nullable(Date),
+                 c_date32 Nullable(Date32),
+                 c_datetime Nullable(DateTime),
+                 c_datetime_tz Nullable(DateTime('Europe/Vilnius')),
+                 c_datetime64 Nullable(DateTime64),
+                 c_datetime64_0 Nullable(DateTime64(0)),
+                 c_datetime64_5 Nullable(DateTime64(5)),
+                 c_datetime64_3_tz Nullable(DateTime64(3, 'Pacific/Apia')),
+                 c_datetime64_9_tz Nullable(DateTime64(9, 'Asia/Kathmandu'))) ENGINE = Log""",
                 ImmutableList.of(
                         "'2015-01-01', '2015-01-01', '2015-01-01 12:34:56', '2015-01-01 12:34:56', '2015-01-01 12:34:56.123', '2015-01-01 12:34:56', '2015-01-01 12:34:56.12345', '2015-01-01 12:34:56.123', '2015-01-01 12:34:56.123456789'",
                         "'2016-01-01', '2016-01-01', '2016-01-01 12:34:56', '2016-01-01 12:34:56', '2016-01-01 12:34:56.987', '2016-01-01 12:34:56', '2016-01-01 12:34:56.98765', '2016-01-01 12:34:56.987', '2016-01-01 12:34:56.987654321'",
                         "'2020-12-31', '2020-12-31', '2020-12-31 12:34:56', '2020-12-31 12:34:56', '2020-12-31 12:34:56.123', '2020-12-31 12:34:56', '2020-12-31 12:34:56.12345', '2020-12-31 12:34:56.123', '2020-12-31 12:34:56.123456789'",
                         "'2025-12-31', '2025-12-31', '2025-12-31 12:34:56', '2025-12-31 12:34:56', '2025-12-31 12:34:56.987', '2025-12-31 12:34:56', '2025-12-31 12:34:56.98765', '2025-12-31 12:34:56.987', '2025-12-31 12:34:56.987654321'",
-                        "null, null, null, null, null, null, null, null, null"
-                ))) {
+                        "null, null, null, null, null, null, null, null, null"))) {
             String tableName = table.getName();
 
             assertTimestampExtractionFunctionIsPushdown("year", "c_date", tableName, "BIGINT '2015', BIGINT '2016', BIGINT '2020', BIGINT '2025', null");
@@ -1851,7 +1849,7 @@ public class TestClickHouseConnectorTest
             assertExtractFunctionIsPushdown("week_of_year(c_datetime64_3_tz)", tableName, "BIGINT '1', BIGINT '1', BIGINT '53', BIGINT '53', null");
             assertExtractFunctionIsPushdown("week_of_year(c_datetime64_9_tz)", tableName, "BIGINT '1', BIGINT '1', BIGINT '53', BIGINT '53', null");
 
-            //not supported functions: year_of_week, yow
+            // not supported functions: year_of_week, yow
             assertTimestampExtractionFunctionIsNotPushdown("year_of_week", "c_date", tableName, "BIGINT '2015', BIGINT '2015', BIGINT '2020', BIGINT '2026', null");
             assertTimestampExtractionFunctionIsNotPushdown("year_of_week", "c_date32", tableName, "BIGINT '2015', BIGINT '2015', BIGINT '2020', BIGINT '2026', null");
             assertTimestampExtractionFunctionIsNotPushdown("year_of_week", "c_datetime", tableName, "BIGINT '2015', BIGINT '2015', BIGINT '2020', BIGINT '2026', null");
@@ -1881,14 +1879,13 @@ public class TestClickHouseConnectorTest
                 onRemoteDatabase(),
                 "tpch.test_extract_timezone_function_pushdown_",
                 """
-                        (c_datetime Nullable(DateTime('UTC')),
-                        c_datetime64_0 Nullable(DateTime64(0, 'Asia/Kathmandu')),
-                        c_datetime64_5 Nullable(DateTime64(5, 'Europe/Vilnius')),
-                        c_datetime64_9 Nullable(DateTime64(9, 'Pacific/Apia'))) ENGINE = Log""",
+                (c_datetime Nullable(DateTime('UTC')),
+                c_datetime64_0 Nullable(DateTime64(0, 'Asia/Kathmandu')),
+                c_datetime64_5 Nullable(DateTime64(5, 'Europe/Vilnius')),
+                c_datetime64_9 Nullable(DateTime64(9, 'Pacific/Apia'))) ENGINE = Log""",
                 ImmutableList.of(
                         "'2015-01-01 12:34:56', '2015-01-01 12:34:56', '2015-01-01 12:34:56.12345', '2015-01-01 12:34:56.123456789'",
-                        "null, null, null, null"
-                ))) {
+                        "null, null, null, null"))) {
             String tableName = table.getName();
 
             assertExtractFunctionIsNotPushdown("timezone(c_datetime)", tableName, "'UTC', null");
@@ -1997,14 +1994,14 @@ public class TestClickHouseConnectorTest
             assertThat(computeScalar("SHOW CREATE TABLE " + testTable.getName()))
                     .isEqualTo(format(
                             """
-                                    CREATE TABLE clickhouse.%s (
-                                       id integer NOT NULL,
-                                       data ROW(name varchar, value bigint) NOT NULL
-                                    )
-                                    WITH (
-                                       engine = 'LOG'
-                                    )\
-                                    """,
+                            CREATE TABLE clickhouse.%s (
+                               id integer NOT NULL,
+                               data ROW(name varchar, value bigint) NOT NULL
+                            )
+                            WITH (
+                               engine = 'LOG'
+                            )\
+                            """,
                             testTable.getName()));
         }
     }
@@ -2019,13 +2016,13 @@ public class TestClickHouseConnectorTest
             assertThat(computeScalar("SHOW CREATE TABLE " + testTable.getName()))
                     .isEqualTo(format(
                             """
-                                    CREATE TABLE clickhouse.%s (
-                                       id integer NOT NULL
-                                    )
-                                    WITH (
-                                       engine = 'LOG'
-                                    )\
-                                    """,
+                            CREATE TABLE clickhouse.%s (
+                               id integer NOT NULL
+                            )
+                            WITH (
+                               engine = 'LOG'
+                            )\
+                            """,
                             testTable.getName()));
 
             Session convertToVarchar = Session.builder(getSession())
@@ -2034,14 +2031,14 @@ public class TestClickHouseConnectorTest
             assertThat(computeScalar(convertToVarchar, "SHOW CREATE TABLE " + testTable.getName()))
                     .isEqualTo(format(
                             """
-                                    CREATE TABLE clickhouse.%s (
-                                       id integer NOT NULL,
-                                       data varchar NOT NULL
-                                    )
-                                    WITH (
-                                       engine = 'LOG'
-                                    )\
-                                    """,
+                            CREATE TABLE clickhouse.%s (
+                               id integer NOT NULL,
+                               data varchar NOT NULL
+                            )
+                            WITH (
+                               engine = 'LOG'
+                            )\
+                            """,
                             testTable.getName()));
         }
     }
@@ -2103,15 +2100,15 @@ public class TestClickHouseConnectorTest
             assertThat(computeScalar("SHOW CREATE TABLE " + testTable.getName()))
                     .isEqualTo(format(
                             """
-                                    CREATE TABLE clickhouse.%s (
-                                       id integer NOT NULL,
-                                       scores array(integer) NOT NULL,
-                                       tags array(varchar) NOT NULL
-                                    )
-                                    WITH (
-                                       engine = 'LOG'
-                                    )\
-                                    """,
+                            CREATE TABLE clickhouse.%s (
+                               id integer NOT NULL,
+                               scores array(integer) NOT NULL,
+                               tags array(varchar) NOT NULL
+                            )
+                            WITH (
+                               engine = 'LOG'
+                            )\
+                            """,
                             testTable.getName()));
         }
     }
@@ -2126,13 +2123,13 @@ public class TestClickHouseConnectorTest
             assertThat(computeScalar("SHOW CREATE TABLE " + testTable.getName()))
                     .isEqualTo(format(
                             """
-                                    CREATE TABLE clickhouse.%s (
-                                       id integer NOT NULL
-                                    )
-                                    WITH (
-                                       engine = 'LOG'
-                                    )\
-                                    """,
+                            CREATE TABLE clickhouse.%s (
+                               id integer NOT NULL
+                            )
+                            WITH (
+                               engine = 'LOG'
+                            )\
+                            """,
                             testTable.getName()));
 
             Session convertToVarchar = Session.builder(getSession())
@@ -2141,14 +2138,14 @@ public class TestClickHouseConnectorTest
             assertThat(computeScalar(convertToVarchar, "SHOW CREATE TABLE " + testTable.getName()))
                     .isEqualTo(format(
                             """
-                                    CREATE TABLE clickhouse.%s (
-                                       id integer NOT NULL,
-                                       map_col varchar NOT NULL
-                                    )
-                                    WITH (
-                                       engine = 'LOG'
-                                    )\
-                                    """,
+                            CREATE TABLE clickhouse.%s (
+                               id integer NOT NULL,
+                               map_col varchar NOT NULL
+                            )
+                            WITH (
+                               engine = 'LOG'
+                            )\
+                            """,
                             testTable.getName()));
         }
     }
