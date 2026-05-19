@@ -49,7 +49,6 @@ public class WarpPluginTest
                 .put("warp-speed.proxied-connector", "hive")
                 .put("fs.hadoop.enabled", "true")
                 .put("hive.azure.abfs.oauth.client-id", "test-client-id") // security-sensitive property from trino-hdfs
-                .put("hive.azure.adl-proxy-host", "proxy-host:9800") // non-sensitive property from trino-hdfs
                 .put("hive.metastore.uri", "thrift://foo:1234")
                 .put("hive.metastore.thrift.client.ssl.key-password", "password")
                 .buildOrThrow();
