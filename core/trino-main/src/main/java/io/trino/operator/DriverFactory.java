@@ -168,14 +168,4 @@ public class DriverFactory
     {
         return noMoreDrivers;
     }
-
-    @Override
-    public void localPlannerComplete()
-    {
-        operatorFactories
-                .stream()
-                .filter(LocalPlannerAware.class::isInstance)
-                .map(LocalPlannerAware.class::cast)
-                .forEach(LocalPlannerAware::localPlannerComplete);
-    }
 }
