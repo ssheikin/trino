@@ -989,6 +989,8 @@
                                 <exclude>**/TestTrinoSnowflakeCatalog.java</exclude>
                                 <exclude>**/TestDatabricksUnityRestCatalog.java</exclude>
                                 <exclude>**/TestIcebergDatabricksUnityRestCatalogConnectorSmokeTest.java</exclude>
+                                <exclude>**/TestIcebergBigLakeMetastoreConnectorSmokeTest.java</exclude>
+                                <exclude>**/TestIcebergDatabricksUnityScanPlanningConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestIcebergAiFunctions.java</exclude>
                                 <exclude>**/TestIcebergGlueCatalogExternalWriteTest.java</exclude>
                                 <exclude>**/TestIcebergCachingGlueCatalogAccessOperationsTest.java</exclude>
@@ -1068,6 +1070,7 @@
                                 <include>**/TestTrinoSnowflakeCatalog.java</include>
                                 <include>**/TestDatabricksUnityRestCatalog.java</include>
                                 <include>**/TestIcebergDatabricksUnityRestCatalogConnectorSmokeTest.java</include>
+                                <include>**/TestIcebergDatabricksUnityScanPlanningConnectorSmokeTest.java</include>
                                 <include>**/TestIcebergGlueCatalogExternalWriteTest.java</include>
                                 <include>**/TestIcebergCachingGlueCatalogAccessOperationsTest.java</include>
                                 <include>**/TestIcebergCachingGlueCatalogConnectorSmokeTest.java</include>

@@ -29,6 +29,7 @@ import io.trino.plugin.hive.parquet.ParquetWriterConfig;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.plugin.iceberg.catalog.file.FileMetastoreTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog;
+import io.trino.spi.NodeVersion;
 import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.SplitWeight;
 import io.trino.spi.catalog.CatalogName;
@@ -41,6 +42,8 @@ import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.predicate.Range;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.predicate.ValueSet;
+import io.trino.spi.security.AiModelAccessControl;
+import io.trino.spi.security.LocationAccessControl;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorSession;
@@ -78,18 +81,27 @@ import java.util.concurrent.CompletableFuture;
 import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
+import static io.airlift.json.JsonCodec.jsonCodec;
+import static io.airlift.units.Duration.ZERO;
 import static io.trino.metastore.cache.CachingHiveMetastore.createPerTransactionCache;
 import static io.trino.plugin.iceberg.IcebergSplitSource.createFileStatisticsDomain;
 import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
+import static io.trino.plugin.iceberg.IcebergTestUtils.OPTIMIZE_POSITION_DELETES;
+import static io.trino.plugin.iceberg.IcebergTestUtils.REMOVE_DANGLING_DELETE_FILES;
+import static io.trino.plugin.iceberg.IcebergTestUtils.TABLE_STATISTICS_READER;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getFileSystemFactory;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getHiveMetastore;
+import static io.trino.plugin.iceberg.delete.DeletionVectorWriter.UNSUPPORTED_DELETION_VECTOR_WRITER;
 import static io.trino.plugin.iceberg.util.EqualityDeleteUtils.writeEqualityDeleteForTable;
 import static io.trino.spi.connector.Constraint.alwaysTrue;
 import static io.trino.spi.type.BigintType.BIGINT;
+import static io.trino.sql.planner.TestingPlannerContext.PLANNER_CONTEXT;
 import static io.trino.tpch.TpchTable.NATION;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.apache.iceberg.TestIcebergPartitionStatistics.PARTITION_STATISTICS_WRITER;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 @TestInstance(PER_CLASS)
@@ -108,6 +120,7 @@ public class TestIcebergSplitSource
 
     private TrinoFileSystemFactory fileSystemFactory;
     private TrinoCatalog catalog;
+    private IcebergMetadata icebergMetadata;
 
     @Override
     protected QueryRunner createQueryRunner()
@@ -136,6 +149,32 @@ public class TestIcebergSplitSource
                 new IcebergConfig().isHideMaterializedViewStorageTable(),
                 new IcebergScheduledMvRefreshConfig().isScheduledMaterializedViewRefreshEnabled(),
                 directExecutor());
+        this.icebergMetadata = new IcebergMetadata(
+                LocationAccessControl.ALLOW_ALL,
+                AiModelAccessControl.ALLOW_ALL,
+                PLANNER_CONTEXT.getTypeManager(),
+                jsonCodec(CommitTaskData.class),
+                catalog,
+                (_, _) -> {
+                    throw new UnsupportedOperationException();
+                },
+                TABLE_STATISTICS_READER,
+                new TableStatisticsWriter(new NodeVersion("test-version")),
+                PARTITION_STATISTICS_WRITER,
+                UNSUPPORTED_DELETION_VECTOR_WRITER,
+                OPTIMIZE_POSITION_DELETES,
+                REMOVE_DANGLING_DELETE_FILES,
+                Optional.empty(),
+                3,
+                false,
+                _ -> false,
+                UTC,
+                newDirectExecutorService(),
+                directExecutor(),
+                newDirectExecutorService(),
+                newDirectExecutorService(),
+                0,
+                ZERO);
 
         return queryRunner;
     }
@@ -154,6 +193,7 @@ public class TestIcebergSplitSource
         try (IcebergSplitSource splitSource = new IcebergSplitSource(
                 new DefaultIcebergFileSystemFactory(fileSystemFactory),
                 SESSION,
+                icebergMetadata,
                 tableHandle,
                 nationTable,
                 nationTable.newScan(),
@@ -423,6 +463,7 @@ public class TestIcebergSplitSource
         try (IcebergSplitSource splitSource = new IcebergSplitSource(
                 new DefaultIcebergFileSystemFactory(fileSystemFactory),
                 SESSION,
+                icebergMetadata,
                 tableHandle,
                 nationTable,
                 nationTable.newScan(),
