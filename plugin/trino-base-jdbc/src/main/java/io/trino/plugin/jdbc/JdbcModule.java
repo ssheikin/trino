@@ -94,7 +94,10 @@ public class JdbcModule
 
         binder.bind(JdbcClient.class).annotatedWith(ForCaching.class).to(Key.get(RetryingJdbcClient.class)).in(Scopes.SINGLETON);
         binder.bind(CachingJdbcClient.class).in(Scopes.SINGLETON);
-        binder.bind(JdbcClient.class).to(Key.get(CachingJdbcClient.class)).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, JdbcClient.class)
+                .setDefault()
+                .to(CachingJdbcClient.class)
+                .in(Scopes.SINGLETON);
 
         newSetBinder(binder, Procedure.class).addBinding().toProvider(FlushJdbcMetadataCacheProcedure.class).in(Scopes.SINGLETON);
         newSetBinder(binder, Procedure.class).addBinding().toProvider(ExecuteProcedure.class).in(Scopes.SINGLETON);
