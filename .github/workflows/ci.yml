@@ -2478,6 +2478,7 @@ jobs:
             - suite-stargate
             - suite-starburst-snowflake
             #- suite-synapse # Synapse suite is run separately in synapse-tests job
+            - suite-open-api
             # End of Starburst suites
             - suite-1
             - suite-2
