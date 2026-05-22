@@ -31,6 +31,7 @@ import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.plugin.iceberg.TableStatisticsWriter;
 import io.trino.spi.NodeVersion;
 import io.trino.spi.TrinoException;
+import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.connector.ConnectorMaterializedViewDefinition;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -151,6 +152,7 @@ public abstract class BaseTrinoCatalogTest
             ConnectorMetadata icebergMetadata = new IcebergMetadata(
                     LocationAccessControl.ALLOW_ALL,
                     AiModelAccessControl.ALLOW_ALL,
+                    new CatalogName("iceberg"),
                     PLANNER_CONTEXT.getTypeManager(),
                     jsonCodec(CommitTaskData.class),
                     catalog,
@@ -202,6 +204,7 @@ public abstract class BaseTrinoCatalogTest
             ConnectorMetadata icebergMetadata = new IcebergMetadata(
                     LocationAccessControl.ALLOW_ALL,
                     AiModelAccessControl.ALLOW_ALL,
+                    new CatalogName("iceberg"),
                     PLANNER_CONTEXT.getTypeManager(),
                     jsonCodec(CommitTaskData.class),
                     catalog,

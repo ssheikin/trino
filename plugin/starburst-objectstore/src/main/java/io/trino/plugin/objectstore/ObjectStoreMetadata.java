@@ -1501,6 +1501,10 @@ public class ObjectStoreMetadata
     @Override
     public boolean isView(ConnectorSession session, SchemaTableName viewName)
     {
+        if (IcebergTableName.isIcebergTableName(viewName.getTableName()) && IcebergTableName.isSystemView(viewName.getTableName())) {
+            return icebergMetadata.isView(unwrap(ICEBERG, session), viewName);
+        }
+
         RelationType relationType = relationTypeCache.getRelationType(viewName).orElse(null);
         if (relationType != null) {
             switch (relationType) {
@@ -1529,6 +1533,10 @@ public class ObjectStoreMetadata
     @Override
     public Optional<ConnectorViewDefinition> getView(ConnectorSession session, SchemaTableName viewName)
     {
+        if (IcebergTableName.isIcebergTableName(viewName.getTableName()) && IcebergTableName.isSystemView(viewName.getTableName())) {
+            return icebergMetadata.getView(unwrap(ICEBERG, session), viewName);
+        }
+
         RelationType relationType = relationTypeCache.getRelationType(viewName).orElse(null);
         if (relationType != null) {
             switch (relationType) {
