@@ -13,28 +13,29 @@
  */
 package io.trino.plugin.kudu;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.DynamicFilter;
+import io.trino.spi.connector.DynamicFilterSnapshot;
 import io.trino.spi.connector.FixedSplitSource;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static io.trino.plugin.kudu.KuduSessionProperties.getDynamicFilteringWaitTimeout;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class KuduSplitManager
         implements ConnectorSplitManager
 {
-    private static final ConnectorSplitSource.ConnectorSplitBatch EMPTY_BATCH = new ConnectorSplitSource.ConnectorSplitBatch(ImmutableList.of(), false);
     private final KuduClientSession clientSession;
 
     @Inject
@@ -48,10 +49,10 @@ public class KuduSplitManager
             ConnectorTransactionHandle transaction,
             ConnectorSession session,
             ConnectorTableHandle table,
-            DynamicFilter dynamicFilter,
+            Set<ColumnHandle> dynamicFilterColumns,
             Constraint constraint)
     {
-        return new KuduDynamicFilteringSplitSource(session, clientSession, dynamicFilter, table);
+        return new KuduDynamicFilteringSplitSource(session, clientSession, (KuduTableHandle) table);
     }
 
     private static class KuduDynamicFilteringSplitSource
@@ -59,73 +60,51 @@ public class KuduSplitManager
     {
         private final ConnectorSession connectorSession;
         private final KuduClientSession clientSession;
-        private final DynamicFilter dynamicFilter;
-        private final ConnectorTableHandle tableHandle;
-        private final long dynamicFilteringTimeoutNanos;
-        private ConnectorSplitSource delegateSplitSource;
-        private final long startNanos;
+        private final KuduTableHandle tableHandle;
+        private final long dynamicFilteringTimeoutMillis;
+
+        private Optional<ConnectorSplitSource> delegateSplitSource = Optional.empty();
 
         private KuduDynamicFilteringSplitSource(
                 ConnectorSession connectorSession,
                 KuduClientSession clientSession,
-                DynamicFilter dynamicFilter,
-                ConnectorTableHandle tableHandle)
+                KuduTableHandle tableHandle)
         {
             this.connectorSession = requireNonNull(connectorSession, "connectorSession is null");
             this.clientSession = requireNonNull(clientSession, "clientSession is null");
-            this.dynamicFilter = requireNonNull(dynamicFilter, "dynamicFilterFuture is null");
-            this.tableHandle = requireNonNull(tableHandle, "splitSourceFuture is null");
-            this.dynamicFilteringTimeoutNanos = (long) getDynamicFilteringWaitTimeout(connectorSession).getValue(NANOSECONDS);
-            this.startNanos = System.nanoTime();
+            this.tableHandle = requireNonNull(tableHandle, "tableHandle is null");
+            this.dynamicFilteringTimeoutMillis = getDynamicFilteringWaitTimeout(connectorSession).toMillis();
         }
 
         @Override
-        public CompletableFuture<ConnectorSplitBatch> getNextBatch(int maxSize)
+        public long getRequestedDynamicFilterWaitTimeoutMillis()
         {
-            CompletableFuture<?> blocked = dynamicFilter.isBlocked();
-            long remainingTimeoutNanos = getRemainingTimeoutNanos();
-            if (remainingTimeoutNanos > 0 && dynamicFilter.isAwaitable()) {
-                // wait for dynamic filter and yield
-                return blocked
-                        .thenApply(_ -> EMPTY_BATCH)
-                        .completeOnTimeout(EMPTY_BATCH, remainingTimeoutNanos, NANOSECONDS);
+            return dynamicFilteringTimeoutMillis;
+        }
+
+        @Override
+        public CompletableFuture<List<ConnectorSplit>> getNextBatch(int maxSize, DynamicFilterSnapshot dynamicFilterSnapshot)
+        {
+            if (delegateSplitSource.isEmpty()) {
+                List<KuduSplit> splits = clientSession.buildKuduSplits(connectorSession, tableHandle, dynamicFilterSnapshot.currentPredicate());
+                delegateSplitSource = Optional.of(new FixedSplitSource(splits));
             }
 
-            if (delegateSplitSource == null) {
-                KuduTableHandle handle = (KuduTableHandle) tableHandle;
-
-                List<KuduSplit> splits = clientSession.buildKuduSplits(connectorSession, handle, dynamicFilter);
-                delegateSplitSource = new FixedSplitSource(splits);
-            }
-
-            return delegateSplitSource.getNextBatch(maxSize);
+            return delegateSplitSource.get().getNextBatch(maxSize, dynamicFilterSnapshot);
         }
 
         @Override
         public void close()
         {
-            if (delegateSplitSource != null) {
-                delegateSplitSource.close();
-            }
+            delegateSplitSource.ifPresent(ConnectorSplitSource::close);
         }
 
         @Override
         public boolean isFinished()
         {
-            if (getRemainingTimeoutNanos() > 0 && dynamicFilter.isAwaitable()) {
-                return false;
-            }
-
-            if (delegateSplitSource != null) {
-                return delegateSplitSource.isFinished();
-            }
-
-            return false;
-        }
-
-        private long getRemainingTimeoutNanos()
-        {
-            return dynamicFilteringTimeoutNanos - (System.nanoTime() - startNanos);
+            return delegateSplitSource
+                    .map(ConnectorSplitSource::isFinished)
+                    .orElse(false);
         }
     }
 }

@@ -44,7 +44,7 @@ public class TestDecoratingConnectorSplitManager
         assertProperForwardingMethodsAreCalled(
                 ConnectorSplitManager.class,
                 splitManager -> new DecoratingConnectorSplitManager(
-                        new ConnectorSplitManager() {},
+                        (_, _, _, _, _) -> null,
                         ImmutableSet.of(_ -> splitManager)));
     }
 }

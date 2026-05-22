@@ -14,6 +14,7 @@
 package io.trino.plugin.base;
 
 import io.trino.spi.cache.CacheSplitId;
+import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorSplitManager;
@@ -21,7 +22,6 @@ import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.function.table.ConnectorTableFunctionHandle;
 import jakarta.inject.Inject;
 
@@ -48,10 +48,10 @@ public class DecoratingConnectorSplitManager
             ConnectorTransactionHandle transaction,
             ConnectorSession session,
             ConnectorTableHandle table,
-            DynamicFilter dynamicFilter,
+            Set<ColumnHandle> dynamicFilterColumns,
             Constraint constraint)
     {
-        return delegate.getSplits(transaction, session, table, dynamicFilter, constraint);
+        return delegate.getSplits(transaction, session, table, dynamicFilterColumns, constraint);
     }
 
     @Override

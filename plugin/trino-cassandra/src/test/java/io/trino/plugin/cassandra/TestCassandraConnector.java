@@ -16,6 +16,7 @@ package io.trino.plugin.cassandra;
 import com.datastax.oss.protocol.internal.util.Bytes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Shorts;
 import com.google.common.primitives.SignedBytes;
@@ -34,7 +35,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.DynamicFilter;
+import io.trino.spi.connector.DynamicFilterSnapshot;
 import io.trino.spi.connector.RecordCursor;
 import io.trino.spi.connector.RecordSet;
 import io.trino.spi.connector.SchemaTableName;
@@ -193,7 +194,7 @@ public class TestCassandraConnector
                 transaction,
                 SESSION,
                 tableHandle,
-                DynamicFilter.EMPTY,
+                ImmutableSet.of(),
                 Constraint.alwaysTrue()));
         CassandraSplit cassandraSplit = assertThat(splits)
                 .singleElement()
@@ -228,7 +229,7 @@ public class TestCassandraConnector
 
         tableHandle = getOnlyElement(metadata.applyFilter(SESSION, tableHandle, Constraint.alwaysTrue()).get().getAlternatives()).handle();
 
-        List<ConnectorSplit> splits = getAllSplits(splitManager.getSplits(transaction, SESSION, tableHandle, DynamicFilter.EMPTY, Constraint.alwaysTrue()));
+        List<ConnectorSplit> splits = getAllSplits(splitManager.getSplits(transaction, SESSION, tableHandle, ImmutableSet.of(), Constraint.alwaysTrue()));
 
         long rowNumber = 0;
         for (ConnectorSplit split : splits) {
@@ -300,7 +301,7 @@ public class TestCassandraConnector
 
         ConnectorTransactionHandle transaction = CassandraTransactionHandle.INSTANCE;
 
-        List<ConnectorSplit> splits = getAllSplits(splitManager.getSplits(transaction, SESSION, tableHandle, DynamicFilter.EMPTY, Constraint.alwaysTrue()));
+        List<ConnectorSplit> splits = getAllSplits(splitManager.getSplits(transaction, SESSION, tableHandle, ImmutableSet.of(), Constraint.alwaysTrue()));
 
         long rowNumber = 0;
         for (ConnectorSplit split : splits) {
@@ -353,7 +354,7 @@ public class TestCassandraConnector
 
         tableHandle = getOnlyElement(metadata.applyFilter(SESSION, tableHandle, Constraint.alwaysTrue()).get().getAlternatives()).handle();
 
-        List<ConnectorSplit> splits = getAllSplits(splitManager.getSplits(transaction, SESSION, tableHandle, DynamicFilter.EMPTY, Constraint.alwaysTrue()));
+        List<ConnectorSplit> splits = getAllSplits(splitManager.getSplits(transaction, SESSION, tableHandle, ImmutableSet.of(), Constraint.alwaysTrue()));
 
         long rowNumber = 0;
         for (ConnectorSplit split : splits) {
@@ -479,7 +480,7 @@ public class TestCassandraConnector
     {
         ImmutableList.Builder<ConnectorSplit> splits = ImmutableList.builder();
         while (!splitSource.isFinished()) {
-            splits.addAll(getFutureValue(splitSource.getNextBatch(1000)).getSplits());
+            splits.addAll(getFutureValue(splitSource.getNextBatch(1000, new DynamicFilterSnapshot(TupleDomain.all(), true))));
         }
         return splits.build();
     }

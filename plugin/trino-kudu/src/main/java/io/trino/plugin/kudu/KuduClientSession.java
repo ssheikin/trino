@@ -36,7 +36,6 @@ import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorTableMetadata;
-import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.SchemaNotFoundException;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.TableNotFoundException;
@@ -184,7 +183,7 @@ public class KuduClientSession
         return KuduTableProperties.toMap(table);
     }
 
-    public List<KuduSplit> buildKuduSplits(ConnectorSession session, KuduTableHandle tableHandle, DynamicFilter dynamicFilter)
+    public List<KuduSplit> buildKuduSplits(ConnectorSession session, KuduTableHandle tableHandle, TupleDomain<ColumnHandle> dynamicFilter)
     {
         KuduTable table = tableHandle.getTable(session, this);
         int primaryKeyColumnCount = table.getSchema().getPrimaryKeyColumnCount();
@@ -197,7 +196,7 @@ public class KuduClientSession
         builder.scanRequestTimeout(scannerScanRequestTimeout.toMillis());
 
         TupleDomain<ColumnHandle> constraint = tableHandle.getConstraint()
-                .intersect(dynamicFilter.getCurrentPredicate().simplify(100));
+                .intersect(dynamicFilter.simplify(100));
         if (constraint.isNone()) {
             return ImmutableList.of();
         }
