@@ -77,6 +77,7 @@ public class DeltaLakeMetadataFactory
     private final String trinoVersion;
     private final TransactionLogReaderFactory transactionLogReaderFactory;
     private final boolean logRetentionDurationEnabled;
+    private final DeltaLakeTableCredentialsProvider tableCredentialsProvider;
 
     @Inject
     public DeltaLakeMetadataFactory(
@@ -100,7 +101,8 @@ public class DeltaLakeMetadataFactory
             DeltaLakeTableMetadataScheduler metadataScheduler,
             @ForDeltaLakeMetadata ExecutorService executorService,
             MetastoreTypeConfig metastoreTypeConfig,
-            TransactionLogReaderFactory transactionLogReaderFactory)
+            TransactionLogReaderFactory transactionLogReaderFactory,
+            DeltaLakeTableCredentialsProvider tableCredentialsProvider)
     {
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.hiveMetastoreFactory = requireNonNull(hiveMetastoreFactory, "hiveMetastore is null");
@@ -135,6 +137,7 @@ public class DeltaLakeMetadataFactory
         this.isOperateOnUnityMetastore = metastoreTypeConfig.getMetastoreType() == UNITY;
         this.transactionLogReaderFactory = requireNonNull(transactionLogReaderFactory, "transactionLogLoaderFactory is null");
         this.logRetentionDurationEnabled = deltaLakeConfig.isLogRetentionDurationEnabled();
+        this.tableCredentialsProvider = requireNonNull(tableCredentialsProvider, "tableCredentialsProvider is null");
     }
 
     public DeltaLakeMetadata create(ConnectorIdentity identity)
@@ -182,7 +185,8 @@ public class DeltaLakeMetadataFactory
                 isOperateOnUnityMetastore,
                 metadataFetchingExecutor,
                 transactionLogReaderFactory,
-                logRetentionDurationEnabled);
+                logRetentionDurationEnabled,
+                tableCredentialsProvider);
     }
 
     public CachingHiveMetastore createTransactionMetastore(ConnectorIdentity identity)
