@@ -103,6 +103,11 @@ public interface ConnectorContext
         throw new UnsupportedOperationException();
     }
 
+    default FileSystemReadExecutor getFileSystemReadExecutor()
+    {
+        throw new UnsupportedOperationException();
+    }
+
     default Map<String, String> getServerProperties()
     {
         throw new UnsupportedOperationException();

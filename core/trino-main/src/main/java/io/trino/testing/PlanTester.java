@@ -38,6 +38,7 @@ import io.trino.cache.CacheManagerRegistry;
 import io.trino.cache.CacheMetadata;
 import io.trino.cache.CachePerformanceTracker;
 import io.trino.cache.CacheStats;
+import io.trino.connector.BoundedFileSystemReadExecutor;
 import io.trino.connector.CatalogFactory;
 import io.trino.connector.CatalogHandle;
 import io.trino.connector.CatalogMetricsService;
@@ -487,7 +488,8 @@ public class PlanTester
                 new ConfigurationFactory(ImmutableMap.of()),
                 new LocalMemoryManager(new NodeMemoryConfig(), Optional.empty()),
                 secretsResolver,
-                nodeInfo));
+                nodeInfo,
+                new BoundedFileSystemReadExecutor(8)));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
         this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager));
         this.alternativeChooser = new AlternativeChooser(createAlternativeChooser(catalogManager));
