@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
+import io.airlift.configuration.ConfigurationAwareModule;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.local.LocalFileSystemFactory;
 import io.trino.plugin.base.config.ConfigUtils;
@@ -43,10 +44,11 @@ public class TestingIcebergConnectorFactory
 {
     private final Path localFileSystemRootPath;
     private final Supplier<Optional<Module>> icebergCatalogModule;
+    private final Supplier<Optional<Module>> additionalOverrideModule;
 
     public TestingIcebergConnectorFactory(Path localFileSystemRootPath)
     {
-        this(localFileSystemRootPath, Optional::empty);
+        this(localFileSystemRootPath, Optional::empty, Optional::empty);
     }
 
     @Deprecated
@@ -54,10 +56,19 @@ public class TestingIcebergConnectorFactory
             Path localFileSystemRootPath,
             Supplier<Optional<Module>> icebergCatalogModule)
     {
+        this(localFileSystemRootPath, icebergCatalogModule, Optional::empty);
+    }
+
+    public TestingIcebergConnectorFactory(
+            Path localFileSystemRootPath,
+            Supplier<Optional<Module>> icebergCatalogModule,
+            Supplier<Optional<Module>> additionalOverrideModule)
+    {
         this.localFileSystemRootPath = requireNonNull(localFileSystemRootPath, "localFileSystemRootPath is null");
         var rootPath = localFileSystemRootPath.toFile();
         var _ = rootPath.mkdirs();
         this.icebergCatalogModule = requireNonNull(icebergCatalogModule, "icebergCatalogModule is null");
+        this.additionalOverrideModule = requireNonNull(additionalOverrideModule, "additionalOverrideModule is null");
     }
 
     @Override
@@ -98,12 +109,15 @@ public class TestingIcebergConnectorFactory
 
     private Module createAdditionalModule(String catalogName)
     {
-        return binder -> {
+        Module localModule = binder -> {
             newMapBinder(binder, String.class, TrinoFileSystemFactory.class)
                     .addBinding("local").toInstance(new LocalFileSystemFactory(localFileSystemRootPath));
             configBinder(binder).bindConfigDefaults(
                     FileHiveMetastoreConfig.class,
                     metastoreConfig -> metastoreConfig.setCatalogDirectory("local:///" + catalogName));
         };
+        return additionalOverrideModule.get()
+                .map(override -> (Module) ConfigurationAwareModule.combine(localModule, override))
+                .orElse(localModule);
     }
 }

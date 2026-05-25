@@ -53,6 +53,9 @@ import io.trino.plugin.iceberg.catalog.file.FileMetastoreTableOperationsProvider
 import io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog;
 import io.trino.plugin.iceberg.delete.OptimizePositionDeletes;
 import io.trino.plugin.iceberg.delete.RemoveDanglingDeleteFiles;
+import io.trino.plugin.iceberg.encryption.DefaultEncryptionManagerFactory;
+import io.trino.plugin.iceberg.encryption.EncryptionManagerFactory;
+import io.trino.plugin.iceberg.encryption.IcebergEncryptionConfig;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
 import io.trino.plugin.iceberg.fileio.ForwardingInputFile;
 import io.trino.plugin.iceberg.procedure.CreateChangelogView;
@@ -105,6 +108,7 @@ public final class IcebergTestUtils
     public static final ConnectorSession SESSION = TestingConnectorSession.builder()
             .setPropertyMetadata(new IcebergSessionProperties(
                     new IcebergConfig(),
+                    new IcebergEncryptionConfig(),
                     new OrcReaderConfig(),
                     new OrcWriterConfig(),
                     new ParquetReaderConfig(),
@@ -131,7 +135,8 @@ public final class IcebergTestUtils
                     new IcebergConfig(),
                     TESTING_TYPE_MANAGER,
                     BLOCKS_HASH_FACTORY,
-                    ParquetFooterCache.noop()),
+                    ParquetFooterCache.noop(),
+                    new DefaultEncryptionManagerFactory(new IcebergEncryptionConfig())),
             new IcebergFileWriterFactory(
                     TESTING_TYPE_MANAGER,
                     new NodeVersion("test_version"),
@@ -278,7 +283,7 @@ public final class IcebergTestUtils
             String catalogName,
             String schemaName)
     {
-        IcebergTableOperationsProvider tableOperationsProvider = new FileMetastoreTableOperationsProvider(fileSystemFactory, FILE_IO_FACTORY);
+        IcebergTableOperationsProvider tableOperationsProvider = new FileMetastoreTableOperationsProvider(fileSystemFactory, FILE_IO_FACTORY, new DefaultEncryptionManagerFactory(Optional.of(new TestingFileMetastoreKeyManagementClient())));
         TrinoCatalog catalog = getTrinoCatalog(metastore, fileSystemFactory, catalogName);
         return loadIcebergTable(catalog, tableOperationsProvider, SESSION, new SchemaTableName(schemaName, tableName));
     }
@@ -288,7 +293,16 @@ public final class IcebergTestUtils
             TrinoFileSystemFactory fileSystemFactory,
             String catalogName)
     {
-        IcebergTableOperationsProvider tableOperationsProvider = new FileMetastoreTableOperationsProvider(fileSystemFactory, FILE_IO_FACTORY);
+        return getTrinoCatalog(metastore, fileSystemFactory, catalogName, new DefaultEncryptionManagerFactory(Optional.of(new TestingFileMetastoreKeyManagementClient())));
+    }
+
+    public static TrinoCatalog getTrinoCatalog(
+            HiveMetastore metastore,
+            TrinoFileSystemFactory fileSystemFactory,
+            String catalogName,
+            EncryptionManagerFactory encryptionManagerFactory)
+    {
+        IcebergTableOperationsProvider tableOperationsProvider = new FileMetastoreTableOperationsProvider(fileSystemFactory, FILE_IO_FACTORY, encryptionManagerFactory);
         CachingHiveMetastore cachingHiveMetastore = createPerTransactionCache(metastore, 1000);
         return new TrinoHiveCatalog(
                 new CatalogName(catalogName),

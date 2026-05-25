@@ -41,6 +41,8 @@ import io.trino.plugin.iceberg.IcebergScheduledMvRefreshConfig;
 import io.trino.plugin.iceberg.IcebergSchemaProperties;
 import io.trino.plugin.iceberg.catalog.BaseTrinoCatalogTest;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
+import io.trino.plugin.iceberg.encryption.DefaultEncryptionManagerFactory;
+import io.trino.plugin.iceberg.encryption.IcebergEncryptionConfig;
 import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.CatalogSchemaTableName;
@@ -185,7 +187,8 @@ public class TestTrinoHiveCatalogWithHiveMetastore
                                 return thriftMetastore;
                             }
                         },
-                        new IcebergHiveCatalogConfig()),
+                        new IcebergHiveCatalogConfig(),
+                        new DefaultEncryptionManagerFactory(new IcebergEncryptionConfig())),
                 useUniqueTableLocations,
                 false,
                 false,

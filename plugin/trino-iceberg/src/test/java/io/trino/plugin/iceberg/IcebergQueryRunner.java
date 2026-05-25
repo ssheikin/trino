@@ -118,6 +118,7 @@ public final class IcebergQueryRunner
         private ImmutableMap.Builder<String, String> icebergProperties = ImmutableMap.builder();
         private Optional<SchemaInitializer> schemaInitializer = Optional.of(SchemaInitializer.builder().build());
         private boolean tpcdsCatalogEnabled;
+        private Optional<Module> additionalOverrideModule = Optional.empty();
 
         protected Builder()
         {
@@ -209,6 +210,12 @@ public final class IcebergQueryRunner
             return self();
         }
 
+        public Builder setAdditionalOverrideModule(Module additionalOverrideModule)
+        {
+            this.additionalOverrideModule = Optional.of(requireNonNull(additionalOverrideModule, "additionalOverrideModule is null"));
+            return self();
+        }
+
         @Override
         public DistributedQueryRunner build()
                 throws Exception
@@ -224,7 +231,7 @@ public final class IcebergQueryRunner
                 }
 
                 Path dataDir = metastoreDirectory.map(File::toPath).orElseGet(() -> queryRunner.getCoordinator().getBaseDataDir().resolve("iceberg_data"));
-                queryRunner.installPlugin(new TestingIcebergPlugin(dataDir, Optional::empty));
+                queryRunner.installPlugin(new TestingIcebergPlugin(dataDir, Optional::empty, () -> additionalOverrideModule));
                 queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", icebergProperties.buildOrThrow());
 
                 queryRunner.getServers().forEach(TestingTrinoServer::getCacheManagerRegistry);
@@ -814,6 +821,8 @@ public final class IcebergQueryRunner
             log.info("\n====\n%s\n====", queryRunner.getCoordinator().getBaseUrl());
         }
     }
+
+    // TODO: Add a new query runner for table encryption
 
     public static final class IcebergAzureQueryRunnerMain
     {

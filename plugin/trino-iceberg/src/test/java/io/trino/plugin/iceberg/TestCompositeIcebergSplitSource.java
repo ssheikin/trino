@@ -28,6 +28,8 @@ import io.trino.plugin.hive.parquet.ParquetWriterConfig;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.plugin.iceberg.catalog.file.FileMetastoreTableOperationsProvider;
 import io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog;
+import io.trino.plugin.iceberg.encryption.DefaultEncryptionManagerFactory;
+import io.trino.plugin.iceberg.encryption.IcebergEncryptionConfig;
 import io.trino.spi.NodeVersion;
 import io.trino.spi.NoopWorkScheduler;
 import io.trino.spi.catalog.CatalogName;
@@ -86,6 +88,7 @@ final class TestCompositeIcebergSplitSource
     private static final ConnectorSession SESSION = TestingConnectorSession.builder()
             .setPropertyMetadata(new IcebergSessionProperties(
                     new IcebergConfig().setCompositeSplitsEnabled(true),
+                    new IcebergEncryptionConfig(),
                     new OrcReaderConfig(),
                     new OrcWriterConfig(),
                     new ParquetReaderConfig(),
@@ -118,7 +121,7 @@ final class TestCompositeIcebergSplitSource
                 fileSystemFactory,
                 FILE_IO_FACTORY,
                 TESTING_TYPE_MANAGER,
-                new FileMetastoreTableOperationsProvider(fileSystemFactory, FILE_IO_FACTORY),
+                new FileMetastoreTableOperationsProvider(fileSystemFactory, FILE_IO_FACTORY, new DefaultEncryptionManagerFactory(new IcebergEncryptionConfig())),
                 false,
                 false,
                 false,
@@ -211,6 +214,7 @@ final class TestCompositeIcebergSplitSource
             ConnectorSession session = TestingConnectorSession.builder()
                     .setPropertyMetadata(new IcebergSessionProperties(
                             new IcebergConfig().setCompositeSplitsEnabled(true),
+                            new IcebergEncryptionConfig(),
                             new OrcReaderConfig(),
                             new OrcWriterConfig(),
                             new ParquetReaderConfig(),
