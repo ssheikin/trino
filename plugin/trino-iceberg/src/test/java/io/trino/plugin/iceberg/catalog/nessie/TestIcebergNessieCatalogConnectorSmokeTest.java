@@ -26,7 +26,6 @@ import io.trino.plugin.iceberg.containers.NessieContainer;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.tpch.TpchTable;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
@@ -99,7 +98,7 @@ public class TestIcebergNessieCatalogConnectorSmokeTest
                         .put(URI, restApiUri)
                         .put(WAREHOUSE_LOCATION, tempDir.toString())
                         .buildOrThrow(),
-                new Configuration(false));
+                null);
 
         return IcebergQueryRunner.builder()
                 .setBaseDataDir(Optional.of(tempDir))
