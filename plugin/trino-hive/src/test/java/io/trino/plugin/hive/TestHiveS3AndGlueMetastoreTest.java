@@ -515,19 +515,21 @@ public class TestHiveS3AndGlueMetastoreTest
             assertUpdate(createCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql);
-            assertUpdate("""
+            assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "hive.security" = 'read-only'
                     """
-                    .formatted(catalog));
+                            .formatted(catalog));
             assertThatThrownBy(() -> assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, dynamicSchema))).hasMessageContaining("Access Denied: Cannot create schema " + dynamicSchema);
-            assertUpdate("""
+            assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                       "hive.security" = 'allow-all',
                       "fs.hadoop.enabled" = 'false',
                       "fs.s3.enabled" = 'true'
                     """
-                    .formatted(catalog));
+                            .formatted(catalog));
             assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, dynamicSchema));
         }
         finally {
@@ -539,10 +541,10 @@ public class TestHiveS3AndGlueMetastoreTest
     protected String getCreateCatalogSqlUsingHive(String catalog, String schemaPath)
     {
         return """
-                CREATE CATALOG %1$s USING hive
-                WITH (
-                   "hive.metastore" = 'glue',
-                   "hive.metastore.glue.default-warehouse-dir" = '%2$s'
-                )""".formatted(catalog, schemaPath);
+               CREATE CATALOG %1$s USING hive
+               WITH (
+                  "hive.metastore" = 'glue',
+                  "hive.metastore.glue.default-warehouse-dir" = '%2$s'
+               )""".formatted(catalog, schemaPath);
     }
 }

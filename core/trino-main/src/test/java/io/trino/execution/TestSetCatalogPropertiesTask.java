@@ -82,22 +82,23 @@ public class TestSetCatalogPropertiesTask
                 ImmutableList.of(
                         new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE"))),
                 """
-                           "tpch.double-type-mapping" = 'DOUBLE'
-                        """,
+                   "tpch.double-type-mapping" = 'DOUBLE'
+                """,
                 ImmutableList.of(
                         new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
                         new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("false"))),
                 """
-                           "tpch.column-naming" = 'STANDARD',
-                           "tpch.double-type-mapping" = 'DOUBLE',
-                           "tpch.predicate-pushdown-enabled" = 'false'
-                        """);
+                   "tpch.column-naming" = 'STANDARD',
+                   "tpch.double-type-mapping" = 'DOUBLE',
+                   "tpch.predicate-pushdown-enabled" = 'false'
+                """);
     }
 
     @Test
     public void testCatalogNameCaseSensitivity()
     {
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %s USING %s
                 WITH (
                 %s)""";
@@ -109,7 +110,8 @@ public class TestSetCatalogPropertiesTask
                 new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE"))));
         assertThat(catalogExists(catalog)).isTrue();
         assertThat((String) queryRunner.execute("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                .isEqualTo(createCatalogSql, catalog, CONNECTOR_NAME, """
+                .isEqualTo(createCatalogSql, catalog, CONNECTOR_NAME,
+                        """
                            "tpch.double-type-mapping" = 'DOUBLE'
                         """);
 
@@ -118,7 +120,8 @@ public class TestSetCatalogPropertiesTask
                 new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("false"))));
 
         assertThat((String) queryRunner.execute("SHOW CREATE CATALOG " + catalog).getOnlyValue())
-                .isEqualTo(createCatalogSql, catalog, CONNECTOR_NAME, """
+                .isEqualTo(createCatalogSql, catalog, CONNECTOR_NAME,
+                        """
                            "tpch.column-naming" = 'STANDARD',
                            "tpch.double-type-mapping" = 'DOUBLE',
                            "tpch.predicate-pushdown-enabled" = 'false'
@@ -151,16 +154,16 @@ public class TestSetCatalogPropertiesTask
                         new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
                         new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE"))),
                 """
-                           "tpch.column-naming" = 'STANDARD',
-                           "tpch.double-type-mapping" = 'DOUBLE'
-                        """,
+                   "tpch.column-naming" = 'STANDARD',
+                   "tpch.double-type-mapping" = 'DOUBLE'
+                """,
                 ImmutableList.of(
                         new Property(new Identifier("tpch.column-naming"), new StringLiteral("SIMPLIFIED")),
                         new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DECIMAL"))),
                 """
-                           "tpch.column-naming" = 'SIMPLIFIED',
-                           "tpch.double-type-mapping" = 'DECIMAL'
-                        """);
+                   "tpch.column-naming" = 'SIMPLIFIED',
+                   "tpch.double-type-mapping" = 'DECIMAL'
+                """);
     }
 
     @Test
@@ -172,16 +175,16 @@ public class TestSetCatalogPropertiesTask
                         new Property(new Identifier("tpch.double-type-mapping"), new StringLiteral("DOUBLE")),
                         new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("false"))),
                 """
-                           "tpch.column-naming" = 'STANDARD',
-                           "tpch.double-type-mapping" = 'DOUBLE',
-                           "tpch.predicate-pushdown-enabled" = 'false'
-                        """,
+                   "tpch.column-naming" = 'STANDARD',
+                   "tpch.double-type-mapping" = 'DOUBLE',
+                   "tpch.predicate-pushdown-enabled" = 'false'
+                """,
                 ImmutableList.of(
                         new Property(new Identifier("tpch.predicate-pushdown-enabled")),
                         new Property(new Identifier("tpch.column-naming"))),
                 """
-                           "tpch.double-type-mapping" = 'DOUBLE'
-                        """);
+                   "tpch.double-type-mapping" = 'DOUBLE'
+                """);
     }
 
     @Test
@@ -196,10 +199,10 @@ public class TestSetCatalogPropertiesTask
                         // to update:
                         new Property(new Identifier("tpch.predicate-pushdown-enabled"), new StringLiteral("false"))),
                 """
-                           "tpch.double-type-mapping" = 'DOUBLE',
-                           "tpch.max-rows-per-page" = '128',
-                           "tpch.predicate-pushdown-enabled" = 'false'
-                        """,
+                   "tpch.double-type-mapping" = 'DOUBLE',
+                   "tpch.max-rows-per-page" = '128',
+                   "tpch.predicate-pushdown-enabled" = 'false'
+                """,
                 ImmutableList.of(
                         // added:
                         new Property(new Identifier("tpch.column-naming"), new StringLiteral("STANDARD")),
@@ -212,12 +215,12 @@ public class TestSetCatalogPropertiesTask
                         // added:
                         new Property(new Identifier("tpch.splits-per-node"), new StringLiteral("16"))),
                 """
-                           "tpch.column-naming" = 'STANDARD',
-                           "tpch.max-rows-per-page" = '128',
-                           "tpch.partitioning-enabled" = 'true',
-                           "tpch.predicate-pushdown-enabled" = 'true',
-                           "tpch.splits-per-node" = '16'
-                        """);
+                   "tpch.column-naming" = 'STANDARD',
+                   "tpch.max-rows-per-page" = '128',
+                   "tpch.partitioning-enabled" = 'true',
+                   "tpch.predicate-pushdown-enabled" = 'true',
+                   "tpch.splits-per-node" = '16'
+                """);
     }
 
     @Test
@@ -261,7 +264,8 @@ public class TestSetCatalogPropertiesTask
 
     private void testSetProperties(List<Property> initialProperties, String showInitialProperties, List<Property> updatedProperties, String showExpectedProperties)
     {
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %s USING %s
                 WITH (
                 %s)""";

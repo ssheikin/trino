@@ -133,7 +133,8 @@ public class TestHiveConnectorSmokeTest
     {
         String firstCatalog = "catalog_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING hive
                 WITH (
                    "hive.allow-register-partition-procedure" = '%2$s'
@@ -158,18 +159,20 @@ public class TestHiveConnectorSmokeTest
     public void testRenameCatalog()
     {
         String oldCatalog = "catalog_rename_" + randomNameSuffix();
-        String createCatalogSql = """
-            CREATE CATALOG %1$s USING hive
-            WITH (
-               "hive.allow-register-partition-procedure" = 'true'
-            )""";
+        String createCatalogSql =
+                """
+                CREATE CATALOG %1$s USING hive
+                WITH (
+                   "hive.allow-register-partition-procedure" = 'true'
+                )""";
         assertUpdate(createCatalogSql.formatted(oldCatalog));
 
         String catalog = "catalog_rename_" + randomNameSuffix();
-        assertUpdate("""
-            ALTER CATALOG %s RENAME TO %s
-            """
-                .formatted(oldCatalog, catalog));
+        assertUpdate(
+                """
+                ALTER CATALOG %s RENAME TO %s
+                """
+                        .formatted(oldCatalog, catalog));
         assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                 .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
         assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
@@ -190,11 +193,12 @@ public class TestHiveConnectorSmokeTest
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql.formatted(catalog));
 
-            assertUpdate("""
+            assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "hive.security" = 'read-only'
                     """
-                    .formatted(catalog));
+                            .formatted(catalog));
             assertThatThrownBy(() -> assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, schemaName))).hasMessageContaining("Access Denied: Cannot create schema " + schemaName);
             assertUpdate(alterCatalogSql(catalog));
             assertUpdate(createSchemaSql("%s.%s".formatted(catalog, schemaName)));
@@ -208,8 +212,8 @@ public class TestHiveConnectorSmokeTest
     protected String alterCatalogSql(String catalog)
     {
         return """
-                    ALTER CATALOG %s SET PROPERTIES
-                    "hive.security" = 'allow-all'
+               ALTER CATALOG %s SET PROPERTIES
+               "hive.security" = 'allow-all'
                """.formatted(catalog);
     }
 

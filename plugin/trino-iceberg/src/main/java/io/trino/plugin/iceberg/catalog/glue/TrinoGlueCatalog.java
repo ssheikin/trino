@@ -1261,10 +1261,10 @@ public class TrinoGlueCatalog
     private List<Column> toGlueColumns(List<ConnectorMaterializedViewDefinition.Column> columns)
     {
         return columns.stream().map(column -> Column.builder()
-                .name(column.getName())
-                .type(typeManager.getType(column.getType()).getBaseName())
-                .comment(column.getComment().orElse(""))
-                .build())
+                        .name(column.getName())
+                        .type(typeManager.getType(column.getType()).getBaseName())
+                        .comment(column.getComment().orElse(""))
+                        .build())
                 .collect(toImmutableList());
     }
 

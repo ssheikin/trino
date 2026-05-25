@@ -219,7 +219,8 @@ public final class DistributedQueryRunner
                     Optional.empty(),
                     Optional.of(ImmutableList.of()),
                     Optional.empty(),
-                    Optional.of(ImmutableList.of()), ImmutableList.of(),
+                    Optional.of(ImmutableList.of()),
+                    ImmutableList.of(),
                     modelConnectionSpecsLoader,
                     catalogMangerKind,
                     bindAllInterfaces);

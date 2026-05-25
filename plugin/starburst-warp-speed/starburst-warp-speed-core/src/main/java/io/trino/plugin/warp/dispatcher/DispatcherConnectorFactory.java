@@ -103,7 +103,8 @@ public class DispatcherConnectorFactory
             Supplier<Optional<Module>> optionalProxyModule = () -> Optional.ofNullable(proxyModule);
 
             return (Set<String>) classLoader.loadClass(InternalDispatcherConnectorFactory.class.getName())
-                    .getMethod("getSecuritySensitivePropertyNames",
+                    .getMethod(
+                            "getSecuritySensitivePropertyNames",
                             String.class,
                             Map.class,
                             Map.class,

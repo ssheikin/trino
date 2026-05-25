@@ -77,15 +77,17 @@ public class TestIcebergProxiedConnectorIntegrationSmokeIT
         String firstCatalog = "catalog_" + StringUtils.randomAlphanumeric(5);
         String secondCatalog = "catalog2_" + StringUtils.randomAlphanumeric(5);
         String renameCatalog = "catalog_rename_" + StringUtils.randomAlphanumeric(5);
-        String expectedShowTemplate = """
-                    CREATE CATALOG %s USING warp_speed
-                    WITH (
-                       "hive.metastore.uri" = 'thrift://localhost:9083',
-                       "iceberg.table-statistics-enabled" = '%2$s',
-                       "warp-speed.proxied-connector" = 'iceberg'
-                    )""";
+        String expectedShowTemplate =
+                """
+                CREATE CATALOG %s USING warp_speed
+                WITH (
+                   "hive.metastore.uri" = 'thrift://localhost:9083',
+                   "iceberg.table-statistics-enabled" = '%2$s',
+                   "warp-speed.proxied-connector" = 'iceberg'
+                )""";
 
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING warp_speed
                 WITH (
                    "iceberg.table-statistics-enabled" = '%2$s',
@@ -99,10 +101,11 @@ public class TestIcebergProxiedConnectorIntegrationSmokeIT
             assertUpdate(createCatalogSql.formatted(secondCatalog, "false"));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
                     .isEqualTo(expectedShowTemplate.formatted(secondCatalog, "false"));
-            assertUpdate("""
-                ALTER CATALOG %s RENAME TO %s
-                """
-                    .formatted(firstCatalog, renameCatalog));
+            assertUpdate(
+                    """
+                    ALTER CATALOG %s RENAME TO %s
+                    """
+                            .formatted(firstCatalog, renameCatalog));
             assertQueryFails("SHOW CREATE CATALOG " + firstCatalog, ".*Catalog '%s' not found".formatted(firstCatalog));
         }
         finally {
@@ -116,7 +119,8 @@ public class TestIcebergProxiedConnectorIntegrationSmokeIT
     {
         String schemaName = "schema_" + StringUtils.randomAlphanumeric(5);
         String firstCatalog = "catalog_" + StringUtils.randomAlphanumeric(5);
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING warp_speed
                 WITH (
                    "iceberg.table-statistics-enabled" = '%2$s',

@@ -105,8 +105,7 @@ public class TestMaterializedViewsOperation
                                     return new MockConnectorTableHandle(schemaTableName);
                                 })
                                 .withGetMaterializedViews((_, _) -> ImmutableMap.of(
-                                        new SchemaTableName("default", "materialized_view_with_no_owner_and_should_use_invoker"),
-                                        new ConnectorMaterializedViewDefinition(
+                                        new SchemaTableName("default", "materialized_view_with_no_owner_and_should_use_invoker"), new ConnectorMaterializedViewDefinition(
                                                 "SELECT * FROM mock.default.default_table",
                                                 Optional.empty(),
                                                 Optional.empty(),
@@ -119,8 +118,7 @@ public class TestMaterializedViewsOperation
                                                 ImmutableList.of(),
                                                 true,
                                                 true),
-                                        new SchemaTableName("default", "materialized_view_with_no_owner"),
-                                        new ConnectorMaterializedViewDefinition(
+                                        new SchemaTableName("default", "materialized_view_with_no_owner"), new ConnectorMaterializedViewDefinition(
                                                 "SELECT * FROM mock.default.default_table",
                                                 Optional.empty(),
                                                 Optional.empty(),
@@ -133,8 +131,7 @@ public class TestMaterializedViewsOperation
                                                 ImmutableList.of(),
                                                 false,
                                                 true),
-                                        new SchemaTableName("default", "materialized_view_with_owner_and_should_use_invoker"),
-                                        new ConnectorMaterializedViewDefinition(
+                                        new SchemaTableName("default", "materialized_view_with_owner_and_should_use_invoker"), new ConnectorMaterializedViewDefinition(
                                                 "SELECT * FROM mock.default.default_table",
                                                 Optional.empty(),
                                                 Optional.empty(),
@@ -147,8 +144,7 @@ public class TestMaterializedViewsOperation
                                                 ImmutableList.of(),
                                                 true,
                                                 true),
-                                        new SchemaTableName("default", "materialized_view_with_owner"),
-                                        new ConnectorMaterializedViewDefinition(
+                                        new SchemaTableName("default", "materialized_view_with_owner"), new ConnectorMaterializedViewDefinition(
                                                 "SELECT * FROM mock.default.default_table",
                                                 Optional.empty(),
                                                 Optional.empty(),
@@ -161,12 +157,9 @@ public class TestMaterializedViewsOperation
                                                 ImmutableList.of(),
                                                 false,
                                                 true),
-                                        new SchemaTableName("analysis", "fresh_materialized_view"),
-                                        createMaterializedViewRequiringAnalysis("SELECT * FROM mock.analysis.t1"),
-                                        new SchemaTableName("analysis", "fresh_materialized_view_non_existent_table"),
-                                        createMaterializedViewRequiringAnalysis("SELECT * FROM mock.analysis.non_existent_table"),
-                                        new SchemaTableName("analysis", "stale_materialized_view"),
-                                        createMaterializedViewRequiringAnalysis("SELECT * FROM mock.analysis.t1")))
+                                        new SchemaTableName("analysis", "fresh_materialized_view"), createMaterializedViewRequiringAnalysis("SELECT * FROM mock.analysis.t1"),
+                                        new SchemaTableName("analysis", "fresh_materialized_view_non_existent_table"), createMaterializedViewRequiringAnalysis("SELECT * FROM mock.analysis.non_existent_table"),
+                                        new SchemaTableName("analysis", "stale_materialized_view"), createMaterializedViewRequiringAnalysis("SELECT * FROM mock.analysis.t1")))
                                 .withData(schemaTableName -> {
                                     if (schemaTableName.getSchemaName().equals("analysis")) {
                                         return ImmutableList.of();

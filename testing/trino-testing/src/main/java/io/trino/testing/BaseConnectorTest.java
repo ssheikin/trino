@@ -4078,10 +4078,10 @@ public abstract class BaseConnectorTest
             Map<String, String> alteredProperties = getBehaviorAlteringCatalogProperties();
             assertThat(alteredProperties)
                     .allSatisfy((newKey, newValue) -> {
-                       if (oldProperties.containsKey(newKey)) {
-                           // Asserts that behavior altering properties actually change current properties.
-                           assertThat(oldProperties.get(newKey)).isNotEqualTo(newValue);
-                       }
+                        if (oldProperties.containsKey(newKey)) {
+                            // Asserts that behavior altering properties actually change current properties.
+                            assertThat(oldProperties.get(newKey)).isNotEqualTo(newValue);
+                        }
                     });
             Map<String, String> newProperties = ImmutableMap.<String, String>builder()
                     .putAll(oldProperties)

@@ -27,7 +27,7 @@ public interface ResultsCacheEntry
     boolean isDone();
 
     /**
-     * @return True, if `isDone` == false and the callback was added.  False, if the `isDone` == true.
+     * @return True, if `isDone` == false and the callback was added. False, if the `isDone` == true.
      */
     boolean addTransitionToDoneCallback(DoneCallback doneCallback);
 

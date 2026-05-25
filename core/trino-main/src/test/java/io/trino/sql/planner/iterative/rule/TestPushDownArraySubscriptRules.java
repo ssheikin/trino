@@ -90,7 +90,8 @@ public class TestPushDownArraySubscriptRules
                 .on(p ->
                         p.project(
                                 Assignments.of(
-                                        p.symbol("expr", BIGINT), new Call(ADD_BIGINT,
+                                        p.symbol("expr", BIGINT),
+                                        new Call(ADD_BIGINT,
                                                 ImmutableList.of(
                                                         arraySubscriptExpression(
                                                                 new Call(ARRAY_CONCAT, ImmutableList.of(new Reference(ARRAY_TYPE, "a"), new Reference(ARRAY_TYPE, "b"))),
@@ -110,8 +111,10 @@ public class TestPushDownArraySubscriptRules
                 .on(p ->
                         p.project(
                                 Assignments.of(
-                                        p.symbol("expr", ARRAY_TYPE), new Reference(ARRAY_TYPE, "a"),
-                                        p.symbol("a_first_element"), arraySubscriptExpression(new Reference(ARRAY_TYPE, "a"), new Constant(BIGINT, 0L))),
+                                        p.symbol("expr", ARRAY_TYPE),
+                                        new Reference(ARRAY_TYPE, "a"),
+                                        p.symbol("a_first_element"),
+                                        arraySubscriptExpression(new Reference(ARRAY_TYPE, "a"), new Constant(BIGINT, 0L))),
                                 p.project(
                                         Assignments.of(p.symbol("a", ARRAY_TYPE), new Reference(ARRAY_TYPE, "a")),
                                         p.values(p.symbol("a", ARRAY_TYPE)))))
@@ -127,8 +130,10 @@ public class TestPushDownArraySubscriptRules
                                 Assignments.of(p.symbol("x"), arraySubscriptExpression(new Reference(ARRAY_TYPE, "array"), new Reference(BIGINT, "y"))),
                                 p.project(
                                         Assignments.of(
-                                                p.symbol("y"), new Reference(BIGINT, "y"),
-                                                p.symbol("array", ARRAY_TYPE), new Reference(ARRAY_TYPE, "array")),
+                                                p.symbol("y"),
+                                                new Reference(BIGINT, "y"),
+                                                p.symbol("array", ARRAY_TYPE),
+                                                new Reference(ARRAY_TYPE, "array")),
                                         p.values(p.symbol("array", ARRAY_TYPE), p.symbol("y")))))
                 .matches(
                         strictProject(
@@ -148,8 +153,10 @@ public class TestPushDownArraySubscriptRules
                                         new Constant(BIGINT, 0L)))),
                                 p.project(
                                         Assignments.of(
-                                                p.symbol("y"), new Reference(BIGINT, "y"),
-                                                p.symbol("array", ARRAY_TYPE), new Reference(ARRAY_TYPE, "array")),
+                                                p.symbol("y"),
+                                                new Reference(BIGINT, "y"),
+                                                p.symbol("array", ARRAY_TYPE),
+                                                new Reference(ARRAY_TYPE, "array")),
                                         p.values(p.symbol("array", ARRAY_TYPE), p.symbol("y")))))
                 .matches(
                         strictProject(
@@ -205,12 +212,15 @@ public class TestPushDownArraySubscriptRules
                 .on(p ->
                         p.project(
                                 Assignments.of(
-                                        p.symbol("expr"), arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)),
-                                        p.symbol("expr_2", ARRAY_TYPE), new Reference(ARRAY_TYPE, "array2")),
+                                        p.symbol("expr"),
+                                        arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)),
+                                        p.symbol("expr_2", ARRAY_TYPE),
+                                        new Reference(ARRAY_TYPE, "array2")),
                                 p.join(INNER,
                                         p.values(p.symbol("array1", ARRAY_TYPE)),
                                         p.values(p.symbol("array2", ARRAY_TYPE)),
-                                        new Comparison(GREATER_THAN,
+                                        new Comparison(
+                                                GREATER_THAN,
                                                 new Call(ADD_BIGINT, ImmutableList.of(
                                                         arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)),
                                                         arraySubscriptExpression(new Reference(ARRAY_TYPE, "array2"), new Constant(BIGINT, 2L)))),
@@ -323,8 +333,10 @@ public class TestPushDownArraySubscriptRules
                 .on(p ->
                         p.project(
                                 Assignments.of(
-                                        p.symbol("expr", BIGINT), arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)),
-                                        p.symbol("expr_2", BIGINT), arraySubscriptExpression(new Reference(ARRAY_TYPE, "array2"), new Constant(BIGINT, 2L))),
+                                        p.symbol("expr", BIGINT),
+                                        arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)),
+                                        p.symbol("expr_2", BIGINT),
+                                        arraySubscriptExpression(new Reference(ARRAY_TYPE, "array2"), new Constant(BIGINT, 2L))),
                                 p.filter(
                                         new Logical(
                                                 AND,
@@ -358,8 +370,10 @@ public class TestPushDownArraySubscriptRules
                 .on(p ->
                         p.project(
                                 Assignments.of(
-                                        p.symbol("expr_1"), arraySubscriptExpression(new Reference(ARRAY_TYPE, "a"), new Constant(BIGINT, 1L)),
-                                        p.symbol("expr_2"), new Call(
+                                        p.symbol("expr_1"),
+                                        arraySubscriptExpression(new Reference(ARRAY_TYPE, "a"), new Constant(BIGINT, 1L)),
+                                        p.symbol("expr_2"),
+                                        new Call(
                                                 ADD_BIGINT,
                                                 ImmutableList.of(
                                                         new Call(

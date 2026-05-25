@@ -46,7 +46,8 @@ public class TestKuduConnectorTest
         extends BaseConnectorTest
 {
     private static final Logger log = Logger.get(TestKuduConnectorTest.class);
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
             CREATE CATALOG %s USING kudu
             WITH (
                "kudu.client.master-addresses" = '%s'
@@ -397,7 +398,8 @@ public class TestKuduConnectorTest
         assertUpdate("DROP TABLE " + tableName);
         assertThat(getQueryRunner().tableExists(getSession(), tableName)).isFalse();
 
-        assertQueryFails("CREATE TABLE " + tableName + " (" +
+        assertQueryFails(
+                "CREATE TABLE " + tableName + " (" +
                         "id INT WITH (primary_key=true)," +
                         "a bad_type, b double, c varchar(50))" +
                         "WITH (partition_by_hash_columns = ARRAY['id'], partition_by_hash_buckets = 2)",
@@ -442,14 +444,14 @@ public class TestKuduConnectorTest
                         "d bigint, e varchar(50))" +
                         "WITH (partition_by_hash_columns = ARRAY['id'], partition_by_hash_buckets = 2)"))
                 .hasMessageContaining("This connector does not support creating tables with column comment");
-        //assertTrue(getQueryRunner().tableExists(getSession(), tableNameLike));
-        //assertTableColumnNames(tableNameLike, "a", "b", "c", "d", "e");
+        // assertTrue(getQueryRunner().tableExists(getSession(), tableNameLike));
+        // assertTableColumnNames(tableNameLike, "a", "b", "c", "d", "e");
 
         assertUpdate("DROP TABLE " + tableName);
         assertThat(getQueryRunner().tableExists(getSession(), tableName)).isFalse();
 
-        //assertUpdate("DROP TABLE " + tableNameLike);
-        //assertFalse(getQueryRunner().tableExists(getSession(), tableNameLike));
+        // assertUpdate("DROP TABLE " + tableNameLike);
+        // assertFalse(getQueryRunner().tableExists(getSession(), tableNameLike));
     }
 
     @Test
@@ -1096,7 +1098,8 @@ public class TestKuduConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, DEFAULT));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
+            String createSecondCatalogSql =
+                    """
                     CREATE CATALOG %s USING kudu
                     WITH (
                        "kudu.client.disable-statistics" = 'true',

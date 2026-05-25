@@ -5068,7 +5068,8 @@ public class IcebergMetadata
         Map<String, Object> currentProperties = catalog.getMaterializedViewProperties(session, viewName, catalog.getMaterializedView(session, viewName).orElseThrow());
         Optional<Object> targetSchedule = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE), () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE)));
         targetSchedule.map(String.class::cast).ifPresent(IcebergMetadata::validateRefreshInterval);
-        Optional<Object> targetTimeZone = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE_TIMEZONE),
+        Optional<Object> targetTimeZone = requireNonNullElseGet(
+                properties.get(REFRESH_SCHEDULE_TIMEZONE),
                 () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE_TIMEZONE)));
         catalog.updateMaterializedViewRefreshSchedule(session, viewName, targetSchedule
                 .map(schedule -> new RefreshSchedule((String) schedule, targetTimeZone.map(String.class::cast).map(ZoneId::of))));

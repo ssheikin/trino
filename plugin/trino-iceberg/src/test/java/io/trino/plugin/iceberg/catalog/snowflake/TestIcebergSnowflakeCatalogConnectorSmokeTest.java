@@ -133,22 +133,22 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String s3SecretKey, String snowflakePassword, String compressionCodec)
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'true',
-                   "fs.s3.enabled" = 'true',
-                   "iceberg.catalog.type" = 'snowflake',
-                   "iceberg.compression-codec" = '%s',
-                   "iceberg.file-format" = '%%s',
-                   "iceberg.snowflake-catalog.account-uri" = '%s',
-                   "iceberg.snowflake-catalog.database" = '%s',
-                   "iceberg.snowflake-catalog.password" = '%s',
-                   "iceberg.snowflake-catalog.role" = '%s',
-                   "iceberg.snowflake-catalog.user" = '%s',
-                   "s3.aws-access-key" = '%s',
-                   "s3.aws-secret-key" = '%s',
-                   "s3.region" = '%s'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'true',
+                  "fs.s3.enabled" = 'true',
+                  "iceberg.catalog.type" = 'snowflake',
+                  "iceberg.compression-codec" = '%s',
+                  "iceberg.file-format" = '%%s',
+                  "iceberg.snowflake-catalog.account-uri" = '%s',
+                  "iceberg.snowflake-catalog.database" = '%s',
+                  "iceberg.snowflake-catalog.password" = '%s',
+                  "iceberg.snowflake-catalog.role" = '%s',
+                  "iceberg.snowflake-catalog.user" = '%s',
+                  "s3.aws-access-key" = '%s',
+                  "s3.aws-secret-key" = '%s',
+                  "s3.region" = '%s'
+               )""".formatted(
                 compressionCodec,
                 SNOWFLAKE_JDBC_URI,
                 SNOWFLAKE_TEST_DATABASE,
@@ -157,8 +157,7 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
                 SNOWFLAKE_USER,
                 S3_ACCESS_KEY,
                 s3SecretKey,
-                S3_REGION
-        );
+                S3_REGION);
     }
 
     @Override
@@ -834,23 +833,26 @@ public class TestIcebergSnowflakeCatalogConnectorSmokeTest
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql);
 
-            assertThatThrownBy(() -> assertUpdate("""
+            assertThatThrownBy(() -> assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "iceberg.file-format" = 'ORC'
                     """
-                    .formatted(catalog))).hasMessageContaining("Snowflake only supports Iceberg tables that use the Parquet file format");
-            assertUpdate("""
-                ALTER CATALOG %1$s SET PROPERTIES
-                   "iceberg.snowflake-catalog.password" = 'invalid'
-                """
-                    .formatted(catalog));
+                            .formatted(catalog))).hasMessageContaining("Snowflake only supports Iceberg tables that use the Parquet file format");
+            assertUpdate(
+                    """
+                    ALTER CATALOG %1$s SET PROPERTIES
+                       "iceberg.snowflake-catalog.password" = 'invalid'
+                    """
+                            .formatted(catalog));
             assertThatThrownBy(() -> computeActual("SHOW SCHEMAS FROM " + catalog))
                     .hasMessageContaining("Failed to connect");
-            assertUpdate("""
-                ALTER CATALOG %1$s SET PROPERTIES
-                   "iceberg.snowflake-catalog.password" = '%2$s'
-                """
-                    .formatted(catalog, SNOWFLAKE_PASSWORD));
+            assertUpdate(
+                    """
+                    ALTER CATALOG %1$s SET PROPERTIES
+                       "iceberg.snowflake-catalog.password" = '%2$s'
+                    """
+                            .formatted(catalog, SNOWFLAKE_PASSWORD));
             assertQuerySucceeds("SHOW SCHEMAS FROM " + catalog);
         }
         finally {

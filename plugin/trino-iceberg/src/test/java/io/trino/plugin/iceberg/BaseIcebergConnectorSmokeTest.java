@@ -179,10 +179,11 @@ public abstract class BaseIcebergConnectorSmokeTest
         assertUpdate(createCatalogSql);
 
         String catalog = "catalog_rename_" + randomNameSuffix();
-        assertUpdate("""
+        assertUpdate(
+                """
                 ALTER CATALOG %s RENAME TO %s
                 """
-                .formatted(oldCatalog, catalog));
+                        .formatted(oldCatalog, catalog));
         assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                 .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
         assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
@@ -203,16 +204,18 @@ public abstract class BaseIcebergConnectorSmokeTest
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql);
 
-            assertThatThrownBy(() -> assertUpdate("""
+            assertThatThrownBy(() -> assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "iceberg.file-format" = 'invalid'
                     """
-                    .formatted(catalog))).hasMessageContaining("Invalid value 'invalid' for type IcebergFileFormat (property 'iceberg.file-format')");
-            assertUpdate("""
-                ALTER CATALOG %1$s SET PROPERTIES
-                   "iceberg.file-format" = '%2$s'
-                """
-                    .formatted(catalog, "ORC"));
+                            .formatted(catalog))).hasMessageContaining("Invalid value 'invalid' for type IcebergFileFormat (property 'iceberg.file-format')");
+            assertUpdate(
+                    """
+                    ALTER CATALOG %1$s SET PROPERTIES
+                       "iceberg.file-format" = '%2$s'
+                    """
+                            .formatted(catalog, "ORC"));
 
             assertUpdate(createSchemaSql(Optional.of(catalog), schema));
             assertUpdate("CREATE TABLE %s.%s.test_table as SELECT * FROM tpch.tiny.region".formatted(catalog, schema), 5);
@@ -224,12 +227,13 @@ public abstract class BaseIcebergConnectorSmokeTest
         }
     }
 
-    protected String getCreateCatalogSqlTemplate(){
-        return  """
-                CREATE CATALOG %s USING iceberg
-                WITH (
-                   "iceberg.file-format" = '%s'
-                )""";
+    protected String getCreateCatalogSqlTemplate()
+    {
+        return """
+               CREATE CATALOG %s USING iceberg
+               WITH (
+                  "iceberg.file-format" = '%s'
+               )""";
     }
 
     @Test

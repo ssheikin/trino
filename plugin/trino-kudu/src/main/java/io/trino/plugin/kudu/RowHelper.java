@@ -38,7 +38,7 @@ public final class RowHelper
                 case BOOL -> to.addBoolean(i, from.getBoolean(i));
                 case BINARY -> to.addBinary(i, from.getBinary(i));
                 default -> throw new IllegalStateException("Unknown type " + schema.getColumnByIndex(i).getType()
-                                                           + " for column " + schema.getColumnByIndex(i).getName());
+                        + " for column " + schema.getColumnByIndex(i).getName());
             }
         }
     }
@@ -58,7 +58,7 @@ public final class RowHelper
                 case BOOL -> to.addBoolean(i, from.getBoolean(i));
                 case BINARY -> to.addBinary(i, from.getBinary(i));
                 default -> throw new IllegalStateException("Unknown type " + schema.getColumnByIndex(i).getType()
-                                                           + " for column " + schema.getColumnByIndex(i).getName());
+                        + " for column " + schema.getColumnByIndex(i).getName());
             }
         }
     }

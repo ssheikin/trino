@@ -91,7 +91,10 @@ public class TestTpchConnectorTest
     protected void assertAlteredCatalogBehavior(String catalogName)
     {
         assertTableColumnNames(format("%s.tiny.nation", catalogName),
-                "n_nationkey", "n_name", "n_regionkey", "n_comment");
+                "n_nationkey",
+                "n_name",
+                "n_regionkey",
+                "n_comment");
     }
 
     @Test

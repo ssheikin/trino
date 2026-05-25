@@ -102,10 +102,10 @@ public abstract class BaseTestHiveAbfsPassthrough
         assertQuery(
                 format("SELECT * FROM %s.%s.%s", CATALOG_NAME, SCHEMA_NAME, TEST_TABLE_NAME),
                 """
-                        VALUES  3, 14, 15, -- test_table.csv
-                         92, 65, 35, -- test_table.csv.gz
-                         89, 79, 32, -- test_table.csv.bz2
-                         38, 46, 26  -- test_table.csv.lz4""");
+                VALUES  3, 14, 15, -- test_table.csv
+                 92, 65, 35, -- test_table.csv.gz
+                 89, 79, 32, -- test_table.csv.bz2
+                 38, 46, 26  -- test_table.csv.lz4""");
     }
 
     @Test

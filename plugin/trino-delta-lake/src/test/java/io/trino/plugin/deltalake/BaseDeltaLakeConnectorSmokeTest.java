@@ -296,7 +296,8 @@ public abstract class BaseDeltaLakeConnectorSmokeTest
     void testCreateDropDynamicCatalog()
     {
         String catalog = "new_catalog_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                     "hive.metastore" = 'thrift',
@@ -320,7 +321,8 @@ public abstract class BaseDeltaLakeConnectorSmokeTest
     {
         String firstCatalog = "catalog_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                    "hive.metastore" = 'thrift',
@@ -348,7 +350,8 @@ public abstract class BaseDeltaLakeConnectorSmokeTest
     public void testRenameCatalog()
     {
         String oldCatalog = "catalog_rename_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                    "hive.metastore" = 'thrift',
@@ -357,10 +360,11 @@ public abstract class BaseDeltaLakeConnectorSmokeTest
         assertUpdate(createCatalogSql.formatted(oldCatalog, hiveHadoop.getHiveMetastoreEndpoint().toString()));
 
         String catalog = "catalog_rename_" + randomNameSuffix();
-        assertUpdate("""
+        assertUpdate(
+                """
                 ALTER CATALOG %s RENAME TO %s
                 """
-                .formatted(oldCatalog, catalog));
+                        .formatted(oldCatalog, catalog));
         assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                 .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
         assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
@@ -374,7 +378,8 @@ public abstract class BaseDeltaLakeConnectorSmokeTest
     public void testCatalogSetProperties()
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                    "hive.metastore" = 'thrift',
@@ -385,32 +390,36 @@ public abstract class BaseDeltaLakeConnectorSmokeTest
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql.formatted(catalog, hiveHadoop.getHiveMetastoreEndpoint().toString()));
 
-            assertThatThrownBy(() -> assertUpdate("""
+            assertThatThrownBy(() -> assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "hive.metastore.uri" = 'invalid'
                     """
-                    .formatted(catalog))).hasMessageContaining("IllegalArgumentException: metastoreUri scheme is missing: invalid");
-            assertUpdate("""
+                            .formatted(catalog))).hasMessageContaining("IllegalArgumentException: metastoreUri scheme is missing: invalid");
+            assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "hive.metastore.uri" = 'thrift://invalid:9083'
                     """
-                    .formatted(catalog));
+                            .formatted(catalog));
             assertThatThrownBy(() -> assertUpdate("SHOW SCHEMAS FROM %s".formatted(catalog))).hasMessageContaining("Failed connecting to Hive metastore: [invalid:9083]");
-            assertUpdate("""
+            assertUpdate(
+                    """
                     ALTER CATALOG %1$s SET PROPERTIES
                       "hive.metastore.uri" = '%2$s',
                       "fs.hadoop.enabled" = 'true',
                       "fs.s3.enabled" = 'false'
                     """
-                    .formatted(catalog, hiveHadoop.getHiveMetastoreEndpoint().toString()));
-            String updatedCreateCatalog = """
-                CREATE CATALOG %1$s USING delta_lake
-                WITH (
-                   "fs.hadoop.enabled" = 'true',
-                   "fs.s3.enabled" = 'false',
-                   "hive.metastore" = 'thrift',
-                   "hive.metastore.uri" = '%2$s'
-                )""";
+                            .formatted(catalog, hiveHadoop.getHiveMetastoreEndpoint().toString()));
+            String updatedCreateCatalog =
+                    """
+                    CREATE CATALOG %1$s USING delta_lake
+                    WITH (
+                       "fs.hadoop.enabled" = 'true',
+                       "fs.s3.enabled" = 'false',
+                       "hive.metastore" = 'thrift',
+                       "hive.metastore.uri" = '%2$s'
+                    )""";
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(updatedCreateCatalog.formatted(catalog, hiveHadoop.getHiveMetastoreEndpoint().toString()));
             assertUpdate("CREATE SCHEMA %s.test_dynamic".formatted(catalog));

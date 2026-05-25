@@ -396,7 +396,8 @@ public abstract class BaseHiveConnectorTest
         String connectorName = isObjectStore() ? "great_lakes" : "hive";
         String firstCatalog = "catalog_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING %2$s
                 WITH (
                    "hive.allow-register-partition-procedure" = '%3$s'

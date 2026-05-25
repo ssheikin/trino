@@ -111,7 +111,8 @@ public class TestDeltaS3AndGlueMetastoreTest
     void testCreateDropDynamicCatalog()
     {
         String catalog = "new_catalog_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                     "hive.metastore" = 'glue',
@@ -135,7 +136,8 @@ public class TestDeltaS3AndGlueMetastoreTest
     {
         String firstCatalog = "catalog_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                    "hive.metastore" = 'glue',
@@ -163,7 +165,8 @@ public class TestDeltaS3AndGlueMetastoreTest
     public void testRenameCatalog()
     {
         String oldCatalog = "catalog_rename_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                    "hive.metastore" = 'glue',
@@ -187,7 +190,8 @@ public class TestDeltaS3AndGlueMetastoreTest
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
         String dynamicSchema = "test_dynamic_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING delta_lake
                 WITH (
                    "hive.metastore" = 'glue',
@@ -198,18 +202,20 @@ public class TestDeltaS3AndGlueMetastoreTest
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql.formatted(catalog, schemaPath()));
 
-            assertThatThrownBy(() -> assertUpdate("""
+            assertThatThrownBy(() -> assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "hive.metastore" = 'invalid'
                     """
-                    .formatted(catalog))).hasMessageContaining("Configuration property 'hive.metastore.glue.default-warehouse-dir' was not used");
-            assertUpdate("""
+                            .formatted(catalog))).hasMessageContaining("Configuration property 'hive.metastore.glue.default-warehouse-dir' was not used");
+            assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                       "hive.metastore" = 'glue',
                       "fs.hadoop.enabled" = 'false',
                       "fs.s3.enabled" = 'true'
                     """
-                    .formatted(catalog));
+                            .formatted(catalog));
             assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, dynamicSchema));
         }
         finally {

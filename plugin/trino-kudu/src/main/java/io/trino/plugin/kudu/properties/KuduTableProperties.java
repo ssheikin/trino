@@ -308,8 +308,7 @@ public final class KuduTableProperties
             case INT32 -> bound.getInt(idx);
             case INT16 -> bound.getShort(idx);
             case INT8 -> (short) bound.getByte(idx);
-            case FLOAT, DOUBLE, DECIMAL ->
-                    throw new IllegalStateException("Unhandled type " + type + " for range partition");
+            case FLOAT, DOUBLE, DECIMAL -> throw new IllegalStateException("Unhandled type " + type + " for range partition");
             case BOOL -> bound.getBoolean(idx);
             case BINARY -> bound.getBinaryCopy(idx);
             // TODO: add support for varchar and date types: https://github.com/trinodb/trino/issues/11009
@@ -341,7 +340,9 @@ public final class KuduTableProperties
         return partitionDesign;
     }
 
-    public static PartialRow toRangeBoundToPartialRow(Schema schema, RangePartitionDefinition definition,
+    public static PartialRow toRangeBoundToPartialRow(
+            Schema schema,
+            RangePartitionDefinition definition,
             RangeBoundValue boundValue)
     {
         PartialRow partialRow = new PartialRow(schema);

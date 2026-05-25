@@ -141,14 +141,14 @@ public class InternalDispatcherConnectorFactory
         return config.entrySet().stream()
                 .filter(e ->
                         e.getKey().startsWith("warp-speed") ||
-                        e.getKey().startsWith(WARP_PREFIX) ||
-                        // TrinoFileSystem hdfs config
-                        e.getKey().startsWith("hive.s3") || e.getKey().startsWith("hive.azure") || e.getKey().startsWith("hive.gcs") ||
-                        // TrinoFileSystem native config
-                        e.getKey().startsWith("fs.") || e.getKey().startsWith("s3.") || e.getKey().startsWith("azure.") || e.getKey().startsWith("gcs.") ||
-                        e.getKey().startsWith("http") ||
-                        e.getKey().startsWith("internal-communication") ||
-                        e.getKey().equals("node.environment"))
+                                e.getKey().startsWith(WARP_PREFIX) ||
+                                // TrinoFileSystem hdfs config
+                                e.getKey().startsWith("hive.s3") || e.getKey().startsWith("hive.azure") || e.getKey().startsWith("hive.gcs") ||
+                                // TrinoFileSystem native config
+                                e.getKey().startsWith("fs.") || e.getKey().startsWith("s3.") || e.getKey().startsWith("azure.") || e.getKey().startsWith("gcs.") ||
+                                e.getKey().startsWith("http") ||
+                                e.getKey().startsWith("internal-communication") ||
+                                e.getKey().equals("node.environment"))
                 .collect(Collectors.toMap(entry -> entry.getKey().startsWith(WARP_PREFIX) ? entry.getKey().substring(WARP_PREFIX.length()) : entry.getKey(), Entry::getValue));
     }
 

@@ -323,10 +323,14 @@ public abstract class BaseIcebergConnectorTest
         try {
             fileSystem.createDirectory(Location.of(schemaLocation));
             assertUpdate(format("CREATE SCHEMA %s.%s WITH (location = '%s')", catalogName, schemaName, schemaLocation));
-            String createTableSql = format("""
+            String createTableSql = format(
+                    """
                     CREATE TABLE %s.%s.%s WITH (
                         extra_properties = MAP(ARRAY['normallynotallowed'], ARRAY['foo'])
-                    ) AS SELECT 1 as c1""", catalogName, schemaName, tableName);
+                    ) AS SELECT 1 as c1""",
+                    catalogName,
+                    schemaName,
+                    tableName);
             assertQuerySucceeds(createTableSql);
             fileSystem.deleteDirectory(Location.of(schemaLocation));
         }

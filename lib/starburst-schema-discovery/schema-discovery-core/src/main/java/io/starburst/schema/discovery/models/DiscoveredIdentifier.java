@@ -15,7 +15,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import static io.starburst.schema.discovery.models.HiveIdentifier.toHiveIdentifier;
 
 public sealed interface DiscoveredIdentifier
-        permits AlphanumericWithUnderscore, HiveIdentifier, TrinoIdentifier
+        permits AlphanumericWithUnderscore,
+                HiveIdentifier,
+                TrinoIdentifier
 {
     String string();
 

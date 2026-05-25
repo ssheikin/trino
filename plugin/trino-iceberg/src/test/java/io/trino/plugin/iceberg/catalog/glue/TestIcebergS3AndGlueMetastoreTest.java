@@ -173,7 +173,8 @@ public class TestIcebergS3AndGlueMetastoreTest
     {
         String firstCatalog = "catalog_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING iceberg
                 WITH (
                    "hive.metastore.glue.default-warehouse-dir" = '%2$s',
@@ -201,7 +202,8 @@ public class TestIcebergS3AndGlueMetastoreTest
     public void testRenameCatalog()
     {
         String oldCatalog = "catalog_rename_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING iceberg
                 WITH (
                    "hive.metastore.glue.default-warehouse-dir" = '%2$s',
@@ -224,7 +226,8 @@ public class TestIcebergS3AndGlueMetastoreTest
     public void testCatalogSetProperties()
     {
         String catalog = "catalog_set_props_" + randomNameSuffix();
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %1$s USING iceberg
                 WITH (
                    "hive.metastore.glue.default-warehouse-dir" = '%2$s',
@@ -235,16 +238,18 @@ public class TestIcebergS3AndGlueMetastoreTest
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql.formatted(catalog, schemaPath()));
 
-            assertThatThrownBy(() -> assertUpdate("""
+            assertThatThrownBy(() -> assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "iceberg.catalog.type" = 'invalid'
                     """
-                    .formatted(catalog))).hasMessageContaining("Error: Invalid value 'invalid' for type CatalogType (property 'iceberg.catalog.type')");
-            assertUpdate("""
+                            .formatted(catalog))).hasMessageContaining("Error: Invalid value 'invalid' for type CatalogType (property 'iceberg.catalog.type')");
+            assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                       "iceberg.catalog.type" = 'glue'
                     """
-                    .formatted(catalog));
+                            .formatted(catalog));
             assertUpdate("CREATE SCHEMA %s.test_dynamic".formatted(catalog));
         }
         finally {

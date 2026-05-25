@@ -78,14 +78,15 @@ public class TestSqlServerConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING %s
-                WITH (
-                   "connection-password" = '%s',
-                   "connection-url" = '%s',
-                   "connection-user" = '%s',
-                   "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING %s
+                    WITH (
+                       "connection-password" = '%s',
+                       "connection-url" = '%s',
+                       "connection-user" = '%s',
+                       "jdbc-types-mapped-to-varchar" = 'true'
+                    )""".formatted(secondCatalog, CONNECTOR_NAME, sqlServer.getPassword(), sqlServer.getJdbcUrl(), sqlServer.getUsername());
             assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue()).isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TEST_SCHEMA));

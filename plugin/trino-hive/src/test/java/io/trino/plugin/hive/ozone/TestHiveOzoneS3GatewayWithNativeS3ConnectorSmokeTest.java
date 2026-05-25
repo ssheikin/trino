@@ -40,14 +40,14 @@ public class TestHiveOzoneS3GatewayWithNativeS3ConnectorSmokeTest
     protected String alterCatalogSql(String catalogName)
     {
         return """
-                ALTER CATALOG %1$s SET PROPERTIES
-                  "hive.security" = 'allow-all',
-                  "fs.hadoop.enabled" = 'false',
-                  "fs.s3.enabled" = 'true',
-                  "s3.aws-access-key" = '%2$s',
-                  "s3.aws-secret-key" = '%3$s',
-                  "s3.endpoint" = '%4$s',
-                  "s3.path-style-access" = 'true'
-                """.formatted(catalogName, DUMMY_ACCESS_KEY, DUMMY_SECRET_KEY, hiveOzoneS3Gateway.getApacheOzoneContainer().getS3EndpointAddress());
+               ALTER CATALOG %1$s SET PROPERTIES
+                 "hive.security" = 'allow-all',
+                 "fs.hadoop.enabled" = 'false',
+                 "fs.s3.enabled" = 'true',
+                 "s3.aws-access-key" = '%2$s',
+                 "s3.aws-secret-key" = '%3$s',
+                 "s3.endpoint" = '%4$s',
+                 "s3.path-style-access" = 'true'
+               """.formatted(catalogName, DUMMY_ACCESS_KEY, DUMMY_SECRET_KEY, hiveOzoneS3Gateway.getApacheOzoneContainer().getS3EndpointAddress());
     }
 }

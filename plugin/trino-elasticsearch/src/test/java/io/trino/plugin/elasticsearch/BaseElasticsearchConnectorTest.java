@@ -67,20 +67,21 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 public abstract class BaseElasticsearchConnectorTest
         extends BaseConnectorTest
 {
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
-                CREATE CATALOG %s USING elasticsearch
-                WITH (
-                   "elasticsearch.auth.password" = '%s',
-                   "elasticsearch.auth.user" = '%s',
-                   "elasticsearch.default-schema-name" = '%s',
-                   "elasticsearch.host" = '%s',
-                   "elasticsearch.port" = '%s',
-                   "elasticsearch.security" = 'PASSWORD',
-                   "elasticsearch.tls.enabled" = 'true',
-                   "elasticsearch.tls.truststore-password" = '123456',
-                   "elasticsearch.tls.truststore-path" = '%s',
-                   "elasticsearch.tls.verify-hostnames" = 'false'
-                )""";
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
+            CREATE CATALOG %s USING elasticsearch
+            WITH (
+               "elasticsearch.auth.password" = '%s',
+               "elasticsearch.auth.user" = '%s',
+               "elasticsearch.default-schema-name" = '%s',
+               "elasticsearch.host" = '%s',
+               "elasticsearch.port" = '%s',
+               "elasticsearch.security" = 'PASSWORD',
+               "elasticsearch.tls.enabled" = 'true',
+               "elasticsearch.tls.truststore-password" = '123456',
+               "elasticsearch.tls.truststore-path" = '%s',
+               "elasticsearch.tls.verify-hostnames" = 'false'
+            )""";
 
     protected ElasticsearchServer server;
     protected RestHighLevelClient client;
@@ -178,29 +179,30 @@ public abstract class BaseElasticsearchConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING elasticsearch
-                WITH (
-                   "elasticsearch.auth.password" = '%s',
-                   "elasticsearch.auth.user" = '%s',
-                   "elasticsearch.default-schema-name" = '%s',
-                   "elasticsearch.host" = '%s',
-                   "elasticsearch.port" = '%s',
-                   "elasticsearch.scroll-size" = '1000',
-                   "elasticsearch.scroll-timeout" = '1m',
-                   "elasticsearch.security" = 'PASSWORD',
-                   "elasticsearch.tls.enabled" = 'true',
-                   "elasticsearch.tls.truststore-password" = '123456',
-                   "elasticsearch.tls.truststore-path" = '%s',
-                   "elasticsearch.tls.verify-hostnames" = 'false'
-                )""".formatted(
-                        secondCatalog,
-                    PASSWORD,
-                    USER,
-                    TPCH_SCHEMA,
-                    server.getAddress().getHost(),
-                    server.getAddress().getPort(),
-                    new File(getResource("truststore.jks").toURI()).getPath());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING elasticsearch
+                    WITH (
+                       "elasticsearch.auth.password" = '%s',
+                       "elasticsearch.auth.user" = '%s',
+                       "elasticsearch.default-schema-name" = '%s',
+                       "elasticsearch.host" = '%s',
+                       "elasticsearch.port" = '%s',
+                       "elasticsearch.scroll-size" = '1000',
+                       "elasticsearch.scroll-timeout" = '1m',
+                       "elasticsearch.security" = 'PASSWORD',
+                       "elasticsearch.tls.enabled" = 'true',
+                       "elasticsearch.tls.truststore-password" = '123456',
+                       "elasticsearch.tls.truststore-path" = '%s',
+                       "elasticsearch.tls.verify-hostnames" = 'false'
+                    )""".formatted(
+                            secondCatalog,
+                            PASSWORD,
+                            USER,
+                            TPCH_SCHEMA,
+                            server.getAddress().getHost(),
+                            server.getAddress().getPort(),
+                            new File(getResource("truststore.jks").toURI()).getPath());
             assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue()).isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));

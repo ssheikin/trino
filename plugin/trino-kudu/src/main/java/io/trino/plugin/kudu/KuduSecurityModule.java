@@ -57,7 +57,8 @@ public class KuduSecurityModule
             return KuduSecurityModule.createKuduClientSession(
                     config,
                     schemaEmulation,
-                    builder -> new PassthroughKuduClient(builder.build()), identifierMapping);
+                    builder -> new PassthroughKuduClient(builder.build()),
+                    identifierMapping);
         }
     }
 

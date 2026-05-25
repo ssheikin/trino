@@ -94,7 +94,8 @@ public abstract class BaseBigQueryConnectorTest
             .withMaxAttempts(3)
             .build();
 
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
             CREATE CATALOG %s USING bigquery
             WITH (
                "bigquery.credentials-key" = '%s'
@@ -1589,7 +1590,8 @@ public abstract class BaseBigQueryConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
+            String createSecondCatalogSql =
+                    """
                     CREATE CATALOG %s USING bigquery
                     WITH (
                        "bigquery.credentials-key" = '%s',

@@ -34,15 +34,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class TestDynamoDbConnectorTest
         extends BaseJdbcConnectorTest
 {
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
-                CREATE CATALOG %s USING dynamodb
-                WITH (
-                   "dynamodb.aws-access-key" = 'accesskey',
-                   "dynamodb.aws-region" = 'us-east-2',
-                   "dynamodb.aws-secret-key" = 'secretkey',
-                   "dynamodb.endpoint-url" = '%s',
-                   "dynamodb.schema-directory" = '%s'
-                )""";
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
+            CREATE CATALOG %s USING dynamodb
+            WITH (
+               "dynamodb.aws-access-key" = 'accesskey',
+               "dynamodb.aws-region" = 'us-east-2',
+               "dynamodb.aws-secret-key" = 'secretkey',
+               "dynamodb.endpoint-url" = '%s',
+               "dynamodb.schema-directory" = '%s'
+            )""";
     private TestingDynamoDbServer server;
 
     @Override

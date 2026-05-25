@@ -123,14 +123,15 @@ public class TestVerticaConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING %s
-                WITH (
-                   "connection-password" = '%s',
-                   "connection-url" = '%s',
-                   "connection-user" = '%s',
-                   "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING %s
+                    WITH (
+                       "connection-password" = '%s',
+                       "connection-url" = '%s',
+                       "connection-user" = '%s',
+                       "jdbc-types-mapped-to-varchar" = 'true'
+                    )""".formatted(secondCatalog, CONNECTOR_NAME, verticaServer.getPassword(), verticaServer.getJdbcUrl(), verticaServer.getUsername());
             assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue()).isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, TPCH_SCHEMA));

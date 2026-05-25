@@ -125,19 +125,18 @@ public class TestIcebergAbfsConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String accessKey)
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "azure.access-key" = '%s',
-                   "azure.auth-type" = 'ACCESS_KEY',
-                   "fs.azure.enabled" = 'true',
-                   "fs.hadoop.enabled" = 'false',
-                   "hive.metastore.uri" = '%s',
-                   "iceberg.catalog.type" = 'HIVE_METASTORE',
-                   "iceberg.file-format" = '%%s'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "azure.access-key" = '%s',
+                  "azure.auth-type" = 'ACCESS_KEY',
+                  "fs.azure.enabled" = 'true',
+                  "fs.hadoop.enabled" = 'false',
+                  "hive.metastore.uri" = '%s',
+                  "iceberg.catalog.type" = 'HIVE_METASTORE',
+                  "iceberg.file-format" = '%%s'
+               )""".formatted(
                 accessKey,
-                hiveHadoop.getHiveMetastoreEndpoint().toString()
-        );
+                hiveHadoop.getHiveMetastoreEndpoint().toString());
     }
 
     @Test

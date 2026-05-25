@@ -141,10 +141,10 @@ public abstract class KuduTestTable
                 options.addHashPartitions(partition.columns(), partition.buckets());
             }
         }
-        //if (partitionDesign.getRange() != null) {
+        // if (partitionDesign.getRange() != null) {
         //    rangePartitionDefinition = partitionDesign.getRange();
         //    options.setRangePartitionColumns(rangePartitionDefinition.getColumns());
-        //}
+        // }
 
         List<RangePartition> rangePartitions = KuduTableProperties.getRangePartitions(properties);
         if (rangePartitionDefinition != null && !rangePartitions.isEmpty()) {

@@ -65,8 +65,7 @@ final class AzureAdSupport
                 .setIdentity(Identity.forUser(username)
                         .withAdditionalExtraCredentials(
                                 ImmutableMap.of(
-                                        OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL,
-                                        accessTokenFor(username, password, clientId, clientSecret, scope)))
+                                        OAUTH2_ACCESS_TOKEN_PASSTHROUGH_CREDENTIAL, accessTokenFor(username, password, clientId, clientSecret, scope)))
                         .build())
                 .build();
     }
@@ -80,8 +79,7 @@ final class AzureAdSupport
                 .setIdentity(Identity.forUser(username)
                         .withAdditionalExtraCredentials(
                                 ImmutableMap.of(
-                                        MULTIPLE_TOKENS_KEY_PREFIX + idPName.toString(),
-                                        accessTokenFor(username, password, clientId, clientSecret, scope)))
+                                        MULTIPLE_TOKENS_KEY_PREFIX + idPName.toString(), accessTokenFor(username, password, clientId, clientSecret, scope)))
                         .build())
                 .build();
     }

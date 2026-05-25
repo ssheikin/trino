@@ -29,8 +29,14 @@ public class LdapQuery
     private final int countLimit;
     private final int searchScope;
 
-    private LdapQuery(String searchBase, String searchFilter, Object[] filterArguments, String[] attributes,
-            int timeLimit, int countLimit, int searchScope)
+    private LdapQuery(
+            String searchBase,
+            String searchFilter,
+            Object[] filterArguments,
+            String[] attributes,
+            int timeLimit,
+            int countLimit,
+            int searchScope)
     {
         this.searchBase = requireNonNull(searchBase, "searchBase is null");
         this.searchFilter = requireNonNull(searchFilter, "searchFilter is null");
@@ -138,7 +144,8 @@ public class LdapQuery
 
         public LdapQuery build()
         {
-            return new LdapQuery(searchBase,
+            return new LdapQuery(
+                    searchBase,
                     searchFilter,
                     filterArguments,
                     attributes,

@@ -137,21 +137,15 @@ public class TestLdapBasedAuthToLocalWithMultipleConfiguration
     @Retention(RUNTIME)
     @Target({FIELD, PARAMETER, METHOD})
     @BindingAnnotation
-    public @interface ForAnnotation1
-    {
-    }
+    public @interface ForAnnotation1 {}
 
     @Retention(RUNTIME)
     @Target({FIELD, PARAMETER, METHOD})
     @BindingAnnotation
-    public @interface ForAnnotation2
-    {
-    }
+    public @interface ForAnnotation2 {}
 
     @Retention(RUNTIME)
     @Target({FIELD, PARAMETER, METHOD})
     @BindingAnnotation
-    public @interface ForAnnotation3
-    {
-    }
+    public @interface ForAnnotation3 {}
 }

@@ -42,12 +42,13 @@ public class TestLocationAccessControl
                 .setSchema("default")
                 .build();
         DistributedQueryRunner queryRunner = DistributedQueryRunner.builder(session)
-                .setWorkerCount(0)// Coordinator only is perfectly enough until we do parallel Stargate connector
+                .setWorkerCount(0) // Coordinator only is perfectly enough until we do parallel Stargate connector
                 .build();
         queryRunner.installPlugin(new MockConnectorPlugin(MockConnectorFactory.builder()
                 .withTableProperties(() -> ImmutableList.of(stringProperty("location", "table location", null, false)))
                 .withGetTableHandle((_, _) -> null)
-                .withLocationAccessControl(Optional.of(new LocationAccessControl() {
+                .withLocationAccessControl(Optional.of(new LocationAccessControl()
+                {
                     @Override
                     public void checkCanUseLocation(ConnectorIdentity identity, String location, String queryI)
                     {

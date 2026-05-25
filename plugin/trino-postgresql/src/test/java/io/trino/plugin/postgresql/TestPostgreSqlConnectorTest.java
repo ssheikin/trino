@@ -177,14 +177,15 @@ public class TestPostgreSqlConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING %s
-                WITH (
-                   "connection-password" = '%s',
-                   "connection-url" = '%s',
-                   "connection-user" = '%s',
-                   "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING %s
+                    WITH (
+                       "connection-password" = '%s',
+                       "connection-url" = '%s',
+                       "connection-user" = '%s',
+                       "jdbc-types-mapped-to-varchar" = 'true'
+                    )""".formatted(secondCatalog, CONNECTOR_NAME, postgreSqlServer.getPassword(), postgreSqlServer.getJdbcUrl(), postgreSqlServer.getUser());
             assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
                     .isEqualTo(createSecondCatalogSql);

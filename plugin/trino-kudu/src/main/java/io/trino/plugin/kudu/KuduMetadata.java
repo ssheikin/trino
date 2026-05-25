@@ -395,8 +395,11 @@ public class KuduMetadata
             propsCopy.put(KuduTableProperties.PARTITION_BY_HASH_COLUMNS, ImmutableList.of(rowId));
             propsCopy.put(KuduTableProperties.PARTITION_BY_HASH_BUCKETS, 2);
             Map<String, Object> finalProperties = ImmutableMap.copyOf(propsCopy);
-            finalTableMetadata = new ConnectorTableMetadata(tableMetadata.getTable(),
-                    finalColumns, finalProperties, tableMetadata.getComment());
+            finalTableMetadata = new ConnectorTableMetadata(
+                    tableMetadata.getTable(),
+                    finalColumns,
+                    finalProperties,
+                    tableMetadata.getComment());
         }
         KuduTable table = clientSession.createTable(session, finalTableMetadata, false);
 

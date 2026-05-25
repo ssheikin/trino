@@ -71,11 +71,12 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 public class TestMongoConnectorTest
         extends BaseConnectorTest
 {
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
-                CREATE CATALOG %s USING mongodb
-                WITH (
-                   "mongodb.connection-url" = '%s'
-                )""";
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
+            CREATE CATALOG %s USING mongodb
+            WITH (
+               "mongodb.connection-url" = '%s'
+            )""";
     protected MongoServer server;
     protected MongoClient client;
 
@@ -179,12 +180,13 @@ public class TestMongoConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING mongodb
-                WITH (
-                   "mongodb.allow-local-scheduling" = 'true',
-                   "mongodb.connection-url" = '%s'
-                )""".formatted(secondCatalog, server.getConnectionString());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING mongodb
+                    WITH (
+                       "mongodb.allow-local-scheduling" = 'true',
+                       "mongodb.connection-url" = '%s'
+                    )""".formatted(secondCatalog, server.getConnectionString());
             assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
                     .isEqualTo(createSecondCatalogSql);

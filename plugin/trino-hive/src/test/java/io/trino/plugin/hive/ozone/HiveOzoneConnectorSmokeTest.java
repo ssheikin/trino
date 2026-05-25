@@ -143,7 +143,8 @@ final class HiveOzoneConnectorSmokeTest
             // "fs.hadoop.enabled" = 'true' is needed to provide Apache Ozone libraries to recognize ofs filesystem. Otherwise:
             // Invalid location URI: ofs://
             // No factory for location: ofs://
-            createCatalogSql += """
+            createCatalogSql +=
+                    """
 
                     WITH (
                        "fs.hadoop.enabled" = 'true'
@@ -152,11 +153,12 @@ final class HiveOzoneConnectorSmokeTest
             assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                     .isEqualTo(createCatalogSql.formatted(catalog));
 
-            assertUpdate("""
+            assertUpdate(
+                    """
                     ALTER CATALOG %s SET PROPERTIES
                        "hive.security" = 'read-only'
                     """
-                    .formatted(catalog));
+                            .formatted(catalog));
             assertThatThrownBy(() -> assertUpdate("CREATE SCHEMA %s.%s".formatted(catalog, schemaName))).hasMessageContaining("Access Denied: Cannot create schema " + schemaName);
             assertUpdate(alterCatalogSql(catalog));
             assertUpdate(createSchemaSql("%s.%s".formatted(catalog, schemaName)));

@@ -106,8 +106,7 @@ public class CacheManagerRegistry
             InternalNodeManager internalNodeManager,
             SecretsResolver secretsResolver)
     {
-        this(
-                cacheConfig,
+        this(cacheConfig,
                 localMemoryManager,
                 newSingleThreadExecutor(daemonThreadsNamed("cache-manager-registry")),
                 blockEncodingSerde,

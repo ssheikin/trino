@@ -268,7 +268,7 @@ public class SourcePartitionedScheduler
                 addSuccessCallback(nextSplitBatchFuture, () -> stageExecution.recordSplitSourceMetrics(partitionedNode, splitSource.getMetrics(), start));
                 sourceTable.ifPresent(source -> addSuccessCallback(
                         nextSplitBatchFuture,
-                        (splitBatch) -> scheduledSplitsPerTableTracker.recordScheduledSplitCount(source, partitionedNode, splitBatch.getSplits().size())));
+                        splitBatch -> scheduledSplitsPerTableTracker.recordScheduledSplitCount(source, partitionedNode, splitBatch.getSplits().size())));
             }
 
             if (nextSplitBatchFuture.isDone()) {

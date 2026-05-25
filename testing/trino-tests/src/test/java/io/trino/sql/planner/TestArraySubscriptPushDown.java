@@ -131,13 +131,13 @@ public class TestArraySubscriptPushDown
     @Test
     public void testArraySubscriptPushdownOnParentColumn()
     {
-        assertPlan("WITH t(arr) AS (VALUES ARRAY[1, 2, 3, 4], ARRAY[5, 6, 7, 8]) " +
+        assertPlan(
+                "WITH t(arr) AS (VALUES ARRAY[1, 2, 3, 4], ARRAY[5, 6, 7, 8]) " +
                         "SELECT a.arr, a.arr[1], b.arr[2] FROM t a CROSS JOIN t b",
                 output(ImmutableList.of("a_arr", "a_at_1", "b_at_2"),
                         project(
                                 ImmutableMap.of(
-                                        "a_at_1",
-                                        expression(
+                                        "a_at_1", expression(
                                                 arraySubscriptExpression(new Reference(new ArrayType(INTEGER), "a_arr"), new Constant(BIGINT, 1L)))),
                                 join(INNER, builder -> builder
                                         .left(
@@ -154,7 +154,8 @@ public class TestArraySubscriptPushDown
     @Test
     public void testArraySubscriptPushdownJoin()
     {
-        assertPlan("WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4])" +
+        assertPlan(
+                "WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4])" +
                         "SELECT b.arr[1] " +
                         "FROM t a, t b " +
                         "WHERE a.arr[2] = b.arr[3]",
@@ -171,14 +172,16 @@ public class TestArraySubscriptPushDown
                                                         new Constant(INTEGER, 2L),
                                                         new Constant(INTEGER, 2L))))))));
 
-        assertPlan("WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4])" +
+        assertPlan(
+                "WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4])" +
                         "SELECT a.arr[1] " +
                         "FROM t a JOIN t b ON a.arr[2] = b.arr[3] " +
                         "WHERE a.arr[4] > INTEGER '5'",
                 output(ImmutableList.of("a_y"),
                         values("a_y")));
 
-        assertPlan("WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4])" +
+        assertPlan(
+                "WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4])" +
                         "SELECT b.arr[1] " +
                         "FROM t a JOIN t b ON a.arr[2] = b.arr[3] " +
                         "WHERE a.arr[4] + b.arr[4] < BIGINT '10'",
@@ -207,7 +210,8 @@ public class TestArraySubscriptPushDown
     public void testArraySubscriptPushdownFilter()
     {
         // dereference pushdown + constant folding
-        assertPlan("WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4]) " +
+        assertPlan(
+                "WITH t(arr) AS (VALUES ARRAY[1, 2, 2, 4]) " +
                         "SELECT a.arr[1], b.arr[2] " +
                         "FROM t a CROSS JOIN t b " +
                         "WHERE a.arr[3] = 2 OR IS_FINITE(b.arr[4])",
@@ -231,12 +235,15 @@ public class TestArraySubscriptPushDown
     @Test
     public void testArraySubscriptPushdownSemiJoin()
     {
-        assertPlan("SELECT arr[1] FROM array_table WHERE arr[2] IN (SELECT t.arr[3] FROM array_table t)",
+        assertPlan(
+                "SELECT arr[1] FROM array_table WHERE arr[2] IN (SELECT t.arr[3] FROM array_table t)",
                 Session.builder(getPlanTester().getDefaultSession())
                         .setSystemProperty(FILTERING_SEMI_JOIN_TO_INNER, "false")
                         .build(),
                 anyTree(
-                        semiJoin("arr_at_2", "arr_at_3", "semi_join_symbol",
+                        semiJoin("arr_at_2",
+                                "arr_at_3",
+                                "semi_join_symbol",
                                 project(
                                         ImmutableMap.of(
                                                 "arr_at_1", expression(arraySubscriptExpression(new Reference(ARRAY_TYPE, "arr_source"), new Constant(BIGINT, 1L))),

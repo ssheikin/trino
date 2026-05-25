@@ -88,12 +88,12 @@ public class TestResultsCache
                 Arguments.of(
                         "testJoinedTables",
                         """
-                                SELECT nation.name, customer.name
-                                FROM tpch.tiny.customer
-                                JOIN tpch.tiny.nation ON nation.nationkey = customer.nationkey
-                                JOIN tpch.tiny.orders ON orders.custkey = customer.custkey
-                                LIMIT 10
-                                """));
+                        SELECT nation.name, customer.name
+                        FROM tpch.tiny.customer
+                        JOIN tpch.tiny.nation ON nation.nationkey = customer.nationkey
+                        JOIN tpch.tiny.orders ON orders.custkey = customer.custkey
+                        LIMIT 10
+                        """));
     }
 
     @ParameterizedTest

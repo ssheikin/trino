@@ -29,7 +29,8 @@ public final class AzureAuthCustomToken
     public AzureAuthCustomToken(TokenCredential credential, AuthType authType)
     {
         checkState(authType.equals(AuthType.DEFAULT),
-                "When using Azure AD pass-through, no other authentication mechanisms should be set. Found: %s", authType);
+                "When using Azure AD pass-through, no other authentication mechanisms should be set. Found: %s",
+                authType);
         this.credential = requireNonNull(credential, "credential is null");
     }
 

@@ -135,22 +135,21 @@ public class TestIcebergS3VendingRestCatalogConnectorSmokeTest
     protected String getCreateCatalogSqlTemplate()
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'false',
-                   "fs.s3.enabled" = 'true',
-                   "iceberg.catalog.type" = 'rest',
-                   "iceberg.file-format" = '%%s',
-                   "iceberg.rest-catalog.uri" = '%s',
-                   "iceberg.rest-catalog.vended-credentials-enabled" = 'true',
-                   "s3.endpoint" = '%s',
-                   "s3.path-style-access" = 'true',
-                   "s3.region" = '%s'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'false',
+                  "fs.s3.enabled" = 'true',
+                  "iceberg.catalog.type" = 'rest',
+                  "iceberg.file-format" = '%%s',
+                  "iceberg.rest-catalog.uri" = '%s',
+                  "iceberg.rest-catalog.vended-credentials-enabled" = 'true',
+                  "s3.endpoint" = '%s',
+                  "s3.path-style-access" = 'true',
+                  "s3.region" = '%s'
+               )""".formatted(
                 "http://" + restCatalogBackendContainer.getRestCatalogEndpoint(),
                 minio.getMinioAddress(),
-                MINIO_REGION
-        );
+                MINIO_REGION);
     }
 
     @Override

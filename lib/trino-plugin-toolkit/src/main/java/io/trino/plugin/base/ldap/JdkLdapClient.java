@@ -128,8 +128,11 @@ public class JdkLdapClient
 
         searchControls.setReturningAttributes(ldapQuery.getAttributes());
 
-        log.debug("LDAP search: scope=%d, timeLimit=%dms, countLimit=%d",
-                scope, timeLimit, countLimit);
+        log.debug(
+                "LDAP search: scope=%d, timeLimit=%dms, countLimit=%d",
+                scope,
+                timeLimit,
+                countLimit);
 
         return new CloseableSearchResults(
                 context.search(

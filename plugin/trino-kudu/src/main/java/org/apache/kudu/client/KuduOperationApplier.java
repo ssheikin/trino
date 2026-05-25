@@ -93,7 +93,8 @@ public final class KuduOperationApplier
 
         if (!failedOperations.isEmpty()) {
             FailedOperation firstError = failedOperations.get(0);
-            throw new TrinoException(GENERIC_INTERNAL_ERROR, format("Error while applying %s kudu operation(s); First error: %s: %s",
+            throw new TrinoException(GENERIC_INTERNAL_ERROR, format(
+                    "Error while applying %s kudu operation(s); First error: %s: %s",
                     failedOperations.size(),
                     firstError.operationResponse.getOperation().getChangeType().toString(),
                     firstError.rowError));

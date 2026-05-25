@@ -36,12 +36,13 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
         extends BaseStargateConnectorTest
 {
     private static final String REMOTE_CATALOG_NAME = "memory";
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
-                CREATE CATALOG %s USING stargate_parallel
-                WITH (
-                   "connection-url" = '%s',
-                   "connection-user" = 'p2p'
-                )""";
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
+            CREATE CATALOG %s USING stargate_parallel
+            WITH (
+               "connection-url" = '%s',
+               "connection-user" = 'p2p'
+            )""";
 
     @Override
     protected QueryRunner createQueryRunner()
@@ -95,13 +96,14 @@ public class TestStargateParallelWithMemoryWritesEnabledConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, MEMORY_TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING stargate_parallel
-                WITH (
-                   "connection-url" = '%s',
-                   "connection-user" = 'p2p',
-                   "jdbc-types-mapped-to-varchar" = 'ARRAY'
-                )""".formatted(secondCatalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME));
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING stargate_parallel
+                    WITH (
+                       "connection-url" = '%s',
+                       "connection-user" = 'p2p',
+                       "jdbc-types-mapped-to-varchar" = 'ARRAY'
+                    )""".formatted(secondCatalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME));
             assertUpdate(createSecondCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + secondCatalog)).isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, MEMORY_TPCH_SCHEMA));

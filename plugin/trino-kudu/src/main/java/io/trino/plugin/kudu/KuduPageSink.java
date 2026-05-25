@@ -225,10 +225,12 @@ public class KuduPageSink
                                 operation == INSERT_OPERATION_NUMBER ||
                                 operation == DELETE_OPERATION_NUMBER,
                         "Invalid operation value, supported are " +
-                                        "%s INSERT_OPERATION_NUMBER, " +
-                                        "%s DELETE_OPERATION_NUMBER and " +
-                                        "%s UPDATE_OPERATION_NUMBER",
-                                INSERT_OPERATION_NUMBER, DELETE_OPERATION_NUMBER, UPDATE_OPERATION_NUMBER);
+                                "%s INSERT_OPERATION_NUMBER, " +
+                                "%s DELETE_OPERATION_NUMBER and " +
+                                "%s UPDATE_OPERATION_NUMBER",
+                        INSERT_OPERATION_NUMBER,
+                        DELETE_OPERATION_NUMBER,
+                        UPDATE_OPERATION_NUMBER);
 
                 if (operation == DELETE_OPERATION_NUMBER || operation == UPDATE_OPERATION_NUMBER) {
                     Delete delete = table.newDelete();

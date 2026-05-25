@@ -105,24 +105,23 @@ final class TestIcebergPolarisCatalogConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String credential)
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'true',
-                   "iceberg.catalog.type" = 'rest',
-                   "iceberg.file-format" = '%%s',
-                   "iceberg.rest-catalog.http-headers" = '%s:%s',
-                   "iceberg.rest-catalog.oauth2.credential" = '%s',
-                   "iceberg.rest-catalog.oauth2.scope" = 'PRINCIPAL_ROLE:ALL',
-                   "iceberg.rest-catalog.security" = 'OAUTH2',
-                   "iceberg.rest-catalog.uri" = '%s',
-                   "iceberg.rest-catalog.warehouse" = '%s'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'true',
+                  "iceberg.catalog.type" = 'rest',
+                  "iceberg.file-format" = '%%s',
+                  "iceberg.rest-catalog.http-headers" = '%s:%s',
+                  "iceberg.rest-catalog.oauth2.credential" = '%s',
+                  "iceberg.rest-catalog.oauth2.scope" = 'PRINCIPAL_ROLE:ALL',
+                  "iceberg.rest-catalog.security" = 'OAUTH2',
+                  "iceberg.rest-catalog.uri" = '%s',
+                  "iceberg.rest-catalog.warehouse" = '%s'
+               )""".formatted(
                 TestingPolarisCatalog.POLARIS_REALM_HEADER,
                 TestingPolarisCatalog.POLARIS_REALM_NAME,
                 credential,
                 catalogUri,
-                TestingPolarisCatalog.WAREHOUSE
-        );
+                TestingPolarisCatalog.WAREHOUSE);
     }
 
     @Override

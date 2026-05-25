@@ -33,9 +33,7 @@ public class FilteredResultsCacheEntry
     }
 
     @Override
-    public void done()
-    {
-    }
+    public void done() {}
 
     @Override
     public boolean isDone()

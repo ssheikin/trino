@@ -133,19 +133,19 @@ public abstract class BaseIcebergMinioConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String secretKey)
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'false',
-                   "fs.s3.enabled" = 'true',
-                   "hive.metastore.uri" = '%s',
-                   "iceberg.catalog.type" = 'HIVE_METASTORE',
-                   "iceberg.file-format" = '%%s',
-                   "s3.aws-access-key" = '%s',
-                   "s3.aws-secret-key" = '%s',
-                   "s3.endpoint" = '%s',
-                   "s3.path-style-access" = 'true',
-                   "s3.region" = '%s'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'false',
+                  "fs.s3.enabled" = 'true',
+                  "hive.metastore.uri" = '%s',
+                  "iceberg.catalog.type" = 'HIVE_METASTORE',
+                  "iceberg.file-format" = '%%s',
+                  "s3.aws-access-key" = '%s',
+                  "s3.aws-secret-key" = '%s',
+                  "s3.endpoint" = '%s',
+                  "s3.path-style-access" = 'true',
+                  "s3.region" = '%s'
+               )""".formatted(
                 hiveMinioDataLake.getHiveHadoop().getHiveMetastoreEndpoint().toString(),
                 MINIO_ROOT_USER,
                 secretKey,

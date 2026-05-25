@@ -15,7 +15,8 @@ package io.trino.spi.function;
 
 public interface BuiltinFunctionsChecker
 {
-    BuiltinFunctionsChecker NOOP_CHECKER = new BuiltinFunctionsChecker() {
+    BuiltinFunctionsChecker NOOP_CHECKER = new BuiltinFunctionsChecker()
+    {
         @Override
         public boolean isBuiltinFunction(CatalogSchemaFunctionName functionName)
         {

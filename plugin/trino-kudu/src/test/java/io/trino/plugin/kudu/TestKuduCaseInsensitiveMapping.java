@@ -111,7 +111,6 @@ public class TestKuduCaseInsensitiveMapping
 
     @Test
     public void testTableNameClash()
-
     {
         String schemaName = "default";
         ImmutableList.Builder<KuduTestColumn> builder = ImmutableList.builder();
@@ -179,7 +178,6 @@ public class TestKuduCaseInsensitiveMapping
 
     @Test
     public void testCaseInsensitiveRenameTable()
-
     {
         String schemaName = "default";
         ImmutableList.Builder<KuduTestColumn> builder = ImmutableList.builder();
@@ -198,7 +196,6 @@ public class TestKuduCaseInsensitiveMapping
 
     @Test
     public void testDropAndAddRangePartition()
-
     {
         String schemaName = "default";
         ImmutableList.Builder<KuduTestColumn> builder = ImmutableList.builder();

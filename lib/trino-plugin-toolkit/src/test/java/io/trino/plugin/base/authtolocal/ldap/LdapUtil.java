@@ -30,8 +30,7 @@ import static java.util.Objects.requireNonNull;
 
 final class LdapUtil
 {
-    private LdapUtil()
-    {}
+    private LdapUtil() {}
 
     @SuppressWarnings("BanJNDI")
     public static String addLdapDefinition(LdapObjectDefinition ldapObjectDefinition, DirContext context)

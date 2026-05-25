@@ -82,7 +82,8 @@ public class TestKafkaConnectorTest
     private static final String JSON_MILLISECONDS_TABLE_NAME = "milliseconds_since_epoch_table";
     private static final String JSON_SECONDS_TABLE_NAME = "seconds_since_epoch_table";
     private static final String DEFAULT_SCHEMA = "default";
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
             CREATE CATALOG %s USING kafka
             WITH (
                "kafka.nodes" = '%s',
@@ -541,7 +542,8 @@ public class TestKafkaConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, DEFAULT_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
+            String createSecondCatalogSql =
+                    """
                     CREATE CATALOG %s USING kafka
                     WITH (
                        "kafka.buffer-size" = '1MB',
@@ -572,8 +574,8 @@ public class TestKafkaConnectorTest
     protected void assertAlteredCatalogBehavior(String catalogName)
     {
         assertThatThrownBy(() -> computeActual("SHOW TABLES FROM %s.%s".formatted(catalogName, DEFAULT_SCHEMA)))
-            .isInstanceOf(QueryFailedException.class)
-            .hasMessageContaining("Schema '%s' does not exist".formatted(DEFAULT_SCHEMA));
+                .isInstanceOf(QueryFailedException.class)
+                .hasMessageContaining("Schema '%s' does not exist".formatted(DEFAULT_SCHEMA));
     }
 
     private static List<JsonDateTimeTestCase> jsonDateTimeFormatsData()

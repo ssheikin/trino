@@ -111,14 +111,15 @@ public abstract class BaseMySqlConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING mysql
-                WITH (
-                   "connection-password" = '%s',
-                   "connection-url" = '%s',
-                   "connection-user" = '%s',
-                   "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING mysql
+                    WITH (
+                       "connection-password" = '%s',
+                       "connection-url" = '%s',
+                       "connection-user" = '%s',
+                       "jdbc-types-mapped-to-varchar" = 'true'
+                    )""".formatted(secondCatalog, mySqlServer.getPassword(), mySqlServer.getJdbcUrl(), mySqlServer.getUsername());
             assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
                     .isEqualTo(createSecondCatalogSql);

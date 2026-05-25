@@ -305,26 +305,38 @@ public abstract class BaseTestDbResourceGroupConfigurationManager
     {
         handle.execute(
                 "INSERT INTO resource_groups " +
-                "(resource_group_id, name, soft_memory_limit, max_queued, " +
-                "soft_concurrency_limit, hard_concurrency_limit, parent, environment) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                id, name, softMemoryLimit, maxQueued, softConcurrencyLimit, hardConcurrencyLimit, parent, environment);
+                        "(resource_group_id, name, soft_memory_limit, max_queued, " +
+                        "soft_concurrency_limit, hard_concurrency_limit, parent, environment) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                id,
+                name,
+                softMemoryLimit,
+                maxQueued,
+                softConcurrencyLimit,
+                hardConcurrencyLimit,
+                parent,
+                environment);
     }
 
     private void insertSelector(long resourceGroupId, long priority, String userRegex)
     {
         handle.execute(
                 "INSERT INTO selectors (resource_group_id, priority, user_regex) VALUES (?, ?, ?)",
-                resourceGroupId, priority, userRegex);
+                resourceGroupId,
+                priority,
+                userRegex);
     }
 
     private void insertExactMatchSelector(String environment, String source, String queryType, String resourceGroupId)
     {
         handle.execute(
                 "INSERT INTO exact_match_source_selectors " +
-                "(environment, source, query_type, update_time, resource_group_id) " +
-                "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)",
-                environment, source, queryType, resourceGroupId);
+                        "(environment, source, query_type, update_time, resource_group_id) " +
+                        "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)",
+                environment,
+                source,
+                queryType,
+                resourceGroupId);
     }
 
     private static SelectionCriteria selectionCriteria(String user)

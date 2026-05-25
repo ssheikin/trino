@@ -56,7 +56,8 @@ public class TestDynamicCatalogsSql
         assertThatThrownBy(() -> computeActual("CREATE CATALOG %s USING base_jdbc".formatted(catalog)))
                 .hasMessageContaining("Invalid configuration property connection-url: must not be null");
         String connectionUrl = createH2ConnectionUrl();
-        assertUpdate("""
+        assertUpdate(
+                """
                 CREATE CATALOG %s USING base_jdbc
                 WITH (
                    "connection-url" = '%s'
@@ -67,7 +68,8 @@ public class TestDynamicCatalogsSql
     @Test
     public void testShowCreateCatalog()
     {
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %s USING base_jdbc
                 WITH (
                    "bootstrap.quiet" = 'true',
@@ -86,7 +88,8 @@ public class TestDynamicCatalogsSql
     @Test
     public void testRenameCatalog()
     {
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %s USING base_jdbc
                 WITH (
                    "connection-url" = '%s'
@@ -99,10 +102,11 @@ public class TestDynamicCatalogsSql
                 .isEqualTo(createCatalogSql.formatted(oldCatalog, connectionUrl));
 
         String catalog = "catalog_" + randomNameSuffix();
-        assertUpdate("""
+        assertUpdate(
+                """
                 ALTER CATALOG %s RENAME TO %s
                 """
-                .formatted(oldCatalog, catalog));
+                        .formatted(oldCatalog, catalog));
         assertThatThrownBy(() -> computeActual("DROP CATALOG " + oldCatalog))
                 .hasMessage("Catalog '%s' not found".formatted(oldCatalog));
         assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
@@ -114,7 +118,8 @@ public class TestDynamicCatalogsSql
     @Test
     public void testCatalogSetProperties()
     {
-        String createCatalogSql = """
+        String createCatalogSql =
+                """
                 CREATE CATALOG %s USING base_jdbc
                 WITH (
                    "bootstrap.quiet" = 'true',
@@ -128,11 +133,12 @@ public class TestDynamicCatalogsSql
                 .isEqualTo(createCatalogSql.formatted(catalog, connectionUrl));
 
         String newJdbcUrl = createH2ConnectionUrl();
-        assertUpdate("""
+        assertUpdate(
+                """
                 ALTER CATALOG %s SET PROPERTIES
                    "connection-url" = '%s'
                 """
-                .formatted(catalog, newJdbcUrl));
+                        .formatted(catalog, newJdbcUrl));
         assertThat((String) computeActual("SHOW CREATE CATALOG " + catalog).getOnlyValue())
                 .isEqualTo(createCatalogSql.formatted(catalog, newJdbcUrl));
 

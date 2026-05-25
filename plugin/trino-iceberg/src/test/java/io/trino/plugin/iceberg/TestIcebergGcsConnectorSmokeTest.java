@@ -157,18 +157,17 @@ public class TestIcebergGcsConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String gcsJsonKey)
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.gcs.enabled" = 'true',
-                   "fs.hadoop.enabled" = 'false',
-                   "gcs.json-key" = '%s',
-                   "hive.metastore.uri" = '%s',
-                   "iceberg.catalog.type" = 'HIVE_METASTORE',
-                   "iceberg.file-format" = '%%s'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.gcs.enabled" = 'true',
+                  "fs.hadoop.enabled" = 'false',
+                  "gcs.json-key" = '%s',
+                  "hive.metastore.uri" = '%s',
+                  "iceberg.catalog.type" = 'HIVE_METASTORE',
+                  "iceberg.file-format" = '%%s'
+               )""".formatted(
                 gcsJsonKey,
-                hiveHadoop.getHiveMetastoreEndpoint().toString()
-        );
+                hiveHadoop.getHiveMetastoreEndpoint().toString());
     }
 
     @Override

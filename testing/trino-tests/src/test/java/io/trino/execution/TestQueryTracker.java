@@ -94,11 +94,13 @@ public class TestQueryTracker
         });
         queryRunner.createCatalog("mock", "mock");
         queryRunner.createCatalog("blackhole", "blackhole", ImmutableMap.of());
-        queryRunner.execute("""
+        queryRunner.execute(
+                """
                 CREATE TABLE blackhole.default.table_within_split_limit (c BIGINT)
                 WITH (split_count = 399, pages_per_split = 1, rows_per_page = 2000)
                 """);
-        queryRunner.execute("""
+        queryRunner.execute(
+                """
                 CREATE TABLE blackhole.default.\"table_exceeding_split_limit.abc\" (c BIGINT)
                 WITH (split_count = 500, pages_per_split = 1, rows_per_page = 2000, page_processing_delay = '1s')
                 """);

@@ -17,9 +17,7 @@ public class MultipleTokensPassthrough
 {
     public static final String MULTIPLE_TOKENS_KEY_PREFIX = "starburst.$internal.oauth2.multiple_tokens.passthrough.";
 
-    private MultipleTokensPassthrough()
-    {
-    }
+    private MultipleTokensPassthrough() {}
 
     public static String toExtraCredentialKey(IdPName idPName)
     {

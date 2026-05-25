@@ -118,9 +118,15 @@ public class TestHudiConnectorTest
     {
         assertThat(computeActual(format("SELECT * FROM %s.tests.nation", catalogName)).getColumnNames())
                 .isEqualTo(List.of(
-                        "_hoodie_commit_time", "_hoodie_commit_seqno", "_hoodie_record_key",
-                        "_hoodie_partition_path", "_hoodie_file_name",
-                        "nationkey", "name", "regionkey", "comment",
+                        "_hoodie_commit_time",
+                        "_hoodie_commit_seqno",
+                        "_hoodie_record_key",
+                        "_hoodie_partition_path",
+                        "_hoodie_file_name",
+                        "nationkey",
+                        "name",
+                        "regionkey",
+                        "comment",
                         "_uuid"));
     }
 }

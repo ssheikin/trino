@@ -124,17 +124,16 @@ public class TestIcebergNessieCatalogConnectorSmokeTest
     protected String getCreateCatalogSqlTemplate()
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'true',
-                   "iceberg.catalog.type" = 'nessie',
-                   "iceberg.file-format" = '%%s',
-                   "iceberg.nessie-catalog.default-warehouse-dir" = '%s',
-                   "iceberg.nessie-catalog.uri" = '%s'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'true',
+                  "iceberg.catalog.type" = 'nessie',
+                  "iceberg.file-format" = '%%s',
+                  "iceberg.nessie-catalog.default-warehouse-dir" = '%s',
+                  "iceberg.nessie-catalog.uri" = '%s'
+               )""".formatted(
                 tempDir.toString(),
-                restApiUri
-        );
+                restApiUri);
     }
 
     @Override

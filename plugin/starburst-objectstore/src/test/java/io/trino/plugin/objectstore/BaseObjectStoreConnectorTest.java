@@ -195,8 +195,12 @@ public abstract class BaseObjectStoreConnectorTest
     protected void assertAlteredCatalogBehavior(String catalogName)
     {
         String schemaName = "notrealschema" + randomNameSuffix();
-        assertQueryFails(format("CREATE SCHEMA %s.%s WITH (location = 's3://%s/%s')", catalogName, schemaName,
-                bucketName, schemaName), "Invalid location URI:.*");
+        assertQueryFails(format(
+                "CREATE SCHEMA %s.%s WITH (location = 's3://%s/%s')",
+                catalogName,
+                schemaName,
+                bucketName,
+                schemaName), "Invalid location URI:.*");
     }
 
     @Override

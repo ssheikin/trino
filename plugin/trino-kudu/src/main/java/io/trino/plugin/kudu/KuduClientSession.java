@@ -406,7 +406,10 @@ public class KuduClientSession
         changeRangePartition(session, schemaTableName, rangePartition, RangePartitionChange.DROP);
     }
 
-    private void changeRangePartition(ConnectorSession session, SchemaTableName schemaTableName, RangePartition rangePartition,
+    private void changeRangePartition(
+            ConnectorSession session,
+            SchemaTableName schemaTableName,
+            RangePartition rangePartition,
             RangePartitionChange change)
     {
         try {

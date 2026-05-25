@@ -91,17 +91,16 @@ final class TestIcebergUnityRestCatalogConnectorSmokeTest
     protected String getCreateCatalogSqlTemplate()
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'true',
-                   "iceberg.catalog.type" = 'rest',
-                   "iceberg.file-format" = '%%s',
-                   "iceberg.rest-catalog.uri" = '%s',
-                   "iceberg.rest-catalog.warehouse" = 'unity',
-                   "iceberg.security" = 'read_only'
-                )""".formatted(
-                restCatalogUri
-        );
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'true',
+                  "iceberg.catalog.type" = 'rest',
+                  "iceberg.file-format" = '%%s',
+                  "iceberg.rest-catalog.uri" = '%s',
+                  "iceberg.rest-catalog.warehouse" = 'unity',
+                  "iceberg.security" = 'read_only'
+               )""".formatted(
+                restCatalogUri);
     }
 
     @Override

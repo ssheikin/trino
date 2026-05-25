@@ -104,8 +104,7 @@ public class QueryMetadata
             Optional<String> jsonPlan,
             Optional<String> payload)
     {
-        this(
-                queryId,
+        this(queryId,
                 transactionId,
                 encoding,
                 query,
@@ -138,8 +137,7 @@ public class QueryMetadata
             Optional<String> jsonPlan,
             Supplier<Optional<String>> payloadProvider)
     {
-        this(
-                queryId,
+        this(queryId,
                 transactionId,
                 encoding,
                 query,

@@ -102,7 +102,7 @@ public class TestKuduIntegrationDecimalColumns
     {
         String tableDefinition = format(
                 "(id INT WITH (primary_key=true), dec DECIMAL(%s, %s)) " +
-                "WITH (partition_by_hash_columns = ARRAY['id'], partition_by_hash_buckets = 2)",
+                        "WITH (partition_by_hash_columns = ARRAY['id'], partition_by_hash_buckets = 2)",
                 decimal.precision,
                 decimal.scale);
 

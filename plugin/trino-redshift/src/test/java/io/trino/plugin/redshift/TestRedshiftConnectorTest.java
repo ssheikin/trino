@@ -148,14 +148,15 @@ public class TestRedshiftConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TEST_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING %s
-                WITH (
-                   "connection-password" = '%s',
-                   "connection-url" = '%s',
-                   "connection-user" = '%s',
-                   "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, CONNECTOR_NAME, JDBC_PASSWORD, JDBC_URL, JDBC_USER);
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING %s
+                    WITH (
+                       "connection-password" = '%s',
+                       "connection-url" = '%s',
+                       "connection-user" = '%s',
+                       "jdbc-types-mapped-to-varchar" = 'true'
+                    )""".formatted(secondCatalog, CONNECTOR_NAME, JDBC_PASSWORD, JDBC_URL, JDBC_USER);
             assertUpdate(createSecondCatalogSql);
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
                     .isEqualTo(createSecondCatalogSql);

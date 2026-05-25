@@ -14,6 +14,4 @@
 package io.trino.spi.connector;
 
 public interface UncacheableConnectorTableHandle
-        extends ConnectorTableHandle
-{
-}
+        extends ConnectorTableHandle {}

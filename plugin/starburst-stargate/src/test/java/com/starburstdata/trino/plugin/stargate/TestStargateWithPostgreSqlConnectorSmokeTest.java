@@ -31,12 +31,13 @@ public class TestStargateWithPostgreSqlConnectorSmokeTest
         extends BaseJdbcConnectorSmokeTest
 {
     private static final String REMOTE_CATALOG_NAME = "postgresql";
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
-                CREATE CATALOG %s USING stargate
-                WITH (
-                   "connection-url" = '%s',
-                   "connection-user" = '%s'
-                )""";
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
+            CREATE CATALOG %s USING stargate
+            WITH (
+               "connection-url" = '%s',
+               "connection-user" = '%s'
+            )""";
     private TestingPostgreSqlServer postgreSqlServer;
     private DistributedQueryRunner remoteStarburst;
 
@@ -115,13 +116,14 @@ public class TestStargateWithPostgreSqlConnectorSmokeTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, POSTGRESQL_TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING stargate
-                WITH (
-                   "connection-url" = '%s',
-                   "connection-user" = '%s',
-                   "jdbc-types-mapped-to-varchar" = 'ARRAY'
-                )""".formatted(secondCatalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME), postgreSqlServer.getUser());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING stargate
+                    WITH (
+                       "connection-url" = '%s',
+                       "connection-user" = '%s',
+                       "jdbc-types-mapped-to-varchar" = 'ARRAY'
+                    )""".formatted(secondCatalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME), postgreSqlServer.getUser());
             assertUpdate(createSecondCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + secondCatalog)).isEqualTo(createSecondCatalogSql);
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, POSTGRESQL_TPCH_SCHEMA));
@@ -167,10 +169,11 @@ public class TestStargateWithPostgreSqlConnectorSmokeTest
             assertQueryFails("SHOW TABLES FROM %s.%s".formatted(catalog, POSTGRESQL_TPCH_SCHEMA),
                     "Error executing query: java.net.UnknownHostException: invalid.*");
 
-            assertUpdate("""
-                ALTER CATALOG %s SET PROPERTIES
-                  "connection-url" = '%s'
-                """.formatted(catalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME)));
+            assertUpdate(
+                    """
+                    ALTER CATALOG %s SET PROPERTIES
+                      "connection-url" = '%s'
+                    """.formatted(catalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME)));
             assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(catalog, stargateConnectionUrl(remoteStarburst, REMOTE_CATALOG_NAME), postgreSqlServer.getUser()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(catalog, POSTGRESQL_TPCH_SCHEMA));

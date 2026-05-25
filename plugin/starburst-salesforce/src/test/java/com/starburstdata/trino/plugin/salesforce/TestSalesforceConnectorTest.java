@@ -134,14 +134,15 @@ import static org.junit.jupiter.api.Assumptions.abort;
 public class TestSalesforceConnectorTest
         extends AbstractTestQueryFramework
 {
-    private static final String CREATE_CATALOG_SQL_TEMPLATE = """
-                CREATE CATALOG %s USING salesforce
-                WITH (
-                   "salesforce.enable-sandbox" = '%s',
-                   "salesforce.password" = '%s',
-                   "salesforce.security-token" = '%s',
-                   "salesforce.user" = '%s'
-                )""";
+    private static final String CREATE_CATALOG_SQL_TEMPLATE =
+            """
+            CREATE CATALOG %s USING salesforce
+            WITH (
+               "salesforce.enable-sandbox" = '%s',
+               "salesforce.password" = '%s',
+               "salesforce.security-token" = '%s',
+               "salesforce.user" = '%s'
+            )""";
     // This map is used for replacing tables and columns ending in __c with their non-__c counterpart when
     // running the expected queries against H2
     private final Map<String, String> tableColumnSuffixRegexes = ImmutableMap.<String, String>builder()
@@ -295,20 +296,21 @@ public class TestSalesforceConnectorTest
             assertThat(computeActual("SHOW TABLES FROM %s.%s".formatted(firstCatalog, "salesforce")).getMaterializedRows()).isNotEmpty();
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING salesforce
-                WITH (
-                   "salesforce.driver-logging.enabled" = 'true',
-                   "salesforce.enable-sandbox" = '%s',
-                   "salesforce.password" = '%s',
-                   "salesforce.security-token" = '%s',
-                   "salesforce.user" = '%s'
-                )""".formatted(
-                        secondCatalog,
-                    SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED,
-                    SALESFORCE_BASIC_AUTH_PASSWORD,
-                    SALESFORCE_BASIC_AUTH_SECURITY_TOKEN,
-                    SALESFORCE_BASIC_AUTH_USER);
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING salesforce
+                    WITH (
+                       "salesforce.driver-logging.enabled" = 'true',
+                       "salesforce.enable-sandbox" = '%s',
+                       "salesforce.password" = '%s',
+                       "salesforce.security-token" = '%s',
+                       "salesforce.user" = '%s'
+                    )""".formatted(
+                            secondCatalog,
+                            SALESFORCE_BASIC_AUTH_SANDBOX_ENABLED,
+                            SALESFORCE_BASIC_AUTH_PASSWORD,
+                            SALESFORCE_BASIC_AUTH_SECURITY_TOKEN,
+                            SALESFORCE_BASIC_AUTH_USER);
             assertUpdate(createSecondCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + secondCatalog))
                     .isEqualTo(createSecondCatalogSql);
@@ -361,10 +363,11 @@ public class TestSalesforceConnectorTest
             assertThat(computeScalar("SHOW CREATE CATALOG " + catalog)).isEqualTo(catalogWithIncorrectUser);
             assertThat(computeActual("SHOW TABLES FROM %s.%s".formatted(catalog, "salesforce")).getMaterializedRows()).isEmpty();
 
-            assertUpdate("""
-                ALTER CATALOG %s SET PROPERTIES
-                  "salesforce.user" = '%s'
-                """.formatted(catalog, SALESFORCE_BASIC_AUTH_USER));
+            assertUpdate(
+                    """
+                    ALTER CATALOG %s SET PROPERTIES
+                      "salesforce.user" = '%s'
+                    """.formatted(catalog, SALESFORCE_BASIC_AUTH_USER));
             assertThat(computeScalar("SHOW CREATE CATALOG " + catalog))
                     .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE
                             .formatted(

@@ -113,15 +113,14 @@ public class TestIcebergTrinoRestCatalogConnectorSmokeTest
     protected String getCreateCatalogSqlTemplate()
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'true',
-                   "iceberg.catalog.type" = 'rest',
-                   "iceberg.file-format" = '%%s',
-                   "iceberg.rest-catalog.uri" = '%s'
-                )""".formatted(
-                testCatalogUri
-        );
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'true',
+                  "iceberg.catalog.type" = 'rest',
+                  "iceberg.file-format" = '%%s',
+                  "iceberg.rest-catalog.uri" = '%s'
+               )""".formatted(
+                testCatalogUri);
     }
 
     @AfterAll

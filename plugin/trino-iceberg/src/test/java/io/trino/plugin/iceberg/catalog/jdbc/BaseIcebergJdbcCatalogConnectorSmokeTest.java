@@ -132,23 +132,22 @@ public abstract class BaseIcebergJdbcCatalogConnectorSmokeTest
     private String getCreateCatalogSqlTemplate(String url, String password)
     {
         return """
-                CREATE CATALOG %%s USING iceberg
-                WITH (
-                   "fs.hadoop.enabled" = 'true',
-                   "iceberg.catalog.type" = 'jdbc',
-                   "iceberg.file-format" = '%%s',
-                   "iceberg.jdbc-catalog.catalog-name" = 'test_catalog',
-                   "iceberg.jdbc-catalog.connection-password" = '%s',
-                   "iceberg.jdbc-catalog.connection-url" = '%s',
-                   "iceberg.jdbc-catalog.connection-user" = '%s',
-                   "iceberg.jdbc-catalog.default-warehouse-dir" = '%s',
-                   "iceberg.jdbc-catalog.driver-class" = 'org.postgresql.Driver'
-                )""".formatted(
+               CREATE CATALOG %%s USING iceberg
+               WITH (
+                  "fs.hadoop.enabled" = 'true',
+                  "iceberg.catalog.type" = 'jdbc',
+                  "iceberg.file-format" = '%%s',
+                  "iceberg.jdbc-catalog.catalog-name" = 'test_catalog',
+                  "iceberg.jdbc-catalog.connection-password" = '%s',
+                  "iceberg.jdbc-catalog.connection-url" = '%s',
+                  "iceberg.jdbc-catalog.connection-user" = '%s',
+                  "iceberg.jdbc-catalog.default-warehouse-dir" = '%s',
+                  "iceberg.jdbc-catalog.driver-class" = 'org.postgresql.Driver'
+               )""".formatted(
                 password,
                 url,
                 USER,
-                warehouseLocation.getAbsolutePath()
-        );
+                warehouseLocation.getAbsolutePath());
     }
 
     @AfterAll

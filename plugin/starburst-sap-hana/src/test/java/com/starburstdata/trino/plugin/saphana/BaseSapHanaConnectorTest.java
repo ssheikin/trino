@@ -91,14 +91,15 @@ public abstract class BaseSapHanaConnectorTest
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, TPCH_SCHEMA));
 
             @Language("SQL")
-            String createSecondCatalogSql = """
-                CREATE CATALOG %s USING sap_hana
-                WITH (
-                   "connection-password" = '%s',
-                   "connection-url" = '%s',
-                   "connection-user" = '%s',
-                   "jdbc-types-mapped-to-varchar" = 'true'
-                )""".formatted(secondCatalog, server.getPassword(), server.getJdbcUrl(), server.getUser());
+            String createSecondCatalogSql =
+                    """
+                    CREATE CATALOG %s USING sap_hana
+                    WITH (
+                       "connection-password" = '%s',
+                       "connection-url" = '%s',
+                       "connection-user" = '%s',
+                       "jdbc-types-mapped-to-varchar" = 'true'
+                    )""".formatted(secondCatalog, server.getPassword(), server.getJdbcUrl(), server.getUser());
             assertUpdate(createSecondCatalogSql);
             assertThat(computeScalar("SHOW CREATE CATALOG " + secondCatalog))
                     .isEqualTo(createSecondCatalogSql);
