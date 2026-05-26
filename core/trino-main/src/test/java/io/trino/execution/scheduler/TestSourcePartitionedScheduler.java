@@ -45,6 +45,7 @@ import io.trino.spi.QueryId;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.DynamicFilter;
+import io.trino.spi.connector.DynamicFilterSnapshot;
 import io.trino.spi.connector.FixedSplitSource;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.TypeOperators;
@@ -187,7 +188,7 @@ public class TestSourcePartitionedScheduler
         assertThat(scheduler.schedule().getNewTasks()).hasSize(1);
 
         // ensure that next batch size fetched by scheduler will be empty and last
-        splitSource.getNextBatch(1);
+        splitSource.getNextBatch(1, DynamicFilterSnapshot.EMPTY);
 
         ScheduleResult scheduleResult = scheduler.schedule();
         assertThat(scheduleResult.getNewTasks()).isEmpty();
@@ -374,7 +375,7 @@ public class TestSourcePartitionedScheduler
             StageScheduler scheduler = newSourcePartitionedSchedulerAsStageScheduler(
                     stage,
                     TABLE_SCAN_NODE_ID,
-                    new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createFixedSplitSource(20, TestingSplit::createRemoteSplit)),
+                    new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createFixedSplitSource(20, TestingSplit::createRemoteSplit), DynamicFilter.EMPTY),
                     new DynamicSplitPlacementPolicy(nodeScheduler.createNodeSelector(session), stage::getAllTasks),
                     2,
                     new DynamicFilterService(metadata, functionManager, typeOperators, new DynamicFilterConfig()),
@@ -514,7 +515,7 @@ public class TestSourcePartitionedScheduler
         StageScheduler scheduler = newSourcePartitionedSchedulerAsStageScheduler(
                 stage,
                 TABLE_SCAN_NODE_ID,
-                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createFixedSplitSource(4 * 300, TestingSplit::createRemoteSplit)),
+                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createFixedSplitSource(4 * 300, TestingSplit::createRemoteSplit), DynamicFilter.EMPTY),
                 new DynamicSplitPlacementPolicy(nodeScheduler.createNodeSelector(session), stage::getAllTasks),
                 4 * 300,
                 new DynamicFilterService(metadata, functionManager, typeOperators, new DynamicFilterConfig()),
@@ -559,7 +560,7 @@ public class TestSourcePartitionedScheduler
         StageScheduler scheduler = newSourcePartitionedSchedulerAsStageScheduler(
                 stage,
                 TABLE_SCAN_NODE_ID,
-                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createFixedSplitSource(3 * 300, TestingSplit::createRemoteSplit)),
+                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createFixedSplitSource(3 * 300, TestingSplit::createRemoteSplit), DynamicFilter.EMPTY),
                 new DynamicSplitPlacementPolicy(nodeScheduler.createNodeSelector(session), stage::getAllTasks),
                 3 * 300,
                 new DynamicFilterService(metadata, functionManager, typeOperators, new DynamicFilterConfig()),
@@ -603,7 +604,7 @@ public class TestSourcePartitionedScheduler
         StageScheduler scheduler = newSourcePartitionedSchedulerAsStageScheduler(
                 stage,
                 TABLE_SCAN_NODE_ID,
-                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createBlockedSplitSource()),
+                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, createBlockedSplitSource(), DynamicFilter.EMPTY),
                 new DynamicSplitPlacementPolicy(nodeScheduler.createNodeSelector(session), stage::getAllTasks),
                 2,
                 dynamicFilterService,
@@ -731,7 +732,7 @@ public class TestSourcePartitionedScheduler
         return newSourcePartitionedSchedulerAsStageScheduler(
                 stage,
                 TABLE_SCAN_NODE_ID,
-                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, splitSource),
+                new ConnectorAwareSplitSource(TEST_CATALOG_HANDLE, splitSource, DynamicFilter.EMPTY),
                 placementPolicy,
                 splitBatchSize,
                 new DynamicFilterService(metadata, functionManager, typeOperators, new DynamicFilterConfig()),
@@ -795,7 +796,7 @@ public class TestSourcePartitionedScheduler
         return new ConnectorSplitSource()
         {
             @Override
-            public CompletableFuture<ConnectorSplitBatch> getNextBatch(int maxSize)
+            public CompletableFuture<List<ConnectorSplit>> getNextBatch(int maxSize, DynamicFilterSnapshot dynamicFilterSnapshot)
             {
                 return new CompletableFuture<>();
             }
@@ -880,11 +881,9 @@ public class TestSourcePartitionedScheduler
         }
 
         @Override
-        public CompletableFuture<ConnectorSplitBatch> getNextBatch(int maxSize)
+        public CompletableFuture<List<ConnectorSplit>> getNextBatch(int maxSize, DynamicFilterSnapshot dynamicFilterSnapshot)
         {
-            return notEmptyFuture
-                    .thenApply(_ -> getBatch(maxSize))
-                    .thenApply(splits -> new ConnectorSplitBatch(splits, isFinished()));
+            return notEmptyFuture.thenApply(_ -> getBatch(maxSize));
         }
 
         private synchronized List<ConnectorSplit> getBatch(int maxSize)
