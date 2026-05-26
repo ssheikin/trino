@@ -479,6 +479,7 @@ public class PlanTester
                 typeManager,
                 new UnimplementedMetastore(),
                 nodeManager.getTestingInternalCoordinatorLocator(),
+                hashStrategyCompiler,
                 nodeSchedulerConfig,
                 accessControlManager,
                 AiModelAccessControl.ALLOW_ALL,

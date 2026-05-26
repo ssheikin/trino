@@ -32,7 +32,9 @@ import io.trino.node.DefaultCoordinatorLocator;
 import io.trino.node.InternalCoordinatorLocator;
 import io.trino.node.InternalNode;
 import io.trino.node.InternalNodeManager;
+import io.trino.operator.FlatHashStrategyCompiler;
 import io.trino.security.AccessControl;
+import io.trino.spi.BlocksHashFactory;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.PageStreamFactory;
@@ -86,6 +88,7 @@ public class DefaultCatalogFactory
     private final TypeManager typeManager;
     private final Metastore metastore;
     private final InternalCoordinatorLocator coordinatorLocator;
+    private final BlocksHashFactory blocksHashFactory;
 
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
@@ -116,6 +119,7 @@ public class DefaultCatalogFactory
             TypeManager typeManager,
             Metastore metastore,
             InternalCoordinatorLocator coordinatorLocator,
+            FlatHashStrategyCompiler flatHashStrategyCompiler,
             NodeSchedulerConfig nodeSchedulerConfig,
             LocationAccessControl locationAccessControl,
             AiModelAccessControl aiModelAccessControl,
@@ -141,6 +145,7 @@ public class DefaultCatalogFactory
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.metastore = requireNonNull(metastore, "metastore is null");
         this.coordinatorLocator = requireNonNull(coordinatorLocator, "coordinatorLocator is null");
+        this.blocksHashFactory = requireNonNull(flatHashStrategyCompiler, "flatHashStrategyCompiler is null").createBlocksHashFactory();
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.locationAccessControl = requireNonNull(locationAccessControl, "locationAccessControl is null");
         this.aiModelAccessControl = requireNonNull(aiModelAccessControl, "aiModelAccessControl is null");
@@ -284,7 +289,8 @@ public class DefaultCatalogFactory
                 serverProperties,
                 nodeInfo.getEnvironment(),
                 new InternalFunctionBundleFactory(),
-                managedStatisticsClient);
+                managedStatisticsClient,
+                blocksHashFactory);
     }
 
     private Tracer createTracer(CatalogName catalogName)

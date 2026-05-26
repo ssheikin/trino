@@ -30,6 +30,7 @@ import io.trino.operator.NullSafeHashCompiler;
 import io.trino.operator.PagesIndex;
 import io.trino.operator.PagesIndexPageSorter;
 import io.trino.simd.BlockEncodingSimdSupport;
+import io.trino.spi.BlocksHashFactory;
 import io.trino.spi.CoordinatorLocator;
 import io.trino.spi.NodeManager;
 import io.trino.spi.NodeVersion;
@@ -75,6 +76,7 @@ public final class TestingConnectorContext
     private final VersionEmbedder versionEmbedder;
     private final TypeManager typeManager;
     private final PageSorter pageSorter;
+    private final BlocksHashFactory blocksHashFactory;
     private final PageIndexerFactory pageIndexerFactory;
 
     public TestingConnectorContext()
@@ -83,16 +85,18 @@ public final class TestingConnectorContext
                 DEFAULT_CONTEXT.getVersionEmbedder(),
                 DEFAULT_CONTEXT.getTypeManager(),
                 DEFAULT_CONTEXT.getPageSorter(),
-                DEFAULT_CONTEXT.getPageIndexerFactory());
+                DEFAULT_CONTEXT.getPageIndexerFactory(),
+                DEFAULT_CONTEXT.getBlocksHashFactory());
     }
 
-    private TestingConnectorContext(NodeManager nodeManager, VersionEmbedder versionEmbedder, TypeManager typeManager, PageSorter pageSorter, PageIndexerFactory pageIndexerFactory)
+    private TestingConnectorContext(NodeManager nodeManager, VersionEmbedder versionEmbedder, TypeManager typeManager, PageSorter pageSorter, PageIndexerFactory pageIndexerFactory, BlocksHashFactory blocksHashFactory)
     {
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.versionEmbedder = requireNonNull(versionEmbedder, "versionEmbedder is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
+        this.blocksHashFactory = requireNonNull(blocksHashFactory, "blocksHashFactory is null");
     }
 
     @Override
@@ -209,7 +213,8 @@ public final class TestingConnectorContext
         private VersionEmbedder versionEmbedder = new EmbedVersion(NodeVersion.UNKNOWN);
         private TypeManager typeManager = TESTING_TYPE_MANAGER;
         private PageSorter pageSorter = new PagesIndexPageSorter(new PagesIndex.TestingFactory(false));
-        private PageIndexerFactory pageIndexerFactory = new GroupByHashPageIndexerFactory(new FlatHashStrategyCompiler(new TypeOperators(), new NullSafeHashCompiler(new TypeOperators())));
+        private FlatHashStrategyCompiler flatHashStrategyCompiler = new FlatHashStrategyCompiler(new TypeOperators(), new NullSafeHashCompiler(new TypeOperators()));
+        private PageIndexerFactory pageIndexerFactory = new GroupByHashPageIndexerFactory(flatHashStrategyCompiler);
 
         private Builder() {}
 
@@ -250,7 +255,8 @@ public final class TestingConnectorContext
                     versionEmbedder,
                     typeManager,
                     pageSorter,
-                    pageIndexerFactory);
+                    pageIndexerFactory,
+                    flatHashStrategyCompiler.createBlocksHashFactory());
         }
     }
 
@@ -258,5 +264,11 @@ public final class TestingConnectorContext
     public FunctionBundleFactory getFunctionBundleFactory()
     {
         return new InternalFunctionBundleFactory();
+    }
+
+    @Override
+    public BlocksHashFactory getBlocksHashFactory()
+    {
+        return blocksHashFactory;
     }
 }

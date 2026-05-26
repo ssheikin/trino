@@ -16,6 +16,7 @@ package io.trino.connector;
 import com.google.common.collect.ImmutableMap;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
+import io.trino.spi.BlocksHashFactory;
 import io.trino.spi.CoordinatorLocator;
 import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
@@ -61,6 +62,7 @@ public class ConnectorContextInstance
     private final String nodeEnvironment;
     private final FunctionBundleFactory functionBundleFactory;
     private final ManagedStatisticsClient managedStatisticsClient;
+    private final BlocksHashFactory blocksHashFactory;
 
     public ConnectorContextInstance(
             OpenTelemetry openTelemetry,
@@ -82,7 +84,8 @@ public class ConnectorContextInstance
             Map<String, String> serverProperties,
             String nodeEnvironment,
             FunctionBundleFactory functionBundleFactory,
-            ManagedStatisticsClient managedStatisticsClient)
+            ManagedStatisticsClient managedStatisticsClient,
+            BlocksHashFactory blocksHashFactory)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -104,6 +107,7 @@ public class ConnectorContextInstance
         this.nodeEnvironment = requireNonNull(nodeEnvironment, "nodeEnvironment is null");
         this.functionBundleFactory = requireNonNull(functionBundleFactory, "functionBundleFactory is null");
         this.managedStatisticsClient = requireNonNull(managedStatisticsClient, "managedStatisticsClient is null");
+        this.blocksHashFactory = requireNonNull(blocksHashFactory, "blocksHashFactory is null");
     }
 
     @Override
@@ -224,5 +228,11 @@ public class ConnectorContextInstance
     public ManagedStatisticsClient getManagedStatisticsClient()
     {
         return managedStatisticsClient;
+    }
+
+    @Override
+    public BlocksHashFactory getBlocksHashFactory()
+    {
+        return blocksHashFactory;
     }
 }
