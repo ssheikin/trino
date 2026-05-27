@@ -34,6 +34,7 @@ import io.trino.sql.tree.ArithmeticBinaryExpression;
 import io.trino.sql.tree.ArithmeticUnaryExpression;
 import io.trino.sql.tree.Array;
 import io.trino.sql.tree.AssignmentStatement;
+import io.trino.sql.tree.AtLocal;
 import io.trino.sql.tree.AtTimeZone;
 import io.trino.sql.tree.AutoGroupBy;
 import io.trino.sql.tree.BetweenPredicate;
@@ -2503,6 +2504,14 @@ class AstBuilder
                 getLocation(context.AT()),
                 (Expression) visit(context.valueExpression()),
                 (Expression) visit(context.timeZoneSpecifier()));
+    }
+
+    @Override
+    public Node visitAtLocal(SqlBaseParser.AtLocalContext context)
+    {
+        return new AtLocal(
+                getLocation(context.AT()),
+                (Expression) visit(context.valueExpression()));
     }
 
     @Override
