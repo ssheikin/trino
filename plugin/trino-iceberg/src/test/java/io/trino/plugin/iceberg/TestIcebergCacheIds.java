@@ -332,7 +332,7 @@ public class TestIcebergCacheIds
                 SplitWeight.standard(),
                 TupleDomain.all(),
                 Optional.empty(),
-                0L,
+                OptionalLong.empty(),
                 OptionalLong.empty());
     }
 
