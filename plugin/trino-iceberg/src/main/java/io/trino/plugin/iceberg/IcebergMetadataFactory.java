@@ -25,6 +25,7 @@ import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.plugin.iceberg.delete.DeletionVectorWriter;
 import io.trino.plugin.iceberg.delete.OptimizePositionDeletes;
 import io.trino.plugin.iceberg.delete.RemoveDanglingDeleteFiles;
+import io.trino.plugin.iceberg.procedure.CreateChangelogView;
 import io.trino.spi.connector.ConnectorExpressionEvaluator;
 import io.trino.spi.security.AiModelAccessControl;
 import io.trino.spi.security.ConnectorIdentity;
@@ -68,6 +69,7 @@ public class IcebergMetadataFactory
     private final boolean materializedViewIncrementalColumnRefreshEnabled;
     private final DeletionVectorWriter deletionVectorWriter;
     private final RemoveDanglingDeleteFiles removeDanglingDeleteFiles;
+    private final CreateChangelogView createChangelogView;
     private final ConnectorExpressionEvaluator evaluator;
 
     @Inject
@@ -84,6 +86,7 @@ public class IcebergMetadataFactory
             DeletionVectorWriter deletionVectorWriter,
             OptimizePositionDeletes optimizePositionDeletes,
             RemoveDanglingDeleteFiles removeDanglingDeleteFiles,
+            CreateChangelogView createChangelogView,
             @RawHiveMetastoreFactory Optional<HiveMetastoreFactory> metastoreFactory,
             @ForIcebergSplitManager ExecutorService icebergScanExecutor,
             @ForIcebergMetadata ExecutorService metadataExecutorService,
@@ -125,6 +128,7 @@ public class IcebergMetadataFactory
         this.icebergPlanningExecutor = requireNonNull(icebergPlanningExecutor, "icebergPlanningExecutor is null");
         this.icebergFileDeleteExecutor = requireNonNull(icebergFileDeleteExecutor, "icebergFileDeleteExecutor is null");
         this.removeDanglingDeleteFiles = requireNonNull(removeDanglingDeleteFiles, "removeDanglingDeleteFiles is null");
+        this.createChangelogView = requireNonNull(createChangelogView, "createChangelogView is null");
         this.materializedViewRefreshMaxSnapshotsToExpire = config.getMaterializedViewRefreshMaxSnapshotsToExpire();
         this.materializedViewRefreshSnapshotRetentionPeriod = config.getMaterializedViewRefreshSnapshotRetentionPeriod();
         this.evaluator = requireNonNull(evaluator, "evaluator is null");
@@ -147,6 +151,7 @@ public class IcebergMetadataFactory
                 deletionVectorWriter,
                 optimizePositionDeletes,
                 removeDanglingDeleteFiles,
+                createChangelogView,
                 metastoreFactory,
                 maxFormatVersion,
                 addFilesProcedureEnabled,

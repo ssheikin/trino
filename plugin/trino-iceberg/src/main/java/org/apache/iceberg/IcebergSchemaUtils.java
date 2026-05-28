@@ -11,20 +11,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.iceberg.procedure;
+package org.apache.iceberg;
 
-public enum IcebergTableProcedureId
+import org.apache.iceberg.types.TypeUtil;
+
+public final class IcebergSchemaUtils
 {
-    OPTIMIZE,
-    OPTIMIZE_MANIFESTS,
-    OPTIMIZE_POSITION_DELETES,
-    REMOVE_DANGLING_DELETE_FILES,
-    DROP_EXTENDED_STATS,
-    ROLLBACK_TO_SNAPSHOT,
-    EXPIRE_SNAPSHOTS,
-    REMOVE_ORPHAN_FILES,
-    ADD_FILES,
-    ADD_FILES_FROM_TABLE,
-    GENERATE_EMBEDDINGS,
-    CREATE_CHANGELOG_VIEW,
+    private IcebergSchemaUtils() {}
+
+    // Exposes Schema.validateIdentifierField, which is package-private in Iceberg.
+    public static void validateIdentifierField(Schema schema, int fieldId)
+    {
+        Schema.validateIdentifierField(
+                fieldId,
+                TypeUtil.indexById(schema.asStruct()),
+                TypeUtil.indexParents(schema.asStruct()));
+    }
 }

@@ -63,8 +63,10 @@ import io.trino.plugin.iceberg.delete.RemoveDanglingDeleteFiles;
 import io.trino.plugin.iceberg.delete.RemoveDanglingDeleteFiles.DanglingDeleteFilesResult;
 import io.trino.plugin.iceberg.functions.IcebergFunctionProvider;
 import io.trino.plugin.iceberg.functions.tablechanges.TableChangesFunctionHandle;
+import io.trino.plugin.iceberg.procedure.CreateChangelogView;
 import io.trino.plugin.iceberg.procedure.IcebergAddFilesFromTableHandle;
 import io.trino.plugin.iceberg.procedure.IcebergAddFilesHandle;
+import io.trino.plugin.iceberg.procedure.IcebergCreateChangelogViewHandle;
 import io.trino.plugin.iceberg.procedure.IcebergDropExtendedStatsHandle;
 import io.trino.plugin.iceberg.procedure.IcebergExpireSnapshotsHandle;
 import io.trino.plugin.iceberg.procedure.IcebergGenerateEmbeddingsHandle;
@@ -591,6 +593,7 @@ public class IcebergMetadata
     private final IcebergTableCredentialsProvider tableCredentialsProvider;
     private final DeletionVectorWriter deletionVectorWriter;
     private final RemoveDanglingDeleteFiles removeDanglingDeleteFiles;
+    private final CreateChangelogView createChangelogView;
     private final ConnectorExpressionEvaluator evaluator;
 
     private Transaction transaction;
@@ -610,6 +613,7 @@ public class IcebergMetadata
             DeletionVectorWriter deletionVectorWriter,
             OptimizePositionDeletes optimizePositionDeletes,
             RemoveDanglingDeleteFiles removeDanglingDeleteFiles,
+            CreateChangelogView createChangelogView,
             Optional<HiveMetastoreFactory> metastoreFactory,
             int maxFormatVersion,
             boolean addFilesProcedureEnabled,
@@ -648,6 +652,7 @@ public class IcebergMetadata
         this.materializedViewIncrementalColumnRefreshEnabled = materializedViewIncrementalColumnRefreshEnabled;
         this.deletionVectorWriter = requireNonNull(deletionVectorWriter, "deletionVectorWriter is null");
         this.removeDanglingDeleteFiles = requireNonNull(removeDanglingDeleteFiles, "removeDanglingDeleteFiles is null");
+        this.createChangelogView = requireNonNull(createChangelogView, "createChangelogView is null");
         this.tableCredentialsProvider = new IcebergTableCredentialsProvider(catalog);
         this.evaluator = requireNonNull(evaluator, "evaluator is null");
     }
@@ -2034,6 +2039,7 @@ public class IcebergMetadata
             case ADD_FILES -> getTableHandleForAddFiles(session, accessControl, tableHandle, executeProperties);
             case ADD_FILES_FROM_TABLE -> getTableHandleForAddFilesFromTable(session, accessControl, tableHandle, executeProperties);
             case GENERATE_EMBEDDINGS -> getTableHandleForGenerateEmbeddings(session, accessControl, tableHandle, executeProperties, retryMode);
+            case CREATE_CHANGELOG_VIEW -> createChangelogView.getTableHandle(session, catalog, accessControl, tableHandle, executeProperties);
         };
     }
 
@@ -2361,7 +2367,7 @@ public class IcebergMetadata
         return switch (executeHandle.procedureId()) {
             case OPTIMIZE -> getColumnHandlesForOptimize(icebergTableHandle);
             case GENERATE_EMBEDDINGS -> getColumnHandlesForGenerateEmbeddings(icebergTableHandle);
-            case OPTIMIZE_MANIFESTS, OPTIMIZE_POSITION_DELETES, DROP_EXTENDED_STATS, ROLLBACK_TO_SNAPSHOT, EXPIRE_SNAPSHOTS, REMOVE_ORPHAN_FILES, ADD_FILES, ADD_FILES_FROM_TABLE, REMOVE_DANGLING_DELETE_FILES -> throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
+            case OPTIMIZE_MANIFESTS, OPTIMIZE_POSITION_DELETES, DROP_EXTENDED_STATS, ROLLBACK_TO_SNAPSHOT, EXPIRE_SNAPSHOTS, REMOVE_ORPHAN_FILES, ADD_FILES, ADD_FILES_FROM_TABLE, REMOVE_DANGLING_DELETE_FILES, CREATE_CHANGELOG_VIEW -> throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
         };
     }
 
@@ -2393,7 +2399,7 @@ public class IcebergMetadata
                 return getLayoutForOptimize(session, executeHandle);
             }
             case OPTIMIZE_MANIFESTS, OPTIMIZE_POSITION_DELETES, REMOVE_DANGLING_DELETE_FILES, DROP_EXTENDED_STATS, ROLLBACK_TO_SNAPSHOT, EXPIRE_SNAPSHOTS, REMOVE_ORPHAN_FILES,
-                 ADD_FILES, ADD_FILES_FROM_TABLE -> {
+                 ADD_FILES, ADD_FILES_FROM_TABLE, CREATE_CHANGELOG_VIEW -> {
                 // handled via executeTableExecute
             }
         }
@@ -2431,7 +2437,8 @@ public class IcebergMetadata
                  EXPIRE_SNAPSHOTS,
                  REMOVE_ORPHAN_FILES,
                  ADD_FILES,
-                 ADD_FILES_FROM_TABLE -> {
+                 ADD_FILES_FROM_TABLE,
+                 CREATE_CHANGELOG_VIEW -> {
                 // handled via executeTableExecute
             }
         }
@@ -2490,7 +2497,8 @@ public class IcebergMetadata
                  EXPIRE_SNAPSHOTS,
                  REMOVE_ORPHAN_FILES,
                  ADD_FILES,
-                 ADD_FILES_FROM_TABLE -> {
+                 ADD_FILES_FROM_TABLE,
+                 CREATE_CHANGELOG_VIEW -> {
                 // handled via executeTableExecute
                 throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
             }
@@ -2726,6 +2734,7 @@ public class IcebergMetadata
             case REMOVE_ORPHAN_FILES -> executeRemoveOrphanFiles(session, executeHandle);
             case ADD_FILES -> executeAddFiles(session, executeHandle);
             case ADD_FILES_FROM_TABLE -> executeAddFilesFromTable(session, executeHandle);
+            case CREATE_CHANGELOG_VIEW -> executeCreateChangelogView(session, executeHandle);
             default -> throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
         };
     }
@@ -2788,6 +2797,26 @@ public class IcebergMetadata
         catch (NotFoundException e) {
             throw new TrinoException(ICEBERG_INVALID_METADATA, e);
         }
+    }
+
+    private Map<String, Long> executeCreateChangelogView(ConnectorSession session, IcebergTableExecuteHandle executeHandle)
+    {
+        checkArgument(executeHandle.procedureHandle() instanceof IcebergCreateChangelogViewHandle, "Unexpected procedure handle %s", executeHandle.procedureHandle());
+        IcebergCreateChangelogViewHandle handle = (IcebergCreateChangelogViewHandle) executeHandle.procedureHandle();
+        ConnectorViewDefinition definition = new ConnectorViewDefinition(
+                handle.viewSql(),
+                Optional.of(handle.catalogName()),
+                Optional.of(handle.viewName().getSchemaName()),
+                handle.viewColumns(),
+                Optional.of(handle.viewComment()),
+                Optional.empty(),
+                true,
+                ImmutableList.of());
+        // Trino does not support TEMPORARY session-scoped views, so this procedure creates a catalogued view
+        // that the user is responsible for dropping. For convenience, replace is set to true so that an
+        // existing view with the same name is replaced rather than causing the procedure to fail.
+        catalog.createView(session, handle.viewName(), definition, true);
+        return ImmutableMap.of();
     }
 
     private void executeDropExtendedStats(ConnectorSession session, IcebergTableExecuteHandle executeHandle)

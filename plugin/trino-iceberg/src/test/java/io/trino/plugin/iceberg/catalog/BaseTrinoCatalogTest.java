@@ -72,6 +72,7 @@ import static io.trino.plugin.hive.HiveErrorCode.HIVE_DATABASE_LOCATION_ERROR;
 import static io.trino.plugin.iceberg.IcebergSchemaProperties.LOCATION_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.FILE_FORMAT_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.FORMAT_VERSION_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTestUtils.CREATE_CHANGELOG_VIEW;
 import static io.trino.plugin.iceberg.IcebergTestUtils.OPTIMIZE_POSITION_DELETES;
 import static io.trino.plugin.iceberg.IcebergTestUtils.REMOVE_DANGLING_DELETE_FILES;
 import static io.trino.plugin.iceberg.IcebergTestUtils.TABLE_STATISTICS_READER;
@@ -162,6 +163,7 @@ public abstract class BaseTrinoCatalogTest
                     UNSUPPORTED_DELETION_VECTOR_WRITER,
                     OPTIMIZE_POSITION_DELETES,
                     REMOVE_DANGLING_DELETE_FILES,
+                    CREATE_CHANGELOG_VIEW,
                     Optional.empty(),
                     3,
                     false,
@@ -212,6 +214,7 @@ public abstract class BaseTrinoCatalogTest
                     UNSUPPORTED_DELETION_VECTOR_WRITER,
                     OPTIMIZE_POSITION_DELETES,
                     REMOVE_DANGLING_DELETE_FILES,
+                    CREATE_CHANGELOG_VIEW,
                     Optional.empty(),
                     3,
                     false,
