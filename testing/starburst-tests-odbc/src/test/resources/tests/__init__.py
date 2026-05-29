@@ -11,6 +11,8 @@
 import pyodbc
 from contextlib import contextmanager, closing
 
+pyodbc.pooling = False
+
 SQL_FALSE = 0
 SQL_TRUE = 1
 
