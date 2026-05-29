@@ -40,7 +40,6 @@ import io.trino.SystemSessionProperties;
 import io.trino.SystemSessionPropertiesProvider;
 import io.trino.block.BlockJsonSerde;
 import io.trino.cache.CacheMetadata;
-import io.trino.connector.BoundedFileSystemReadExecutor;
 import io.trino.connector.system.SystemConnectorModule;
 import io.trino.dispatcher.DispatchManager;
 import io.trino.exchange.ExchangeMetricsCollector;
@@ -122,7 +121,6 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockEncodingSerde;
 import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.FileSystemReadExecutor;
 import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.function.FunctionBundle;
 import io.trino.spi.predicate.TupleDomain;
@@ -526,9 +524,6 @@ public class ServerMainModule
 
         // PageIndexer
         binder.bind(PageIndexerFactory.class).to(GroupByHashPageIndexerFactory.class).in(Scopes.SINGLETON);
-
-        // FileSystemReadExecutor
-        binder.bind(FileSystemReadExecutor.class).to(BoundedFileSystemReadExecutor.class).in(Scopes.SINGLETON);
 
         // Finalizer
         binder.bind(FinalizerService.class).in(Scopes.SINGLETON);

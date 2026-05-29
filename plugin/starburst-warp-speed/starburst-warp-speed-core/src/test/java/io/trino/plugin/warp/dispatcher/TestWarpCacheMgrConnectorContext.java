@@ -48,8 +48,7 @@ public class TestWarpCacheMgrConnectorContext
                         ConnectorContext.class.getMethod("getManagedStatisticsClient"),
                         ConnectorContext.class.getMethod("getLocationAccessControl"),
                         ConnectorContext.class.getMethod("getNodeEnvironment"),
-                        ConnectorContext.class.getMethod("getFunctionBundleFactory"),
-                        ConnectorContext.class.getMethod("getFileSystemReadExecutor")));
+                        ConnectorContext.class.getMethod("getFunctionBundleFactory")));
 
         assertAllMethodsOverridden(
                 WarpContext.class,
