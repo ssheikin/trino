@@ -312,6 +312,7 @@ import io.trino.sql.tree.TruncateTable;
 import io.trino.sql.tree.TryExpression;
 import io.trino.sql.tree.TypeParameter;
 import io.trino.sql.tree.Union;
+import io.trino.sql.tree.UniquePredicate;
 import io.trino.sql.tree.Unnest;
 import io.trino.sql.tree.Update;
 import io.trino.sql.tree.UpdateAssignment;
@@ -2414,6 +2415,12 @@ class AstBuilder
     public Node visitExists(SqlBaseParser.ExistsContext context)
     {
         return new ExistsPredicate(getLocation(context), new SubqueryExpression(getLocation(context), (Query) visit(context.query())));
+    }
+
+    @Override
+    public Node visitUnique(SqlBaseParser.UniqueContext context)
+    {
+        return new UniquePredicate(getLocation(context), new SubqueryExpression(getLocation(context), (Query) visit(context.query())));
     }
 
     @Override
