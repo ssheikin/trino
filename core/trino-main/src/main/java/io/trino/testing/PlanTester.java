@@ -171,6 +171,7 @@ import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
+import io.trino.spi.connector.ConnectorTableCredentials;
 import io.trino.spi.connector.metastore.UnimplementedMetastore;
 import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.function.FunctionBundle;
@@ -206,6 +207,7 @@ import io.trino.sql.parser.SqlParser;
 import io.trino.sql.planner.AdaptivePlanner;
 import io.trino.sql.planner.AlternativesOptimizers;
 import io.trino.sql.planner.CompilerConfig;
+import io.trino.sql.planner.ConnectorTableCredentialsVisitor;
 import io.trino.sql.planner.LocalExecutionPlanner;
 import io.trino.sql.planner.LocalExecutionPlanner.LocalExecutionPlan;
 import io.trino.sql.planner.LogicalPlanner;
@@ -873,7 +875,12 @@ public class PlanTester
             throw new AssertionError("Expected sub-plan to have no children");
         }
 
-        TaskContext taskContext = createTaskContext(notificationExecutor, yieldExecutor, session);
+        ImmutableMap.Builder<PlanNodeId, ConnectorTableCredentials> tableCredentialsBuilder = ImmutableMap.builder();
+        ConnectorTableCredentialsVisitor visitor = new ConnectorTableCredentialsVisitor(session, plannerContext.getMetadata(), tableCredentialsBuilder);
+        subplan.getFragment().getRoot().accept(visitor, null);
+        ImmutableMap<PlanNodeId, ConnectorTableCredentials> tableCredentials = tableCredentialsBuilder.buildOrThrow();
+
+        TaskContext taskContext = createTaskContext(notificationExecutor, yieldExecutor, session, tableCredentials);
         TableExecuteContextManager tableExecuteContextManager = new TableExecuteContextManager();
         tableExecuteContextManager.registerTableExecuteContextForQuery(taskContext.getQueryContext().getQueryId());
         LocalExecutionPlanner executionPlanner = new LocalExecutionPlanner(
