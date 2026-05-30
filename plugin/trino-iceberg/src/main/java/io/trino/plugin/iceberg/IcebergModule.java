@@ -15,13 +15,17 @@ package io.trino.plugin.iceberg;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
+import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.filesystem.cache.CacheKeyProvider;
 import io.trino.metastore.HiveMetastoreFactory;
 import io.trino.metastore.RawHiveMetastoreFactory;
+import io.trino.parquet.cache.MemoryParquetFooterCache;
+import io.trino.parquet.cache.ParquetFooterCache;
 import io.trino.plugin.base.DecoratingConnectorSplitManager;
 import io.trino.plugin.base.Decorator;
 import io.trino.plugin.base.ForDecorator;
@@ -222,5 +226,15 @@ public class IcebergModule
         // binder.bind(TypeManager.class).toInstance(context.getTypeManager());
         newOptionalBinder(binder, TypeManager.class).setBinding()
                 .toInstance(new IcebergTypeManager(context.getTypeManager(), buildConfigObject(IcebergConfig.class).getLegacyVariantTypeMapping()));
+    }
+
+    @Provides
+    @Singleton
+    public static ParquetFooterCache createParquetFooterCache(IcebergConfig config)
+    {
+        return switch (config.getParquetFooterCacheType()) {
+            case NONE -> ParquetFooterCache.noop();
+            case MEMORY -> new MemoryParquetFooterCache(config.getParquetFooterCacheMemoryMaxSize());
+        };
     }
 }
