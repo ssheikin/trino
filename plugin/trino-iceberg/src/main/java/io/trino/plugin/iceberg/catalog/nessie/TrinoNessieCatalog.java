@@ -446,6 +446,12 @@ public class TrinoNessieCatalog
     }
 
     @Override
+    public void updateMaterializedViewSubstitutionEnabled(ConnectorSession session, SchemaTableName viewName, Optional<Boolean> substitutionEnabled)
+    {
+        throw new TrinoException(NOT_SUPPORTED, "updateMaterializedViewSubstitutionEnabled is not supported for Iceberg Nessie catalogs");
+    }
+
+    @Override
     public void dropMaterializedView(ConnectorSession session, SchemaTableName schemaViewName)
     {
         throw new TrinoException(NOT_SUPPORTED, "dropMaterializedView is not supported for Iceberg Nessie catalogs");
@@ -488,7 +494,7 @@ public class TrinoNessieCatalog
     }
 
     @Override
-    protected void invalidateTableCache(SchemaTableName schemaTableName)
+    public void invalidateTableCache(SchemaTableName schemaTableName)
     {
         tableMetadataCache.invalidate(schemaTableName);
     }

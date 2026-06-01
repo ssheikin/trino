@@ -613,6 +613,8 @@ public class TestIcebergSplitSource
                 Optional.empty(),
                 Optional.empty(),
                 false,
+                UUID.randomUUID(),
+                false,
                 Optional.empty(),
                 false,
                 ImmutableSet.of(),

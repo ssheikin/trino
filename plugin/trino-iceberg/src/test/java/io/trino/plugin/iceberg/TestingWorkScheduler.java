@@ -24,11 +24,11 @@ import io.trino.testing.QueryRunner;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -37,8 +37,8 @@ import static java.util.Objects.requireNonNull;
 public class TestingWorkScheduler
         implements WorkScheduler
 {
-    private final Map<String, MaterializedViewRefresh> jobs = new HashMap<>();
-    private final Map<CatalogSchemaTableName, List<MaterializedViewRefreshRecord>> refreshHistory = new HashMap<>();
+    private final Map<String, MaterializedViewRefresh> jobs = new ConcurrentHashMap<>();
+    private final Map<CatalogSchemaTableName, List<MaterializedViewRefreshRecord>> refreshHistory = new ConcurrentHashMap<>();
     private final Supplier<QueryRunner> queryRunner;
 
     public TestingWorkScheduler(Supplier<QueryRunner> queryRunner)
@@ -47,7 +47,7 @@ public class TestingWorkScheduler
     }
 
     @Override
-    public synchronized String createMaterializedViewRefreshJob(ConnectorSession session, String catalogName, String schemaName, String materializedViewName, RefreshSchedule schedule)
+    public String createMaterializedViewRefreshJob(ConnectorSession session, String catalogName, String schemaName, String materializedViewName, RefreshSchedule schedule)
     {
         String id = UUID.randomUUID().toString();
         jobs.put(id, new MaterializedViewRefresh(new CatalogSchemaTableName(catalogName, schemaName, materializedViewName), schedule));
@@ -55,25 +55,25 @@ public class TestingWorkScheduler
     }
 
     @Override
-    public synchronized Optional<RefreshSchedule> getJobSchedule(ConnectorSession session, String jobId)
+    public Optional<RefreshSchedule> getJobSchedule(ConnectorSession session, String jobId)
     {
         return Optional.ofNullable(jobs.get(jobId)).map(MaterializedViewRefresh::schedule);
     }
 
     @Override
-    public synchronized void deleteJobSchedule(ConnectorSession session, String jobId)
+    public void deleteJobSchedule(ConnectorSession session, String jobId)
     {
         jobs.remove(jobId);
     }
 
     @Override
-    public synchronized boolean updateJobSchedule(ConnectorSession session, String jobId, RefreshSchedule schedule)
+    public boolean updateJobSchedule(ConnectorSession session, String jobId, RefreshSchedule schedule)
     {
         return jobs.computeIfPresent(jobId, (_, existing) -> existing.withSchedule(schedule)) != null;
     }
 
     @Override
-    public synchronized boolean updateMaterializedViewName(ConnectorSession session, String jobId, String materializedViewName)
+    public boolean updateMaterializedViewName(ConnectorSession session, String jobId, String materializedViewName)
     {
         return jobs.computeIfPresent(jobId, (_, existing) -> existing.withMaterializedViewName(materializedViewName)) != null;
     }
@@ -91,7 +91,7 @@ public class TestingWorkScheduler
         return results.build();
     }
 
-    public synchronized void runScheduledRefreshesForJobId(String jobId)
+    public void runScheduledRefreshesForJobId(String jobId)
     {
         Instant startedAt = Instant.now();
         MaterializedResult result = refreshMaterializedView(jobs.get(jobId));
@@ -117,12 +117,12 @@ public class TestingWorkScheduler
                 Optional.empty());
     }
 
-    public synchronized String getRequiredJobScheduleId(CatalogSchemaTableName materializedView)
+    public String getRequiredJobScheduleId(CatalogSchemaTableName materializedView)
     {
         return getJobScheduleId(materializedView).orElseThrow();
     }
 
-    public synchronized Optional<String> getJobScheduleId(CatalogSchemaTableName materializedView)
+    public Optional<String> getJobScheduleId(CatalogSchemaTableName materializedView)
     {
         return jobs.entrySet().stream()
                 .filter(entry -> entry.getValue().table().equals(materializedView))

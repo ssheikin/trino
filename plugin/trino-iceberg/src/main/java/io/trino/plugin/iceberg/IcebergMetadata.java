@@ -335,6 +335,7 @@ import static io.trino.plugin.iceberg.IcebergFileFormat.ORC;
 import static io.trino.plugin.iceberg.IcebergFileFormat.PARQUET;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.REFRESH_SCHEDULE_TIMEZONE;
+import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.SUBSTITUTION_ENABLED;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.LAST_UPDATED_SEQUENCE_NUMBER;
@@ -543,7 +544,7 @@ public class IcebergMetadata
             .add(SORTED_BY_PROPERTY)
             .add(MERGE_MODE_PROPERTY)
             .build();
-    public static final Set<String> UPDATABLE_MATERIALIZED_VIEW_PROPERTIES = ImmutableSet.of(REFRESH_SCHEDULE, REFRESH_SCHEDULE_TIMEZONE);
+    public static final Set<String> UPDATABLE_MATERIALIZED_VIEW_PROPERTIES = ImmutableSet.of(REFRESH_SCHEDULE, REFRESH_SCHEDULE_TIMEZONE, SUBSTITUTION_ENABLED);
     private static final String SYSTEM_SCHEMA = "system";
 
     public static final String NUMBER_OF_DISTINCT_VALUES_NAME = "NUMBER_OF_DISTINCT_VALUES";
@@ -830,7 +831,8 @@ public class IcebergMetadata
                     OptionalLong.of(snapshotId),
                     schemaFor(table, snapshotId),
                     partitionSpec,
-                    branch);
+                    branch,
+                    true);
         }
         return tableHandleForCurrentSnapshot(session, tableName, table, Optional.empty());
     }
@@ -863,7 +865,8 @@ public class IcebergMetadata
                 getCurrentSnapshotId(table),
                 table.schema(),
                 Optional.of(table.spec()),
-                branch);
+                branch,
+                false);
     }
 
     private IcebergTableHandle tableHandleForSnapshot(
@@ -873,7 +876,8 @@ public class IcebergMetadata
             OptionalLong tableSnapshotId,
             Schema tableSchema,
             Optional<PartitionSpec> partitionSpec,
-            Optional<String> branch)
+            Optional<String> branch,
+            boolean versionPinnedByQuery)
     {
         validateTableForTrino(table, tableSnapshotId);
         Map<String, String> tableProperties = table.properties();
@@ -894,9 +898,11 @@ public class IcebergMetadata
                 ImmutableSet.of(),
                 Optional.ofNullable(tableProperties.get(TableProperties.DEFAULT_NAME_MAPPING)),
                 table.location(),
-                table.properties(),
+                tableProperties,
                 getTablePartitioning(session, table),
                 branch,
+                versionPinnedByQuery,
+                table.uuid(),
                 false,
                 Optional.empty(),
                 false,
@@ -4373,6 +4379,8 @@ public class IcebergMetadata
                 table.getStorageProperties(),
                 table.getTablePartitioning(),
                 table.getBranch(),
+                table.isVersionPinnedByQuery(),
+                table.getTableUuid(),
                 table.isRecordScannedFiles(),
                 table.getMaxScannedFileSize(),
                 table.isForceReadingAllFiles(),
@@ -4491,6 +4499,8 @@ public class IcebergMetadata
                         table.getStorageProperties(),
                         table.getTablePartitioning(),
                         table.getBranch(),
+                        table.isVersionPinnedByQuery(),
+                        table.getTableUuid(),
                         table.isRecordScannedFiles(),
                         table.getMaxScannedFileSize(),
                         table.isForceReadingAllFiles(),
@@ -4667,6 +4677,8 @@ public class IcebergMetadata
                 firstTable.getStorageProperties(),
                 firstTable.getTablePartitioning(),
                 firstTable.getBranch(),
+                firstTable.isVersionPinnedByQuery(),
+                firstTable.getTableUuid(),
                 firstTable.isRecordScannedFiles(),
                 firstTable.getMaxScannedFileSize(),
                 firstTable.isForceReadingAllFiles(),
@@ -4804,6 +4816,8 @@ public class IcebergMetadata
                 originalHandle.getStorageProperties(),
                 Optional.empty(), // requiredTablePartitioning does not affect stats
                 originalHandle.getBranch(),
+                false, // versionPinnedByQuery does not affect stats
+                originalHandle.getTableUuid(),
                 false, // recordScannedFiles does not affect stats
                 originalHandle.getMaxScannedFileSize(),
                 originalHandle.isForceReadingAllFiles(),
@@ -5018,6 +5032,11 @@ public class IcebergMetadata
         }
         commitTransaction(transaction, "refresh materialized view");
 
+        // The refresh just committed a new storage snapshot, but the catalog may still hold the
+        // storage table metadata read during refresh planning in this same transaction. Evict it so
+        // an in-transaction reader (e.g. materialization indexing) observes the committed snapshot.
+        catalog.invalidateTableCache(((IcebergTableHandle) tableHandle).getSchemaTableName());
+
         transaction = null;
         fromSnapshotForRefresh = OptionalLong.empty();
         Map<String, String> summary = icebergTable.currentSnapshot().summary();
@@ -5099,14 +5118,21 @@ public class IcebergMetadata
         if (!unsupportedProperties.isEmpty()) {
             throw new TrinoException(NOT_SUPPORTED, "The following properties cannot be updated: " + String.join(", ", unsupportedProperties));
         }
-        Map<String, Object> currentProperties = catalog.getMaterializedViewProperties(session, viewName, catalog.getMaterializedView(session, viewName).orElseThrow());
-        Optional<Object> targetSchedule = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE), () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE)));
-        targetSchedule.map(String.class::cast).ifPresent(IcebergMetadata::validateRefreshInterval);
-        Optional<Object> targetTimeZone = requireNonNullElseGet(
-                properties.get(REFRESH_SCHEDULE_TIMEZONE),
-                () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE_TIMEZONE)));
-        catalog.updateMaterializedViewRefreshSchedule(session, viewName, targetSchedule
-                .map(schedule -> new RefreshSchedule((String) schedule, targetTimeZone.map(String.class::cast).map(ZoneId::of))));
+
+        if (properties.containsKey(REFRESH_SCHEDULE) || properties.containsKey(REFRESH_SCHEDULE_TIMEZONE)) {
+            Map<String, Object> currentProperties = catalog.getMaterializedViewProperties(session, viewName, catalog.getMaterializedView(session, viewName).orElseThrow());
+            Optional<Object> targetSchedule = requireNonNullElseGet(properties.get(REFRESH_SCHEDULE), () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE)));
+            targetSchedule.map(String.class::cast).ifPresent(IcebergMetadata::validateRefreshInterval);
+            Optional<Object> targetTimeZone = requireNonNullElseGet(
+                    properties.get(REFRESH_SCHEDULE_TIMEZONE),
+                    () -> Optional.ofNullable(currentProperties.get(REFRESH_SCHEDULE_TIMEZONE)));
+            catalog.updateMaterializedViewRefreshSchedule(session, viewName, targetSchedule
+                    .map(schedule -> new RefreshSchedule((String) schedule, targetTimeZone.map(String.class::cast).map(ZoneId::of))));
+        }
+        if (properties.containsKey(SUBSTITUTION_ENABLED)) {
+            Optional<Boolean> substitutionEnabled = properties.get(SUBSTITUTION_ENABLED).map(Boolean.class::cast);
+            catalog.updateMaterializedViewSubstitutionEnabled(session, viewName, substitutionEnabled);
+        }
     }
 
     @Override

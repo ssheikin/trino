@@ -410,6 +410,12 @@ public class TrinoSnowflakeCatalog
     }
 
     @Override
+    public void updateMaterializedViewSubstitutionEnabled(ConnectorSession session, SchemaTableName viewName, Optional<Boolean> substitutionEnabled)
+    {
+        throw new TrinoException(NOT_SUPPORTED, "Materialized views are not supported for the Snowflake Iceberg catalog");
+    }
+
+    @Override
     public void dropMaterializedView(ConnectorSession session, SchemaTableName viewName)
     {
         throw new TrinoException(NOT_SUPPORTED, "Materialized views are not supported for the Snowflake Iceberg catalog");
@@ -452,7 +458,7 @@ public class TrinoSnowflakeCatalog
     }
 
     @Override
-    protected void invalidateTableCache(SchemaTableName schemaTableName)
+    public void invalidateTableCache(SchemaTableName schemaTableName)
     {
         tableMetadataCache.invalidate(schemaTableName);
     }

@@ -959,6 +959,12 @@ public class TrinoRestCatalog
     }
 
     @Override
+    public void updateMaterializedViewSubstitutionEnabled(ConnectorSession session, SchemaTableName viewName, Optional<Boolean> substitutionEnabled)
+    {
+        throw new TrinoException(NOT_SUPPORTED, "updateMaterializedViewSubstitutionEnabled is not supported for Iceberg REST catalog");
+    }
+
+    @Override
     public void dropMaterializedView(ConnectorSession session, SchemaTableName viewName)
     {
         throw new TrinoException(NOT_SUPPORTED, "dropMaterializedView is not supported for Iceberg REST catalog");
@@ -1069,7 +1075,8 @@ public class TrinoRestCatalog
         };
     }
 
-    private void invalidateTableCache(SchemaTableName schemaTableName)
+    @Override
+    public void invalidateTableCache(SchemaTableName schemaTableName)
     {
         tableCache.invalidate(schemaTableName);
     }

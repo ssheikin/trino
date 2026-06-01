@@ -204,6 +204,8 @@ public interface TrinoCatalog
 
     void updateMaterializedViewRefreshSchedule(ConnectorSession session, SchemaTableName viewName, Optional<RefreshSchedule> schedule);
 
+    void updateMaterializedViewSubstitutionEnabled(ConnectorSession session, SchemaTableName viewName, Optional<Boolean> substitutionEnabled);
+
     void dropMaterializedView(ConnectorSession session, SchemaTableName viewName);
 
     Optional<ConnectorMaterializedViewDefinition> getMaterializedView(ConnectorSession session, SchemaTableName viewName);
@@ -211,6 +213,8 @@ public interface TrinoCatalog
     Map<String, Object> getMaterializedViewProperties(ConnectorSession session, SchemaTableName viewName, ConnectorMaterializedViewDefinition definition);
 
     Optional<BaseTable> getMaterializedViewStorageTable(ConnectorSession session, SchemaTableName viewName);
+
+    void invalidateTableCache(SchemaTableName schemaTableName);
 
     void renameMaterializedView(ConnectorSession session, SchemaTableName source, SchemaTableName target);
 
