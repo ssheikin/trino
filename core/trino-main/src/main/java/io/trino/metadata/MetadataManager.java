@@ -25,6 +25,7 @@ import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
+import io.starburst.server.substitution.MaterializationService;
 import io.trino.Session;
 import io.trino.connector.CatalogHandle;
 import io.trino.connector.system.GlobalSystemConnector;
@@ -130,6 +131,7 @@ import io.trino.sql.analyzer.TypeSignatureProvider;
 import io.trino.sql.planner.PartitioningHandle;
 import io.trino.transaction.TransactionManager;
 import io.trino.type.TypeCoercion;
+import jakarta.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -211,6 +213,7 @@ public final class MetadataManager
     private final TypeManager typeManager;
     private final TypeCoercion typeCoercion;
     private final CatalogManager catalogManager;
+    private final Provider<MaterializationService> materializationService;
 
     private final ConcurrentMap<QueryId, QueryCatalogs> catalogsByQueryId = new ConcurrentHashMap<>();
 
@@ -223,7 +226,8 @@ public final class MetadataManager
             LanguageFunctionManager languageFunctionManager,
             TableFunctionRegistry tableFunctionRegistry,
             TypeManager typeManager,
-            CatalogManager catalogManager)
+            CatalogManager catalogManager,
+            Provider<MaterializationService> materializationService)
     {
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
@@ -235,6 +239,7 @@ public final class MetadataManager
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.languageFunctionManager = requireNonNull(languageFunctionManager, "languageFunctionManager is null");
         this.tableFunctionRegistry = requireNonNull(tableFunctionRegistry, "tableFunctionRegistry is null");
+        this.materializationService = requireNonNull(materializationService, "materializationDefinitionFactory is null");
     }
 
     @Override
@@ -1354,6 +1359,7 @@ public final class MetadataManager
     @Override
     public Optional<ConnectorOutputMetadata> finishRefreshMaterializedView(
             Session session,
+            QualifiedObjectName materializedViewName,
             TableHandle tableHandle,
             InsertTableHandle insertHandle,
             Collection<Slice> fragments,
@@ -1370,7 +1376,7 @@ public final class MetadataManager
                 .map(TableHandle::connectorHandle)
                 .collect(toImmutableList());
 
-        return metadata.finishRefreshMaterializedView(
+        Optional<ConnectorOutputMetadata> result = metadata.finishRefreshMaterializedView(
                 session.toConnectorSession(catalogHandle),
                 tableHandle.connectorHandle(),
                 insertHandle.connectorHandle(),
@@ -1380,6 +1386,10 @@ public final class MetadataManager
                 sourceConnectorHandles.size() < sourceTableHandles.size(),
                 !sourceTableFunctions.isEmpty(),
                 hasNonDeterministicFunctions);
+
+        materializationService.get().finishRefreshMaterializedView(session, materializedViewName);
+
+        return result;
     }
 
     @Override
@@ -1783,6 +1793,10 @@ public final class MetadataManager
         if (catalogMetadata.getSecurityManagement() == SYSTEM) {
             systemSecurityMetadata.tableCreated(session, viewName.asCatalogSchemaTableName());
         }
+        if (replace) {
+            // CREATE OR REPLACE must drop any potentially stale entry from the prior definition.
+            materializationService.get().remove(viewName);
+        }
     }
 
     @Override
@@ -1796,6 +1810,8 @@ public final class MetadataManager
         if (catalogMetadata.getSecurityManagement() == SYSTEM) {
             systemSecurityMetadata.tableDropped(session, viewName.asCatalogSchemaTableName());
         }
+
+        materializationService.get().remove(viewName);
     }
 
     @Override
@@ -2004,6 +2020,7 @@ public final class MetadataManager
         if (catalogMetadata.getSecurityManagement() == SYSTEM) {
             systemSecurityMetadata.tableRenamed(session, source.asCatalogSchemaTableName(), target.asCatalogSchemaTableName());
         }
+        materializationService.get().renameIfExists(session, source, target);
     }
 
     @Override
@@ -2014,6 +2031,8 @@ public final class MetadataManager
         ConnectorMetadata metadata = catalogMetadata.getMetadata(session);
 
         metadata.setMaterializedViewProperties(session.toConnectorSession(catalogHandle), viewName.asSchemaTableName(), properties);
+
+        materializationService.get().setMaterializedViewProperties(session, viewName, properties);
     }
 
     @Override

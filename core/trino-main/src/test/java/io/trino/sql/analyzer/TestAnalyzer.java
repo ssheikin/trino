@@ -8801,7 +8801,7 @@ public class TestAnalyzer
                 new ColumnPropertyManager(CatalogServiceProvider.fail()),
                 tablePropertyManager,
                 new ViewPropertyManager(_ -> ImmutableMap.of()),
-                new MaterializedViewPropertyManager(_ -> ImmutableMap.of()))));
+                new MaterializedViewPropertyManager(true, _ -> ImmutableMap.of()))));
         StatementAnalyzerFactory statementAnalyzerFactory = new StatementAnalyzerFactory(
                 plannerContext,
                 new SqlParser(),

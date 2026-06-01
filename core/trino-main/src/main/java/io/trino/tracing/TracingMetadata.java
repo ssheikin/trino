@@ -807,6 +807,7 @@ public class TracingMetadata
     @Override
     public Optional<ConnectorOutputMetadata> finishRefreshMaterializedView(
             Session session,
+            QualifiedObjectName materializedViewName,
             TableHandle tableHandle,
             InsertTableHandle insertTableHandle,
             Collection<Slice> fragments,
@@ -819,6 +820,7 @@ public class TracingMetadata
         try (var _ = scopedSpan(span)) {
             return delegate.finishRefreshMaterializedView(
                     session,
+                    materializedViewName,
                     tableHandle,
                     insertTableHandle,
                     fragments,
