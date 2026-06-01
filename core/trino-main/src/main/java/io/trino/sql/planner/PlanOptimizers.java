@@ -1082,8 +1082,8 @@ public class PlanOptimizers
                 costCalculator,
                 ImmutableSet.<Rule<?>>builder()
                         .addAll(new PushPartialAggregationThroughJoin().rules())
-                        .add(new PushPartialAggregationThroughExchange(plannerContext),
-                                new PruneJoinColumns(),
+                        .addAll(new PushPartialAggregationThroughExchange(plannerContext).rules())
+                        .add(new PruneJoinColumns(),
                                 new PruneJoinChildrenColumns(),
                                 new RemoveRedundantIdentityProjections())
                         .build()));
