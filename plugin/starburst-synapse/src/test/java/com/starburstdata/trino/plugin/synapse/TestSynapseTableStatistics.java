@@ -21,11 +21,12 @@ import io.trino.spi.statistics.TableStatistics;
 import io.trino.testing.MaterializedRow;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.sql.TestTable;
+import org.assertj.core.api.AbstractDoubleAssert;
+import org.assertj.core.api.Condition;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.InstanceOfAssertFactory;
 import org.assertj.core.api.MapAssert;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.data.Percentage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.Consumer;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.starburstdata.trino.plugin.synapse.SynapseQueryRunner.createSynapseQueryRunner;
@@ -46,15 +48,17 @@ import static io.trino.tpch.TpchTable.REGION;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.from;
-import static org.assertj.core.api.Assertions.withinPercentage;
 import static org.junit.jupiter.api.Assumptions.abort;
 
 public class TestSynapseTableStatistics
         extends BaseJdbcTableStatisticsTest
 {
-    // Azure Synapse can return highly inaccurate statistics (e.g., ndv=10 instead of 5 for regionkey).
-    // A tolerance of 120% accommodates this known Synapse behavior and prevents flaky test failures.
-    private static final Percentage STAT_TOLERANCE_PERCENT = withinPercentage(120.0);
+    private static final double STAT_UNDER_PERCENT = 80.0;
+    private static final double STAT_OVER_PERCENT = 120.0;
+
+    private static final double LOWER_STAT_SCALE = 1.0 - STAT_UNDER_PERCENT / 100.0;
+    private static final double UPPER_STAT_SCALE = 1.0 + STAT_OVER_PERCENT / 100.0;
+
     private static final InstanceOfAssertFactory<Map, MapAssert<ColumnHandle, ColumnStatistics>> COLUMN_STATS_MAP =
             InstanceOfAssertFactories.map(ColumnHandle.class, ColumnStatistics.class);
 
@@ -455,19 +459,35 @@ public class TestSynapseTableStatistics
         return stats -> {
             SoftAssertions softly = new SoftAssertions();
 
-            softly.assertThat(stats.getDistinctValuesCount().getValue())
-                    .isCloseTo(distinctValues, STAT_TOLERANCE_PERCENT);
-
-            softly.assertThat(stats.getNullsFraction().getValue())
-                    .isCloseTo(nullsFraction, STAT_TOLERANCE_PERCENT);
+            assertAsymmetricCloseTo(softly.assertThat(stats.getDistinctValuesCount().getValue()), distinctValues);
+            assertAsymmetricCloseTo(softly.assertThat(stats.getNullsFraction().getValue()), nullsFraction);
 
             dataSize.ifPresent(size ->
-                    softly.assertThat(stats.getDataSize().getValue())
-                            .isCloseTo(size, STAT_TOLERANCE_PERCENT));
+                    assertAsymmetricCloseTo(softly.assertThat(stats.getDataSize().getValue()), size));
 
             softly.assertThat(stats.getRange()).isEmpty();
             softly.assertAll();
         };
+    }
+
+    private static void assertAsymmetricCloseTo(AbstractDoubleAssert<?> assertion, double expected)
+    {
+        if (Double.isNaN(expected)) {
+            assertion.isNaN();
+        }
+        else {
+            checkArgument(expected >= 0, "expected value must be >= 0");
+            assertion.isBetween(
+                    expected * LOWER_STAT_SCALE,
+                    expected * UPPER_STAT_SCALE);
+        }
+    }
+
+    private static Condition<Double> withinStatTolerance(double expected)
+    {
+        double low = expected * LOWER_STAT_SCALE;
+        double high = expected * UPPER_STAT_SCALE;
+        return new Condition<>(v -> v >= low && v <= high, "between %s and %s", low, high);
     }
 
     @Override
@@ -482,7 +502,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(5, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(5));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -501,7 +521,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(1, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(1));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -519,7 +539,7 @@ public class TestSynapseTableStatistics
             assertThat(stats)
                     .get()
                     .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                    .isCloseTo(5, STAT_TOLERANCE_PERCENT);
+                    .is(withinStatTolerance(5));
             assertThat(stats)
                     .get()
                     .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -563,7 +583,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(2, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(2));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -583,7 +603,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(2, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(2));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -603,7 +623,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(5, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(5));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -622,7 +642,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(3, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(3));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -641,7 +661,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(5, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(5));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -662,7 +682,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(5, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(5));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
@@ -681,7 +701,7 @@ public class TestSynapseTableStatistics
         assertThat(stats)
                 .get()
                 .extracting(s -> s.getRowCount().getValue(), InstanceOfAssertFactories.DOUBLE)
-                .isCloseTo(1, STAT_TOLERANCE_PERCENT);
+                .is(withinStatTolerance(1));
         assertThat(stats)
                 .get()
                 .extracting(TableStatistics::getColumnStatistics, COLUMN_STATS_MAP)
