@@ -2833,7 +2833,7 @@ public class IcebergMetadata
         // Trino does not support TEMPORARY session-scoped views, so this procedure creates a catalogued view
         // that the user is responsible for dropping. For convenience, replace is set to true so that an
         // existing view with the same name is replaced rather than causing the procedure to fail.
-        catalog.createView(session, handle.viewName(), definition, true);
+        catalog.createView(session, handle.viewName(), definition, ImmutableMap.of(), true);
         return ImmutableMap.of();
     }
 
@@ -4289,8 +4289,7 @@ public class IcebergMetadata
     @Override
     public void createView(ConnectorSession session, SchemaTableName viewName, ConnectorViewDefinition definition, Map<String, Object> viewProperties, boolean replace)
     {
-        checkArgument(viewProperties.isEmpty(), "This connector does not support creating views with properties");
-        catalog.createView(session, viewName, definition, replace);
+        catalog.createView(session, viewName, definition, viewProperties, replace);
     }
 
     @Override
@@ -4353,6 +4352,12 @@ public class IcebergMetadata
         }
 
         return catalog.getView(session, viewName);
+    }
+
+    @Override
+    public Map<String, Object> getViewProperties(ConnectorSession session, SchemaTableName viewName)
+    {
+        return catalog.getViewProperties(session, viewName);
     }
 
     @Override
