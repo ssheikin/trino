@@ -65,9 +65,13 @@ import io.trino.spi.function.TypeParameter;
 import io.trino.spi.function.TypeParameterSpecialization;
 import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.DoubleType;
+import io.trino.spi.type.NumericExpression;
 import io.trino.spi.type.StandardTypes;
+import io.trino.spi.type.TemplateParameter;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeSignature;
+import io.trino.spi.type.TypeTemplate;
+import io.trino.spi.type.TypeTemplates;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.transaction.TransactionId;
 import org.junit.jupiter.api.Disabled;
@@ -76,6 +80,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.invoke.MethodHandle;
 import java.util.List;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
@@ -97,8 +102,10 @@ import static io.trino.spi.function.InvocationConvention.InvocationArgumentConve
 import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.FAIL_ON_NULL;
 import static io.trino.spi.function.OperatorType.LESS_THAN;
 import static io.trino.spi.type.StandardTypes.DOUBLE;
-import static io.trino.spi.type.TypeParameter.numericVariable;
 import static io.trino.spi.type.TypeSignature.arrayType;
+import static io.trino.spi.type.TypeTemplates.numericVariable;
+import static io.trino.spi.type.TypeTemplates.type;
+import static io.trino.spi.type.TypeTemplates.typeVariable;
 import static io.trino.spi.type.VarcharType.createVarcharType;
 import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypeSignatures;
 import static io.trino.sql.planner.TestingPlannerContext.PLANNER_CONTEXT;
@@ -390,8 +397,8 @@ public class TestAnnotationEngineForAggregates
     {
         Signature expectedSignature = Signature.builder()
                 .typeVariable("T")
-                .returnType(new TypeSignature("T"))
-                .argumentType(new TypeSignature("T"))
+                .returnType(typeVariable("T"))
+                .argumentType(typeVariable("T"))
                 .build();
 
         ParametricAggregation aggregation = getOnlyElement(parseFunctionDefinitions(GenericAggregationFunction.class));
@@ -544,9 +551,9 @@ public class TestAnnotationEngineForAggregates
     {
         Signature expectedSignature = Signature.builder()
                 .typeVariable("T")
-                .returnType(new TypeSignature("T"))
-                .argumentType(arrayType(new TypeSignature("T")))
-                .argumentType(new TypeSignature("T"))
+                .returnType(typeVariable("T"))
+                .argumentType(TypeTemplates.arrayType(typeVariable("T")))
+                .argumentType(typeVariable("T"))
                 .build();
 
         ParametricAggregation aggregation = getOnlyElement(parseFunctionDefinitions(ImplicitSpecializedAggregationFunction.class));
@@ -635,8 +642,8 @@ public class TestAnnotationEngineForAggregates
     {
         Signature expectedSignature = Signature.builder()
                 .typeVariable("T")
-                .returnType(new TypeSignature("T"))
-                .argumentType(arrayType(new TypeSignature("T")))
+                .returnType(typeVariable("T"))
+                .argumentType(TypeTemplates.arrayType(typeVariable("T")))
                 .build();
 
         ParametricAggregation aggregation = getOnlyElement(parseFunctionDefinitions(ExplicitSpecializedAggregationFunction.class));
@@ -856,8 +863,8 @@ public class TestAnnotationEngineForAggregates
     {
         Signature expectedSignature = Signature.builder()
                 .typeVariable("T")
-                .returnType(new TypeSignature("T"))
-                .argumentType(new TypeSignature("T"))
+                .returnType(typeVariable("T"))
+                .argumentType(typeVariable("T"))
                 .build();
 
         ParametricAggregation aggregation = getOnlyElement(parseFunctionDefinitions(InjectTypeAggregateFunction.class));
@@ -918,8 +925,8 @@ public class TestAnnotationEngineForAggregates
     public void testInjectLiteralAggregateParse()
     {
         Signature expectedSignature = Signature.builder()
-                .returnType(new TypeSignature("varchar", numericVariable("x")))
-                .argumentType(new TypeSignature("varchar", numericVariable("x")))
+                .returnType(type("varchar", numericVariable("x")))
+                .argumentType(type("varchar", numericVariable("x")))
                 .build();
 
         ParametricAggregation aggregation = getOnlyElement(parseFunctionDefinitions(InjectLiteralAggregateFunction.class));
@@ -984,9 +991,9 @@ public class TestAnnotationEngineForAggregates
     {
         Signature expectedSignature = Signature.builder()
                 .numericVariable("z", parseNumericExpression("x + y"))
-                .returnType(new TypeSignature("varchar", numericVariable("z")))
-                .argumentType(new TypeSignature("varchar", numericVariable("x")))
-                .argumentType(new TypeSignature("varchar", numericVariable("y")))
+                .returnType(type("varchar", numericVariable("z")))
+                .argumentType(type("varchar", numericVariable("x")))
+                .argumentType(type("varchar", numericVariable("y")))
                 .build();
 
         ParametricAggregation aggregation = getOnlyElement(parseFunctionDefinitions(LongConstraintAggregateFunction.class));
@@ -1109,8 +1116,8 @@ public class TestAnnotationEngineForAggregates
                 .typeVariable("T1")
                 .typeVariable("T2")
                 .returnType(DoubleType.DOUBLE)
-                .argumentType(new TypeSignature("T1"))
-                .argumentType(new TypeSignature("T2"))
+                .argumentType(typeVariable("T1"))
+                .argumentType(typeVariable("T2"))
                 .build();
 
         ParametricAggregation aggregation = getOnlyElement(parseFunctionDefinitions(PartiallyFixedTypeParameterInjectionAggregateFunction.class));
@@ -1204,8 +1211,8 @@ public class TestAnnotationEngineForAggregates
         FunctionDependencyDeclaration dependencyDeclaration = aggregation.getFunctionDependencies(boundSignature);
 
         ImmutableMap.Builder<TypeSignature, Type> typeDependencies = ImmutableMap.builder();
-        for (TypeSignature typeSignature : dependencyDeclaration.getTypeDependencies()) {
-            typeSignature = applyBoundVariables(typeSignature, functionBinding.variables());
+        for (TypeTemplate typeTemplate : dependencyDeclaration.getTypeDependencies()) {
+            TypeSignature typeSignature = applyBoundVariables(typeTemplate, functionBinding.variables());
             typeDependencies.put(typeSignature, PLANNER_CONTEXT.getTypeManager().getType(typeSignature));
         }
 
@@ -1223,13 +1230,35 @@ public class TestAnnotationEngineForAggregates
     private static ResolvedFunction resolveDependency(FunctionDependencyDeclaration.OperatorDependency dependency)
     {
         QualifiedName name = QualifiedName.of(GlobalSystemConnector.NAME, BUILTIN_SCHEMA, mangleOperatorName(dependency.getOperatorType()));
-        return PLANNER_CONTEXT.getFunctionResolver().resolveFunction(TEST_SESSION, name, fromTypeSignatures(dependency.getArgumentTypes()), new AllowAllAccessControl());
+        return PLANNER_CONTEXT.getFunctionResolver().resolveFunction(TEST_SESSION, name, fromTypeSignatures(toTypeSignatures(dependency.getArgumentTypes())), new AllowAllAccessControl());
     }
 
     private static ResolvedFunction resolveDependency(FunctionDependencyDeclaration.FunctionDependency dependency)
     {
         QualifiedName name = QualifiedName.of(dependency.getName().catalogName(), dependency.getName().schemaName(), dependency.getName().functionName());
-        return PLANNER_CONTEXT.getFunctionResolver().resolveFunction(TEST_SESSION, name, fromTypeSignatures(dependency.getArgumentTypes()), new AllowAllAccessControl());
+        return PLANNER_CONTEXT.getFunctionResolver().resolveFunction(TEST_SESSION, name, fromTypeSignatures(toTypeSignatures(dependency.getArgumentTypes())), new AllowAllAccessControl());
+    }
+
+    private static List<TypeSignature> toTypeSignatures(List<TypeTemplate> templates)
+    {
+        return templates.stream()
+                .map(TestAnnotationEngineForAggregates::toTypeSignature)
+                .collect(toImmutableList());
+    }
+
+    private static TypeSignature toTypeSignature(TypeTemplate template)
+    {
+        return switch (template) {
+            case TypeTemplate.TypeVariable(String name) -> new TypeSignature(name);
+            case TypeTemplate.TypeApplication(String base, List<TemplateParameter> parameters) -> new TypeSignature(
+                    base,
+                    parameters.stream()
+                            .map(parameter -> switch (parameter) {
+                                case TemplateParameter.TypeArgument(var name, var type) -> io.trino.spi.type.TypeParameter.typeParameter(name, toTypeSignature(type));
+                                case TemplateParameter.NumericArgument(NumericExpression value) -> io.trino.spi.type.TypeParameter.numericParameter(((NumericExpression.Literal) value).value());
+                            })
+                            .collect(toImmutableList()));
+        };
     }
 
     private static BoundSignature builtinFunction(String name, Type returnType, List<Type> argumentTypes)
