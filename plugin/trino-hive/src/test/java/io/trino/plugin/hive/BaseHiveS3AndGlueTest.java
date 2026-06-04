@@ -24,29 +24,29 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static io.trino.plugin.hive.BaseS3AndGlueMetastoreTest.LocationPattern.DOUBLE_SLASH;
-import static io.trino.plugin.hive.BaseS3AndGlueMetastoreTest.LocationPattern.TRIPLE_SLASH;
-import static io.trino.plugin.hive.BaseS3AndGlueMetastoreTest.LocationPattern.TWO_TRAILING_SLASHES;
+import static io.trino.plugin.hive.BaseS3AndGlueTest.LocationPattern.DOUBLE_SLASH;
+import static io.trino.plugin.hive.BaseS3AndGlueTest.LocationPattern.TRIPLE_SLASH;
+import static io.trino.plugin.hive.BaseS3AndGlueTest.LocationPattern.TWO_TRAILING_SLASHES;
 import static io.trino.plugin.hive.TestingHiveUtils.getConnectorService;
 import static io.trino.spi.security.SelectedRole.Type.ROLE;
 import static io.trino.testing.MaterializedResult.resultBuilder;
-import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class TestHiveS3AndGlueMetastoreTest
-        extends BaseS3AndGlueMetastoreTest
+public abstract class BaseHiveS3AndGlueTest
+        extends BaseS3AndGlueTest
 {
-    public TestHiveS3AndGlueMetastoreTest()
+    protected BaseHiveS3AndGlueTest(String bucketName)
     {
-        super("partitioned_by", "external_location", requireEnv("S3_BUCKET"));
+        super("partitioned_by", "external_location", bucketName);
     }
 
     @Override
@@ -58,13 +58,14 @@ public class TestHiveS3AndGlueMetastoreTest
                 .addExtraProperty("sql.path", "hive.functions")
                 .addExtraProperty("sql.default-function-catalog", "hive")
                 .addExtraProperty("sql.default-function-schema", "functions")
-                .setCreateTpchSchemas(false)
                 .addHiveProperty("hive.metastore", "glue")
                 .addHiveProperty("hive.metastore.glue.default-warehouse-dir", schemaPath())
                 .addHiveProperty("hive.security", "allow-all")
                 .addHiveProperty("hive.non-managed-table-writes-enabled", "true")
                 .addHiveProperty("fs.s3.enabled", "true")
                 .addHiveProperty("hive.metastore-cache-ttl", "0s")
+                .addHiveProperties(s3AndGlueProperties())
+                .setCreateTpchSchemas(false)
                 .build();
         queryRunner.execute("CREATE SCHEMA " + schemaName + " WITH (location = '" + schemaPath() + "')");
         queryRunner.execute("CREATE SCHEMA IF NOT EXISTS functions");
@@ -72,6 +73,11 @@ public class TestHiveS3AndGlueMetastoreTest
         metastore = getConnectorService(queryRunner, GlueHiveMetastore.class);
 
         return queryRunner;
+    }
+
+    protected Map<String, String> s3AndGlueProperties()
+    {
+        return Map.of();
     }
 
     private Session createSession(Optional<SelectedRole> role)
