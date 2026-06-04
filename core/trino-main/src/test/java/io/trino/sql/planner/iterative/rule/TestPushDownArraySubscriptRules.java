@@ -23,7 +23,7 @@ import io.trino.plugin.tpch.TpchTableHandle;
 import io.trino.spi.function.OperatorType;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.ArrayType;
-import io.trino.sql.analyzer.TypeSignatureProvider;
+import io.trino.sql.analyzer.TypeDescriptorProvider;
 import io.trino.sql.ir.Call;
 import io.trino.sql.ir.Cast;
 import io.trino.sql.ir.Comparison;
@@ -66,7 +66,7 @@ public class TestPushDownArraySubscriptRules
     private static final TestingFunctionResolution FUNCTIONS = new TestingFunctionResolution();
     private static final ResolvedFunction ADD_BIGINT = FUNCTIONS.resolveOperator(OperatorType.ADD, ImmutableList.of(BIGINT, BIGINT));
     private static final ResolvedFunction ARRAY_SUBSCRIPT = FUNCTIONS.resolveOperator(OperatorType.SUBSCRIPT, ImmutableList.of(ARRAY_TYPE, BIGINT));
-    private static final ResolvedFunction ARRAY_CONCAT = FUNCTIONS.resolveFunction("concat", ImmutableList.of(new TypeSignatureProvider(ARRAY_TYPE.getTypeSignature()), new TypeSignatureProvider(ARRAY_TYPE.getTypeSignature())));
+    private static final ResolvedFunction ARRAY_CONCAT = FUNCTIONS.resolveFunction("concat", ImmutableList.of(new TypeDescriptorProvider(ARRAY_TYPE.getTypeDescriptor()), new TypeDescriptorProvider(ARRAY_TYPE.getTypeDescriptor())));
 
     @Override
     protected RuleTester tester()

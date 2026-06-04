@@ -45,7 +45,7 @@ import static io.trino.SystemSessionProperties.FILTERING_SEMI_JOIN_TO_INNER;
 import static io.trino.SystemSessionProperties.PUSH_FILTER_INTO_VALUES_MAX_ROW_COUNT;
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.IntegerType.INTEGER;
-import static io.trino.sql.analyzer.TypeSignatureProvider.fromTypes;
+import static io.trino.sql.analyzer.TypeDescriptorProvider.fromTypes;
 import static io.trino.sql.ir.Comparison.Operator.EQUAL;
 import static io.trino.sql.ir.Logical.Operator.OR;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.any;
