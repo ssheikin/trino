@@ -103,6 +103,7 @@ public class DefaultCatalogFactory
     private final LocalMemoryManager localMemoryManager;
     private final SecretsResolver secretsResolver;
     private final NodeInfo nodeInfo;
+    private final ConnectorExpressionEvaluator evaluator;
 
     @Inject
     public DefaultCatalogFactory(
@@ -130,7 +131,8 @@ public class DefaultCatalogFactory
             ConfigurationFactory configurationFactory,
             LocalMemoryManager localMemoryManager,
             SecretsResolver secretsResolver,
-            NodeInfo nodeInfo)
+            NodeInfo nodeInfo,
+            ConnectorExpressionEvaluator evaluator)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
@@ -157,6 +159,7 @@ public class DefaultCatalogFactory
         this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
         this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
         this.nodeInfo = requireNonNull(nodeInfo, "nodeInfo is null");
+        this.evaluator = requireNonNull(evaluator, "evaluator is null");
     }
 
     @Override
@@ -229,7 +232,7 @@ public class DefaultCatalogFactory
                         metadata,
                         accessControl,
                         maxPrefetchedInformationSchemaPrefixes,
-                        ConnectorExpressionEvaluator.NO_OP));
+                        evaluator));
 
         SystemTablesProvider systemTablesProvider = new SystemTablesProvider(
                 transactionManager,
@@ -293,7 +296,7 @@ public class DefaultCatalogFactory
                 new InternalFunctionBundleFactory(),
                 managedStatisticsClient,
                 blocksHashFactory,
-                ConnectorExpressionEvaluator.NO_OP);
+                evaluator);
     }
 
     private Tracer createTracer(CatalogName catalogName)

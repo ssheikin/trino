@@ -15,6 +15,7 @@ package io.trino.sql;
 
 import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
+import io.airlift.json.JsonCodec;
 import io.opentelemetry.api.trace.Tracer;
 import io.trino.cache.CacheMetadata;
 import io.trino.execution.warnings.WarningCollector;
@@ -26,6 +27,7 @@ import io.trino.spi.block.BlockEncodingSerde;
 import io.trino.spi.function.BuiltinFunctionsChecker;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
+import io.trino.sql.ir.Expression;
 import io.trino.sql.ir.optimizer.IrExpressionEvaluator;
 import io.trino.sql.ir.optimizer.IrExpressionOptimizer;
 
@@ -55,6 +57,7 @@ public class PlannerContext
     private final LanguageFunctionManager languageFunctionManager;
     private final BuiltinFunctionsChecker builtinFunctionsChecker;
     private final Tracer tracer;
+    private final JsonCodec<Expression> expressionCodec;
     private final Supplier<IrExpressionOptimizer> expressionOptimizer = Suppliers.memoize(() -> newOptimizer(this));
     private final Supplier<IrExpressionEvaluator> expressionEvaluator = Suppliers.memoize(() -> new IrExpressionEvaluator(this));
     private final Supplier<IrExpressionOptimizer> partialEvaluator = Suppliers.memoize(() -> newPartialEvaluator(this));
@@ -69,7 +72,8 @@ public class PlannerContext
             FunctionManager functionManager,
             LanguageFunctionManager languageFunctionManager,
             BuiltinFunctionsChecker builtinFunctionsChecker,
-            Tracer tracer)
+            Tracer tracer,
+            JsonCodec<Expression> expressionCodec)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.cacheMetadata = requireNonNull(cacheMetadata, "cacheMetadata is null");
@@ -80,6 +84,7 @@ public class PlannerContext
         this.languageFunctionManager = requireNonNull(languageFunctionManager, "languageFunctionManager is null");
         this.builtinFunctionsChecker = requireNonNull(builtinFunctionsChecker, "builtinFunctionsChecker is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
+        this.expressionCodec = requireNonNull(expressionCodec, "expressionCodec is null");
     }
 
     public Metadata getMetadata()
@@ -145,5 +150,10 @@ public class PlannerContext
     public Tracer getTracer()
     {
         return tracer;
+    }
+
+    public JsonCodec<Expression> getExpressionCodec()
+    {
+        return expressionCodec;
     }
 }
