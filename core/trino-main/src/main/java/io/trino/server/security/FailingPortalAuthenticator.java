@@ -13,26 +13,16 @@
  */
 package io.trino.server.security;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import io.trino.spi.security.Identity;
+import jakarta.ws.rs.container.ContainerRequestContext;
 
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-/**
- * Defines the authentication and authorization required to access a REST resource.
- */
-@Documented
-@Retention(RUNTIME)
-@Target({TYPE, METHOD})
-public @interface ResourceSecurity
+public class FailingPortalAuthenticator
+        implements PortalAuthenticator
 {
-    enum AccessType
+    @Override
+    public Identity authenticate(ContainerRequestContext request)
+            throws AuthenticationException
     {
-        PUBLIC, WEB_UI, AUTHENTICATED_USER, MANAGEMENT_READ, MANAGEMENT_WRITE, INTERNAL_ONLY, PORTAL
+        throw new AuthenticationException("Portal authentication is not enabled");
     }
-
-    AccessType value();
 }
