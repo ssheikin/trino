@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.trino</groupId>
         <artifactId>starburst-warp-speed</artifactId>
-        <version>481-e.0.25-SNAPSHOT</version>
+        <version>481-e.0.25</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
