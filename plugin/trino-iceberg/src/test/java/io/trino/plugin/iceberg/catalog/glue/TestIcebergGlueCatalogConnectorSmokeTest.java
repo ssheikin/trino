@@ -13,8 +13,8 @@
  */
 package io.trino.plugin.iceberg.catalog.glue;
 
-import com.google.common.collect.ImmutableMap;
 import io.trino.filesystem.Location;
+import io.trino.plugin.hive.FlociS3AndGlue;
 import io.trino.plugin.iceberg.BaseIcebergConnectorSmokeTest;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
@@ -38,15 +38,17 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static io.trino.plugin.hive.metastore.glue.GlueConverter.getTableTypeNullable;
 import static io.trino.plugin.iceberg.IcebergTestUtils.checkParquetFileSorting;
-import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
 import static io.trino.testing.TestingNames.randomNameSuffix;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -57,29 +59,31 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
 {
     private final String bucketName;
     private final String schemaName;
-    private final GlueClient glueClient;
+    private FlociS3AndGlue floci;
+    private GlueClient glueClient;
 
     public TestIcebergGlueCatalogConnectorSmokeTest()
     {
         super(FileFormat.PARQUET);
-        this.bucketName = requireEnv("S3_BUCKET");
+        this.bucketName = "test-iceberg-glue-smoke-" + randomNameSuffix();
         this.schemaName = "test_iceberg_smoke_" + randomNameSuffix();
-        glueClient = GlueClient.create();
     }
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
+        floci = closeAfterClass(new FlociS3AndGlue());
+        floci.createBucket(bucketName);
+        glueClient = closeAfterClass(floci.createGlueClient());
         return IcebergQueryRunner.builder()
-                .setIcebergProperties(
-                        ImmutableMap.of(
-                                "iceberg.file-format", format.name(),
-                                "iceberg.catalog.type", "glue",
-                                "hive.metastore.glue.default-warehouse-dir", schemaPath(),
-                                "fs.s3.enabled", "true",
-                                "iceberg.register-table-procedure.enabled", "true",
-                                "iceberg.writer-sort-buffer-size", "1MB"))
+                .addIcebergProperty("iceberg.file-format", format.name())
+                .addIcebergProperty("iceberg.catalog.type", "glue")
+                .addIcebergProperty("hive.metastore.glue.default-warehouse-dir", schemaPath())
+                .addIcebergProperty("fs.s3.enabled", "true")
+                .addIcebergProperty("iceberg.register-table-procedure.enabled", "true")
+                .addIcebergProperty("iceberg.writer-sort-buffer-size", "1MB")
+                .addIcebergProperties(floci.s3AndGlueProperties())
                 .setSchemaInitializer(
                         SchemaInitializer.builder()
                                 .withClonedTpchTables(REQUIRED_TPCH_TABLES)
@@ -91,16 +95,22 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
     @Override
     protected String getCreateCatalogSqlTemplate()
     {
+        String catalogProperties = Stream.concat(
+                        Stream.of(
+                                Map.entry("fs.hadoop.enabled", "false"),
+                                Map.entry("fs.native-s3.enabled", "true"),
+                                Map.entry("hive.metastore.glue.default-warehouse-dir", schemaPath()),
+                                Map.entry("iceberg.catalog.type", "glue"),
+                                Map.entry("iceberg.file-format", "%s")),
+                        floci.s3AndGlueProperties().entrySet().stream())
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> format("\"%s\" = '%s'", entry.getKey(), entry.getValue()))
+                .collect(joining(",\n   "));
         return """
                CREATE CATALOG %%s USING iceberg
                WITH (
-                  "fs.hadoop.enabled" = 'false',
-                  "fs.native-s3.enabled" = 'true',
-                  "hive.metastore.glue.default-warehouse-dir" = '%s',
-                  "iceberg.catalog.type" = 'glue',
-                  "iceberg.file-format" = '%%s'
-               )""".formatted(
-                schemaPath());
+                  %s
+               )""".formatted(catalogProperties);
     }
 
     @AfterAll
@@ -253,7 +263,7 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
     @Override
     protected void deleteDirectory(String location)
     {
-        try (S3Client s3 = S3Client.create()) {
+        try (S3Client s3 = floci.createS3Client()) {
             ListObjectsV2Request listObjectsRequest = ListObjectsV2Request.builder()
                     .bucket(bucketName)
                     .prefix(location)
@@ -291,7 +301,7 @@ public class TestIcebergGlueCatalogConnectorSmokeTest
     @Override
     protected boolean locationExists(String location)
     {
-        try (S3Client s3 = S3Client.create()) {
+        try (S3Client s3 = floci.createS3Client()) {
             ListObjectsV2Request request = ListObjectsV2Request.builder()
                     .bucket(bucketName)
                     .prefix(location)

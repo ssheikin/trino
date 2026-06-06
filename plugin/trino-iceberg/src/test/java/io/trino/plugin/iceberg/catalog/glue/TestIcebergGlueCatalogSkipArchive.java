@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.iceberg.catalog.glue;
 
-import com.google.common.collect.ImmutableMap;
+import io.trino.plugin.hive.FlociS3AndGlue;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
 import io.trino.plugin.iceberg.SchemaInitializer;
 import io.trino.testing.AbstractTestQueryFramework;
@@ -31,8 +31,6 @@ import software.amazon.awssdk.services.glue.model.Table;
 import software.amazon.awssdk.services.glue.model.TableInput;
 import software.amazon.awssdk.services.glue.model.TableVersion;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -55,21 +53,22 @@ public class TestIcebergGlueCatalogSkipArchive
         extends AbstractTestQueryFramework
 {
     protected final String schemaName = "test_iceberg_skip_archive_" + randomNameSuffix();
-    private GlueClient glueClient = GlueClient.create();
+    private GlueClient glueClient;
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        File schemaDirectory = Files.createTempDirectory("test_iceberg").toFile();
-        schemaDirectory.deleteOnExit();
+        FlociS3AndGlue floci = closeAfterClass(new FlociS3AndGlue());
+        String bucketName = "test-iceberg-glue-skip-archive-" + randomNameSuffix();
+        floci.createBucket(bucketName);
+        glueClient = closeAfterClass(floci.createGlueClient());
 
         return IcebergQueryRunner.builder()
-                .setIcebergProperties(
-                        ImmutableMap.<String, String>builder()
-                                .put("iceberg.catalog.type", "glue")
-                                .put("hive.metastore.glue.default-warehouse-dir", schemaDirectory.getAbsolutePath())
-                                .buildOrThrow())
+                .addIcebergProperty("iceberg.catalog.type", "glue")
+                .addIcebergProperty("hive.metastore.glue.default-warehouse-dir", "s3://%s/".formatted(bucketName))
+                .addIcebergProperty("fs.s3.enabled", "true")
+                .addIcebergProperties(floci.s3AndGlueProperties())
                 .setSchemaInitializer(
                         SchemaInitializer.builder()
                                 .withSchemaName(schemaName)
