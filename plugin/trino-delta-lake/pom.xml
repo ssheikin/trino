@@ -700,7 +700,6 @@
                                 <exclude>**/TestDeltaLakeRenameToWithGlueMetastore.java</exclude>
                                 <exclude>**/TestDeltaLakeRegisterTableProcedureWithGlue.java</exclude>
                                 <exclude>**/TestDeltaLakeViewsGlueMetastore.java</exclude>
-                                <exclude>**/TestDeltaLakeConcurrentModificationGlueMetastore.java</exclude>
                                 <exclude>**/TestDeltaLakeGcsConnectorSmokeTest.java</exclude>
                                 <exclude>**/Test*FailureRecoveryTest.java</exclude>
                                 <exclude>**/TestS3AndUnityMetastoreDeltaConnectorSmokeTest.java</exclude>
@@ -742,7 +741,6 @@
                                 <include>**/TestDeltaLakeRenameToWithGlueMetastore.java</include>
                                 <include>**/TestDeltaLakeRegisterTableProcedureWithGlue.java</include>
                                 <include>**/TestDeltaLakeViewsGlueMetastore.java</include>
-                                <include>**/TestDeltaLakeConcurrentModificationGlueMetastore.java</include>
                                 <include>**/TestDeltaLakeGcsConnectorSmokeTest.java</include>
                                 <include>**/TestS3AndUnityMetastoreDeltaConnectorSmokeTest.java</include>
                                 <include>**/TestS3AndUnityMetastoreWithCredentialVendingDeltaConnectorSmokeTest.java</include>
