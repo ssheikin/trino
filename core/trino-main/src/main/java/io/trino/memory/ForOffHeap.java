@@ -11,29 +11,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.gpu;
+package io.trino.memory;
 
-import io.airlift.units.DataSize;
+import com.google.inject.BindingAnnotation;
 
-public interface GpuNodeSetup
-{
-    boolean isNodeGpuExecutionEnabled();
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-    DataSize getGpuDeviceMemoryPoolSize();
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-    class Disabled
-            implements GpuNodeSetup
-    {
-        @Override
-        public boolean isNodeGpuExecutionEnabled()
-        {
-            return false;
-        }
-
-        @Override
-        public DataSize getGpuDeviceMemoryPoolSize()
-        {
-            return DataSize.ofBytes(0);
-        }
-    }
-}
+@Retention(RUNTIME)
+@Target({FIELD, PARAMETER, METHOD})
+@BindingAnnotation
+public @interface ForOffHeap {}
