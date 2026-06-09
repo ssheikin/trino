@@ -40,9 +40,10 @@ import java.math.BigInteger;
 
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.trino.spi.type.TimestampType.TIMESTAMP_MILLIS;
-import static io.trino.spi.type.Timestamps.truncateEpochMicrosToMillis;
+import static io.trino.spi.type.Timestamps.MICROSECONDS_PER_MILLISECOND;
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Float.intBitsToFloat;
+import static java.lang.Math.floorDiv;
 
 public final class TypeHelper
 {
@@ -228,5 +229,10 @@ public final class TypeHelper
             return Slices.wrappedHeapBuffer(row.getBinary(field));
         }
         throw new IllegalStateException("getSlice not implemented for " + type);
+    }
+
+    static long truncateEpochMicrosToMillis(long epochMicros)
+    {
+        return floorDiv(epochMicros, MICROSECONDS_PER_MILLISECOND) * MICROSECONDS_PER_MILLISECOND;
     }
 }
