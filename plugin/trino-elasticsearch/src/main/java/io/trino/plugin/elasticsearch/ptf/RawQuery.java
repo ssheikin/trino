@@ -91,7 +91,8 @@ public class RawQuery
                                     .name("QUERY")
                                     .type(VARCHAR)
                                     .build()),
-                    GENERIC_TABLE);
+                    GENERIC_TABLE,
+                    "");
             this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
         }
 
