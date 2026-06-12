@@ -644,6 +644,30 @@
 
                                 <!-- Backwards incompatible changes since the previous release -->
                                 <item>
+                                    <code>java.method.visibilityReduced</code>
+                                    <old>method long io.trino.spi.type.DoubleType::xxHash64(double)</old>
+                                </item>
+                                <item>
+                                    <code>java.method.visibilityReduced</code>
+                                    <old>method boolean io.trino.spi.type.TimeType::equalOperator(long, long)</old>
+                                </item>
+                                <item>
+                                    <code>java.method.visibilityReduced</code>
+                                    <old>method long io.trino.spi.type.TimeType::hashCodeOperator(long)</old>
+                                </item>
+                                <item>
+                                    <code>java.method.visibilityReduced</code>
+                                    <old>method boolean io.trino.spi.type.TimeType::lessThan(long, long)</old>
+                                </item>
+                                <item>
+                                    <code>java.method.visibilityReduced</code>
+                                    <old>method boolean io.trino.spi.type.TimeType::lessThanOrEqual(long, long)</old>
+                                </item>
+                                <item>
+                                    <code>java.method.visibilityReduced</code>
+                                    <old>method long io.trino.spi.type.TimeType::xxHash64Operator(long)</old>
+                                </item>
+                                <item>
                                     <code>java.method.noLongerDefault</code>
                                     <new>method java.util.concurrent.CompletableFuture&lt;java.util.List&lt;io.trino.spi.connector.ConnectorSplit&gt;&gt; io.trino.spi.connector.ConnectorSplitSource::getNextBatch(int, io.trino.spi.connector.DynamicFilterSnapshot)</new>
                                     <justification>Method is now abstract — split sources must implement it</justification>
