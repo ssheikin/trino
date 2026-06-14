@@ -744,7 +744,7 @@
                         <configuration>
                             <excludes combine.children="append">
                                 <!-- gpu profile -->
-                                <exclude>**/TestGpuParquetPageSource.java</exclude>
+                                <exclude>**/TestHiveGpuParquetPageSource.java</exclude>
                                 <exclude>**/TestHiveGpuConnectorSmokeTest.java</exclude>
                                 <exclude>**/TestHiveGpuDistributedAggregations.java</exclude>
                                 <exclude>**/TestHiveGpuJoinQueries.java</exclude>
@@ -786,7 +786,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <includes>
-                                <include>**/TestGpuParquetPageSource.java</include>
+                                <include>**/TestHiveGpuParquetPageSource.java</include>
                                 <include>**/TestHiveGpuConnectorSmokeTest.java</include>
                                 <include>**/TestHiveGpuDistributedAggregations.java</include>
                                 <include>**/TestHiveGpuJoinQueries.java</include>
