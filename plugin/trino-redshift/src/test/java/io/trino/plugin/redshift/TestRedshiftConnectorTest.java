@@ -913,6 +913,7 @@ public class TestRedshiftConnectorTest
     }
 
     // override because we enabled the varchar unsafe pushdown
+    @Override
     @Test
     public void testVarcharCharComparison()
     {

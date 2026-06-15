@@ -447,7 +447,9 @@ public class PlanTester
                 catalogManager,
                 notificationExecutor);
 
-        TypeRegistry typeRegistry = new TypeRegistry(typeOperators, new FeaturesConfig());
+        FeaturesConfig featuresConfig = new FeaturesConfig()
+                .setLegacyVarcharToCharCoercion(false);
+        TypeRegistry typeRegistry = new TypeRegistry(typeOperators, featuresConfig);
         TypeManager typeManager = new InternalTypeManager(typeRegistry);
         InternalBlockEncodingSerde blockEncodingSerde = new InternalBlockEncodingSerde(TESTING_BLOCK_ENCODING_MANAGER, typeManager);
         SecretsResolver secretsResolver = new SecretsResolver(ImmutableMap.of());
@@ -456,7 +458,7 @@ public class PlanTester
                 () -> getPlannerContext().getMetadata(),
                 () -> getPlannerContext().getTypeManager(),
                 () -> getPlannerContext().getFunctionManager());
-        globalFunctionCatalog.addFunctions(SystemFunctionBundle.create(new FeaturesConfig(), typeOperators, blockTypeOperators, CURRENT_NODE.getNodeVersion()));
+        globalFunctionCatalog.addFunctions(SystemFunctionBundle.create(featuresConfig, typeOperators, blockTypeOperators, CURRENT_NODE.getNodeVersion()));
         TestingGroupProviderManager groupProvider = new TestingGroupProviderManager();
         LanguageFunctionManager languageFunctionManager = new LanguageFunctionManager(
                 sqlParser,
@@ -477,7 +479,8 @@ public class PlanTester
                 catalogManager,
                 () -> {
                     throw new UnsupportedOperationException();
-                }));
+                },
+                featuresConfig));
         JsonMapper mapper = new JsonMapperProvider()
                 .withJsonDeserializers(ImmutableMap.of(
                         Type.class, new TypeDeserializer(typeManager),
@@ -502,7 +505,7 @@ public class PlanTester
 
         CacheMetadata cacheMetadata = new CacheMetadata(createCacheMetadata(catalogManager));
         FunctionManager functionManager = new FunctionManager(createFunctionProvider(catalogManager), globalFunctionCatalog, languageFunctionManager);
-        this.plannerContext = new PlannerContext(metadata, cacheMetadata, typeOperators, blockEncodingSerde, typeManager, functionManager, languageFunctionManager, BuiltinFunctionsChecker.NOOP_CHECKER, tracer, expressionCodec);
+        this.plannerContext = new PlannerContext(metadata, cacheMetadata, typeOperators, blockEncodingSerde, typeManager, functionManager, languageFunctionManager, BuiltinFunctionsChecker.NOOP_CHECKER, tracer, expressionCodec, featuresConfig);
         this.evaluator = new InternalConnectorExpressionEvaluator(plannerContext);
         NodeInfo nodeInfo = new NodeInfo("test");
         catalogFactory.setCatalogFactory(new DefaultCatalogFactory(

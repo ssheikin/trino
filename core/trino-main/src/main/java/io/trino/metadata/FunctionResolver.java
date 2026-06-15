@@ -79,14 +79,15 @@ public class FunctionResolver
             TypeManager typeManager,
             LanguageFunctionManager languageFunctionManager,
             BuiltinFunctionsChecker builtinFunctionsChecker,
-            WarningCollector warningCollector)
+            WarningCollector warningCollector,
+            boolean legacyVarcharToCharCoercion)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.languageFunctionManager = requireNonNull(languageFunctionManager, "languageFunctionManager is null");
         this.builtinFunctionsChecker = requireNonNull(builtinFunctionsChecker, "builtinFunctionsChecker is null");
         this.warningCollector = requireNonNull(warningCollector, "warningCollector is null");
-        this.functionBinder = new FunctionBinder(metadata, typeManager);
+        this.functionBinder = new FunctionBinder(metadata, typeManager, legacyVarcharToCharCoercion);
     }
 
     /**
