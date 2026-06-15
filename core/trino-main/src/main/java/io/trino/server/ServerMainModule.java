@@ -94,6 +94,7 @@ import io.trino.operator.DirectExchangeClientSupplier;
 import io.trino.operator.FlatHashStrategyCompiler;
 import io.trino.operator.ForExchange;
 import io.trino.operator.GroupByHashPageIndexerFactory;
+import io.trino.operator.JoinPagesIndex;
 import io.trino.operator.NullSafeHashCompiler;
 import io.trino.operator.PagesIndex;
 import io.trino.operator.PagesIndexPageSorter;
@@ -372,6 +373,7 @@ public class ServerMainModule
         newExporter(binder).export(OrderingCompiler.class).withGeneratedName();
         binder.bind(NullSafeHashCompiler.class).in(Scopes.SINGLETON);
         binder.bind(PagesIndex.Factory.class).to(PagesIndex.DefaultFactory.class);
+        binder.bind(JoinPagesIndex.Factory.class).to(JoinPagesIndex.DefaultFactory.class);
         binder.bind(PagesInputStreamFactory.class);
         jaxrsBinder(binder).bind(IoExceptionSuppressingWriterInterceptor.class);
 
