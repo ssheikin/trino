@@ -85,6 +85,7 @@ public final class ConnectorSensitiveProperties
                             "azure.user-assigned-managed-identity.resource-id",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -99,7 +100,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .put("deprecated_snowflake_jdbc",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -180,6 +182,7 @@ public final class ConnectorSensitiveProperties
                             "azure.user-assigned-managed-identity.resource-id",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -205,7 +208,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .put("gsheets",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -227,6 +231,7 @@ public final class ConnectorSensitiveProperties
                             "azure.user-assigned-managed-identity.resource-id",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -241,7 +246,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .put("hudi",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -253,6 +259,7 @@ public final class ConnectorSensitiveProperties
                             "azure.user-assigned-managed-identity.resource-id",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -267,7 +274,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .put("iceberg",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -279,6 +287,7 @@ public final class ConnectorSensitiveProperties
                             "azure.user-assigned-managed-identity.resource-id",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -300,7 +309,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .put("ignite",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -353,6 +363,7 @@ public final class ConnectorSensitiveProperties
                             "azure.user-assigned-managed-identity.resource-id",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -374,7 +385,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .put("loki",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -585,6 +597,7 @@ public final class ConnectorSensitiveProperties
                             "azure.user-assigned-managed-identity.resource-id",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -600,7 +613,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .put("starburst_internal_testing",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -716,6 +730,7 @@ public final class ConnectorSensitiveProperties
                             "connection-password",
                             "gcs.json-key",
                             "hive.metastore.glue.aws-secret-key",
+                            "hive.metastore.rest.shared-secret",
                             "hive.metastore.thrift.client.ssl.key-password",
                             "hive.metastore.thrift.client.ssl.trust-certificate-password",
                             "hive.metastore.unity.proxy.password",
@@ -745,7 +760,8 @@ public final class ConnectorSensitiveProperties
                             "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "ssh-tunnel.private-key"))
             .buildOrThrow();
 
     private ConnectorSensitiveProperties() {}

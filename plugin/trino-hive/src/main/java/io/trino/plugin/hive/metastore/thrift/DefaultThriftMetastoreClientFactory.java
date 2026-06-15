@@ -19,6 +19,9 @@ import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.plugin.hive.metastore.thrift.ThriftHiveMetastoreClient.TransportSupplier;
 import io.trino.spi.Node;
+import io.trino.sshtunnel.SshTunnelConfig;
+import io.trino.sshtunnel.SshTunnelManager;
+import io.trino.sshtunnel.SshTunnelProperties;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
@@ -40,6 +43,7 @@ import static java.util.Objects.requireNonNull;
 public class DefaultThriftMetastoreClientFactory
         implements ThriftMetastoreClientFactory
 {
+    private final Optional<SshTunnelProperties> sshTunnelProperties;
     private final Optional<SSLContext> sslContext;
     private final Optional<HostAndPort> socksProxy;
     private final int connectTimeoutMillis;
@@ -57,6 +61,34 @@ public class DefaultThriftMetastoreClientFactory
     private final AtomicInteger chosenAlterTransactionalTableAlternative = new AtomicInteger(Integer.MAX_VALUE);
     private final AtomicInteger chosenAlterPartitionsAlternative = new AtomicInteger(Integer.MAX_VALUE);
 
+    /**
+     * Constructor with SSH tunnel support, for use by icehouse-common's GalaxyHmsClientFactory.
+     */
+    public DefaultThriftMetastoreClientFactory(
+            SshTunnelConfig sshTunnelConfig,
+            Optional<SSLContext> sslContext,
+            Optional<HostAndPort> socksProxy,
+            Duration connectTimeout,
+            Duration readTimeout,
+            HiveMetastoreAuthentication metastoreAuthentication,
+            String hostname,
+            Optional<String> catalogName,
+            boolean metastoreSupportsTableMeta,
+            DataSize maxMessageSize)
+    {
+        this.sshTunnelProperties = SshTunnelProperties.generateFrom(requireNonNull(sshTunnelConfig, "sshTunnelConfig is null"));
+        this.sslContext = requireNonNull(sslContext, "sslContext is null");
+        this.socksProxy = requireNonNull(socksProxy, "socksProxy is null");
+        this.connectTimeoutMillis = toIntExact(connectTimeout.toMillis());
+        this.readTimeoutMillis = toIntExact(readTimeout.toMillis());
+        this.metastoreAuthentication = requireNonNull(metastoreAuthentication, "metastoreAuthentication is null");
+        this.hostname = requireNonNull(hostname, "hostname is null");
+        this.catalogName = requireNonNull(catalogName, "catalogName is null");
+        this.metastoreSupportsTableMeta = metastoreSupportsTableMeta;
+        // @MaxDataSize("2047MB") on getMaxMessageSize() guarantees the value fits in an int
+        this.maxMessageSizeBytes = toIntExact(requireNonNull(maxMessageSize, "maxMessageSize is null").toBytes());
+    }
+
     public DefaultThriftMetastoreClientFactory(
             Optional<SSLContext> sslContext,
             Optional<HostAndPort> socksProxy,
@@ -68,6 +100,7 @@ public class DefaultThriftMetastoreClientFactory
             boolean metastoreSupportsTableMeta,
             DataSize maxMessageSize)
     {
+        this.sshTunnelProperties = Optional.empty();
         this.sslContext = requireNonNull(sslContext, "sslContext is null");
         this.socksProxy = requireNonNull(socksProxy, "socksProxy is null");
         this.connectTimeoutMillis = toIntExact(connectTimeout.toMillis());
@@ -113,7 +146,12 @@ public class DefaultThriftMetastoreClientFactory
             throws TTransportException
     {
         checkArgument(uri.getScheme().toLowerCase(ENGLISH).equals("thrift"), "Invalid metastore uri scheme %s", uri.getScheme());
-        return createTransport(HostAndPort.fromParts(uri.getHost(), uri.getPort()), delegationToken);
+        HostAndPort address = HostAndPort.fromParts(uri.getHost(), uri.getPort());
+        HostAndPort useAddress = sshTunnelProperties.map(SshTunnelManager::getCached)
+                .map(sshTunnelManager -> sshTunnelManager.getOrCreateTunnel(address))
+                .map(tunnel -> HostAndPort.fromParts("localhost", tunnel.getLocalTunnelPort()))
+                .orElse(address);
+        return createTransport(useAddress, delegationToken);
     }
 
     protected ThriftMetastoreClient create(TransportSupplier transportSupplier, String hostname)
