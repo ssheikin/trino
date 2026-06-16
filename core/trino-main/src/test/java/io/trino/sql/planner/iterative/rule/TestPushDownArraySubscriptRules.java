@@ -26,7 +26,6 @@ import io.trino.spi.type.ArrayType;
 import io.trino.sql.analyzer.TypeDescriptorProvider;
 import io.trino.sql.ir.Call;
 import io.trino.sql.ir.Cast;
-import io.trino.sql.ir.Comparison;
 import io.trino.sql.ir.Constant;
 import io.trino.sql.ir.Expression;
 import io.trino.sql.ir.IsNull;
@@ -45,6 +44,7 @@ import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.sql.ir.ComparisonOperator.EQUAL;
 import static io.trino.sql.ir.ComparisonOperator.GREATER_THAN;
 import static io.trino.sql.ir.ComparisonOperator.NOT_EQUAL;
+import static io.trino.sql.ir.IrExpressions.comparison;
 import static io.trino.sql.ir.IrExpressions.not;
 import static io.trino.sql.ir.Logical.Operator.AND;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.expression;
@@ -81,7 +81,7 @@ public class TestPushDownArraySubscriptRules
         tester().assertThat(new PushDownArraySubscriptThroughFilter())
                 .on(p ->
                         p.filter(
-                                new Comparison(GREATER_THAN, new Reference(BIGINT, "x"), new Constant(BIGINT, 5L)),
+                                comparison(FUNCTIONS.getMetadata(), GREATER_THAN, new Reference(BIGINT, "x"), new Constant(BIGINT, 5L)),
                                 p.values(p.symbol("x"))))
                 .doesNotFire();
 
@@ -219,7 +219,8 @@ public class TestPushDownArraySubscriptRules
                                 p.join(INNER,
                                         p.values(p.symbol("array1", ARRAY_TYPE)),
                                         p.values(p.symbol("array2", ARRAY_TYPE)),
-                                        new Comparison(
+                                        comparison(
+                                                FUNCTIONS.getMetadata(),
                                                 GREATER_THAN,
                                                 new Call(ADD_BIGINT, ImmutableList.of(
                                                         arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)),
@@ -231,7 +232,8 @@ public class TestPushDownArraySubscriptRules
                                         "expr", expression(new Reference(BIGINT, "indexed_array1")),
                                         "expr_2", expression(new Reference(ARRAY_TYPE, "array2"))),
                                 join(INNER, builder -> builder
-                                        .filter(new Comparison(
+                                        .filter(comparison(
+                                                FUNCTIONS.getMetadata(),
                                                 GREATER_THAN,
                                                 new Call(ADD_BIGINT, ImmutableList.of(
                                                         new Reference(BIGINT, "indexed_array1"),
@@ -296,8 +298,8 @@ public class TestPushDownArraySubscriptRules
                 .on(p ->
                         p.filter(
                                 new Logical(AND, ImmutableList.of(
-                                        new Comparison(NOT_EQUAL, arraySubscriptExpression(new Call(nestedArraySubscript, ImmutableList.of(new Reference(nestedArrayType, "a"), new Constant(BIGINT, 1L))), new Constant(BIGINT, 1L)), new Constant(BIGINT, 5L)),
-                                        new Comparison(EQUAL, arraySubscriptExpression(new Reference(ARRAY_TYPE, "b"), new Constant(BIGINT, 2L)), new Constant(BIGINT, 2L)),
+                                        comparison(FUNCTIONS.getMetadata(), NOT_EQUAL, arraySubscriptExpression(new Call(nestedArraySubscript, ImmutableList.of(new Reference(nestedArrayType, "a"), new Constant(BIGINT, 1L))), new Constant(BIGINT, 1L)), new Constant(BIGINT, 5L)),
+                                        comparison(FUNCTIONS.getMetadata(), EQUAL, arraySubscriptExpression(new Reference(ARRAY_TYPE, "b"), new Constant(BIGINT, 2L)), new Constant(BIGINT, 2L)),
                                         not(FUNCTIONS.getMetadata(), new IsNull(new Cast(new Call(nestedArraySubscript, ImmutableList.of(new Reference(nestedArrayType, "a"), new Constant(BIGINT, 3L))), JSON))))),
                                 p.tableScan(
                                         testTable,
@@ -308,8 +310,8 @@ public class TestPushDownArraySubscriptRules
                 .matches(project(
                         filter(
                                 new Logical(AND, ImmutableList.of(
-                                        new Comparison(NOT_EQUAL, new Reference(BIGINT, "expr"), new Constant(BIGINT, 5L)),
-                                        new Comparison(EQUAL, new Reference(BIGINT, "expr_0"), new Constant(BIGINT, 2L)),
+                                        comparison(FUNCTIONS.getMetadata(), NOT_EQUAL, new Reference(BIGINT, "expr"), new Constant(BIGINT, 5L)),
+                                        comparison(FUNCTIONS.getMetadata(), EQUAL, new Reference(BIGINT, "expr_0"), new Constant(BIGINT, 2L)),
                                         not(FUNCTIONS.getMetadata(), new IsNull(new Cast(new Reference(ARRAY_TYPE, "expr_1"), JSON))))),
                                 strictProject(
                                         ImmutableMap.of(
@@ -341,7 +343,7 @@ public class TestPushDownArraySubscriptRules
                                         new Logical(
                                                 AND,
                                                 ImmutableList.of(
-                                                        new Comparison(NOT_EQUAL, arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)), new Constant(BIGINT, 3L)),
+                                                        comparison(FUNCTIONS.getMetadata(), NOT_EQUAL, arraySubscriptExpression(new Reference(ARRAY_TYPE, "array1"), new Constant(BIGINT, 1L)), new Constant(BIGINT, 3L)),
                                                         not(FUNCTIONS.getMetadata(), new IsNull(new Reference(ARRAY_TYPE, "array2"))))),
                                         p.values(p.symbol("array1", ARRAY_TYPE), p.symbol("array2", ARRAY_TYPE)))))
                 .matches(
@@ -353,7 +355,7 @@ public class TestPushDownArraySubscriptRules
                                         new Logical(
                                                 AND,
                                                 ImmutableList.of(
-                                                        new Comparison(NOT_EQUAL, new Reference(BIGINT, "indexed_array"), new Constant(BIGINT, 3L)),
+                                                        comparison(FUNCTIONS.getMetadata(), NOT_EQUAL, new Reference(BIGINT, "indexed_array"), new Constant(BIGINT, 3L)),
                                                         not(FUNCTIONS.getMetadata(), new IsNull(new Reference(ARRAY_TYPE, "array2"))))),
                                         strictProject(
                                                 ImmutableMap.of(

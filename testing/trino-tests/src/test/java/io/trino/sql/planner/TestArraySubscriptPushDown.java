@@ -28,7 +28,6 @@ import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.ArrayType;
 import io.trino.sql.ir.Call;
 import io.trino.sql.ir.Cast;
-import io.trino.sql.ir.Comparison;
 import io.trino.sql.ir.Constant;
 import io.trino.sql.ir.Expression;
 import io.trino.sql.ir.Logical;
@@ -47,6 +46,7 @@ import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.sql.analyzer.TypeDescriptorProvider.fromTypes;
 import static io.trino.sql.ir.ComparisonOperator.EQUAL;
+import static io.trino.sql.ir.IrExpressions.comparison;
 import static io.trino.sql.ir.Logical.Operator.OR;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.any;
 import static io.trino.sql.planner.assertions.PlanMatchPattern.anyTree;
@@ -164,7 +164,7 @@ public class TestArraySubscriptPushDown
                         project(
                                 ImmutableMap.of("b_x", expression(new Reference(INTEGER, "arr_1"))),
                                 filter(
-                                        new Comparison(EQUAL, new Reference(INTEGER, "arr_2"), new Reference(INTEGER, "arr_3")),
+                                        comparison(FUNCTIONS.getMetadata(), EQUAL, new Reference(INTEGER, "arr_2"), new Reference(INTEGER, "arr_3")),
                                         values(
                                                 ImmutableList.of("arr_1", "arr_2", "arr_3"),
                                                 ImmutableList.of(ImmutableList.of(
@@ -193,14 +193,14 @@ public class TestArraySubscriptPushDown
                                         project(
                                                 ImmutableMap.of("b_arr_1", expression(new Reference(INTEGER, "b_arr_1"))),
                                                 filter(
-                                                        new Comparison(EQUAL, new Reference(INTEGER, "b_arr_3"), new Constant(INTEGER, 2L)),
+                                                        comparison(FUNCTIONS.getMetadata(), EQUAL, new Reference(INTEGER, "b_arr_3"), new Constant(INTEGER, 2L)),
                                                         values(
                                                                 ImmutableList.of("b_arr_3", "b_arr_1"),
                                                                 ImmutableList.of(ImmutableList.of(new Constant(INTEGER, 2L), new Constant(INTEGER, 1L)))))))
                                 .right(
                                         project(
                                                 filter(
-                                                        new Comparison(EQUAL, new Reference(INTEGER, "a_arr_2"), new Constant(INTEGER, 2L)),
+                                                        comparison(FUNCTIONS.getMetadata(), EQUAL, new Reference(INTEGER, "a_arr_2"), new Constant(INTEGER, 2L)),
                                                         values(
                                                                 ImmutableList.of("a_arr_2"),
                                                                 ImmutableList.of(ImmutableList.of(new Constant(INTEGER, 2L))))))))));
@@ -221,7 +221,7 @@ public class TestArraySubscriptPushDown
                                 ImmutableMap.of("a_y", expression(new Reference(INTEGER, "arr_1")), "b_x", expression(new Reference(INTEGER, "arr_2"))),
                                 filter(
                                         new Logical(OR, ImmutableList.of(
-                                                new Comparison(EQUAL, new Reference(INTEGER, "arr_3"), new Constant(INTEGER, 2L)),
+                                                comparison(FUNCTIONS.getMetadata(), EQUAL, new Reference(INTEGER, "arr_3"), new Constant(INTEGER, 2L)),
                                                 new Call(IS_FINITE, ImmutableList.of(new Cast(new Reference(INTEGER, "arr_4"), BIGINT))))),
                                         values(
                                                 ImmutableList.of("arr_2", "arr_4", "arr_1", "arr_3"),
