@@ -95,6 +95,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -199,6 +201,8 @@ public final class ConnectorSensitiveProperties
                             "io.credentials-key",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -233,6 +237,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -257,6 +263,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -288,6 +296,8 @@ public final class ConnectorSensitiveProperties
                             "io.credentials-key",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -360,6 +370,8 @@ public final class ConnectorSensitiveProperties
                             "io.credentials-key",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -462,7 +474,9 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem"))
             .put("prometheus",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -494,6 +508,8 @@ public final class ConnectorSensitiveProperties
                             "keystore-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -580,6 +596,8 @@ public final class ConnectorSensitiveProperties
                             "io.credentials-key",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
@@ -723,6 +741,8 @@ public final class ConnectorSensitiveProperties
                             "keystore-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key"))
