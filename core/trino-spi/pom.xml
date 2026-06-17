@@ -332,6 +332,12 @@
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <new>method io.trino.spi.connector.ConnectorPageSource io.trino.spi.connector.ConnectorPageSourceProvider::createPageSource(io.trino.spi.connector.ConnectorTransactionHandle, io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorSplit, io.trino.spi.connector.ConnectorTableHandle, java.util.Optional&lt;io.trino.spi.connector.ConnectorTableCredentials&gt;, java.util.List&lt;io.trino.spi.connector.ColumnHandle&gt;, io.trino.spi.connector.DynamicFilter, io.trino.spi.connector.MemoryContext)</new>
+                                    <justification>It's revapi false-positive -- a new overload was added and old one got deprecated</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
                                     <code>java.method.returnTypeTypeParametersChanged</code>
                                     <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.RowBlock::getNulls()</old>
                                     <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.RowBlock::getNulls()</new>

@@ -23,6 +23,7 @@ import io.trino.spi.connector.ConnectorTableCredentials;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
+import io.trino.spi.connector.MemoryContext;
 import io.trino.spi.connector.RecordPageSource;
 
 import java.util.List;
@@ -49,7 +50,8 @@ public class KuduPageSourceProvider
             ConnectorTableHandle table,
             Optional<ConnectorTableCredentials> tableCredentials,
             List<ColumnHandle> columns,
-            DynamicFilter dynamicFilter)
+            DynamicFilter dynamicFilter,
+            MemoryContext memoryContext)
     {
         KuduRecordSet recordSet = (KuduRecordSet) recordSetProvider.getRecordSet(transaction, session, split, table, columns);
         return new RecordPageSource(recordSet);
