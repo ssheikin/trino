@@ -1101,8 +1101,8 @@ jobs:
 
   # -----------------------------------------------------------
   # Synapse tests - start a SQL pool if needed
-  # nightly tests run on any scheduled run or labeled PR, while
-  # weekly and PT only run on labeled PRs or the specific weekly schedule
+  # These tests are expensive and no different than the same in cork, so
+  # only run on labeled PRs
   # -----------------------------------------------------------
   synapse-prepare:
     name: synapse-prepare
@@ -1111,11 +1111,10 @@ jobs:
       contents: read
     runs-on: [ self-hosted, gha-fleet-ec2-2cpu-1gb-arm64, latest ]
     if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'pull_request' && (
+      github.event_name == 'pull_request' && (
         contains(github.event.pull_request.labels.*.name, 'synapse-smoke') ||
         contains(github.event.pull_request.labels.*.name, 'synapse')
-      ))
+      )
     outputs:
       matrix: ${{ steps.build-synapse-matrix.outputs.MATRIX }}
       matrix-with-pt: ${{ steps.build-synapse-matrix.outputs.PT_MATRIX }}
@@ -1128,7 +1127,6 @@ jobs:
           GH_REPOSITORY: ${{ github.repository }}
           GH_EVENT_NAME: ${{ github.event_name }}
           GH_JOB_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
-          IS_WEEKLY_SCHEDULE: ${{ github.event_name == 'schedule' && github.event.schedule == '0 0 * * 6' }}
           HAS_SYNAPSE_LABEL: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'synapse') }}
         run: |
           pool_tags="$(jq -nc \
@@ -1143,7 +1141,7 @@ jobs:
           }')"
           matrix=$(jq -nc '{"include": [{"synapse-test": "smoke"}]}')
           pt_matrix="$matrix"
-          if [[ "$IS_WEEKLY_SCHEDULE" == "true" || "$HAS_SYNAPSE_LABEL" == 'true' ]]; then
+          if [[ "$HAS_SYNAPSE_LABEL" == 'true' ]]; then
             pool_tags=$(echo "$pool_tags" | jq -c '.test_type = "full"')
             matrix=$(echo "$matrix" | jq -c '.include += [
               { "synapse-test": "full", "profile": "fte-tests" },
