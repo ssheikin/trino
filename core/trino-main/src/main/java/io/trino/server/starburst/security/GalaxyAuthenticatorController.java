@@ -37,6 +37,11 @@ public final class GalaxyAuthenticatorController
         super(ImmutableMap.of(issuer, ImmutableSet.of(audience)), jwtClaimsParser);
     }
 
+    public GalaxyAuthenticatorController(String issuer, JwtClaimsParser jwtClaimsParser)
+    {
+        super(ImmutableMap.of(issuer, ImmutableSet.of()), jwtClaimsParser);
+    }
+
     public Identity authenticate(String token, Optional<RequestBodyHashing> requestBodyHashing)
             throws AuthenticationException
     {

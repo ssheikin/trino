@@ -119,7 +119,7 @@ public final class GalaxyAuthenticationHelper
             GalaxyIdentityType identityType,
             Claims claims) {}
 
-    record RequestBodyHashing(String hash, String claimName)
+    public record RequestBodyHashing(String hash, String claimName)
     {
         public RequestBodyHashing
         {

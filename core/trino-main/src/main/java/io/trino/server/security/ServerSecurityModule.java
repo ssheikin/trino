@@ -28,6 +28,7 @@ import io.trino.server.security.jwt.JwtAuthenticatorSupportModule;
 import io.trino.server.security.oauth2.OAuth2AuthenticationSupportModule;
 import io.trino.server.security.oauth2.OAuth2Authenticator;
 import io.trino.server.security.oauth2.OAuth2Client;
+import io.trino.server.starburst.security.GalaxyTrinoAuthenticator;
 
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,8 @@ public class ServerSecurityModule
         configBinder(binder).bindConfig(InsecureAuthenticatorConfig.class);
         binder.bind(InsecureAuthenticator.class).in(Scopes.SINGLETON);
         install(authenticatorModule(securityConfig, "insecure", InsecureAuthenticator.class, _ -> {}));
+
+        install(authenticatorModule(securityConfig, "portal", GalaxyTrinoAuthenticator.class, new PortalTrinoAuthenticatorModule()));
     }
 
     @Provides

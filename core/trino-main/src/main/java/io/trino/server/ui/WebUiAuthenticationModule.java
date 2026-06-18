@@ -51,6 +51,8 @@ public class WebUiAuthenticationModule
         installWebUiAuthenticator("form", new FormUiAuthenticatorModule(true));
         installWebUiAuthenticator("fixed", new FixedUiAuthenticatorModule());
         installWebUiAuthenticator("oauth2", new OAuth2WebUiModule());
+        installWebUiAuthenticator("portal", portalBinder ->
+                portalBinder.bind(WebUiAuthenticationFilter.class).to(PortalWebUiAuthenticationFilter.class).in(SINGLETON));
 
         install(webUiAuthenticator("certificate", CertificateAuthenticator.class, certificateBinder -> {
             newOptionalBinder(certificateBinder, ClientCertificate.class).setBinding().toInstance(REQUESTED);
