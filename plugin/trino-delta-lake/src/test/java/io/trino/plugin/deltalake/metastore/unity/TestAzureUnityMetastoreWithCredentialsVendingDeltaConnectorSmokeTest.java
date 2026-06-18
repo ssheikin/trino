@@ -17,19 +17,15 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
-import static io.trino.testing.SystemEnvironmentUtils.requireEnv;
-
-public class TestAzureUnityMetastoreDeltaConnectorSmokeTest
+public class TestAzureUnityMetastoreWithCredentialsVendingDeltaConnectorSmokeTest
         extends BaseAzureAndUnityMetastoreDeltaConnectorSmokeTest
 {
-    private static final String DATABRICKS_AZURE_STORAGE_ACCESS_KEY = requireEnv("DATABRICKS_AZURE_STORAGE_ACCESS_KEY");
-
     @Override
     protected Map<String, String> getAdditionalDeltaLakeProperties()
     {
         return ImmutableMap.<String, String>builder()
-                .put("azure.auth-type", "ACCESS_KEY")
-                .put("azure.access-key", DATABRICKS_AZURE_STORAGE_ACCESS_KEY)
+                .put("azure.auth-type", "DEFAULT")
+                .put("hive.metastore.unity.vended-credentials-enabled", "true")
                 .buildOrThrow();
     }
 }
