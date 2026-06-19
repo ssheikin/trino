@@ -13,11 +13,11 @@
  */
 package io.trino.spi.gpu;
 
-import io.trino.spi.gpu.borrow.Move;
-
-public interface ConnectorGpuMemoryContext
+/// Represents allocated (reserved) memory.
+///
+/// Not thread-safe.
+public interface MemoryAllocation
+        extends RuntimeCloseable
 {
-    /// Reserve memory before using it or declare already used memory.
-    @Move
-    MemoryAllocation allocate(MemoryAmount amount);
+    void update(MemoryAmount newAmount);
 }
