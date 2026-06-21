@@ -3204,7 +3204,7 @@ class AstBuilder
         return new StaticMethodCall(
                 getLocation(context),
                 getQualifiedName(context.qualifiedName()),
-                (Identifier) visit(context.identifier()),
+                (Identifier) visit(context.methodName()),
                 visit(context.argument(), CallArgument.class));
     }
 
@@ -3214,8 +3214,18 @@ class AstBuilder
         return new MethodCall(
                 getLocation(context),
                 (Expression) visit(context.primaryExpression()),
-                (Identifier) visit(context.identifier()),
+                (Identifier) visit(context.methodName()),
                 visit(context.argument(), CallArgument.class));
+    }
+
+    @Override
+    public Node visitMethodName(SqlBaseParser.MethodNameContext context)
+    {
+        if (context.identifier() != null) {
+            return visit(context.identifier());
+        }
+        // a keyword used as a method name
+        return new Identifier(getLocation(context), context.getText(), false);
     }
 
     @Override
