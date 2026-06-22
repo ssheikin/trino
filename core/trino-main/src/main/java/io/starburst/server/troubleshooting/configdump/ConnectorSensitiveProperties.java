@@ -536,6 +536,17 @@ public final class ConnectorSensitiveProperties
                             "keystore-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password"))
+            .put("sas",
+                    ImmutableSet.of(
+                            "auth-to-local.ldap.bind-password",
+                            "http-client.http-proxy.password",
+                            "http-client.https.automatic-shared-secret",
+                            "http-client.key-store-password",
+                            "http-client.trust-store-password",
+                            "ldap.ssl.keystore.password",
+                            "ldap.ssl.truststore.password",
+                            "otel.exporter.tls.client-key-password",
+                            "otel.exporter.tls.client-key-pem"))
             .put("singlestore",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",

@@ -1609,6 +1609,7 @@ jobs:
             - suite-clients
             - suite-functions
             - suite-kdb
+            - suite-sas
             - suite-tpch
             - suite-tpcds
             - suite-storage-formats-detailed
