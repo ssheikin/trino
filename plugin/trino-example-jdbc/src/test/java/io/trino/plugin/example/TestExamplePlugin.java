@@ -13,7 +13,6 @@
  */
 package io.trino.plugin.example;
 
-import com.google.common.collect.ImmutableMap;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.testing.TestingConnectorContext;
@@ -22,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestExamplePlugin
@@ -31,8 +29,8 @@ final class TestExamplePlugin
     void testGetSecuritySensitivePropertyNames()
     {
         Plugin plugin = new ExamplePlugin();
-        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
-        Map<String, String> config = ImmutableMap.of(
+        ConnectorFactory factory = plugin.getConnectorFactories().iterator().next();
+        Map<String, String> config = Map.of(
                 "non-existent-property", "value",
                 "connection-url", "jdbc:h2:mem:test",
                 "credential-provider.type", "inline",
