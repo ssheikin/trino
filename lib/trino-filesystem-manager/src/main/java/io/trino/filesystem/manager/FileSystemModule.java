@@ -27,8 +27,6 @@ import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.alluxio.AlluxioFileSystemCacheModule;
-import io.trino.filesystem.alluxio.AlluxioFileSystemFactory;
-import io.trino.filesystem.alluxio.AlluxioFileSystemModule;
 import io.trino.filesystem.azure.AzureFileSystemConfig;
 import io.trino.filesystem.azure.AzureFileSystemFactory;
 import io.trino.filesystem.azure.AzureFileSystemFactoryWithMultiIdp;
@@ -105,11 +103,6 @@ public class FileSystemModule
         }
 
         var factories = newMapBinder(binder, String.class, TrinoFileSystemFactory.class);
-
-        if (config.isAlluxioEnabled()) {
-            install(new AlluxioFileSystemModule());
-            factories.addBinding("alluxio").to(AlluxioFileSystemFactory.class);
-        }
 
         if (config.isAzureEnabled()) {
             install(new AzureFileSystemModule());
