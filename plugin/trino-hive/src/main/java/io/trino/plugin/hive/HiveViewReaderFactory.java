@@ -14,6 +14,7 @@
 package io.trino.plugin.hive;
 
 import io.trino.metastore.Table;
+import io.trino.plugin.hive.ViewReaderUtil.ViewReader;
 import io.trino.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 import io.trino.spi.connector.CatalogSchemaTableName;
 import io.trino.spi.connector.ConnectorSession;
@@ -21,8 +22,6 @@ import io.trino.spi.connector.SchemaTableName;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
-
-import static io.trino.plugin.hive.ViewReaderUtil.ViewReader;
 
 public interface HiveViewReaderFactory
 {

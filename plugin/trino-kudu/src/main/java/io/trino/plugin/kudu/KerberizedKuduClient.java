@@ -15,11 +15,11 @@ package io.trino.plugin.kudu;
 
 import io.trino.plugin.base.authentication.CachingKerberosAuthentication;
 import org.apache.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduClient.KuduClientBuilder;
 
 import javax.security.auth.Subject;
 
 import static java.util.Objects.requireNonNull;
-import static org.apache.kudu.client.KuduClient.KuduClientBuilder;
 
 public class KerberizedKuduClient
         extends ForwardingKuduClient

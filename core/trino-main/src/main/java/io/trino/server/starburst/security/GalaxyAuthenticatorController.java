@@ -19,11 +19,11 @@ import io.airlift.log.Logger;
 import io.jsonwebtoken.JwtException;
 import io.trino.server.security.AuthenticationException;
 import io.trino.server.starburst.security.GalaxyAuthenticationHelper.IdentityParams;
+import io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
 import io.trino.spi.security.Identity;
 
 import java.util.Optional;
 
-import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
 import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.parseClaimsWithoutValidation;
 import static io.trino.server.starburst.security.GalaxyIdentity.createIdentity;
 

@@ -23,12 +23,12 @@ import io.trino.plugin.base.authentication.KerberosConfiguration;
 import io.trino.plugin.base.mapping.IdentifierMapping;
 import io.trino.plugin.kudu.schema.SchemaEmulation;
 import org.apache.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduClient.KuduClientBuilder;
 
 import java.util.function.Function;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.base.util.SystemProperties.setJavaSecurityKrb5Conf;
-import static org.apache.kudu.client.KuduClient.KuduClientBuilder;
 
 public class KuduSecurityModule
         extends AbstractConfigurationAwareModule

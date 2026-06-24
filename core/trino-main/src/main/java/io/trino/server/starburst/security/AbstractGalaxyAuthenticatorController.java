@@ -20,6 +20,9 @@ import io.starburst.stargate.id.AccountId;
 import io.starburst.stargate.id.RoleId;
 import io.starburst.stargate.id.UserId;
 import io.trino.server.security.AuthenticationException;
+import io.trino.server.starburst.security.GalaxyAuthenticationHelper.IdentityParams;
+import io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
+import io.trino.server.starburst.security.GalaxyIdentity.EmbeddedActiveRoleSet;
 
 import java.time.Instant;
 import java.util.Date;
@@ -33,9 +36,6 @@ import static io.jsonwebtoken.ClaimJwtException.INCORRECT_EXPECTED_CLAIM_MESSAGE
 import static io.jsonwebtoken.ClaimJwtException.MISSING_EXPECTED_CLAIM_MESSAGE_TEMPLATE;
 import static io.jsonwebtoken.Claims.AUDIENCE;
 import static io.jsonwebtoken.Claims.ISSUER;
-import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.IdentityParams;
-import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
-import static io.trino.server.starburst.security.GalaxyIdentity.EmbeddedActiveRoleSet;
 import static io.trino.server.starburst.security.GalaxyIdentity.parseEmbeddedEnabledRoles;
 import static io.trino.server.starburst.security.GalaxyIdentity.toGalaxyIdentityType;
 import static java.time.Instant.now;

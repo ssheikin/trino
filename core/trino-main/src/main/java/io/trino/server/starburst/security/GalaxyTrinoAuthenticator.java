@@ -18,12 +18,12 @@ import com.google.inject.Inject;
 import io.trino.server.security.AuthenticationException;
 import io.trino.server.security.Authenticator;
 import io.trino.server.security.PortalAuthenticator;
+import io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
 import io.trino.spi.security.Identity;
 import jakarta.ws.rs.container.ContainerRequestContext;
 
 import java.util.Optional;
 
-import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
 import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.extractToken;
 import static jakarta.ws.rs.HttpMethod.POST;
 import static jakarta.ws.rs.HttpMethod.PUT;

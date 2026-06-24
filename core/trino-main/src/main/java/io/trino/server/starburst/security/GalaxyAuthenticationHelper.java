@@ -21,6 +21,8 @@ import io.starburst.stargate.id.AccountId;
 import io.starburst.stargate.id.RoleId;
 import io.starburst.stargate.id.UserId;
 import io.trino.server.security.AuthenticationException;
+import io.trino.server.starburst.security.GalaxyIdentity.EmbeddedActiveRoleSet;
+import io.trino.server.starburst.security.GalaxyIdentity.GalaxyIdentityType;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MediaType;
@@ -35,8 +37,6 @@ import java.util.Optional;
 
 import static com.google.common.hash.Hashing.sha256;
 import static io.trino.server.security.jwt.JwtUtil.newJwtParserBuilder;
-import static io.trino.server.starburst.security.GalaxyIdentity.EmbeddedActiveRoleSet;
-import static io.trino.server.starburst.security.GalaxyIdentity.GalaxyIdentityType;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 

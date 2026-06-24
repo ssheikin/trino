@@ -18,6 +18,7 @@ import io.starburst.stargate.id.AccountId;
 import io.starburst.stargate.id.RoleId;
 import io.starburst.stargate.id.UserId;
 import io.trino.server.security.AuthenticationException;
+import io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
 import io.trino.spi.security.Identity;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,6 @@ import java.util.Optional;
 
 import static io.trino.server.security.jwt.JwtUtil.newJwtBuilder;
 import static io.trino.server.starburst.security.AbstractGalaxyAuthenticatorController.REQUEST_EXPIRATION_CLAIM;
-import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.RequestBodyHashing;
 import static io.trino.server.starburst.security.GalaxyAuthenticationHelper.parseClaimsWithoutValidation;
 import static io.trino.server.starburst.security.GalaxyIdentity.PORTAL_IDENTITY_TYPE;
 import static io.trino.server.starburst.security.GalaxyIdentity.createPrincipalString;
