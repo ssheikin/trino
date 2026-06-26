@@ -25,7 +25,7 @@ import io.trino.plugin.base.util.UncheckedCloseable;
 import io.trino.plugin.deltalake.DeltaLakeConfig;
 import io.trino.plugin.deltalake.DeltaLakeFileSystemFactory;
 import io.trino.plugin.deltalake.DeltaLakeMetadata;
-import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
+import io.trino.plugin.deltalake.DeltaLakeMetadataFactoryInterface;
 import io.trino.plugin.deltalake.DeltaLakeTableCredentials;
 import io.trino.plugin.deltalake.metastore.DeltaLakeMetastore;
 import io.trino.plugin.deltalake.metastore.VendedCredentialsHandle;
@@ -80,7 +80,7 @@ public class RegisterTableProcedure
         }
     }
 
-    private final DeltaLakeMetadataFactory metadataFactory;
+    private final DeltaLakeMetadataFactoryInterface metadataFactory;
     private final TransactionLogAccess transactionLogAccess;
     private final CachingExtendedStatisticsAccess statisticsAccess;
     private final DeltaLakeFileSystemFactory fileSystemFactory;
@@ -88,7 +88,7 @@ public class RegisterTableProcedure
 
     @Inject
     public RegisterTableProcedure(
-            DeltaLakeMetadataFactory metadataFactory,
+            DeltaLakeMetadataFactoryInterface metadataFactory,
             TransactionLogAccess transactionLogAccess,
             CachingExtendedStatisticsAccess statisticsAccess,
             DeltaLakeFileSystemFactory fileSystemFactory,

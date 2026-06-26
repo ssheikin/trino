@@ -32,7 +32,7 @@ import io.trino.metastore.Table;
 import io.trino.plugin.base.ConnectorContextModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.deltalake.DeltaLakeMetadata;
-import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
+import io.trino.plugin.deltalake.DeltaLakeMetadataFactoryInterface;
 import io.trino.plugin.deltalake.DeltaLakeModule;
 import io.trino.plugin.deltalake.DeltaLakeSecurityModule;
 import io.trino.plugin.deltalake.metastore.DeltaLakeMetastoreModule;
@@ -91,7 +91,7 @@ public class TestDeltaLakeGlueMetastore
     private File tempDir;
     private LifeCycleManager lifeCycleManager;
     private HiveMetastore metastoreClient;
-    private DeltaLakeMetadataFactory metadataFactory;
+    private DeltaLakeMetadataFactoryInterface metadataFactory;
     private String databaseName;
     private TestingConnectorSession session;
 
@@ -127,7 +127,7 @@ public class TestDeltaLakeGlueMetastore
 
         lifeCycleManager = injector.getInstance(LifeCycleManager.class);
         metastoreClient = injector.getInstance(HiveMetastoreFactory.class).createMetastore(Optional.empty());
-        metadataFactory = injector.getInstance(DeltaLakeMetadataFactory.class);
+        metadataFactory = injector.getInstance(DeltaLakeMetadataFactoryInterface.class);
 
         session = TestingConnectorSession.builder()
                 .setPropertyMetadata(injector.getInstance(new Key<Set<SessionPropertiesProvider>>() {}).stream()

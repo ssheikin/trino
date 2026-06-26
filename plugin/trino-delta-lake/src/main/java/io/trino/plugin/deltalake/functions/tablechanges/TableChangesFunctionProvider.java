@@ -16,7 +16,7 @@ package io.trino.plugin.deltalake.functions.tablechanges;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorTableFunction;
-import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
+import io.trino.plugin.deltalake.DeltaLakeMetadataFactoryInterface;
 import io.trino.spi.function.table.ConnectorTableFunction;
 
 import static java.util.Objects.requireNonNull;
@@ -24,10 +24,10 @@ import static java.util.Objects.requireNonNull;
 public class TableChangesFunctionProvider
         implements Provider<ConnectorTableFunction>
 {
-    private final DeltaLakeMetadataFactory deltaLakeMetadataFactory;
+    private final DeltaLakeMetadataFactoryInterface deltaLakeMetadataFactory;
 
     @Inject
-    public TableChangesFunctionProvider(DeltaLakeMetadataFactory deltaLakeMetadataFactory)
+    public TableChangesFunctionProvider(DeltaLakeMetadataFactoryInterface deltaLakeMetadataFactory)
     {
         this.deltaLakeMetadataFactory = requireNonNull(deltaLakeMetadataFactory, "deltaLakeMetadataFactory is null");
     }

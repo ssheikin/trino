@@ -188,7 +188,7 @@ public class TestDeltaLakeMetadata
             ImmutableSet.of(BOOLEAN_COLUMN_HANDLE, DOUBLE_COLUMN_HANDLE);
 
     private File temporaryCatalogDirectory;
-    private DeltaLakeMetadataFactory deltaLakeMetadataFactory;
+    private DeltaLakeMetadataFactoryInterface deltaLakeMetadataFactory;
     private DeltaLakeMetastore deltaLakeMetastore;
 
     @BeforeAll
@@ -232,7 +232,7 @@ public class TestDeltaLakeMetadata
                 .setRequiredConfigurationProperties(config)
                 .initialize();
 
-        deltaLakeMetadataFactory = injector.getInstance(DeltaLakeMetadataFactory.class);
+        deltaLakeMetadataFactory = injector.getInstance(DeltaLakeMetadataFactoryInterface.class);
 
         deltaLakeMetastore = injector.getInstance(DeltaLakeMetastore.class);
         deltaLakeMetastore.createDatabase(Database.builder()

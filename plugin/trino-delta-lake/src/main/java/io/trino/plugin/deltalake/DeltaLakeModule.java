@@ -112,7 +112,8 @@ public class DeltaLakeModule
         newSetBinder(binder, new TypeLiteral<Decorator<ConnectorSplitManager>>() {});
         binder.bind(ConnectorSplitManager.class).to(DecoratingConnectorSplitManager.class).in(Scopes.SINGLETON);
 
-        binder.bind(DeltaLakeMetadataFactory.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, DeltaLakeMetadataFactoryInterface.class)
+                .setDefault().to(DeltaLakeMetadataFactory.class).in(Scopes.SINGLETON);
         binder.bind(CachingExtendedStatisticsAccess.class).in(Scopes.SINGLETON);
         binder.bind(ExtendedStatisticsAccess.class).to(CachingExtendedStatisticsAccess.class).in(Scopes.SINGLETON);
         binder.bind(ExtendedStatisticsAccess.class).annotatedWith(ForCachingExtendedStatisticsAccess.class).to(MetaDirStatisticsAccess.class).in(Scopes.SINGLETON);

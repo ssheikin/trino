@@ -30,11 +30,11 @@ import static java.util.Objects.requireNonNull;
 
 public class DeltaLakeTransactionManager
 {
-    private final DeltaLakeMetadataFactory metadataFactory;
+    private final DeltaLakeMetadataFactoryInterface metadataFactory;
     private final Map<ConnectorTransactionHandle, MemoizedMetadata> transactions = new ConcurrentHashMap<>();
 
     @Inject
-    public DeltaLakeTransactionManager(DeltaLakeMetadataFactory metadataFactory)
+    public DeltaLakeTransactionManager(DeltaLakeMetadataFactoryInterface metadataFactory)
     {
         this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
     }

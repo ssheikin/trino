@@ -48,6 +48,7 @@ import static io.trino.plugin.hive.metastore.MetastoreTypeConfig.MetastoreType.U
 import static java.util.Objects.requireNonNull;
 
 public class DeltaLakeMetadataFactory
+        implements DeltaLakeMetadataFactoryInterface
 {
     private final HiveMetastoreFactory hiveMetastoreFactory;
     private final DeltaLakeFileSystemFactory fileSystemFactory;
@@ -140,11 +141,13 @@ public class DeltaLakeMetadataFactory
         this.tableCredentialsProvider = requireNonNull(tableCredentialsProvider, "tableCredentialsProvider is null");
     }
 
+    @Override
     public DeltaLakeMetadata create(ConnectorIdentity identity)
     {
         return create(createTransactionMetastore(identity));
     }
 
+    @Override
     public DeltaLakeMetadata create(HiveMetastore hiveMetastore)
     {
         AccessControlMetadata accessControlMetadata = accessControlMetadataFactory.create(hiveMetastore);
@@ -189,6 +192,7 @@ public class DeltaLakeMetadataFactory
                 tableCredentialsProvider);
     }
 
+    @Override
     public CachingHiveMetastore createTransactionMetastore(ConnectorIdentity identity)
     {
         return createPerTransactionCache(

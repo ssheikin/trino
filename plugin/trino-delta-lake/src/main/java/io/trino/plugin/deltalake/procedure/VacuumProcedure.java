@@ -27,7 +27,7 @@ import io.trino.plugin.base.util.UncheckedCloseable;
 import io.trino.plugin.deltalake.DeltaLakeConfig;
 import io.trino.plugin.deltalake.DeltaLakeFileSystemFactory;
 import io.trino.plugin.deltalake.DeltaLakeMetadata;
-import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
+import io.trino.plugin.deltalake.DeltaLakeMetadataFactoryInterface;
 import io.trino.plugin.deltalake.DeltaLakeSessionProperties;
 import io.trino.plugin.deltalake.DeltaLakeTableCredentials;
 import io.trino.plugin.deltalake.DeltaLakeTableHandle;
@@ -99,14 +99,14 @@ public class VacuumProcedure
 
     private final CatalogName catalogName;
     private final DeltaLakeFileSystemFactory fileSystemFactory;
-    private final DeltaLakeMetadataFactory metadataFactory;
+    private final DeltaLakeMetadataFactoryInterface metadataFactory;
     private final TransactionLogAccess transactionLogAccess;
 
     @Inject
     public VacuumProcedure(
             CatalogName catalogName,
             DeltaLakeFileSystemFactory fileSystemFactory,
-            DeltaLakeMetadataFactory metadataFactory,
+            DeltaLakeMetadataFactoryInterface metadataFactory,
             TransactionLogAccess transactionLogAccess)
     {
         this.catalogName = requireNonNull(catalogName, "catalogName is null");

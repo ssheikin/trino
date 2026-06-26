@@ -128,7 +128,7 @@ public class TestDeltaLakeCacheIds
 
         FileSystemTransactionLogReaderFactory transactionLogReaderFactory = new FileSystemTransactionLogReaderFactory(new DefaultDeltaLakeFileSystemFactory(HDFS_FILE_SYSTEM_FACTORY, new NoOpTableCredentialsProvider()));
         HiveMetastoreFactory hiveMetastoreFactory = HiveMetastoreFactory.ofInstance(new UnimplementedHiveMetastore(), false);
-        DeltaLakeMetadataFactory metadataFactory = new DeltaLakeMetadataFactory(
+        DeltaLakeMetadataFactoryInterface metadataFactory = new DeltaLakeMetadataFactory(
                 hiveMetastoreFactory,
                 deltaLakeFileSystemFactory,
                 LocationAccessControl.ALLOW_ALL,

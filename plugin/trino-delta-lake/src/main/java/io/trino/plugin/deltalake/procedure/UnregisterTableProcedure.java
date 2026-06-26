@@ -18,7 +18,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import io.trino.plugin.base.util.UncheckedCloseable;
 import io.trino.plugin.deltalake.DeltaLakeMetadata;
-import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
+import io.trino.plugin.deltalake.DeltaLakeMetadataFactoryInterface;
 import io.trino.plugin.deltalake.LocatedTableHandle;
 import io.trino.plugin.deltalake.statistics.CachingExtendedStatisticsAccess;
 import io.trino.plugin.deltalake.transactionlog.TransactionLogAccess;
@@ -58,12 +58,12 @@ public class UnregisterTableProcedure
         }
     }
 
-    private final DeltaLakeMetadataFactory metadataFactory;
+    private final DeltaLakeMetadataFactoryInterface metadataFactory;
     private final TransactionLogAccess transactionLogAccess;
     private final CachingExtendedStatisticsAccess statisticsAccess;
 
     @Inject
-    public UnregisterTableProcedure(DeltaLakeMetadataFactory metadataFactory, TransactionLogAccess transactionLogAccess, CachingExtendedStatisticsAccess statisticsAccess)
+    public UnregisterTableProcedure(DeltaLakeMetadataFactoryInterface metadataFactory, TransactionLogAccess transactionLogAccess, CachingExtendedStatisticsAccess statisticsAccess)
     {
         this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
         this.transactionLogAccess = requireNonNull(transactionLogAccess, "transactionLogAccess is null");

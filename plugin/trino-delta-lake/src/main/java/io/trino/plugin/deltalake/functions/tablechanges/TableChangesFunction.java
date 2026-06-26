@@ -19,7 +19,7 @@ import io.trino.plugin.base.util.UncheckedCloseable;
 import io.trino.plugin.deltalake.CorruptedDeltaLakeTableHandle;
 import io.trino.plugin.deltalake.DeltaLakeColumnHandle;
 import io.trino.plugin.deltalake.DeltaLakeMetadata;
-import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
+import io.trino.plugin.deltalake.DeltaLakeMetadataFactoryInterface;
 import io.trino.plugin.deltalake.DeltaLakeTableHandle;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorAccessControl;
@@ -64,9 +64,9 @@ public class TableChangesFunction
     private static final String COMMIT_VERSION_COLUMN_NAME = "_commit_version";
     private static final String COMMIT_TIMESTAMP_COLUMN_NAME = "_commit_timestamp";
 
-    private final DeltaLakeMetadataFactory deltaLakeMetadataFactory;
+    private final DeltaLakeMetadataFactoryInterface deltaLakeMetadataFactory;
 
-    public TableChangesFunction(DeltaLakeMetadataFactory deltaLakeMetadataFactory)
+    public TableChangesFunction(DeltaLakeMetadataFactoryInterface deltaLakeMetadataFactory)
     {
         super(SCHEMA_NAME,
                 NAME,

@@ -25,6 +25,7 @@ import io.trino.plugin.deltalake.DeltaLakeExecutorModule;
 import io.trino.plugin.deltalake.DeltaLakeFileSystemFactory;
 import io.trino.plugin.deltalake.DeltaLakeMergeResult;
 import io.trino.plugin.deltalake.DeltaLakeMetadataFactory;
+import io.trino.plugin.deltalake.DeltaLakeMetadataFactoryInterface;
 import io.trino.plugin.deltalake.DeltaLakeNodePartitioningProvider;
 import io.trino.plugin.deltalake.DeltaLakePageSinkProvider;
 import io.trino.plugin.deltalake.DeltaLakePageSourceProvider;
@@ -85,7 +86,8 @@ public class LakehouseDeltaModule
         binder.bind(DeltaLakeTableProperties.class).in(Scopes.SINGLETON);
 
         binder.bind(DeltaLakeTransactionManager.class).in(Scopes.SINGLETON);
-        binder.bind(DeltaLakeMetadataFactory.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, DeltaLakeMetadataFactoryInterface.class)
+                .setDefault().to(DeltaLakeMetadataFactory.class).in(Scopes.SINGLETON);
         binder.bind(DeltaLakeWriterStats.class).in(Scopes.SINGLETON);
         binder.bind(CheckpointSchemaManager.class).in(Scopes.SINGLETON);
         binder.bind(CheckpointWriterManager.class).in(Scopes.SINGLETON);
