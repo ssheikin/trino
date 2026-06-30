@@ -14,7 +14,8 @@
 package io.trino.plugin.deltalake.metastore.unity;
 
 import com.google.inject.Inject;
-import io.trino.plugin.hive.metastore.unity.UnityHiveMetastoreFactory;
+import io.trino.plugin.deltalake.DeltaLakeTableCredentials;
+import io.trino.plugin.deltalake.metastore.VendedCredentialsHandle;
 import io.trino.plugin.hive.metastore.unity.UnityMetastore;
 import io.trino.spi.security.ConnectorIdentity;
 
@@ -22,20 +23,29 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class UnityDeltaLakeTableCredentialsProvider
+public class DynamicUnityDeltaLakeTableCredentialsProvider
         extends AbstractUnityDeltaLakeTableCredentialsProvider
 {
-    private final UnityMetastore unityMetastore;
+    private final DeltaLakeDynamicUnityMetastoreFactory metastoreFactory;
 
     @Inject
-    public UnityDeltaLakeTableCredentialsProvider(UnityHiveMetastoreFactory metastoreFactory)
+    public DynamicUnityDeltaLakeTableCredentialsProvider(DeltaLakeDynamicUnityMetastoreFactory metastoreFactory)
     {
-        this.unityMetastore = (UnityMetastore) requireNonNull(metastoreFactory, "metastoreFactory is null").createMetastore(Optional.empty());
+        this.metastoreFactory = requireNonNull(metastoreFactory, "metastoreFactory is null");
+    }
+
+    @Override
+    public Optional<DeltaLakeTableCredentials> getTableCredentials(ConnectorIdentity identity, VendedCredentialsHandle handle)
+    {
+        if (!metastoreFactory.resolveVendedCredentialsEnabled(identity.getExtraCredentials())) {
+            return Optional.empty();
+        }
+        return super.getTableCredentials(identity, handle);
     }
 
     @Override
     protected UnityMetastore getUnityMetastore(ConnectorIdentity identity)
     {
-        return unityMetastore;
+        return (UnityMetastore) metastoreFactory.createMetastore(Optional.of(identity));
     }
 }
