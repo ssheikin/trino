@@ -32,6 +32,7 @@ import io.trino.cost.TaskCountEstimator;
 import io.trino.execution.TaskManagerConfig;
 import io.trino.metadata.Metadata;
 import io.trino.operator.aggregation.AccumulatorFactory;
+import io.trino.security.AccessControl;
 import io.trino.split.PageSourceManager;
 import io.trino.split.SplitManager;
 import io.trino.sql.PlannerContext;
@@ -315,6 +316,7 @@ public class PlanOptimizers
             TaskCountEstimator taskCountEstimator,
             Optional<MaterializationIndex> materializationIndex,
             SubstitutionMetadata substitutionMetadata,
+            AccessControl accessControl,
             NodePartitioningManager nodePartitioningManager,
             RuleStatsRecorder ruleStats)
     {
@@ -331,6 +333,7 @@ public class PlanOptimizers
                 taskCountEstimator,
                 materializationIndex,
                 substitutionMetadata,
+                accessControl,
                 nodePartitioningManager,
                 ruleStats);
     }
@@ -349,6 +352,7 @@ public class PlanOptimizers
             TaskCountEstimator taskCountEstimator,
             Optional<MaterializationIndex> materializationIndex,
             SubstitutionMetadata substitutionMetadata,
+            AccessControl accessControl,
             NodePartitioningManager nodePartitioningManager,
             RuleStatsRecorder ruleStats)
     {
@@ -677,7 +681,7 @@ public class PlanOptimizers
         // and FilterNodes are preserved above the scan for the substituted storage table.
         // When the MV substitution feature is disabled the index isn't bound, so the rule is skipped entirely.
         materializationIndex.ifPresent(index ->
-                builder.add(new MvSubstitutionOptimizer(index, plannerContext.getMetadata(), substitutionMetadata)));
+                builder.add(new MvSubstitutionOptimizer(index, plannerContext.getMetadata(), substitutionMetadata, accessControl)));
 
         // Perform redirection before CBO rules to ensure stats from destination connector are used
         // Perform redirection before agg, topN, limit, sample etc. push down into table scan as the destination connector may support a different set of push downs
