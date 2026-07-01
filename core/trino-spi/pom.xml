@@ -222,7 +222,7 @@
                         <revapi.differences>
                             <ignore>true</ignore>
                             <differences>
-                                <!-- TODO: Sort into proper sections below -->
+                                <!-- General suppressions, same as in Trino: -->
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.class.externalClassExposedInAPI</code>
@@ -265,6 +265,8 @@
                                     <new>enum io.starburst.ai.model.LlmTrait</new>
                                     <justification>starburst-ai-client-model is a dependency of trino-spi</justification>
                                 </item>
+
+                                <!-- SEP internal changes -->
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.method.addedToInterface</code>
@@ -364,12 +366,6 @@
                                     <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
                                 </item>
 
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method void io.trino.spi.block.BlockEncodingSerde::writeBlock(io.airlift.slice.SliceOutput, io.trino.spi.block.Block, java.util.Optional&lt;io.trino.spi.type.Type&gt;)</new>
-                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
-                                </item>
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.method.visibilityIncreased</code>
@@ -490,13 +486,6 @@
 
                                 <item>
                                     <ignore>true</ignore>
-                                    <code>java.method.removed</code>
-                                    <old>method java.util.Optional&lt;io.trino.spi.Page&gt; io.trino.spi.connector.MergePage::getInsertionsPage()</old>
-                                    <justification>Iceberg row lineage support (https://github.com/starburstdata/cork/pull/2019, https://github.com/starburstdata/trino-fork-log/issues/151)</justification>
-                                </item>
-
-                                <item>
-                                    <ignore>true</ignore>
                                     <code>java.method.numberOfParametersChanged</code>
                                     <old>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::instantiateSink(io.trino.spi.exchange.ExchangeSinkHandle, int)</old>
                                     <new>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::instantiateSink(io.trino.spi.exchange.ExchangeSinkHandle, int, java.util.Optional&lt;io.trino.spi.Node&gt;)</new>
@@ -585,13 +574,6 @@
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
-                                    <code>java.method.numberOfParametersChanged</code>
-                                    <old>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.util.Optional&lt;java.lang.String&gt;)</old>
-                                    <new>method void io.trino.spi.resourcegroups.SelectionCriteria::&lt;init&gt;(boolean, java.lang.String, java.util.Set&lt;java.lang.String&gt;, java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.util.Optional&lt;java.lang.String&gt;, java.util.Set&lt;java.lang.String&gt;, io.trino.spi.session.ResourceEstimates, java.lang.String, java.util.Optional&lt;java.lang.String&gt;)</new>
-                                    <justification>Added queryText before queryType parameter</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
                                     <code>java.method.addedToInterface</code>
                                     <new>method java.util.Set&lt;java.lang.String&gt; io.trino.spi.connector.ConnectorFactory::getSecuritySensitivePropertyNames(java.lang.String, java.util.Map&lt;java.lang.String, java.lang.String&gt;, io.trino.spi.connector.ConnectorContext)</new>
                                     <justification>This is a planned change to make method abstract to force user to implement getSecuritySensitivePropertyNames method(https://github.com/starburstdata/starburst-docs/pull/3635)</justification>
@@ -628,27 +610,6 @@
                                         <matcher>java</matcher>
                                         <match>@java.lang.Deprecated(*) ^*;</match>
                                     </old>
-                                </item>
-                                <!-- Backwards incompatible changes since the previous release -->
-                                <!-- Any exclusions below can be deleted after each release -->
-                                <item>
-                                    <code>java.method.numberOfParametersChanged</code>
-                                    <old>method java.util.Optional&lt;io.trino.spi.connector.ConnectorOutputMetadata&gt; io.trino.spi.connector.ConnectorMetadata::finishRefreshMaterializedView(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableHandle, io.trino.spi.connector.ConnectorInsertTableHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.Collection&lt;io.trino.spi.statistics.ComputedStatistics&gt;, java.util.List&lt;io.trino.spi.connector.ConnectorTableHandle&gt;, boolean, boolean)</old>
-                                    <new>method java.util.Optional&lt;io.trino.spi.connector.ConnectorOutputMetadata&gt; io.trino.spi.connector.ConnectorMetadata::finishRefreshMaterializedView(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableHandle, io.trino.spi.connector.ConnectorInsertTableHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.Collection&lt;io.trino.spi.statistics.ComputedStatistics&gt;, java.util.List&lt;io.trino.spi.connector.ConnectorTableHandle&gt;, boolean, boolean, boolean)</new>
-                                    <justification>Add hasNonDeterministicFunctions parameter to detect stale materialized views</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.returnTypeChanged</code>
-                                    <old>method void io.trino.spi.connector.ConnectorMetadata::finishTableExecute(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableExecuteHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.List&lt;java.lang.Object&gt;)</old>
-                                    <new>method java.util.Map&lt;java.lang.String, java.lang.Long&gt; io.trino.spi.connector.ConnectorMetadata::finishTableExecute(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableExecuteHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.List&lt;java.lang.Object&gt;)</new>
-                                    <justification>Allows distributed table procedures to output metrics in result</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.field.removed</code>
-                                    <old>field io.trino.spi.function.OperatorType.MODULUS</old>
-                                    <justification>Fixes an incorrect operator name</justification>
                                 </item>
                             </differences>
                         </revapi.differences>
