@@ -345,6 +345,12 @@
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method boolean io.trino.spi.block.ValueBlock::isNullUnchecked(int)</new>
+                                    <justification>Added to enable performance optimizations</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
                                     <code>java.method.returnTypeTypeParametersChanged</code>
                                     <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.VariableWidthBlock::getNulls()</old>
                                     <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.VariableWidthBlock::getNulls()</new>
@@ -385,6 +391,24 @@
                                 <item>
                                     <ignore>true</ignore>
                                     <code>java.method.visibilityIncreased</code>
+                                    <old>method short[] io.trino.spi.block.ShortArrayBlock::getRawValues()</old>
+                                    <new>method short[] io.trino.spi.block.ShortArrayBlock::getRawValues()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int io.trino.spi.block.ShortArrayBlock::getRawValuesOffset()</old>
+                                    <new>method int io.trino.spi.block.ShortArrayBlock::getRawValuesOffset()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
                                     <old>method long[] io.trino.spi.block.LongArrayBlock::getRawValues()</old>
                                     <new>method long[] io.trino.spi.block.LongArrayBlock::getRawValues()</new>
                                     <oldVisibility>package</oldVisibility>
@@ -417,6 +441,34 @@
                                     <oldVisibility>package</oldVisibility>
                                     <newVisibility>public</newVisibility>
                                     <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int io.trino.spi.block.VariableWidthBlock::getRawArrayBase()</old>
+                                    <new>method int io.trino.spi.block.VariableWidthBlock::getRawArrayBase()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method int[] io.trino.spi.block.VariableWidthBlock::getRawOffsets()</old>
+                                    <new>method int[] io.trino.spi.block.VariableWidthBlock::getRawOffsets()</new>
+                                    <oldVisibility>package</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>VByte encodings (https://github.com/starburstdata/cork/pull/1835)</justification>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.visibilityIncreased</code>
+                                    <old>method io.trino.spi.predicate.SortedRangeSet io.trino.spi.predicate.SortedRangeSet::fromUnorderedValuesBlock(io.trino.spi.type.Type, io.trino.spi.block.Block)</old>
+                                    <new>method io.trino.spi.predicate.SortedRangeSet io.trino.spi.predicate.SortedRangeSet::fromUnorderedValuesBlock(io.trino.spi.type.Type, io.trino.spi.block.Block)</new>
+                                    <oldVisibility>private</oldVisibility>
+                                    <newVisibility>public</newVisibility>
+                                    <justification>Exposed to make GPU support more efficient</justification>
                                 </item>
 
                                 <item>
@@ -463,6 +515,60 @@
                                     <code>java.method.addedToInterface</code>
                                     <new>method io.trino.spi.function.BatchFunctionImplementation io.trino.spi.function.FunctionBundle::getBatchFunctionImplementation(io.trino.spi.function.FunctionId)</new>
                                     <justification>Support batch calling convention for AI functions</justification>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
+                                    <new>method void io.trino.spi.type.AbstractLongType::writeLong(io.trino.spi.block.PreSizedBlockBuilder, long)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
+                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.AbstractIntType::createPreSizedBlockBuilder(int)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
+                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.AbstractLongType::createPreSizedBlockBuilder(int)</new>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.Type::createPreSizedBlockBuilder(int)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeBoolean(io.trino.spi.block.PreSizedBlockBuilder, boolean)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeDouble(io.trino.spi.block.PreSizedBlockBuilder, double)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeLong(io.trino.spi.block.PreSizedBlockBuilder, long)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeObject(io.trino.spi.block.PreSizedBlockBuilder, java.lang.Object)</new>
+                                </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method void io.trino.spi.type.Type::writeSlice(io.trino.spi.block.PreSizedBlockBuilder, io.airlift.slice.Slice)</new>
+                                </item>
+                                <item>
+                                    <regex>true</regex>
+                                    <ignore>true</ignore>
+                                    <code>java.class.externalClassExposedInAPI</code>
+                                    <newArchive>ai\.rapids:cudf:.*</newArchive>
+                                    <justification>Usage of cuDF is explicit, not merely an implementation detail</justification>
                                 </item>
                                 <!-- / Cork internal changes -->
                                 <!-- Cork backports, i.e. temporary exclusions -->
@@ -526,104 +632,10 @@
                                 <!-- Backwards incompatible changes since the previous release -->
                                 <!-- Any exclusions below can be deleted after each release -->
                                 <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
-                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.AbstractIntType::createPreSizedBlockBuilder(int)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
-                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.AbstractLongType::createPreSizedBlockBuilder(int)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.finalMethodAddedToNonFinalClass</code>
-                                    <new>method void io.trino.spi.type.AbstractLongType::writeLong(io.trino.spi.block.PreSizedBlockBuilder, long)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method io.trino.spi.block.PreSizedBlockBuilder io.trino.spi.type.Type::createPreSizedBlockBuilder(int)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method void io.trino.spi.type.Type::writeBoolean(io.trino.spi.block.PreSizedBlockBuilder, boolean)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method void io.trino.spi.type.Type::writeDouble(io.trino.spi.block.PreSizedBlockBuilder, double)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method void io.trino.spi.type.Type::writeLong(io.trino.spi.block.PreSizedBlockBuilder, long)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method void io.trino.spi.type.Type::writeObject(io.trino.spi.block.PreSizedBlockBuilder, java.lang.Object)</new>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method void io.trino.spi.type.Type::writeSlice(io.trino.spi.block.PreSizedBlockBuilder, io.airlift.slice.Slice)</new>
-                                </item>
-                                <item>
                                     <code>java.method.numberOfParametersChanged</code>
                                     <old>method java.util.Optional&lt;io.trino.spi.connector.ConnectorOutputMetadata&gt; io.trino.spi.connector.ConnectorMetadata::finishRefreshMaterializedView(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableHandle, io.trino.spi.connector.ConnectorInsertTableHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.Collection&lt;io.trino.spi.statistics.ComputedStatistics&gt;, java.util.List&lt;io.trino.spi.connector.ConnectorTableHandle&gt;, boolean, boolean)</old>
                                     <new>method java.util.Optional&lt;io.trino.spi.connector.ConnectorOutputMetadata&gt; io.trino.spi.connector.ConnectorMetadata::finishRefreshMaterializedView(io.trino.spi.connector.ConnectorSession, io.trino.spi.connector.ConnectorTableHandle, io.trino.spi.connector.ConnectorInsertTableHandle, java.util.Collection&lt;io.airlift.slice.Slice&gt;, java.util.Collection&lt;io.trino.spi.statistics.ComputedStatistics&gt;, java.util.List&lt;io.trino.spi.connector.ConnectorTableHandle&gt;, boolean, boolean, boolean)</new>
                                     <justification>Add hasNonDeterministicFunctions parameter to detect stale materialized views</justification>
-                                </item>
-                                <item>
-                                    <regex>true</regex>
-                                    <ignore>true</ignore>
-                                    <code>java.class.externalClassExposedInAPI</code>
-                                    <newArchive>ai\.rapids:cudf:.*</newArchive>
-                                    <justification>Usage of cuDF is explicit, not merely an implementation detail</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.visibilityIncreased</code>
-                                    <old>method short[] io.trino.spi.block.ShortArrayBlock::getRawValues()</old>
-                                    <new>method short[] io.trino.spi.block.ShortArrayBlock::getRawValues()</new>
-                                    <oldVisibility>package</oldVisibility>
-                                    <newVisibility>public</newVisibility>
-                                    <justification>Exposed to make GPU support more efficient</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.visibilityIncreased</code>
-                                    <old>method int io.trino.spi.block.ShortArrayBlock::getRawValuesOffset()</old>
-                                    <new>method int io.trino.spi.block.ShortArrayBlock::getRawValuesOffset()</new>
-                                    <oldVisibility>package</oldVisibility>
-                                    <newVisibility>public</newVisibility>
-                                    <justification>Exposed to make GPU support more efficient</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.visibilityIncreased</code>
-                                    <old>method int io.trino.spi.block.VariableWidthBlock::getRawArrayBase()</old>
-                                    <new>method int io.trino.spi.block.VariableWidthBlock::getRawArrayBase()</new>
-                                    <oldVisibility>package</oldVisibility>
-                                    <newVisibility>public</newVisibility>
-                                    <justification>Exposed to make GPU support more efficient</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.visibilityIncreased</code>
-                                    <old>method int[] io.trino.spi.block.VariableWidthBlock::getRawOffsets()</old>
-                                    <new>method int[] io.trino.spi.block.VariableWidthBlock::getRawOffsets()</new>
-                                    <oldVisibility>package</oldVisibility>
-                                    <newVisibility>public</newVisibility>
-                                    <justification>Exposed to make GPU support more efficient</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.addedToInterface</code>
-                                    <new>method boolean io.trino.spi.block.ValueBlock::isNullUnchecked(int)</new>
-                                    <justification>Added to enable performance optimizations</justification>
                                 </item>
                                 <item>
                                     <ignore>true</ignore>
@@ -637,15 +649,6 @@
                                     <code>java.field.removed</code>
                                     <old>field io.trino.spi.function.OperatorType.MODULUS</old>
                                     <justification>Fixes an incorrect operator name</justification>
-                                </item>
-                                <item>
-                                    <ignore>true</ignore>
-                                    <code>java.method.visibilityIncreased</code>
-                                    <old>method io.trino.spi.predicate.SortedRangeSet io.trino.spi.predicate.SortedRangeSet::fromUnorderedValuesBlock(io.trino.spi.type.Type, io.trino.spi.block.Block)</old>
-                                    <new>method io.trino.spi.predicate.SortedRangeSet io.trino.spi.predicate.SortedRangeSet::fromUnorderedValuesBlock(io.trino.spi.type.Type, io.trino.spi.block.Block)</new>
-                                    <oldVisibility>private</oldVisibility>
-                                    <newVisibility>public</newVisibility>
-                                    <justification>Exposed to make GPU support more efficient</justification>
                                 </item>
                             </differences>
                         </revapi.differences>
