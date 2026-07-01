@@ -206,7 +206,7 @@
                 <version>0.15.1</version>
                 <configuration>
                     <skip>${trino.check.skip-revapi}</skip>
-                    <oldVersion>480</oldVersion>
+                    <oldVersion>481</oldVersion>
                     <ignoreSuggestionsFormat>xml</ignoreSuggestionsFormat>
                     <analysisConfiguration>
                         <revapi.filter>
@@ -350,6 +350,13 @@
                                     <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.VariableWidthBlock::getNulls()</new>
                                     <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
                                 </item>
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.returnTypeTypeParametersChanged</code>
+                                    <old>method java.util.Optional&lt;io.trino.spi.block.ByteArrayBlock&gt; io.trino.spi.block.VariantBlock::getNulls()</old>
+                                    <new>method java.util.Optional&lt;io.trino.spi.block.BooleanArrayBlock&gt; io.trino.spi.block.VariantBlock::getNulls()</new>
+                                    <justification>Join optimisations https://github.com/starburstdata/trino-fork-log/issues/167</justification>
+                                </item>
 
                                 <item>
                                     <ignore>true</ignore>
@@ -449,6 +456,13 @@
                                     <old>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::updateSinkInstanceHandle(io.trino.spi.exchange.ExchangeSinkHandle, int)</old>
                                     <new>method java.util.concurrent.CompletableFuture&lt;io.trino.spi.exchange.ExchangeSinkInstanceHandle&gt; io.trino.spi.exchange.Exchange::updateSinkInstanceHandle(io.trino.spi.exchange.ExchangeSinkHandle, int, java.util.Optional&lt;io.trino.spi.Node&gt;)</new>
                                     <justification>FTE buffer service (https://github.com/starburstdata/trino-fork-log/issues/52)</justification>
+                                </item>
+
+                                <item>
+                                    <ignore>true</ignore>
+                                    <code>java.method.addedToInterface</code>
+                                    <new>method io.trino.spi.function.BatchFunctionImplementation io.trino.spi.function.FunctionBundle::getBatchFunctionImplementation(io.trino.spi.function.FunctionId)</new>
+                                    <justification>Support batch calling convention for AI functions</justification>
                                 </item>
                                 <!-- / Cork internal changes -->
                                 <!-- Cork backports, i.e. temporary exclusions -->
