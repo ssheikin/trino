@@ -1030,9 +1030,12 @@ public class IcebergMetadata
 
         // Only when dealing with an actual system table proceed to retrieve the base table for the system table
         String name = tableNameFrom(tableName.getTableName());
+        SchemaTableName baseName = new SchemaTableName(tableName.getSchemaName(), name);
         BaseTable table;
         try {
-            table = catalog.loadTable(session, new SchemaTableName(tableName.getSchemaName(), name));
+            table = getMaterializedView(session, baseName)
+                    .flatMap(_ -> catalog.getMaterializedViewStorageTable(session, baseName))
+                    .orElseGet(() -> catalog.loadTable(session, baseName));
         }
         catch (TableNotFoundException e) {
             return Optional.empty();
