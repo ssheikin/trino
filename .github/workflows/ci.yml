@@ -3,6 +3,7 @@ name: ci
 on:
   push:
     branches:
+      - master
       - release-*-e
   pull_request:
   merge_group:
