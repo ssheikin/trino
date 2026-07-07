@@ -22,6 +22,7 @@ import io.trino.metadata.InternalFunctionBundle;
 import io.trino.plugin.iceberg.IcebergConnector;
 import io.trino.plugin.iceberg.IcebergFileFormat;
 import io.trino.plugin.iceberg.IcebergPlugin;
+import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.plugin.warp.di.WarpStubsStorageEngineModule;
 import io.trino.plugin.warp.dispatcher.DispatcherConnectorFactory;
 import io.trino.plugin.warp.it.DispatcherQueryRunner;
@@ -103,7 +104,7 @@ public class TestWarpSpeedWithIcebergProxiedConnectorTest
         queryRunner.addFunctions(functions.build());
 
         // Install TPCH plugin for source data
-        queryRunner.installPlugin(new io.trino.plugin.tpch.TpchPlugin());
+        queryRunner.installPlugin(new TpchPlugin());
         queryRunner.createCatalog("tpch", "tpch");
 
         // Create schema and copy TPCH tables using the queryRunner's default session
