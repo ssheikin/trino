@@ -259,8 +259,8 @@ public class QueryExplainer
         return Optional.of(switch (statement) {
             case CreateCatalog createCatalog -> "CREATE CATALOG " + createCatalog.getCatalogName();
             case DropCatalog dropCatalog -> "DROP CATALOG " + dropCatalog.getCatalogName();
-            case RenameCatalog renameCatalog -> "ALTER CATALOG %s RENAME TO %s".formatted(((RenameCatalog) statement).getSource(), ((RenameCatalog) statement).getTarget());
-            case SetCatalogProperties setCatalogProperties -> "ALTER CATALOG %s SET PROPERTIES".formatted(((SetCatalogProperties) statement).getName());
+            case RenameCatalog renameCatalog -> "ALTER CATALOG %s RENAME TO %s".formatted(renameCatalog.getSource(), renameCatalog.getTarget());
+            case SetCatalogProperties setCatalogProperties -> "ALTER CATALOG %s SET PROPERTIES".formatted(setCatalogProperties.getName());
             case CreateSchema createSchema -> "CREATE SCHEMA " + createSchema.getSchemaName();
             case DropSchema dropSchema -> "DROP SCHEMA " + dropSchema.getSchemaName();
             case CreateTable createTable -> "CREATE TABLE " + createTable.getName();
