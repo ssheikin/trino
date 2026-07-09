@@ -214,6 +214,7 @@
   when:
     scheduled: nightly
     labeled: [snowflake]
+    dispatches: false
     impacted: false
 ## Weekly
 - modules:
