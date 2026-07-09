@@ -214,6 +214,7 @@
   when:
     scheduled: nightly
     labeled: [snowflake]
+    impacted: false
 ## Weekly
 - modules:
     - plugin/starburst-kdb
@@ -240,6 +241,7 @@
     scheduled: weekly
     labeled: [snowflake]
     dispatches: false
+    impacted: false
 # only run "default" and "smoke-tests" profile tests on Azure
 - modules:
     - plugin/starburst-snowflake
@@ -254,6 +256,7 @@
     scheduled: weekly
     labeled: [snowflake]
     dispatches: false
+    impacted: false
 ## Only if impacted
 - modules:
     - plugin/trino-cassandra
