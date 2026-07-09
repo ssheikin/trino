@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.starburstdata.trino.plugin.snowflake.SnowflakeConnectorFlavour.DEPRECATED_JDBC;
+import static com.starburstdata.trino.plugin.snowflake.SnowflakeConnectorFlavour.PARALLEL;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.TEST_SCHEMA;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.impersonationDisabled;
 import static com.starburstdata.trino.plugin.snowflake.SnowflakeQueryRunner.parallelBuilder;
@@ -26,8 +26,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.abort;
 
-// TODO: rename to TestParallelSnowflakeConnectorTest
-public class TestJdbcSnowflakeConnectorTest
+public class TestParallelSnowflakeConnectorTest
         extends BaseSnowflakeConnectorTest
 {
     @Override
@@ -56,7 +55,7 @@ public class TestJdbcSnowflakeConnectorTest
     @Override
     protected SnowflakeConnectorFlavour connectorFlavour()
     {
-        return DEPRECATED_JDBC;
+        return PARALLEL;
     }
 
     @Override
