@@ -224,6 +224,7 @@ import static io.trino.plugin.hive.HiveSessionProperties.isBucketExecutionEnable
 import static io.trino.plugin.hive.HiveSessionProperties.isCollectColumnStatisticsOnWrite;
 import static io.trino.plugin.hive.HiveSessionProperties.isCreateEmptyBucketFiles;
 import static io.trino.plugin.hive.HiveSessionProperties.isDelegateTransactionalManagedTableLocationToMetastore;
+import static io.trino.plugin.hive.HiveSessionProperties.isForceLocalScheduling;
 import static io.trino.plugin.hive.HiveSessionProperties.isNonTransactionalOptimizeEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isOptimizedMismatchedBucketCount;
 import static io.trino.plugin.hive.HiveSessionProperties.isParallelPartitionedBucketedWrites;
@@ -4271,6 +4272,12 @@ public class HiveMetadata
             return targetCatalogName.map(catalog -> new CatalogSchemaTableName(catalog, table.getSchemaTableName()));
         }
         return Optional.empty();
+    }
+
+    @Override
+    public boolean supportsSingleNodeExecution(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        return !isForceLocalScheduling(session);
     }
 
     @Override
