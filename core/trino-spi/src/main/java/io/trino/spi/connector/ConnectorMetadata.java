@@ -1886,6 +1886,16 @@ public interface ConnectorMetadata
         return false;
     }
 
+    /**
+     * Whether the table can be queried in single-node execution mode, where the entire query
+     * runs on an arbitrary node. Returns false for tables whose data is only available on
+     * specific nodes.
+     */
+    default boolean supportsSingleNodeExecution(ConnectorSession session, ConnectorTableHandle tableHandle)
+    {
+        return true;
+    }
+
     default WriterScalingOptions getNewTableWriterScalingOptions(ConnectorSession session, SchemaTableName tableName, Map<String, Object> tableProperties)
     {
         return WriterScalingOptions.DISABLED;

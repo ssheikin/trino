@@ -73,8 +73,8 @@ import io.trino.sql.planner.AdaptivePlanner;
 import io.trino.sql.planner.InputExtractor;
 import io.trino.sql.planner.LogicalPlanner;
 import io.trino.sql.planner.LogicalPlanner.PlanningResult;
+import io.trino.sql.planner.NodeExecutionStrategy;
 import io.trino.sql.planner.NodePartitioningManager;
-import io.trino.sql.planner.OptimizerConfig;
 import io.trino.sql.planner.Plan;
 import io.trino.sql.planner.PlanFragment;
 import io.trino.sql.planner.PlanFragmenter;
@@ -149,7 +149,7 @@ public class SqlQueryExecution
     private final ExecutorService queryExecutor;
     private final ScheduledExecutorService schedulerExecutor;
     private final InternalNodeManager nodeManager;
-    private final boolean forceSingleNodeQuery;
+    private final NodeExecutionStrategy nodeExecutionStrategy;
 
     private final AtomicReference<QueryScheduler> queryScheduler = new AtomicReference<>();
     private final AtomicReference<EffectivePlan> queryPlan = new AtomicReference<>();
@@ -196,7 +196,7 @@ public class SqlQueryExecution
             ExecutorService queryExecutor,
             ScheduledExecutorService schedulerExecutor,
             InternalNodeManager nodeManager,
-            boolean forceSingleNodeQuery,
+            NodeExecutionStrategy nodeExecutionStrategy,
             NodeTaskMap nodeTaskMap,
             ExecutionPolicy executionPolicy,
             SplitSchedulerStats schedulerStats,
@@ -233,7 +233,7 @@ public class SqlQueryExecution
             this.queryExecutor = requireNonNull(queryExecutor, "queryExecutor is null");
             this.schedulerExecutor = requireNonNull(schedulerExecutor, "schedulerExecutor is null");
             this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
-            this.forceSingleNodeQuery = forceSingleNodeQuery;
+            this.nodeExecutionStrategy = requireNonNull(nodeExecutionStrategy, "nodeExecutionStrategy is null");
             this.nodeTaskMap = requireNonNull(nodeTaskMap, "nodeTaskMap is null");
             this.executionPolicy = requireNonNull(executionPolicy, "executionPolicy is null");
             this.schedulerStats = requireNonNull(schedulerStats, "schedulerStats is null");
@@ -557,7 +557,7 @@ public class SqlQueryExecution
                 stateMachine.getSession(),
                 planOptimizers,
                 alternativeOptimizers,
-                forceSingleNodeQuery,
+                nodeExecutionStrategy,
                 idAllocator,
                 plannerContext,
                 statsCalculator,
@@ -925,7 +925,7 @@ public class SqlQueryExecution
         private final ExchangeMetricsCollector exchangeMetricsCollector;
         private final EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory;
         private final TaskDescriptorStorage taskDescriptorStorage;
-        private final boolean forceSingleNodeQuery;
+        private final NodeExecutionStrategy nodeExecutionStrategy;
         private final FormatOptions formatOptions;
 
         @Inject
@@ -962,7 +962,7 @@ public class SqlQueryExecution
                 ExchangeMetricsCollector exchangeMetricsCollector,
                 EventDrivenTaskSourceFactory eventDrivenTaskSourceFactory,
                 TaskDescriptorStorage taskDescriptorStorage,
-                OptimizerConfig optimizerConfig,
+                NodeExecutionStrategy nodeExecutionStrategy,
                 FormatOptions formatOptions)
         {
             this.tracer = requireNonNull(tracer, "tracer is null");
@@ -999,7 +999,7 @@ public class SqlQueryExecution
             this.exchangeMetricsCollector = requireNonNull(exchangeMetricsCollector, "exchangeMetricsCollector is null");
             this.eventDrivenTaskSourceFactory = requireNonNull(eventDrivenTaskSourceFactory, "eventDrivenTaskSourceFactory is null");
             this.taskDescriptorStorage = requireNonNull(taskDescriptorStorage, "taskDescriptorStorage is null");
-            this.forceSingleNodeQuery = optimizerConfig.isForceSingleNodeQuery();
+            this.nodeExecutionStrategy = requireNonNull(nodeExecutionStrategy, "nodeExecutionStrategy is null");
             this.formatOptions = requireNonNull(formatOptions, "formatOptions is null");
         }
 
@@ -1040,7 +1040,7 @@ public class SqlQueryExecution
                     queryExecutor,
                     schedulerExecutor,
                     nodeManager,
-                    forceSingleNodeQuery,
+                    nodeExecutionStrategy,
                     nodeTaskMap,
                     executionPolicy,
                     schedulerStats,
