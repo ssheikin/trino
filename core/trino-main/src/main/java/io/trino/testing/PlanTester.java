@@ -243,7 +243,6 @@ import io.trino.sql.planner.plan.OutputNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.planner.plan.TableScanNode;
-import io.trino.sql.planner.sanity.PlanSanityChecker;
 import io.trino.sql.rewrite.DescribeInputRewrite;
 import io.trino.sql.rewrite.DescribeOutputRewrite;
 import io.trino.sql.rewrite.ExplainRewrite;
@@ -321,6 +320,8 @@ import static io.trino.sql.newir.FormatOptions.TESTING_FORMAT_OPTIONS;
 import static io.trino.sql.planner.LogicalPlanner.Stage.OPTIMIZED_AND_VALIDATED;
 import static io.trino.sql.planner.optimizations.PlanNodeSearcher.searchFrom;
 import static io.trino.sql.planner.planprinter.PlanPrinter.textLogicalPlan;
+import static io.trino.sql.planner.sanity.PlanSanityChecker.DISTRIBUTED_PLAN_SANITY_CHECKER;
+import static io.trino.sql.planner.sanity.PlanSanityChecker.SINGLE_NODE_PLAN_SANITY_CHECKER;
 import static io.trino.sql.testing.TreeAssertions.assertFormattedSql;
 import static io.trino.testing.TestingDirectTrinoClient.toMaterializedRows;
 import static io.trino.testing.TestingTaskContext.createTaskContext;
@@ -1137,7 +1138,7 @@ public class PlanTester
                 session,
                 optimizers,
                 alternativeOptimizers,
-                new PlanSanityChecker(true),
+                DISTRIBUTED_PLAN_SANITY_CHECKER,
                 idAllocator,
                 getPlannerContext(),
                 statsCalculator,
@@ -1160,7 +1161,7 @@ public class PlanTester
                 optimizers,
                 planFragmenter,
                 false,
-                new PlanSanityChecker(false),
+                SINGLE_NODE_PLAN_SANITY_CHECKER,
                 warningCollector,
                 planOptimizersStatsCollector,
                 new CachingTableStatsProvider(getPlannerContext().getMetadata(), session, () -> false));
