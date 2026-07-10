@@ -72,7 +72,7 @@ import io.trino.sql.newir.Program;
 import io.trino.sql.planner.AdaptivePlanner;
 import io.trino.sql.planner.InputExtractor;
 import io.trino.sql.planner.LogicalPlanner;
-import io.trino.sql.planner.LogicalPlanner.PlanOptions;
+import io.trino.sql.planner.LogicalPlanner.PlanningResult;
 import io.trino.sql.planner.NodePartitioningManager;
 import io.trino.sql.planner.OptimizerConfig;
 import io.trino.sql.planner.Plan;
@@ -565,14 +565,14 @@ public class SqlQueryExecution
                 planOptimizersStatsCollector,
                 tableStatsProvider,
                 formatOptions);
-        PlanOptions planOptions = logicalPlanner.plan(analysis);
+        PlanningResult planningResult = logicalPlanner.plan(analysis);
 
         // fragment the plan
         SubPlan fragmentedPlan = null;
-        if (planOptions.newIrProgram().isPresent()) {
+        if (planningResult.newIrProgram().isPresent()) {
             Optional<SubPlan> optionalFragmentedPlan = Optional.empty();
             try (var _ = scopedSpan(tracer, "fragment-plan-new-ir")) {
-                optionalFragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planOptions.newIrProgram().get(), forceSingleNodeQuery, stateMachine.getWarningCollector());
+                optionalFragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planningResult.newIrProgram().get(), forceSingleNodeQuery, stateMachine.getWarningCollector());
             }
             catch (RuntimeException e) {
                 LOG.warn(e, "Exception thrown while fragmenting the new IR plan, falling back to old IR plan");
@@ -583,7 +583,7 @@ public class SqlQueryExecution
                     LOG.info("Successfully fragmented the new IR plan for query: " + stateMachine.getSession().getQueryId());
                 }
                 fragmentedPlan = optionalFragmentedPlan.get();
-                queryPlan.set(new EffectivePlan(planOptions.newIrProgram().get()));
+                queryPlan.set(new EffectivePlan(planningResult.newIrProgram().get()));
             }
             else if (debugEnabled) {
                 LOG.info("Failed to fragment the new IR plan for query: %s. The old IR plan will be used.", stateMachine.getSession().getQueryId());
@@ -591,8 +591,8 @@ public class SqlQueryExecution
         }
         if (fragmentedPlan == null) {
             try (var _ = scopedSpan(tracer, "fragment-plan-old-ir")) {
-                fragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planOptions.oldIrPlan(), forceSingleNodeQuery, stateMachine.getWarningCollector());
-                queryPlan.set(new EffectivePlan(planOptions.oldIrPlan()));
+                fragmentedPlan = planFragmenter.createSubPlans(stateMachine.getSession(), planningResult.oldIrPlan(), forceSingleNodeQuery, stateMachine.getWarningCollector());
+                queryPlan.set(new EffectivePlan(planningResult.oldIrPlan()));
             }
         }
 
