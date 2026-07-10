@@ -13,11 +13,28 @@
  */
 package io.trino.plugin.hive.metastore.unity;
 
-import io.unitycatalog.client.model.DataSourceFormat;
+import java.util.Optional;
 
-import java.util.Set;
-
-public interface SupportedUnityTableFormatsProvider
+public class UnityCatalogException
+        extends RuntimeException
 {
-    Set<DataSourceFormat> supportedUnityTableFormats();
+    private final int statusCode;
+    private final Optional<String> errorCode;
+
+    public UnityCatalogException(int statusCode, Optional<String> errorCode, String message)
+    {
+        super(message);
+        this.statusCode = statusCode;
+        this.errorCode = errorCode;
+    }
+
+    public int getStatusCode()
+    {
+        return statusCode;
+    }
+
+    public Optional<String> getErrorCode()
+    {
+        return errorCode;
+    }
 }
