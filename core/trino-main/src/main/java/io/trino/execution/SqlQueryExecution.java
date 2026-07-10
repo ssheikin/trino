@@ -557,7 +557,7 @@ public class SqlQueryExecution
                 stateMachine.getSession(),
                 planOptimizers,
                 alternativeOptimizers,
-                forceSingleNodeQuery ? SINGLE_NODE_PLAN_SANITY_CHECKER : DISTRIBUTED_PLAN_SANITY_CHECKER,
+                forceSingleNodeQuery,
                 idAllocator,
                 plannerContext,
                 statsCalculator,
@@ -567,6 +567,7 @@ public class SqlQueryExecution
                 tableStatsProvider,
                 formatOptions);
         PlanningResult planningResult = logicalPlanner.plan(analysis);
+        boolean forceSingleNodeQuery = planningResult.forceSingleNodeQuery();
 
         // fragment the plan
         SubPlan fragmentedPlan = null;
@@ -605,7 +606,7 @@ public class SqlQueryExecution
         stateMachine.setOutput(analysis.getTarget());
 
         boolean explainAnalyze = analysis.getStatement() instanceof ExplainAnalyze;
-        return new PlanRoot(fragmentedPlan, !explainAnalyze);
+        return new PlanRoot(fragmentedPlan, !explainAnalyze, forceSingleNodeQuery);
     }
 
     private void planDistribution(PlanRoot plan, CachingTableStatsProvider tableStatsProvider)
@@ -634,7 +635,7 @@ public class SqlQueryExecution
                     queryExecutor,
                     schedulerExecutor,
                     nodeManager,
-                    forceSingleNodeQuery,
+                    plan.isForceSingleNodeQuery(),
                     nodeTaskMap,
                     executionPolicy,
                     tracer,
@@ -673,8 +674,8 @@ public class SqlQueryExecution
                             plannerContext,
                             adaptivePlanOptimizers,
                             planFragmenter,
-                            forceSingleNodeQuery,
-                            forceSingleNodeQuery ? SINGLE_NODE_PLAN_SANITY_CHECKER : DISTRIBUTED_PLAN_SANITY_CHECKER,
+                            plan.isForceSingleNodeQuery(),
+                            plan.isForceSingleNodeQuery() ? SINGLE_NODE_PLAN_SANITY_CHECKER : DISTRIBUTED_PLAN_SANITY_CHECKER,
                             stateMachine.getWarningCollector(),
                             planOptimizersStatsCollector,
                             tableStatsProvider),
@@ -863,11 +864,13 @@ public class SqlQueryExecution
     {
         private final SubPlan root;
         private final boolean summarizeTaskInfos;
+        private final boolean forceSingleNodeQuery;
 
-        public PlanRoot(SubPlan root, boolean summarizeTaskInfos)
+        public PlanRoot(SubPlan root, boolean summarizeTaskInfos, boolean forceSingleNodeQuery)
         {
             this.root = requireNonNull(root, "root is null");
             this.summarizeTaskInfos = summarizeTaskInfos;
+            this.forceSingleNodeQuery = forceSingleNodeQuery;
         }
 
         public SubPlan getRoot()
@@ -878,6 +881,11 @@ public class SqlQueryExecution
         public boolean isSummarizeTaskInfos()
         {
             return summarizeTaskInfos;
+        }
+
+        public boolean isForceSingleNodeQuery()
+        {
+            return forceSingleNodeQuery;
         }
     }
 

@@ -203,6 +203,7 @@ public class PipelinedQueryScheduler
 
     private final StageManager stageManager;
     private final CoordinatorStagesScheduler coordinatorStagesScheduler;
+    private final boolean forceSingleNodeQuery;
 
     private final RetryPolicy retryPolicy;
     private final int maxQueryRetryAttempts;
@@ -262,6 +263,7 @@ public class PipelinedQueryScheduler
         this.splitSourceFactory = requireNonNull(splitSourceFactory, "splitSourceFactory is null");
         this.exchangeManagerRegistry = requireNonNull(exchangeManagerRegistry, "exchangeManagerRegistry is null");
         this.exchangeMetricsCollector = requireNonNull(exchangeMetricsCollector, "exchangeMetricsCollector is null");
+        this.forceSingleNodeQuery = forceSingleNodeQuery;
         this.schedulerSpan = tracer.spanBuilder("scheduler")
                 .setParent(Context.current().with(queryStateMachine.getSession().getQuerySpan()))
                 .setAttribute(TrinoAttributes.QUERY_ID, queryStateMachine.getQueryId().toString())
@@ -377,7 +379,8 @@ public class PipelinedQueryScheduler
                         exchangeMetricsCollector,
                         tableExecuteContextManager,
                         retryPolicy,
-                        attempt);
+                        attempt,
+                        forceSingleNodeQuery);
             }
             default -> throw new IllegalArgumentException("Unexpected retry policy: " + retryPolicy);
         };
@@ -914,7 +917,8 @@ public class PipelinedQueryScheduler
                 ExchangeMetricsCollector exchangeMetricsCollector,
                 TableExecuteContextManager tableExecuteContextManager,
                 RetryPolicy retryPolicy,
-                int attempt)
+                int attempt,
+                boolean forceSingleNodeQuery)
         {
             DistributedStagesSchedulerStateMachine stateMachine = new DistributedStagesSchedulerStateMachine(queryStateMachine.getQueryId(), executor);
 
@@ -1017,6 +1021,7 @@ public class PipelinedQueryScheduler
                         dynamicFilterService,
                         executor,
                         tableExecuteContextManager,
+                        forceSingleNodeQuery,
                         metadata,
                         scheduledSplitsPerTableTracker);
                 stageSchedulers.put(stageExecution.getStageId(), scheduler);
@@ -1167,6 +1172,7 @@ public class PipelinedQueryScheduler
                 DynamicFilterService dynamicFilterService,
                 ScheduledExecutorService executor,
                 TableExecuteContextManager tableExecuteContextManager,
+                boolean forceSingleNodeQuery,
                 Metadata metadata,
                 ScheduledSplitsPerTableTracker scheduledSplitsPerTableTracker)
         {
@@ -1340,7 +1346,7 @@ public class PipelinedQueryScheduler
             List<InternalNode> stageNodeList;
             if (fragment.getRemoteSourceNodes().stream().allMatch(node -> node.getExchangeType() == REPLICATE)) {
                 // no remote source
-                bucketNodeMap = nodePartitioningManager.getBucketNodeMap(session, partitioningHandle, partitionCount);
+                bucketNodeMap = nodePartitioningManager.getBucketNodeMap(session, partitioningHandle, forceSingleNodeQuery, partitionCount);
                 stageNodeList = bucketNodeMap.getDistinctNodes();
             }
             else {
