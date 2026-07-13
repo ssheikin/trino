@@ -20,6 +20,8 @@ import com.google.inject.Key;
 import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.testing.TempFile;
 import io.opentelemetry.api.metrics.MeterProvider;
+import io.trino.cache.CacheManagerConfig;
+import io.trino.cache.CacheManagerRegistry;
 import io.trino.spi.TrinoException;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.catalog.CatalogProperties;
@@ -36,6 +38,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 
+import static io.airlift.tracing.Tracing.noopTracer;
+import static io.opentelemetry.api.OpenTelemetry.noop;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -87,6 +91,7 @@ public class TestBuiltInCatalogsConflict
                                         }
                                     }),
                     ImmutableSet.of(),
+                    new CacheManagerRegistry(noop(), noopTracer(), new SecretsResolver(ImmutableMap.of()), new CacheManagerConfig()),
                     Executors.newSingleThreadScheduledExecutor(),
                     new CatalogMetricsService(Optional.of(MeterProvider.noop())));
             assertThatThrownBy(catalogManager::loadInitialCatalogs)

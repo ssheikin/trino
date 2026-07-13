@@ -24,6 +24,7 @@ import io.trino.spi.PageSorter;
 import io.trino.spi.PageStreamFactory;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.cache.ConnectorCacheFactory;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorExpressionEvaluator;
@@ -65,6 +66,7 @@ public class ConnectorContextInstance
     private final ManagedStatisticsClient managedStatisticsClient;
     private final BlocksHashFactory blocksHashFactory;
     private final ConnectorExpressionEvaluator evaluator;
+    private final ConnectorCacheFactory cacheFactory;
 
     public ConnectorContextInstance(
             OpenTelemetry openTelemetry,
@@ -88,7 +90,8 @@ public class ConnectorContextInstance
             FunctionBundleFactory functionBundleFactory,
             ManagedStatisticsClient managedStatisticsClient,
             BlocksHashFactory blocksHashFactory,
-            ConnectorExpressionEvaluator evaluator)
+            ConnectorExpressionEvaluator evaluator,
+            ConnectorCacheFactory cacheFactory)
     {
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.tracer = requireNonNull(tracer, "tracer is null");
@@ -112,6 +115,7 @@ public class ConnectorContextInstance
         this.managedStatisticsClient = requireNonNull(managedStatisticsClient, "managedStatisticsClient is null");
         this.blocksHashFactory = requireNonNull(blocksHashFactory, "blocksHashFactory is null");
         this.evaluator = requireNonNull(evaluator, "evaluator is null");
+        this.cacheFactory = requireNonNull(cacheFactory, "cacheFactory is null");
     }
 
     @Override
@@ -244,5 +248,11 @@ public class ConnectorContextInstance
     public ConnectorExpressionEvaluator getExpressionEvaluator()
     {
         return evaluator;
+    }
+
+    @Override
+    public ConnectorCacheFactory getCacheFactory()
+    {
+        return cacheFactory;
     }
 }

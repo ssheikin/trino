@@ -24,6 +24,8 @@ import io.airlift.configuration.secrets.SecretsResolver;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.metrics.MeterProvider;
 import io.trino.Session;
+import io.trino.cache.CacheManagerConfig;
+import io.trino.cache.CacheManagerRegistry;
 import io.trino.connector.CatalogMetricsService;
 import io.trino.connector.CatalogServiceProvider;
 import io.trino.connector.CoordinatorDynamicCatalogManager;
@@ -72,6 +74,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+import static io.airlift.tracing.Tracing.noopTracer;
+import static io.opentelemetry.api.OpenTelemetry.noop;
 import static io.trino.SessionTestUtils.TEST_SESSION;
 import static io.trino.connector.BuiltInCatalogsProvider.NO_BUILTIN_CATALOGS;
 import static io.trino.operator.scalar.ApplyFunction.APPLY_FUNCTION;
@@ -124,7 +128,7 @@ public class TestDataframeMetadataProvider
                 plannerContext.getMetadata(),
                 SQL_PARSER,
                 accessControl,
-                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, ImmutableSet.of(), directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop()))),
+                new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), new LazyCatalogFactory(), NO_BUILTIN_CATALOGS, ImmutableSet.of(), new CacheManagerRegistry(noop(), noopTracer(), new SecretsResolver(ImmutableMap.of()), new CacheManagerConfig()), directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop()))),
                 new SessionPropertyManager(),
                 new SchemaPropertyManager(CatalogServiceProvider.fail()),
                 new ColumnPropertyManager(CatalogServiceProvider.fail()),

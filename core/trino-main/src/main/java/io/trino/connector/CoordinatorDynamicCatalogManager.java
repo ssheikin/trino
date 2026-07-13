@@ -22,6 +22,7 @@ import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.cache.CacheManagerRegistry;
 import io.trino.connector.system.GlobalSystemConnector;
 import io.trino.metadata.Catalog;
 import io.trino.metadata.CatalogManager;
@@ -80,6 +81,7 @@ public class CoordinatorDynamicCatalogManager
     private final CatalogStoreWithBuiltInCatalogs catalogStore;
     private final CatalogFactory catalogFactory;
     private final Set<CatalogFailureHandler> catalogFailureHandler;
+    private final CacheManagerRegistry cacheManagerRegistry;
     private final Executor executor;
     private final CatalogMetricsService catalogMetricsService;
 
@@ -104,6 +106,7 @@ public class CoordinatorDynamicCatalogManager
             CatalogFactory catalogFactory,
             BuiltInCatalogsProvider builtInCatalogsProvider,
             Set<CatalogFailureHandler> catalogFailureHandler,
+            CacheManagerRegistry cacheManagerRegistry,
             @ForStartup Executor executor,
             CatalogMetricsService catalogMetricsService)
     {
@@ -112,6 +115,7 @@ public class CoordinatorDynamicCatalogManager
                 requireNonNull(builtInCatalogsProvider, "builtInCatalogsProvider is null"));
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
         this.catalogFailureHandler = requireNonNull(catalogFailureHandler, "catalogFailureHandler is null");
+        this.cacheManagerRegistry = requireNonNull(cacheManagerRegistry, "cacheManagerRegistry is null");
         this.executor = requireNonNull(executor, "executor is null");
         this.catalogMetricsService = requireNonNull(catalogMetricsService, "catalogMetricsService is null");
     }
@@ -448,6 +452,7 @@ public class CoordinatorDynamicCatalogManager
             removed = removedCatalog != null;
             if (removed) {
                 catalogMetricsService.catalogDropped(removedCatalog.getConnectorName().toString());
+                cacheManagerRegistry.drop(catalogName);
             }
         }
 

@@ -25,6 +25,7 @@ import io.trino.spi.PageStreamFactory;
 import io.trino.spi.Unstable;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.cache.ConnectorCacheFactory;
 import io.trino.spi.connector.ai.ModelConnectionSpecsLoader;
 import io.trino.spi.connector.metastore.Metastore;
 import io.trino.spi.function.FunctionBundleFactory;
@@ -33,6 +34,7 @@ import io.trino.spi.security.LocationAccessControl;
 import io.trino.spi.type.TypeManager;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface ConnectorContext
 {
@@ -163,5 +165,11 @@ public interface ConnectorContext
     default ConnectorExpressionEvaluator getExpressionEvaluator()
     {
         return ConnectorExpressionEvaluator.NO_OP;
+    }
+
+    @Unstable
+    default ConnectorCacheFactory getCacheFactory()
+    {
+        return _ -> Optional.empty();
     }
 }

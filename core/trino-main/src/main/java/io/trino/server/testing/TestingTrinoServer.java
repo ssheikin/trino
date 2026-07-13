@@ -42,6 +42,8 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.trino.Session;
 import io.trino.SystemSessionPropertiesProvider;
+import io.trino.cache.CacheManagerConfig;
+import io.trino.cache.CacheManagerRegistry;
 import io.trino.cache.CacheMetadata;
 import io.trino.cache.SubqueryCacheManagerModule;
 import io.trino.cache.SubqueryCacheManagerRegistry;
@@ -243,6 +245,7 @@ public class TestingTrinoServer
     private final FailureInjector failureInjector;
     private final ExchangeManagerRegistry exchangeManagerRegistry;
     private SubqueryCacheManagerRegistry subqueryCacheManagerRegistry;
+    private final CacheManagerRegistry cacheManagerRegistry;
     private final SpoolingManagerRegistry spoolingManagerRegistry;
 
     public static class TestShutdownAction
@@ -355,6 +358,7 @@ public class TestingTrinoServer
                     binder.bind(NodeVersion.class).toInstance(new NodeVersion(VERSION));
                     binder.bind(EventListenerConfig.class).in(Scopes.SINGLETON);
                     binder.bind(ExchangeManagerConfig.class).in(Scopes.SINGLETON);
+                    binder.bind(CacheManagerConfig.class).in(Scopes.SINGLETON);
                     binder.bind(AccessControlConfig.class).in(Scopes.SINGLETON);
                     binder.bind(TestingAccessControlManager.class).in(Scopes.SINGLETON);
                     binder.bind(TestingGroupProvider.class).in(Scopes.SINGLETON);
@@ -374,6 +378,7 @@ public class TestingTrinoServer
                     newOptionalBinder(binder, Key.get(Runnable.class, NodeStateManager.PreShutdownAction.class));
                     binder.bind(ProcedureTester.class).in(Scopes.SINGLETON);
                     binder.bind(ExchangeManagerRegistry.class).in(Scopes.SINGLETON);
+                    binder.bind(CacheManagerRegistry.class).in(Scopes.SINGLETON);
                     spanProcessor.ifPresent(processor -> newSetBinder(binder, SpanProcessor.class).addBinding().toInstance(processor));
 
                     newSetBinder(binder, SystemSessionPropertiesProvider.class)
@@ -471,6 +476,7 @@ public class TestingTrinoServer
         mBeanServer = injector.getInstance(MBeanServer.class);
         failureInjector = injector.getInstance(FailureInjector.class);
         exchangeManagerRegistry = injector.getInstance(ExchangeManagerRegistry.class);
+        cacheManagerRegistry = injector.getInstance(CacheManagerRegistry.class);
         spoolingManagerRegistry = injector.getInstance(SpoolingManagerRegistry.class);
 
         systemAccessControlConfiguration.ifPresentOrElse(
@@ -622,6 +628,11 @@ public class TestingTrinoServer
             subqueryCacheManagerRegistry.loadSubqueryCacheManager(name, properties);
         }
         return subqueryCacheManagerRegistry;
+    }
+
+    public void loadBlobCacheManager(String name, Map<String, String> properties)
+    {
+        cacheManagerRegistry.loadBlobCacheManager(name, properties);
     }
 
     public void loadSpoolingManager(String name, Map<String, String> properties)

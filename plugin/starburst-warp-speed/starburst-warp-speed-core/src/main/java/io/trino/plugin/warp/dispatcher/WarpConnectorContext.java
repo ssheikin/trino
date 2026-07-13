@@ -24,6 +24,7 @@ import io.trino.spi.PageSorter;
 import io.trino.spi.PageStreamFactory;
 import io.trino.spi.VersionEmbedder;
 import io.trino.spi.WorkScheduler;
+import io.trino.spi.cache.ConnectorCacheFactory;
 import io.trino.spi.connector.CatalogVersion;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorExpressionEvaluator;
@@ -200,5 +201,11 @@ public class WarpConnectorContext
     public ConnectorExpressionEvaluator getExpressionEvaluator()
     {
         return connectorContext.getExpressionEvaluator();
+    }
+
+    @Override
+    public ConnectorCacheFactory getCacheFactory()
+    {
+        return connectorContext.getCacheFactory();
     }
 }

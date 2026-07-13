@@ -43,6 +43,8 @@ import io.trino.SystemSessionProperties;
 import io.trino.SystemSessionPropertiesProvider;
 import io.trino.block.BlockJsonSerde;
 import io.trino.cache.CacheConfig;
+import io.trino.cache.CacheManagerConfig;
+import io.trino.cache.CacheManagerRegistry;
 import io.trino.cache.CacheMetadata;
 import io.trino.cache.CachePerformanceTracker;
 import io.trino.cache.CacheStats;
@@ -397,6 +399,7 @@ public class PlanTester
     private final CachePerformanceTracker cachePerformanceTracker;
     private final JsonCodec<TupleDomain> tupleDomainCodec;
     private final SpoolingManagerRegistry spoolingManagerRegistry;
+    private final CacheManagerRegistry cacheManagerRegistry;
     private final TaskManagerConfig taskManagerConfig;
     private final OptimizerConfig optimizerConfig;
     private final StatementAnalyzerFactory statementAnalyzerFactory;
@@ -441,7 +444,9 @@ public class PlanTester
         LazyCatalogFactory catalogFactory = new LazyCatalogFactory();
         this.catalogFactory = catalogFactory;
         this.catalogFailureHandler = new TestingCatalogFailureHandler();
-        this.catalogManager = new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), catalogFactory, NO_BUILTIN_CATALOGS, ImmutableSet.of(catalogFailureHandler), directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop())));
+        SecretsResolver secretsResolver = new SecretsResolver(ImmutableMap.of());
+        this.cacheManagerRegistry = new CacheManagerRegistry(noop(), noopTracer(), secretsResolver, new CacheManagerConfig());
+        this.catalogManager = new CoordinatorDynamicCatalogManager(new InMemoryCatalogStore(), catalogFactory, NO_BUILTIN_CATALOGS, ImmutableSet.of(catalogFailureHandler), cacheManagerRegistry, directExecutor(), new CatalogMetricsService(Optional.of(MeterProvider.noop())));
         this.transactionManager = InMemoryTransactionManager.create(
                 new TransactionManagerConfig().setIdleTimeout(new Duration(1, TimeUnit.DAYS)),
                 yieldExecutor,
@@ -453,7 +458,6 @@ public class PlanTester
         TypeRegistry typeRegistry = new TypeRegistry(typeOperators, featuresConfig);
         TypeManager typeManager = new InternalTypeManager(typeRegistry);
         InternalBlockEncodingSerde blockEncodingSerde = new InternalBlockEncodingSerde(TESTING_BLOCK_ENCODING_MANAGER, typeManager);
-        SecretsResolver secretsResolver = new SecretsResolver(ImmutableMap.of());
 
         this.globalFunctionCatalog = new GlobalFunctionCatalog(
                 () -> getPlannerContext().getMetadata(),
@@ -535,7 +539,8 @@ public class PlanTester
                 new LocalMemoryManager(new NodeMemoryConfig(), Optional.empty()),
                 secretsResolver,
                 nodeInfo,
-                evaluator));
+                evaluator,
+                cacheManagerRegistry));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
         this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager), new DirectIoExecutor());
         this.alternativeChooser = new AlternativeChooser(createAlternativeChooser(catalogManager));
@@ -639,7 +644,8 @@ public class PlanTester
                 new HandleResolver(),
                 exchangeManagerRegistry,
                 subqueryCacheManagerRegistry,
-                spoolingManagerRegistry);
+                spoolingManagerRegistry,
+                cacheManagerRegistry);
 
         catalogManager.registerGlobalSystemConnector(globalSystemConnector);
         languageFunctionManager.setPlannerContext(plannerContext);
@@ -724,6 +730,7 @@ public class PlanTester
         notificationExecutor.shutdownNow();
         yieldExecutor.shutdownNow();
         catalogManager.stop();
+        cacheManagerRegistry.shutdown();
         finalizerService.destroy();
     }
 
