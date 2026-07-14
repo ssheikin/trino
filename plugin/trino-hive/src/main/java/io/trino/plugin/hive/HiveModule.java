@@ -38,6 +38,7 @@ import io.trino.plugin.hive.orc.OrcWriterConfig;
 import io.trino.plugin.hive.parquet.HiveGpuParquetPageSourceFactory;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.plugin.hive.parquet.ParquetWriterConfig;
+import io.trino.plugin.hive.substitution.HiveSubstitutionMetadata;
 import io.trino.plugin.hive.util.SortTempFileFactory;
 import io.trino.spi.cache.ConnectorCacheMetadata;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
@@ -45,6 +46,7 @@ import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.SystemTable;
+import io.trino.spi.connector.substitution.ConnectorSubstitutionMetadata;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.function.table.ConnectorTableFunction;
 
@@ -111,6 +113,8 @@ public class HiveModule
         binder.bind(HiveGpuParquetPageSourceFactory.class).in(Scopes.SINGLETON);
 
         binder.bind(ConnectorCacheMetadata.class).to(HiveCacheMetadata.class).in(Scopes.SINGLETON);
+
+        newOptionalBinder(binder, ConnectorSubstitutionMetadata.class).setDefault().to(HiveSubstitutionMetadata.class).in(Scopes.SINGLETON);
 
         // for table handle, column handle and split ids
         jsonCodecBinder(binder).bindJsonCodec(HiveCacheTableId.class);
