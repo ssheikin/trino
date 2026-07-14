@@ -742,9 +742,12 @@ jobs:
       VERTEX_SERVICE_ACCOUNT_KEY: ${{ secrets.VERTEX_SERVICE_ACCOUNT_KEY }}
       VERTEX_PROJECT_ID: ${{ vars.VERTEX_PROJECT_ID }}
       VERTEX_LOCATION: ${{ vars.VERTEX_LOCATION }}
+    # Live AI tests bill real provider APIs, so we do not run them on every merge to master.
+    # They run on the weekly schedule, on a manual workflow_dispatch on master, or on demand via the 'ai' PR label.
     if: |
-      github.event_name == 'push' && github.ref == 'refs/heads/master' ||
-      github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ai')
+      (github.event_name == 'schedule' && github.event.schedule == '0 0 * * 6') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ai'))
     steps:
       - uses: actions/checkout@v6
         with:
