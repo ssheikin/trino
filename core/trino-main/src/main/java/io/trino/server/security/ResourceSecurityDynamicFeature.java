@@ -84,35 +84,29 @@ public class ResourceSecurityDynamicFeature
         switch (accessType) {
             case PUBLIC -> {
                 // no authentication or authorization
-                return;
             }
             case WEB_UI -> {
                 context.register(webUiAuthenticationFilter);
                 context.register(new DisposeIdentityResponseFilter());
-                return;
             }
             case AUTHENTICATED_USER -> {
                 context.register(authenticationFilter);
                 context.register(new DisposeIdentityResponseFilter());
-                return;
             }
             case PORTAL -> {
                 context.register(portalAuthenticationFilter);
                 context.register(new DisposeIdentityResponseFilter());
-                return;
             }
             case MANAGEMENT_READ, MANAGEMENT_WRITE -> {
                 context.register(new ManagementAuthenticationFilter(fixedManagementUser, fixedManagementUserForHttps, authenticationFilter));
                 context.register(new ManagementAuthorizationFilter(accessControl, sessionContextFactory, accessType == MANAGEMENT_READ));
                 context.register(new DisposeIdentityResponseFilter());
-                return;
             }
             case INTERNAL_ONLY -> {
                 context.register(new InternalOnlyRequestFilter(internalAuthenticationManager));
-                return;
             }
+            default -> throw new IllegalArgumentException("Unknown access type: " + accessType);
         }
-        throw new IllegalArgumentException("Unknown mode: " + accessType);
     }
 
     @Priority(Priorities.AUTHENTICATION)
