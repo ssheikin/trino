@@ -14,6 +14,7 @@
 package io.trino.plugin.bigquery;
 
 import com.google.common.collect.ImmutableMap;
+import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.testing.TestingConnectorContext;
 import org.junit.jupiter.api.Test;
@@ -34,14 +35,16 @@ public class TestBigQueryPlugin
         ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
         assertThat(factory).isInstanceOf(BigQueryConnectorFactory.class);
 
-        factory.create(
-                        "test",
-                        Map.of(
-                                "bigquery.project-id", "xxx",
-                                "bigquery.credentials-key", DUMMY_BIGQUERY_CREDENTIALS_KEY,
-                                "bootstrap.quiet", "true"),
-                        new TestingConnectorContext())
-                .shutdown();
+        Connector connector = factory.create(
+                "test",
+                Map.of(
+                        "bigquery.project-id", "xxx",
+                        "bigquery.credentials-key", DUMMY_BIGQUERY_CREDENTIALS_KEY,
+                        "bootstrap.quiet", "true"),
+                new TestingConnectorContext());
+        // MV substitution support must be wired; verifiable without BigQuery/GCP access.
+        assertThat(connector.getSubstitutionMetadata()).isNotNull();
+        connector.shutdown();
     }
 
     @Test
