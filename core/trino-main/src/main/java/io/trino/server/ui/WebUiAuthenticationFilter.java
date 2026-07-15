@@ -15,8 +15,21 @@ package io.trino.server.ui;
 
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 
 @Priority(Priorities.AUTHENTICATION)
 public interface WebUiAuthenticationFilter
-        extends ContainerRequestFilter {}
+        extends ContainerRequestFilter
+{
+    /**
+     * Whether the request carries this filter's UI credential material (e.g. a session cookie),
+     * regardless of whether that material is still valid. Lets a caller distinguish "no credential
+     * present, forward anonymously" from "credential present but invalid, issue a challenge".
+     * Defaults to {@code false} so an unhandled filter type is treated as carrying no credential.
+     */
+    default boolean hasCredential(ContainerRequestContext request)
+    {
+        return false;
+    }
+}

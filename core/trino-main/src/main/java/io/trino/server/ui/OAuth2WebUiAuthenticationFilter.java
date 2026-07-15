@@ -71,6 +71,12 @@ public class OAuth2WebUiAuthenticationFilter
     }
 
     @Override
+    public boolean hasCredential(ContainerRequestContext request)
+    {
+        return OAuthWebUiCookie.read(request.getCookies()).isPresent();
+    }
+
+    @Override
     public void filter(ContainerRequestContext request)
     {
         String path = request.getUriInfo().getRequestUri().getPath();

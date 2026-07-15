@@ -265,6 +265,12 @@ public class FormWebUiAuthenticationFilter
                 .map(user -> createAuthenticationCookie(user, secure));
     }
 
+    @Override
+    public boolean hasCredential(ContainerRequestContext request)
+    {
+        return MULTIPART_COOKIE.read(request.getCookies()).isPresent();
+    }
+
     Optional<String> getAuthenticatedUsername(ContainerRequestContext request)
     {
         try {
