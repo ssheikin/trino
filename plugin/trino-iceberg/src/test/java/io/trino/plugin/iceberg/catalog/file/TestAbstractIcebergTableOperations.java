@@ -20,8 +20,6 @@ import io.trino.filesystem.TrinoInputFile;
 import io.trino.filesystem.TrinoInputStream;
 import io.trino.filesystem.local.LocalFileSystemFactory;
 import io.trino.metastore.HiveMetastore;
-import io.trino.plugin.iceberg.encryption.DefaultEncryptionManagerFactory;
-import io.trino.plugin.iceberg.encryption.IcebergEncryptionConfig;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIo;
 import io.trino.plugin.iceberg.fileio.ForwardingInputFile;
 import org.apache.iceberg.io.InputFile;
@@ -40,6 +38,7 @@ import static io.trino.metastore.cache.CachingHiveMetastore.createPerTransaction
 import static io.trino.plugin.hive.metastore.file.TestingFileHiveMetastore.createTestingFileHiveMetastore;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_MISSING_METADATA;
+import static io.trino.plugin.iceberg.IcebergTestUtils.ENCRYPTION_MANAGER_FACTORY;
 import static io.trino.testing.TestingConnectorSession.SESSION;
 import static io.trino.testing.assertions.TrinoExceptionAssert.assertTrinoExceptionThrownBy;
 
@@ -71,7 +70,7 @@ public class TestAbstractIcebergTableOperations
                 "test-table",
                 Optional.of("test-owner"),
                 Optional.empty(),
-                new DefaultEncryptionManagerFactory(new IcebergEncryptionConfig()))
+                ENCRYPTION_MANAGER_FACTORY)
         {
             // Without this, we'd have to create a table that's never accessed anyway, because we're simulating S3 errors.
             @Override
@@ -113,7 +112,7 @@ public class TestAbstractIcebergTableOperations
                 "test-table",
                 Optional.of("test-owner"),
                 Optional.empty(),
-                new DefaultEncryptionManagerFactory(new IcebergEncryptionConfig()))
+                ENCRYPTION_MANAGER_FACTORY)
         {
             @Override
             protected String getRefreshedLocation(boolean invalidateCaches)
