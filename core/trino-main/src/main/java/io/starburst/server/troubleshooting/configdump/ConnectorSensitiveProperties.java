@@ -21,6 +21,7 @@ public final class ConnectorSensitiveProperties
             .put("ai",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -30,6 +31,7 @@ public final class ConnectorSensitiveProperties
             .put("bigquery",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "bigquery.credentials-key",
                             "bigquery.rpc-proxy.keystore-password",
                             "bigquery.rpc-proxy.password",
@@ -43,6 +45,7 @@ public final class ConnectorSensitiveProperties
             .put("blackhole",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -52,6 +55,7 @@ public final class ConnectorSensitiveProperties
             .put("cassandra",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "cassandra.password",
                             "cassandra.tls.keystore-password",
                             "cassandra.tls.truststore-password",
@@ -64,6 +68,7 @@ public final class ConnectorSensitiveProperties
             .put("clickhouse",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -77,6 +82,7 @@ public final class ConnectorSensitiveProperties
             .put("delta_lake",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
@@ -103,6 +109,7 @@ public final class ConnectorSensitiveProperties
             .put("druid",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -114,6 +121,7 @@ public final class ConnectorSensitiveProperties
             .put("duckdb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -125,6 +133,7 @@ public final class ConnectorSensitiveProperties
             .put("elasticsearch",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "elasticsearch.auth.password",
                             "elasticsearch.aws.secret-key",
                             "elasticsearch.tls.keystore-password",
@@ -138,6 +147,7 @@ public final class ConnectorSensitiveProperties
             .put("exasol",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -149,6 +159,7 @@ public final class ConnectorSensitiveProperties
             .put("faker",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -158,6 +169,7 @@ public final class ConnectorSensitiveProperties
             .put("great_lakes",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
@@ -197,6 +209,7 @@ public final class ConnectorSensitiveProperties
             .put("gsheets",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "gsheets.credentials-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -207,6 +220,7 @@ public final class ConnectorSensitiveProperties
             .put("hive",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
@@ -233,6 +247,7 @@ public final class ConnectorSensitiveProperties
             .put("hudi",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
@@ -259,6 +274,7 @@ public final class ConnectorSensitiveProperties
             .put("iceberg",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
@@ -294,6 +310,7 @@ public final class ConnectorSensitiveProperties
             .put("ignite",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -305,6 +322,7 @@ public final class ConnectorSensitiveProperties
             .put("jmx",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -314,6 +332,7 @@ public final class ConnectorSensitiveProperties
             .put("kafka",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -326,6 +345,7 @@ public final class ConnectorSensitiveProperties
             .put("kudu",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -335,6 +355,7 @@ public final class ConnectorSensitiveProperties
             .put("lakehouse",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
@@ -370,6 +391,7 @@ public final class ConnectorSensitiveProperties
             .put("loki",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -379,6 +401,7 @@ public final class ConnectorSensitiveProperties
             .put("mariadb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -390,6 +413,7 @@ public final class ConnectorSensitiveProperties
             .put("memory",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -399,6 +423,7 @@ public final class ConnectorSensitiveProperties
             .put("mongodb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -411,6 +436,7 @@ public final class ConnectorSensitiveProperties
             .put("mysql",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -422,6 +448,7 @@ public final class ConnectorSensitiveProperties
             .put("opensearch",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -435,6 +462,7 @@ public final class ConnectorSensitiveProperties
             .put("oracle",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -446,6 +474,7 @@ public final class ConnectorSensitiveProperties
             .put("pinot",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -459,6 +488,7 @@ public final class ConnectorSensitiveProperties
             .put("postgresql",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -470,6 +500,7 @@ public final class ConnectorSensitiveProperties
             .put("prometheus",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -480,6 +511,7 @@ public final class ConnectorSensitiveProperties
             .put("redis",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -492,6 +524,7 @@ public final class ConnectorSensitiveProperties
             .put("redshift",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -506,6 +539,7 @@ public final class ConnectorSensitiveProperties
             .put("sap_hana",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -517,6 +551,7 @@ public final class ConnectorSensitiveProperties
             .put("sas",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -526,6 +561,7 @@ public final class ConnectorSensitiveProperties
             .put("singlestore",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -537,6 +573,7 @@ public final class ConnectorSensitiveProperties
             .put("snowflake_parallel",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -551,6 +588,7 @@ public final class ConnectorSensitiveProperties
             .put("sqlserver",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -562,6 +600,7 @@ public final class ConnectorSensitiveProperties
             .put("starburst_functions",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
@@ -589,6 +628,7 @@ public final class ConnectorSensitiveProperties
             .put("starburst_internal_testing",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -598,6 +638,7 @@ public final class ConnectorSensitiveProperties
             .put("starburst_kdb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -608,6 +649,7 @@ public final class ConnectorSensitiveProperties
             .put("starburst_openapi",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -619,6 +661,7 @@ public final class ConnectorSensitiveProperties
             .put("stargate",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -631,6 +674,7 @@ public final class ConnectorSensitiveProperties
             .put("stargate_parallel",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -643,6 +687,7 @@ public final class ConnectorSensitiveProperties
             .put("synapse",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -654,6 +699,7 @@ public final class ConnectorSensitiveProperties
             .put("tpcds",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -663,6 +709,7 @@ public final class ConnectorSensitiveProperties
             .put("tpch",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -672,6 +719,7 @@ public final class ConnectorSensitiveProperties
             .put("trino_thrift",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
                             "http-client.key-store-password",
@@ -681,6 +729,7 @@ public final class ConnectorSensitiveProperties
             .put("vertica",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "connection-password",
                             "http-client.http-proxy.password",
                             "http-client.https.automatic-shared-secret",
@@ -692,6 +741,7 @@ public final class ConnectorSensitiveProperties
             .put("warp_speed",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
+                            "aws.kms.secret-key",
                             "azure.access-key",
                             "azure.oauth.client-id",
                             "azure.oauth.endpoint",
