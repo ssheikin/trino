@@ -285,6 +285,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.base.Verify.verifyNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -1435,6 +1436,7 @@ public class IcebergMetadata
                         tableMetadatas.addAll(taskResults);
                     }
                     catch (ExecutionException e) {
+                        throwIfUnchecked(e.getCause());
                         throw new RuntimeException(e.getCause());
                     }
 
@@ -1549,6 +1551,7 @@ public class IcebergMetadata
                                 .flatMap(Optional::stream);
                     }
                     catch (ExecutionException e) {
+                        throwIfUnchecked(e.getCause());
                         throw new RuntimeException(e.getCause());
                     }
                 })
@@ -5320,6 +5323,7 @@ public class IcebergMetadata
             tableChangeInfos = processWithAdditionalThreads(tableChangeInfoTasks.build(), metadataFetchingExecutor);
         }
         catch (ExecutionException e) {
+            throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());
         }
 
