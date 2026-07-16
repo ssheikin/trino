@@ -31,6 +31,7 @@ import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.hive.HiveConfig;
 import io.trino.plugin.iceberg.catalog.IcebergCatalogModule;
+import io.trino.plugin.iceberg.encryption.IcebergEncryptionModule;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
@@ -134,6 +135,7 @@ public class IcebergConnectorFactory
                 new JsonModule(),
                 new IcebergModule(context),
                 new IcebergSecurityModule(),
+                new IcebergEncryptionModule(),
                 icebergCatalogModule.orElse(new IcebergCatalogModule()),
                 new MBeanServerModule(),
                 new AiClientModule(context.getModelConnectionSpecsLoader()),
