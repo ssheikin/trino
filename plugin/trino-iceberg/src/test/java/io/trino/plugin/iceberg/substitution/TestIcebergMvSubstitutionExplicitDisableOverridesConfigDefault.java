@@ -15,17 +15,13 @@ package io.trino.plugin.iceberg.substitution;
 
 import com.google.inject.Binder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
-import io.starburst.materialization.metastore.client.HttpMaterializationMetastoreModule;
-import io.starburst.materialization.metastore.client.MaterializationMetastoreClientConfig;
-import io.starburst.materialization.metastore.client.RequestAuthenticator;
-import io.starburst.materialization.metastore.server.TestingMaterializationMetastoreServer;
+import io.starburst.server.substitution.MaterializedViewSubstitutionConfig;
 import io.trino.plugin.iceberg.TestingIcebergPlugin;
-import io.trino.plugin.tpch.TpchPlugin;
-import io.trino.server.ServerConfig;
+import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -37,46 +33,42 @@ import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
 /**
- * Runs the full MV substitution contract suite with the materialization metastore type set to REST,
- * so every CREATE/REFRESH/REMOVE/RENAME on a substitution MV is written through the HTTP client to
- * the DB-backed metastore with real Iceberg-produced materialization definitions. Substitution reads
- * still come from the coordinator's in-memory index (single cluster), so this primarily validates
- * the REST write-through path end-to-end under the full DDL contract.
+ * Verifies that an explicit {@code materialized-view-substitution.support.enabled=false} wins over a module that
+ * raises the default to {@code true} via {@code bindConfigDefaults}, leaving substitution disabled. Airlift treats
+ * {@code bindConfigDefaults} as a default that an explicit property overrides, so an operator (or portal) can
+ * always turn substitution off even when an embedding assembly (e.g. SEP) would enable it by default. When
+ * disabled, the substitution wiring is absent — observable here because the {@code substitution_enabled}
+ * materialized view property is not registered.
+ * <p>
+ * NOTE: this pairs with {@link TestIcebergMvSubstitutionEnabledByConfigDefaults}; once substitution is enabled by
+ * default, both tests must be revisited.
  */
 @Execution(SAME_THREAD)
-public class TestIcebergMvSubstitutionWithRestMetastore
-        extends AbstractIcebergMvSubstitutionTest
+public class TestIcebergMvSubstitutionExplicitDisableOverridesConfigDefault
+        extends AbstractTestQueryFramework
 {
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        PostgreSQLContainer metastoreDb = closeAfterClass(new PostgreSQLContainer("postgres:16"));
-        metastoreDb.start();
-        TestingMaterializationMetastoreServer metastoreServer = closeAfterClass(new TestingMaterializationMetastoreServer(
-                metastoreDb.getJdbcUrl(),
-                metastoreDb.getUsername(),
-                metastoreDb.getPassword()));
-
         QueryRunner queryRunner = DistributedQueryRunner.builder(
                         testSessionBuilder()
                                 .setCatalog(ICEBERG_CATALOG)
                                 .setSchema("tpch")
                                 .build())
+                // Explicitly disabled by the operator; the module below tries to default it on, but the explicit
+                // property must win, keeping the feature off.
+                .addExtraProperty("materialized-view-substitution.support.enabled", "false")
                 .setAdditionalModuleSupplier(() -> new AbstractConfigurationAwareModule()
                 {
                     @Override
                     protected void setup(Binder binder)
                     {
-                        binder.bind(RequestAuthenticator.class).toInstance(_ -> {});
-                        configBinder(binder).bindConfigDefaults(MaterializationMetastoreClientConfig.class, config -> config.setMetastoreId("id"));
-                        if (buildConfigObject(ServerConfig.class).isCoordinator()) {
-                            install(new HttpMaterializationMetastoreModule());
-                        }
+                        configBinder(binder).bindConfigDefaults(
+                                MaterializedViewSubstitutionConfig.class,
+                                config -> config.setMaterializedViewSubstitutionSupportEnabled(true));
                     }
                 })
-                .addExtraProperty("materialized-view-substitution.support.enabled", "true")
-                .addCoordinatorProperty("materialization.metastore.base-uri", metastoreServer.baseUri().toString())
                 .build();
         try {
             Path baseDataDir = queryRunner.getCoordinator().getBaseDataDir();
@@ -85,8 +77,6 @@ public class TestIcebergMvSubstitutionWithRestMetastore
                     "iceberg.catalog.type", "TESTING_FILE_METASTORE",
                     "hive.metastore.catalog.dir", "local:///iceberg-catalog",
                     "iceberg.hive-catalog-name", "hive"));
-            queryRunner.installPlugin(new TpchPlugin());
-            queryRunner.createCatalog("tpch", "tpch");
             queryRunner.execute("CREATE SCHEMA iceberg.tpch");
         }
         catch (Throwable e) {
@@ -94,5 +84,16 @@ public class TestIcebergMvSubstitutionWithRestMetastore
             throw e;
         }
         return queryRunner;
+    }
+
+    @Test
+    public void testSubstitutionDisabledDespiteConfigDefault()
+    {
+        assertUpdate("CREATE TABLE base_table AS SELECT 1 AS id", 1);
+        // The substitution_enabled MV property is only registered when the feature is enabled, so its absence
+        // proves the explicit property disabled the feature despite the raised default.
+        assertQueryFails(
+                "CREATE MATERIALIZED VIEW test_mv WITH (substitution_enabled = true) AS SELECT * FROM base_table",
+                ".*materialized view property 'substitution_enabled' does not exist.*");
     }
 }

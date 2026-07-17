@@ -15,17 +15,12 @@ package io.trino.plugin.iceberg.substitution;
 
 import com.google.inject.Binder;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
-import io.starburst.materialization.metastore.client.HttpMaterializationMetastoreModule;
-import io.starburst.materialization.metastore.client.MaterializationMetastoreClientConfig;
-import io.starburst.materialization.metastore.client.RequestAuthenticator;
-import io.starburst.materialization.metastore.server.TestingMaterializationMetastoreServer;
+import io.starburst.server.substitution.MaterializedViewSubstitutionConfig;
 import io.trino.plugin.iceberg.TestingIcebergPlugin;
 import io.trino.plugin.tpch.TpchPlugin;
-import io.trino.server.ServerConfig;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
 import org.junit.jupiter.api.parallel.Execution;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -37,46 +32,43 @@ import static io.trino.testing.TestingSession.testSessionBuilder;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
 /**
- * Runs the full MV substitution contract suite with the materialization metastore type set to REST,
- * so every CREATE/REFRESH/REMOVE/RENAME on a substitution MV is written through the HTTP client to
- * the DB-backed metastore with real Iceberg-produced materialization definitions. Substitution reads
- * still come from the coordinator's in-memory index (single cluster), so this primarily validates
- * the REST write-through path end-to-end under the full DDL contract.
+ * Runs the full MV substitution contract suite with {@code materialized-view-substitution.support.enabled}
+ * left unset (its default is disabled), enabling the feature instead through a module that raises the config
+ * default via {@code bindConfigDefaults}. This mirrors how an embedding assembly (e.g. SEP) turns substitution
+ * on from its own wiring rather than an operator property, and verifies that {@link
+ * io.starburst.server.substitution.MvSubstitutionModule} honors that default when deciding to wire the real
+ * {@code MaterializationService} and {@code MaterializationIndex}.
+ * <p>
+ * NOTE: this relies on the config default being disabled. Once substitution is enabled by default (the field
+ * default of {@code materialized-view-substitution.support.enabled} flips to {@code true}), leaving the property
+ * unset would already enable the feature and this test would no longer exercise the {@code bindConfigDefaults}
+ * enable path — it must be revisited then.
  */
 @Execution(SAME_THREAD)
-public class TestIcebergMvSubstitutionWithRestMetastore
+public class TestIcebergMvSubstitutionEnabledByConfigDefaults
         extends AbstractIcebergMvSubstitutionTest
 {
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        PostgreSQLContainer metastoreDb = closeAfterClass(new PostgreSQLContainer("postgres:16"));
-        metastoreDb.start();
-        TestingMaterializationMetastoreServer metastoreServer = closeAfterClass(new TestingMaterializationMetastoreServer(
-                metastoreDb.getJdbcUrl(),
-                metastoreDb.getUsername(),
-                metastoreDb.getPassword()));
-
         QueryRunner queryRunner = DistributedQueryRunner.builder(
                         testSessionBuilder()
                                 .setCatalog(ICEBERG_CATALOG)
                                 .setSchema("tpch")
                                 .build())
+                // Note: the property is intentionally not set here; the feature is enabled solely through the
+                // config default raised in the additional module below.
                 .setAdditionalModuleSupplier(() -> new AbstractConfigurationAwareModule()
                 {
                     @Override
                     protected void setup(Binder binder)
                     {
-                        binder.bind(RequestAuthenticator.class).toInstance(_ -> {});
-                        configBinder(binder).bindConfigDefaults(MaterializationMetastoreClientConfig.class, config -> config.setMetastoreId("id"));
-                        if (buildConfigObject(ServerConfig.class).isCoordinator()) {
-                            install(new HttpMaterializationMetastoreModule());
-                        }
+                        configBinder(binder).bindConfigDefaults(
+                                MaterializedViewSubstitutionConfig.class,
+                                config -> config.setMaterializedViewSubstitutionSupportEnabled(true));
                     }
                 })
-                .addExtraProperty("materialized-view-substitution.support.enabled", "true")
-                .addCoordinatorProperty("materialization.metastore.base-uri", metastoreServer.baseUri().toString())
                 .build();
         try {
             Path baseDataDir = queryRunner.getCoordinator().getBaseDataDir();
