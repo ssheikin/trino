@@ -73,14 +73,16 @@ public class OAuth2TokenExchangeResource
 
     private final OAuth2TokenExchange tokenExchange;
     private final OAuth2Service service;
+    private final boolean externalAuthenticationConfirmationEnabled;
     private final Executor responseExecutor;
     private final ScheduledExecutorService timeoutExecutor;
 
     @Inject
-    public OAuth2TokenExchangeResource(OAuth2TokenExchange tokenExchange, OAuth2Service service, @ForOAuth2 ExecutorService responseExecutor, @ForOAuth2 ScheduledExecutorService timeoutExecutor)
+    public OAuth2TokenExchangeResource(OAuth2TokenExchange tokenExchange, OAuth2Service service, OAuth2Config oauth2Config, @ForOAuth2 ExecutorService responseExecutor, @ForOAuth2 ScheduledExecutorService timeoutExecutor)
     {
         this.tokenExchange = requireNonNull(tokenExchange, "tokenExchange is null");
         this.service = requireNonNull(service, "service is null");
+        this.externalAuthenticationConfirmationEnabled = oauth2Config.isExternalAuthenticationConfirmationEnabled();
         this.responseExecutor = requireNonNull(responseExecutor, "responseExecutor is null");
         this.timeoutExecutor = requireNonNull(timeoutExecutor, "timeoutExecutor is null");
     }
@@ -88,8 +90,11 @@ public class OAuth2TokenExchangeResource
     @Path("initiate/{authIdHash}")
     @GET
     @Produces(MediaType.TEXT_HTML)
-    public Response initiateTokenExchange(@PathParam("authIdHash") String authIdHash)
+    public Response initiateTokenExchange(@PathParam("authIdHash") String authIdHash, @BeanParam ExternalUriInfo externalUriInfo)
     {
+        if (!externalAuthenticationConfirmationEnabled) {
+            return service.startOAuth2Challenge(externalUriInfo.absolutePath(CALLBACK_ENDPOINT), Optional.ofNullable(authIdHash));
+        }
         // authIdHash implicitly propagated via action=""
         // the browser POSTs to the same URL it's currently on (e.g. /oauth2/token/initiate/abc123),
         // so the authIdHash path segment is needed here on GET to be preserved on POST later

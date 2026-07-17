@@ -1015,6 +1015,73 @@ public class TestResourceSecurity
     }
 
     @Test
+    public void testOAuth2AuthenticationWithConfirmationDisabled()
+            throws Exception
+    {
+        CookieManager cookieManager = new CookieManager();
+        OkHttpClient client = this.client.newBuilder()
+                .cookieJar(new JavaNetCookieJar(cookieManager))
+                .build();
+
+        try (TokenServer tokenServer = new TokenServer(Optional.empty());
+                TestingTrinoServer server = TestingTrinoServer.builder()
+                        .setProperties(ImmutableMap.<String, String>builder()
+                                .putAll(SECURE_PROPERTIES)
+                                .put("http-server.authentication.type", "oauth2")
+                                .putAll(getOAuth2Properties(tokenServer))
+                                .put("http-server.authentication.oauth2.external-authentication.confirmation.enabled", "false")
+                                .buildOrThrow())
+                        .setAdditionalModule(oauth2Module(tokenServer))
+                        .setSystemAccessControl(TestSystemAccessControl.NO_IMPERSONATION)
+                        .build()) {
+            HttpServerInfo httpServerInfo = server.getInstance(Key.get(HttpServerInfo.class));
+            URI baseUri = httpServerInfo.getHttpsUri();
+
+            // get the initiate URL from the authenticate header
+            Request request = new Request.Builder()
+                    .url(getManagementLocation(baseUri))
+                    .build();
+            String redirectTo;
+            String tokenServerUri;
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_UNAUTHORIZED);
+                String authenticateHeader = response.header(WWW_AUTHENTICATE);
+                assertThat(authenticateHeader).isNotNull();
+                Pattern oauth2BearerPattern = Pattern.compile("Bearer x_redirect_server=\"(https://127.0.0.1:[0-9]+/oauth2/token/initiate/.+)\", x_token_server=\"(https://127.0.0.1:[0-9]+/oauth2/token/.+)\"");
+                Matcher matcher = oauth2BearerPattern.matcher(authenticateHeader);
+                assertThat(matcher.matches()).isTrue();
+                redirectTo = matcher.group(1);
+                tokenServerUri = matcher.group(2);
+            }
+
+            // GET redirects straight to the authorization server without the confirmation page
+            request = new Request.Builder()
+                    .url(redirectTo)
+                    .build();
+            String state;
+            try (Response response = client.newCall(request).execute()) {
+                assertThat(response.code()).isEqualTo(SC_SEE_OTHER);
+                String locationHeader = response.header(LOCATION);
+                assertThat(locationHeader).isNotNull();
+                Pattern locationPattern = Pattern.compile("http://example\\.com/authorize\\?(.+)");
+                Matcher matcher = locationPattern.matcher(locationHeader);
+                assertThat(matcher.matches()).isTrue();
+                state = matcher.group(1);
+            }
+
+            // complete the challenge with the callback endpoint and verify the client can fetch the token
+            assertOk(
+                    client,
+                    uriBuilderFrom(baseUri)
+                            .replacePath("/oauth2/callback/")
+                            .addParameter("code", "TEST_CODE")
+                            .addParameter("state", state)
+                            .toString());
+            assertThat(getOauthToken(client, tokenServerUri)).isEqualTo(tokenServer.getAccessToken());
+        }
+    }
+
+    @Test
     public void testOAuth2Groups()
             throws Exception
     {

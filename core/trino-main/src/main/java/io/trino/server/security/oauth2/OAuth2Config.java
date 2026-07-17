@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
+import io.airlift.configuration.ConfigHidden;
 import io.airlift.configuration.ConfigSecuritySensitive;
 import io.airlift.configuration.LegacyConfig;
 import io.airlift.configuration.validation.FileExists;
@@ -50,6 +51,7 @@ public class OAuth2Config
     private boolean enableRefreshTokens;
     private boolean enableDiscovery = true;
     private boolean usePrincipalFromIdToken;
+    private boolean externalAuthenticationConfirmationEnabled = true;
 
     public Optional<String> getStateKey()
     {
@@ -255,6 +257,20 @@ public class OAuth2Config
     public OAuth2Config setUsePrincipalFromIdToken(boolean usePrincipalFromIdToken)
     {
         this.usePrincipalFromIdToken = usePrincipalFromIdToken;
+        return this;
+    }
+
+    public boolean isExternalAuthenticationConfirmationEnabled()
+    {
+        return externalAuthenticationConfirmationEnabled;
+    }
+
+    @Config("http-server.authentication.oauth2.external-authentication.confirmation.enabled")
+    @ConfigHidden
+    @ConfigDescription("Require user confirmation before redirecting to the identity provider during external authentication. Disabling this reduces protection against phishing attacks")
+    public OAuth2Config setExternalAuthenticationConfirmationEnabled(boolean externalAuthenticationConfirmationEnabled)
+    {
+        this.externalAuthenticationConfirmationEnabled = externalAuthenticationConfirmationEnabled;
         return this;
     }
 }
