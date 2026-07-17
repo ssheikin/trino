@@ -940,6 +940,12 @@
                                     <new>method io.trino.spi.type.TypeDescriptor io.trino.spi.type.AbstractType::getTypeDescriptor()</new>
                                     <justification>Renamed getTypeSignature to getTypeDescriptor</justification>
                                 </item>
+                                <item>
+                                    <code>java.method.numberOfParametersChanged</code>
+                                    <old>method void io.trino.spi.security.AccessDeniedException::denyCreateViewWithSelect(java.lang.String, java.util.Optional&lt;java.lang.String&gt;, io.trino.spi.security.ConnectorIdentity, java.lang.String)</old>
+                                    <new>method void io.trino.spi.security.AccessDeniedException::denyCreateViewWithSelect(java.lang.String, java.util.Optional&lt;java.lang.String&gt;, java.lang.String)</new>
+                                    <justification>denyCreateViewWithSelect now takes the view owner's username (String) instead of ConnectorIdentity as part of adding branch-related factories to AccessDeniedException</justification>
+                                </item>
                             </differences>
                         </revapi.differences>
                     </analysisConfiguration>

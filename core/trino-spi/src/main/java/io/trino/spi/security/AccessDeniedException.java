@@ -520,7 +520,12 @@ public class AccessDeniedException
 
     public static void denyCreateViewWithSelect(String sourceName, ConnectorIdentity identity, String extraInfo)
     {
-        denyCreateViewWithSelect(sourceName, Optional.empty(), identity, extraInfo);
+        denyCreateViewWithSelect(sourceName, identity.getUser(), extraInfo);
+    }
+
+    public static void denyCreateViewWithSelect(String sourceName, String ownerName, String extraInfo)
+    {
+        denyCreateViewWithSelect(sourceName, Optional.empty(), ownerName, extraInfo);
     }
 
     public static void denyCreateViewWithSelect(String sourceName, Optional<String> branchName, Identity identity)
@@ -528,16 +533,21 @@ public class AccessDeniedException
         denyCreateViewWithSelect(sourceName, branchName, identity.toConnectorIdentity());
     }
 
-    public static void denyCreateViewWithSelect(String sourceName, Optional<String> branchName, ConnectorIdentity identity)
+    public static void denyCreateViewWithSelect(String sourceName, Optional<String> branchName, ConnectorIdentity connectorIdentity)
     {
-        denyCreateViewWithSelect(sourceName, branchName, identity, null);
+        denyCreateViewWithSelect(sourceName, branchName, connectorIdentity.getUser(), null);
     }
 
-    public static void denyCreateViewWithSelect(String sourceName, Optional<String> branchName, ConnectorIdentity identity, String extraInfo)
+    public static void denyCreateViewWithSelect(String sourceName, Optional<String> branchName, String ownerName)
+    {
+        denyCreateViewWithSelect(sourceName, branchName, ownerName, null);
+    }
+
+    public static void denyCreateViewWithSelect(String sourceName, Optional<String> branchName, String ownerName, String extraInfo)
     {
         throw new AccessDeniedException(branchName
-                .map(branch -> format("View owner '%s' cannot create view that selects from branch %s in %s%s", identity.getUser(), branch, sourceName, formatExtraInfo(extraInfo)))
-                .orElseGet(() -> format("View owner '%s' cannot create view that selects from %s%s", identity.getUser(), sourceName, formatExtraInfo(extraInfo))));
+                .map(branch -> format("View owner '%s' cannot create view that selects from branch %s in %s%s", ownerName, branch, sourceName, formatExtraInfo(extraInfo)))
+                .orElseGet(() -> format("View owner '%s' cannot create view that selects from %s%s", ownerName, sourceName, formatExtraInfo(extraInfo))));
     }
 
     public static void denyRenameView(String viewName, String newViewName)
@@ -576,6 +586,11 @@ public class AccessDeniedException
     public static void denySetViewAuthorization(String viewName, TrinoPrincipal principal, String extraInfo)
     {
         throw new AccessDeniedException(format("Cannot set authorization for view %s to %s%s", viewName, principal, formatExtraInfo(extraInfo)));
+    }
+
+    public static void denySetViewComment(String viewName, String extraInfo)
+    {
+        throw new AccessDeniedException(format("Cannot set comment for view %s%s", viewName, formatExtraInfo(extraInfo)));
     }
 
     public static void denyDropView(String viewName)
@@ -869,6 +884,11 @@ public class AccessDeniedException
     public static void denyExecuteFunction(String functionName)
     {
         throw new AccessDeniedException(format("Cannot execute function %s", functionName));
+    }
+
+    public static void denyExecuteFunction(String functionName, String extraInfo)
+    {
+        throw new AccessDeniedException(format("Cannot execute function %s%s", functionName, formatExtraInfo(extraInfo)));
     }
 
     public static void denyExecuteFunction(String functionName, FunctionKind functionKind, String extraInfo)

@@ -334,6 +334,9 @@ class TestingSystemSecurityMetadata
     public void columnTypeChanged(Session session, CatalogSchemaTableName table, String column, String oldType, String newType) {}
 
     @Override
+    public void finishStatisticsCollection(Session session, CatalogSchemaTableName table) {}
+
+    @Override
     public void columnNotNullConstraintDropped(Session session, CatalogSchemaTableName table, String column) {}
 
     @Override

@@ -1025,6 +1025,24 @@
             <!-- starburst-shared-components: external artifacts from the stargate repo -->
             <dependency>
                 <groupId>io.starburst.stargate</groupId>
+                <artifactId>access-control-client</artifactId>
+                <version>${dep.starburst-shared.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.starburst.stargate</groupId>
+                <artifactId>access-control-client-models</artifactId>
+                <version>${dep.starburst-shared.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.starburst.stargate</groupId>
+                <artifactId>cockroach-testing</artifactId>
+                <version>${dep.starburst-shared.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.starburst.stargate</groupId>
                 <artifactId>icehouse-spi</artifactId>
                 <version>${dep.starburst-shared.version}</version>
             </dependency>
@@ -1050,6 +1068,12 @@
             <dependency>
                 <groupId>io.starburst.stargate</groupId>
                 <artifactId>starburst-crypto</artifactId>
+                <version>${dep.starburst-shared.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.starburst.stargate</groupId>
+                <artifactId>stargate-exceptions</artifactId>
                 <version>${dep.starburst-shared.version}</version>
             </dependency>
 

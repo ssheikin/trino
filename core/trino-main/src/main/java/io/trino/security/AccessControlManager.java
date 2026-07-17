@@ -35,6 +35,7 @@ import io.trino.plugin.base.security.ForwardingSystemAccessControl;
 import io.trino.plugin.base.security.ReadOnlySystemAccessControl;
 import io.trino.plugin.base.util.AutoCloseableCloser;
 import io.trino.server.PluginClassLoader;
+import io.trino.server.starburst.accesscontrol.GalaxyAccessControl;
 import io.trino.spi.NodeVersion;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
@@ -91,7 +92,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.airlift.configuration.ConfigurationLoader.loadPropertiesFrom;
+import static io.trino.server.starburst.security.GalaxyIdentity.isViewOwnerIdentity;
 import static io.trino.spi.StandardErrorCode.INVALID_COLUMN_MASK;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.trino.spi.StandardErrorCode.SERVER_STARTING_UP;
@@ -617,7 +620,18 @@ public class AccessControlManager
             return ImmutableSet.of();
         }
 
-        if (filterCatalogs(securityContext, ImmutableSet.of(catalogName)).isEmpty()) {
+        if (isGalaxyAccessControl()) {
+            // This call is meant as a pre-filter, but in Galaxy filterCatalogs is actually expensive
+            // as it is derived from visibility of contained relations, so only pay for it when
+            // information_schema is present (where it is needed to hide the schema).
+            // TODO (https://github.com/starburstdata/stargate/issues/12932) we probably can skip the check for information_schema as well
+            //  but this requires more discussion
+            if (schemaNames.contains("information_schema")
+                    && filterCatalogs(securityContext, ImmutableSet.of(catalogName)).isEmpty()) {
+                return ImmutableSet.of();
+            }
+        }
+        else if (filterCatalogs(securityContext, ImmutableSet.of(catalogName)).isEmpty()) {
             return ImmutableSet.of();
         }
 
@@ -776,7 +790,25 @@ public class AccessControlManager
             return ImmutableSet.of();
         }
 
-        if (filterCatalogs(securityContext, ImmutableSet.of(catalogName)).isEmpty()) {
+        if (isGalaxyAccessControl()) {
+            // This call is meant as a pre-filter, but in Galaxy filterCatalogs is actually expensive
+            // as it is derived from visibility of contained relations, so only pay for it when
+            // information_schema is present (where it is needed to hide the schema).
+            // TODO (https://github.com/starburstdata/stargate/issues/12932) we probably can skip the check for information_schema as well
+            //  but this requires more discussion
+            if (tableNames.stream().map(SchemaTableName::getSchemaName).anyMatch("information_schema"::equals)
+                    && filterCatalogs(securityContext, ImmutableSet.of(catalogName)).isEmpty()) {
+                return ImmutableSet.of();
+            }
+
+            // Don't do visibility checks for views, because we can't edit dispatch tokens to have the view owner's
+            // information, which means that any query to the table visibility API will be using the querying session's context.
+            // See https://github.com/starburstdata/stargate/issues/15283
+            if (isViewOwnerIdentity(securityContext.getIdentity())) {
+                return tableNames;
+            }
+        }
+        else if (filterCatalogs(securityContext, ImmutableSet.of(catalogName)).isEmpty()) {
             return ImmutableSet.of();
         }
 
@@ -834,9 +866,24 @@ public class AccessControlManager
         requireNonNull(catalogName, "catalogName is null");
         requireNonNull(tableColumns, "tableColumns is null");
 
-        Set<SchemaTableName> filteredTables = filterTables(securityContext, catalogName, tableColumns.keySet());
-        if (!filteredTables.equals(tableColumns.keySet())) {
-            tableColumns = Maps.filterKeys(tableColumns, filteredTables::contains);
+        if (isGalaxyAccessControl()) {
+            // This call is meant as a pre-filter, but in Galaxy filterTables is actually expensive,
+            // so only pay for it when information_schema is present; the privilege checks happen in
+            // filterColumns below regardless.
+            // TODO (https://github.com/starburstdata/stargate/issues/12932) we probably can skip the check for information_schema as well
+            //  but this requires more discussion
+            if (tableColumns.keySet().stream().anyMatch(schemaTableName -> "information_schema".equals(schemaTableName.getSchemaName()))) {
+                Set<SchemaTableName> filteredTables = filterTables(securityContext, catalogName, tableColumns.keySet());
+                if (!filteredTables.equals(tableColumns.keySet())) {
+                    tableColumns = Maps.filterKeys(tableColumns, filteredTables::contains);
+                }
+            }
+        }
+        else {
+            Set<SchemaTableName> filteredTables = filterTables(securityContext, catalogName, tableColumns.keySet());
+            if (!filteredTables.equals(tableColumns.keySet())) {
+                tableColumns = Maps.filterKeys(tableColumns, filteredTables::contains);
+            }
         }
 
         if (tableColumns.isEmpty()) {
@@ -1861,6 +1908,15 @@ public class AccessControlManager
             return locationControls;
         }
         return ImmutableList.of(new InitializingLocationAccessControl());
+    }
+
+    private boolean isGalaxyAccessControl()
+    {
+        List<SystemAccessControl> accessControls = getSystemAccessControls();
+        // Apply the Galaxy pre-filter optimizations only when GalaxyAccessControl is the sole system
+        // access control. They weaken the filterCatalogs/filterTables pre-filter that wraps the whole
+        // access-control chain, so they are only safe when nothing else is in the chain
+        return accessControls.size() == 1 && getOnlyElement(accessControls) instanceof GalaxyAccessControl;
     }
 
     private ConnectorSecurityContext toConnectorSecurityContext(String catalogName, SecurityContext securityContext)

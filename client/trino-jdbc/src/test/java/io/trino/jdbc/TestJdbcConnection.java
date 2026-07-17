@@ -84,6 +84,7 @@ import static io.trino.client.ClientSelectedRole.Type.ROLE;
 import static io.trino.metadata.MetadataUtil.TableMetadataBuilder.tableMetadataBuilder;
 import static io.trino.server.HttpRequestSessionContextFactory.REMOTE_USER_ADDRESS_KEY;
 import static io.trino.server.security.jwt.JwtUtil.newJwtBuilder;
+import static io.trino.server.starburst.accesscontrol.MetadataAccessControllerSupplier.TRANSACTION_ID_KEY;
 import static io.trino.spi.connector.SystemTable.Distribution.ALL_NODES;
 import static io.trino.spi.type.VarcharType.createUnboundedVarcharType;
 import static io.trino.testing.assertions.Assert.assertEventually;
@@ -447,8 +448,10 @@ public class TestJdbcConnection
                     .buildOrThrow();
             TrinoConnection trinoConnection = connection.unwrap(TrinoConnection.class);
             assertThat(trinoConnection.getExtraCredentials()).isEqualTo(expectedCredentials);
-            assertThat(listExtraCredentials(connection)).isEqualTo(ImmutableMap.builder().putAll(expectedCredentials)
+            Map<String, String> actualCredentials = listExtraCredentials(connection);
+            assertThat(actualCredentials).containsAllEntriesOf(ImmutableMap.<String, String>builder().putAll(expectedCredentials)
                     .put(REMOTE_USER_ADDRESS_KEY, "127.0.0.1").buildOrThrow());
+            assertThat(actualCredentials).containsKey(TRANSACTION_ID_KEY);
         }
     }
 

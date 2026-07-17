@@ -324,4 +324,10 @@ public abstract class ForwardingSystemSecurityMetadata
     {
         return delegate().getFunctionsAuthorizationInfo(session, prefix);
     }
+
+    @Override
+    public void finishStatisticsCollection(Session session, CatalogSchemaTableName table)
+    {
+        delegate().finishStatisticsCollection(session, table);
+    }
 }
