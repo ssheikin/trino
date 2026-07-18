@@ -57,6 +57,7 @@ import io.trino.plugin.iceberg.encryption.DefaultEncryptionManagerFactory;
 import io.trino.plugin.iceberg.encryption.EncryptionManagerFactory;
 import io.trino.plugin.iceberg.encryption.IcebergEncryptionConfig;
 import io.trino.plugin.iceberg.fileio.ForwardingFileIoFactory;
+import io.trino.plugin.iceberg.procedure.CreateChangelogView;
 import org.apache.iceberg.PartitionStatisticsWriter;
 
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
@@ -86,6 +87,7 @@ public class LakehouseIcebergModule
         binder.bind(DeletionVectorWriter.class).to(DefaultDeletionVectorWriter.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, IcebergMetadataFactoryInterface.class)
                 .setBinding().to(IcebergMetadataFactory.class).in(Scopes.SINGLETON);
+        binder.bind(CreateChangelogView.class).in(Scopes.SINGLETON);
         binder.bind(IcebergFileWriterFactory.class).in(Scopes.SINGLETON);
         binder.bind(TableStatisticsReader.class).in(Scopes.SINGLETON);
         binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
