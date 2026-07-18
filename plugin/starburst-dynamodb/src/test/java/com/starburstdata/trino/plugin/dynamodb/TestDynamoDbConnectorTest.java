@@ -132,12 +132,12 @@ public class TestDynamoDbConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().toAbsolutePath()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().getAbsolutePath()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().toAbsolutePath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, "amazondynamodb"));
 
-            String secondSchemaDir = server.getSchemaDirectory().getAbsolutePath() + "/second/";
+            String secondSchemaDir = server.getSchemaDirectory().toAbsolutePath() + "/second/";
             createDir(secondSchemaDir);
             assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, server.getEndpointUrl(), secondSchemaDir));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
