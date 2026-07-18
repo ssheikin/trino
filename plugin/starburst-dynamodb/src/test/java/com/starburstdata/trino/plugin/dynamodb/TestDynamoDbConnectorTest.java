@@ -12,17 +12,24 @@ package com.starburstdata.trino.plugin.dynamodb;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.trino.plugin.jdbc.BaseJdbcConnectorTest;
+import io.trino.plugin.jdbc.credential.CredentialPropertiesProvider;
+import io.trino.spi.security.ConnectorIdentity;
 import io.trino.testing.MaterializedResult;
 import io.trino.testing.QueryRunner;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.SqlExecutor;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.testing.MaterializedResult.resultBuilder;
@@ -44,14 +51,24 @@ public class TestDynamoDbConnectorTest
                "dynamodb.endpoint-url" = '%s',
                "dynamodb.schema-directory" = '%s'
             )""";
-    private TestingDynamoDbServer server;
+
+    @TempDir
+    private static Path schemaDirectory;
+
+    private DynamoDbConfig dynamoDbConfig;
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        this.server = closeAfterClass(new TestingDynamoDbServer());
-        return DynamoDbQueryRunner.builder(server.getSchemaDirectory())
+        TestingDynamoDbServer server = closeAfterClass(new TestingDynamoDbServer());
+        dynamoDbConfig = new DynamoDbConfig()
+                .setAwsAccessKey("accessKey")
+                .setAwsSecretKey("secretKey")
+                .setPredicatePushdownEnabled(true)
+                .setEndpointUrl(server.getEndpointUrl());
+        return DynamoDbQueryRunner.builder()
+                .setSchemaDirectory(schemaDirectory)
                 .setEndpointUrl(server.getEndpointUrl())
                 .setAwsAccessKey("accessKey")
                 .setAwsSecretKey("secretKey")
@@ -63,7 +80,21 @@ public class TestDynamoDbConnectorTest
     @Override
     protected SqlExecutor onRemoteDatabase()
     {
-        return server::execute;
+        return this::executeOnRemoteDatabase;
+    }
+
+    private void executeOnRemoteDatabase(String sql)
+    {
+        CredentialPropertiesProvider propertiesProvider = new ConfigCredentialPropertiesProvider(dynamoDbConfig, new AwsRolePropertiesProvider(dynamoDbConfig));
+        Properties properties = new Properties();
+        properties.putAll(propertiesProvider.getCredentialProperties(ConnectorIdentity.ofUser("user")));
+        try (Connection connection = DriverManager.getConnection(DynamoDbConnectionFactory.getConnectionUrl(dynamoDbConfig), properties);
+                Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to execute statement: " + sql, e);
+        }
     }
 
     @Override
@@ -132,16 +163,16 @@ public class TestDynamoDbConnectorTest
         String firstCatalog = "catalog1_" + randomNameSuffix();
         String secondCatalog = "catalog2_" + randomNameSuffix();
         try {
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().toAbsolutePath()));
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, dynamoDbConfig.getEndpointUrl().orElseThrow(), schemaDirectory.toAbsolutePath()));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + firstCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, server.getEndpointUrl(), server.getSchemaDirectory().toAbsolutePath()));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(firstCatalog, dynamoDbConfig.getEndpointUrl().orElseThrow(), schemaDirectory.toAbsolutePath()));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(firstCatalog, "amazondynamodb"));
 
-            String secondSchemaDir = server.getSchemaDirectory().toAbsolutePath() + "/second/";
+            String secondSchemaDir = schemaDirectory.toAbsolutePath() + "/second/";
             createDir(secondSchemaDir);
-            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, server.getEndpointUrl(), secondSchemaDir));
+            assertUpdate(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, dynamoDbConfig.getEndpointUrl().orElseThrow(), secondSchemaDir));
             assertThat((String) computeActual("SHOW CREATE CATALOG " + secondCatalog).getOnlyValue())
-                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, server.getEndpointUrl(), secondSchemaDir));
+                    .isEqualTo(CREATE_CATALOG_SQL_TEMPLATE.formatted(secondCatalog, dynamoDbConfig.getEndpointUrl().orElseThrow(), secondSchemaDir));
             assertQuerySucceeds("SHOW TABLES FROM %s.%s".formatted(secondCatalog, "amazondynamodb"));
         }
         finally {
