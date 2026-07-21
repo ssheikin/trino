@@ -27,8 +27,10 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import static io.trino.testing.assertions.Assert.assertEventually;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -48,6 +50,8 @@ public class HiveHadoop
         return new Builder();
     }
 
+    private final Function<String, String> runOnHive;
+
     private HiveHadoop(
             String image,
             String hostName,
@@ -55,7 +59,8 @@ public class HiveHadoop
             Map<String, String> filesToMount,
             Map<String, String> envVars,
             Optional<Network> network,
-            int startupRetryLimit)
+            int startupRetryLimit,
+            Optional<Function<String, String>> runOnHive)
     {
         super(image,
                 hostName,
@@ -64,6 +69,7 @@ public class HiveHadoop
                 envVars,
                 network,
                 startupRetryLimit);
+        this.runOnHive = runOnHive.orElseGet(() -> this::runOnHiveViaBeeline);
     }
 
     @Override
@@ -90,6 +96,11 @@ public class HiveHadoop
 
     public String runOnHive(String query)
     {
+        return runOnHive.apply(query);
+    }
+
+    private String runOnHiveViaBeeline(String query)
+    {
         return executeInContainerFailOnError("beeline", "-u", "jdbc:hive2://localhost:10000/default", "-n", "hive", "-e", query);
     }
 
@@ -107,6 +118,8 @@ public class HiveHadoop
     public static class Builder
             extends BaseTestContainer.Builder<HiveHadoop.Builder, HiveHadoop>
     {
+        private Optional<Function<String, String>> runOnHive = Optional.empty();
+
         private Builder()
         {
             this.image = HIVE3_IMAGE;
@@ -114,10 +127,19 @@ public class HiveHadoop
             this.exposePorts = ImmutableSet.of(HIVE_METASTORE_PORT);
         }
 
+        // Allows callers using a Hive image incompatible with the default beeline-based
+        // runOnHive (and the readiness check in start(), which runs through it) to substitute
+        // their own implementation.
+        public Builder withRunOnHive(Function<String, String> runOnHive)
+        {
+            this.runOnHive = Optional.of(requireNonNull(runOnHive, "runOnHive is null"));
+            return this;
+        }
+
         @Override
         public HiveHadoop build()
         {
-            return new HiveHadoop(image, hostName, exposePorts, filesToMount, envVars, network, startupRetryLimit);
+            return new HiveHadoop(image, hostName, exposePorts, filesToMount, envVars, network, startupRetryLimit, runOnHive);
         }
     }
 }
