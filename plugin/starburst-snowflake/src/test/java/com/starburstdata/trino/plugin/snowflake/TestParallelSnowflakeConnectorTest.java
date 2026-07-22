@@ -1635,13 +1635,6 @@ public class TestParallelSnowflakeConnectorTest
                 "snowflakeQueryExecutionTime");
     }
 
-    private Session experimentalPushdownEnabled()
-    {
-        return Session.builder(getSession())
-                .setCatalogSessionProperty("snowflake", "experimental_pushdown_enabled", "true")
-                .build();
-    }
-
     @Test
     public void testCreateDropMultipleCatalogs()
     {
@@ -1763,6 +1756,46 @@ public class TestParallelSnowflakeConnectorTest
                     .rowCount()
                     .isEqualTo(1);
         }
+    }
+
+    @Test
+    public void testApproximateNumericConstantPushdown()
+    {
+        try (TestTable table = new TestTable(
+                onRemoteDatabase(),
+                getSession().getSchema().orElseThrow() + ".approx_numeric_constant",
+                "(a_double DOUBLE)",
+                ImmutableList.of(
+                        "-1.5",
+                        "0.0",
+                        "2.5",
+                        "cast('NaN' as double)",
+                        "cast('Infinity' as double)",
+                        "cast('-Infinity' as double)"))) {
+            assertThat(query("SELECT * FROM " + table.getName() + " WHERE a_double IS NOT DISTINCT FROM DOUBLE '2.5'"))
+                    .isFullyPushedDown()
+                    .hasCorrectResultsRegardlessOfPushdown()
+                    .result().rowCount().isEqualTo(1);
+            assertThat(query("SELECT * FROM " + table.getName() + " WHERE a_double IS NOT DISTINCT FROM DOUBLE 'NaN'"))
+                    .isFullyPushedDown()
+                    .hasCorrectResultsRegardlessOfPushdown()
+                    .result().rowCount().isEqualTo(1);
+            assertThat(query("SELECT * FROM " + table.getName() + " WHERE a_double IS NOT DISTINCT FROM DOUBLE 'Infinity'"))
+                    .isFullyPushedDown()
+                    .hasCorrectResultsRegardlessOfPushdown()
+                    .result().rowCount().isEqualTo(1);
+            assertThat(query("SELECT * FROM " + table.getName() + " WHERE a_double IS NOT DISTINCT FROM DOUBLE '-Infinity'"))
+                    .isFullyPushedDown()
+                    .hasCorrectResultsRegardlessOfPushdown()
+                    .result().rowCount().isEqualTo(1);
+        }
+    }
+
+    private Session experimentalPushdownEnabled()
+    {
+        return Session.builder(getSession())
+                .setCatalogSessionProperty("snowflake", "experimental_pushdown_enabled", "true")
+                .build();
     }
 
     private static String jsonExtractPushdownTestTableDefinition()
