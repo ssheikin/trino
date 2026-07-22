@@ -151,6 +151,7 @@ import io.trino.operator.PagesIndexPageSorter;
 import io.trino.operator.SplitDriverFactory;
 import io.trino.operator.TaskContext;
 import io.trino.operator.gpu.GpuConfig;
+import io.trino.operator.gpu.GpuExecutionSemaphore;
 import io.trino.operator.gpu.GpuNodeSetup;
 import io.trino.operator.index.IndexJoinLookupStats;
 import io.trino.operator.index.IndexManager;
@@ -944,6 +945,7 @@ public class PlanTester
         TaskContext taskContext = createTaskContext(notificationExecutor, yieldExecutor, session, tableCredentials);
         TableExecuteContextManager tableExecuteContextManager = new TableExecuteContextManager();
         tableExecuteContextManager.registerTableExecuteContextForQuery(taskContext.getQueryContext().getQueryId());
+        GpuConfig gpuConfig = new GpuConfig();
         LocalExecutionPlanner executionPlanner = new LocalExecutionPlanner(
                 plannerContext,
                 Optional.empty(),
@@ -958,7 +960,8 @@ public class PlanTester
                 expressionCompiler,
                 pageFunctionCompiler,
                 new GpuNodeSetup.Disabled(),
-                new GpuConfig(),
+                gpuConfig,
+                new GpuExecutionSemaphore(gpuConfig),
                 joinFilterFunctionCompiler,
                 new IndexJoinLookupStats(),
                 new CacheStats(),
