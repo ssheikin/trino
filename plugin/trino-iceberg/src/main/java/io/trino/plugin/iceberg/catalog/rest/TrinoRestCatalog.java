@@ -151,6 +151,7 @@ public class TrinoRestCatalog
     private final Cache<TableIdentifier, TableIdentifier> remoteTableMappingCache;
     private final boolean viewEndpointsEnabled;
     private final Executor metadataFetchingExecutor;
+    private final boolean serverAssignedTableLocationEnabled;
 
     private final Cache<SchemaTableName, BaseTable> tableCache = EvictableCacheBuilder.newBuilder()
             .maximumSize(PER_QUERY_CACHE_SIZE)
@@ -171,7 +172,8 @@ public class TrinoRestCatalog
             Cache<Namespace, Namespace> remoteNamespaceMappingCache,
             Cache<TableIdentifier, TableIdentifier> remoteTableMappingCache,
             boolean viewEndpointsEnabled,
-            Executor metadataFetchingExecutor)
+            Executor metadataFetchingExecutor,
+            boolean serverAssignedTableLocationEnabled)
     {
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.restSessionCatalog = requireNonNull(restSessionCatalog, "restSessionCatalog is null");
@@ -188,6 +190,7 @@ public class TrinoRestCatalog
         this.remoteTableMappingCache = requireNonNull(remoteTableMappingCache, "remoteTableMappingCache is null");
         this.viewEndpointsEnabled = viewEndpointsEnabled;
         this.metadataFetchingExecutor = requireNonNull(metadataFetchingExecutor, "metadataFetchingExecutor is null");
+        this.serverAssignedTableLocationEnabled = serverAssignedTableLocationEnabled;
     }
 
     @Override
@@ -765,6 +768,10 @@ public class TrinoRestCatalog
     @Override
     public String defaultTableLocation(ConnectorSession session, SchemaTableName schemaTableName)
     {
+        if (serverAssignedTableLocationEnabled) {
+            return null;
+        }
+
         String tableName = createLocationForTable(schemaTableName.getTableName());
 
         Map<String, Object> properties = loadNamespaceMetadata(session, schemaTableName.getSchemaName());
