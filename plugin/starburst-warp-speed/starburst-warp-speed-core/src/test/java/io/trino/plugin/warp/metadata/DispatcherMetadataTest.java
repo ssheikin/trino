@@ -61,6 +61,7 @@ import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.expression.Constant;
 import io.trino.spi.expression.StandardFunctions;
 import io.trino.spi.expression.Variable;
+import io.trino.spi.metrics.Metrics;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.Range;
 import io.trino.spi.predicate.TupleDomain;
@@ -482,7 +483,7 @@ public class DispatcherMetadataTest
                         TupleDomain.all(),
                         Optional.empty()),
                 Optional.empty(),
-                Collections.emptyList(),
+                Metrics.EMPTY,
                 false,
                 Set.of());
     }
