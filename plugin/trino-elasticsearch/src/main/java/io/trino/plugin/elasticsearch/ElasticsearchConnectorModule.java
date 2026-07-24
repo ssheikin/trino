@@ -26,6 +26,7 @@ import io.trino.plugin.elasticsearch.client.ElasticRestClientConfigurator;
 import io.trino.plugin.elasticsearch.client.ElasticsearchClient;
 import io.trino.plugin.elasticsearch.client.ElasticsearchClientStats;
 import io.trino.plugin.elasticsearch.ptf.RawQuery;
+import io.trino.plugin.elasticsearch.substitution.ElasticsearchSubstitutionMetadata;
 import io.trino.spi.TrinoException;
 import io.trino.spi.function.table.ConnectorTableFunction;
 import org.apache.http.HttpHost;
@@ -62,7 +63,7 @@ public class ElasticsearchConnectorModule
     {
         binder.bind(ElasticsearchConnector.class).in(Scopes.SINGLETON);
         binder.bind(ElasticsearchMetadataFactory.class).in(Scopes.SINGLETON);
-
+        binder.bind(ElasticsearchSubstitutionMetadata.class).in(Scopes.SINGLETON);
         binder.bind(ElasticsearchSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(ElasticsearchPageSourceProvider.class).in(Scopes.SINGLETON);
         binder.bind(NodesSystemTable.class).in(Scopes.SINGLETON);
