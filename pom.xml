@@ -185,8 +185,6 @@
     </scm>
 
     <properties>
-        <!-- todo: remove when airbase version matches this one -->
-        <dep.plugin.airstyle.version>7</dep.plugin.airstyle.version>
         <project.build.targetJdk>25</project.build.targetJdk>
         <!-- for reproducible build support, updated by release plugin -->
         <project.build.outputTimestamp>2025-04-16T09:58:47Z</project.build.outputTimestamp>
