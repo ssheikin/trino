@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAccumulator;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.plugin.base.util.ExecutorUtil.processWithAdditionalThreads;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
@@ -110,16 +109,17 @@ public class RemoveDanglingDeleteFiles
 
     private Set<String> collectDeleteFileReferencedDataFilePaths(BaseTable icebergTable, Snapshot currentSnapshot)
     {
+        Set<String> referencedDataFilePaths = ConcurrentHashMap.newKeySet();
         try {
-            return processWithAdditionalThreads(
+            processWithAdditionalThreads(
                     currentSnapshot.deleteManifests(icebergTable.io()).stream()
-                            .<Callable<Set<String>>>map(manifest ->
-                                    () -> collectDeleteFileReferencedPathsFromManifest(icebergTable, manifest))
+                            .<Callable<Void>>map(manifest ->
+                                    () -> {
+                                        collectDeleteFileReferencedPathsFromManifest(icebergTable, manifest, referencedDataFilePaths);
+                                        return null;
+                                    })
                             .collect(toImmutableList()),
-                    icebergScanExecutor)
-                    .stream()
-                    .flatMap(Set::stream)
-                    .collect(toImmutableSet());
+                    icebergScanExecutor);
         }
         catch (ExecutionException e) {
             if (e.getCause() instanceof TrinoException trinoException) {
@@ -127,11 +127,11 @@ public class RemoveDanglingDeleteFiles
             }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to process delete manifests for table: " + icebergTable.name(), e);
         }
+        return referencedDataFilePaths;
     }
 
-    private static Set<String> collectDeleteFileReferencedPathsFromManifest(BaseTable icebergTable, ManifestFile manifest)
+    private static void collectDeleteFileReferencedPathsFromManifest(BaseTable icebergTable, ManifestFile manifest, Set<String> referencedDataFilePaths)
     {
-        ImmutableSet.Builder<String> referencedDataFilePathsBuilder = ImmutableSet.builder();
         try (ManifestReader<? extends ContentFile<?>> manifestReader = readerForManifest(manifest, icebergTable);
                 CloseableIterator<? extends ContentFile<?>> readerIterator = manifestReader.iterator()) {
             while (readerIterator.hasNext()) {
@@ -139,7 +139,7 @@ public class RemoveDanglingDeleteFiles
                 if (contentFile instanceof DeleteFile deleteFile) {
                     String referencedDataFile = ContentFileUtil.referencedDataFileLocation(deleteFile);
                     if (referencedDataFile != null) {
-                        referencedDataFilePathsBuilder.add(referencedDataFile);
+                        referencedDataFilePaths.add(referencedDataFile);
                     }
                 }
             }
@@ -150,7 +150,6 @@ public class RemoveDanglingDeleteFiles
             }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
         }
-        return referencedDataFilePathsBuilder.build();
     }
 
     private DataFilesMinSequenceNumberMetadata processDataManifests(
