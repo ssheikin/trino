@@ -279,7 +279,51 @@ public class KuduMetadata
         if (tableMetadata.getColumns().stream().map(ColumnMetadata::getComment).anyMatch(Optional::isPresent)) {
             throw new TrinoException(NOT_SUPPORTED, "This connector does not support creating tables with column comment");
         }
-        clientSession.createTable(session, tableMetadata, saveMode == IGNORE);
+        clientSession.createTable(session, withGeneratedPrimaryKeyIfMissing(tableMetadata), saveMode == IGNORE);
+    }
+
+    private static ConnectorTableMetadata withGeneratedPrimaryKeyIfMissing(ConnectorTableMetadata tableMetadata)
+    {
+        if (tableMetadata.getColumns().stream().anyMatch(column -> column.getName().equals(ROW_ID))) {
+            throw new TrinoException(
+                    NOT_SUPPORTED,
+                    "Column name '%s' is reserved for the auto-generated primary key. Rename the column.".formatted(ROW_ID));
+        }
+
+        boolean hasPrimaryKey = tableMetadata.getColumns().stream()
+                .anyMatch(column -> Boolean.TRUE.equals(column.getProperties().get(KuduColumnProperties.PRIMARY_KEY)));
+        if (hasPrimaryKey) {
+            return tableMetadata;
+        }
+
+        // Kudu requires every partition column to be part of the primary key. When the user specifies
+        // explicit hash/range partitions but no primary key column, we cannot safely synthesize a key —
+        // doing so would leave the user-supplied partition columns outside the primary key and cause a
+        // Kudu schema error. Require the user to mark at least one column explicitly instead.
+        if (KuduTableProperties.getPartitionDesign(tableMetadata.getProperties()).hasPartitions()) {
+            throw new TrinoException(NOT_SUPPORTED,
+                    "Kudu tables with explicit partition columns require at least one primary key column. " +
+                            "Add WITH (primary_key=true) to a column, or omit partition columns to use an auto-generated primary key.");
+        }
+
+        List<ColumnMetadata> columns = new ArrayList<>(tableMetadata.getColumns());
+        columns.add(0, ColumnMetadata.builder()
+                .setName(ROW_ID)
+                .setType(VarcharType.VARCHAR)
+                .setComment(Optional.of("key=true"))
+                .setHidden(true)
+                .setProperties(ImmutableMap.of(KuduColumnProperties.PRIMARY_KEY, true))
+                .build());
+
+        Map<String, Object> properties = new HashMap<>(tableMetadata.getProperties());
+        properties.put(KuduTableProperties.PARTITION_BY_HASH_COLUMNS, ImmutableList.of(ROW_ID));
+        properties.put(KuduTableProperties.PARTITION_BY_HASH_BUCKETS, 2);
+
+        return new ConnectorTableMetadata(
+                tableMetadata.getTable(),
+                ImmutableList.copyOf(columns),
+                ImmutableMap.copyOf(properties),
+                tableMetadata.getComment());
     }
 
     @Override
@@ -375,32 +419,9 @@ public class KuduMetadata
             throw new TrinoException(NOT_SUPPORTED, "This connector does not support replacing tables");
         }
 
-        PartitionDesign design = KuduTableProperties.getPartitionDesign(tableMetadata.getProperties());
-        boolean generateUUID = !design.hasPartitions();
-        ConnectorTableMetadata finalTableMetadata = tableMetadata;
-        if (generateUUID) {
-            String rowId = ROW_ID;
-            List<ColumnMetadata> copy = new ArrayList<>(tableMetadata.getColumns());
-            Map<String, Object> columnProperties = new HashMap<>();
-            columnProperties.put(KuduColumnProperties.PRIMARY_KEY, true);
-            copy.add(0, ColumnMetadata.builder()
-                    .setName(rowId)
-                    .setType(VarcharType.VARCHAR)
-                    .setComment(Optional.of("key=true"))
-                    .setHidden(true)
-                    .setProperties(columnProperties)
-                    .build());
-            List<ColumnMetadata> finalColumns = ImmutableList.copyOf(copy);
-            Map<String, Object> propsCopy = new HashMap<>(tableMetadata.getProperties());
-            propsCopy.put(KuduTableProperties.PARTITION_BY_HASH_COLUMNS, ImmutableList.of(rowId));
-            propsCopy.put(KuduTableProperties.PARTITION_BY_HASH_BUCKETS, 2);
-            Map<String, Object> finalProperties = ImmutableMap.copyOf(propsCopy);
-            finalTableMetadata = new ConnectorTableMetadata(
-                    tableMetadata.getTable(),
-                    finalColumns,
-                    finalProperties,
-                    tableMetadata.getComment());
-        }
+        ConnectorTableMetadata finalTableMetadata = withGeneratedPrimaryKeyIfMissing(tableMetadata);
+        boolean generateUUID = finalTableMetadata.getColumns().stream()
+                .anyMatch(column -> column.getName().equals(ROW_ID));
         KuduTable table = clientSession.createTable(session, finalTableMetadata, false);
 
         Schema schema = table.getSchema();

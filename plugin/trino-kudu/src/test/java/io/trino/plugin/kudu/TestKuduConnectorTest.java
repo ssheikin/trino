@@ -339,16 +339,6 @@ public class TestKuduConnectorTest
     }
 
     @Test
-    @Override
-    public void testAddNotNullColumnToEmptyTable()
-    {
-        // TODO: Enable this test
-        assertThatThrownBy(super::testAddNotNullColumnToEmptyTable)
-                .hasMessage("must specify at least one key column");
-        abort("TODO");
-    }
-
-    @Test
     public void testProjection()
     {
         assertUpdate("CREATE TABLE IF NOT EXISTS test_projection (" +
@@ -452,6 +442,59 @@ public class TestKuduConnectorTest
 
         // assertUpdate("DROP TABLE " + tableNameLike);
         // assertFalse(getQueryRunner().tableExists(getSession(), tableNameLike));
+    }
+
+    @Test
+    public void testCreateTableWithExplicitHashPartitionRequiresPrimaryKey()
+    {
+        assertQueryFails(
+                "CREATE TABLE test_hash_no_pk_" + randomNameSuffix() + " (a varchar, b bigint)" +
+                        " WITH (partition_by_hash_columns = ARRAY['a'], partition_by_hash_buckets = 2)",
+                "Kudu tables with explicit partition columns require at least one primary key column.*");
+    }
+
+    @Test
+    public void testCreateTableWithExplicitRangePartitionRequiresPrimaryKey()
+    {
+        assertQueryFails(
+                "CREATE TABLE test_range_no_pk_" + randomNameSuffix() + " (a varchar, b bigint)" +
+                        " WITH (partition_by_range_columns = ARRAY['a'])",
+                "Kudu tables with explicit partition columns require at least one primary key column.*");
+    }
+
+    @Test
+    public void testCreateTableWithReservedRowUuidColumnName()
+    {
+        // no primary_key marker
+        assertQueryFails(
+                "CREATE TABLE test_row_uuid_" + randomNameSuffix() + " (row_uuid varchar, b bigint)",
+                "Column name 'row_uuid' is reserved for the auto-generated primary key.*");
+        // with primary_key=true: the name check must fire before the hasPrimaryKey short-circuit,
+        // otherwise getColumnsMetadata would silently hide the column and inserts would overwrite it
+        assertQueryFails(
+                "CREATE TABLE test_row_uuid_pk_" + randomNameSuffix() +
+                        " (row_uuid varchar WITH (primary_key=true), b bigint)" +
+                        " WITH (partition_by_hash_columns = ARRAY['row_uuid'], partition_by_hash_buckets = 2)",
+                "Column name 'row_uuid' is reserved for the auto-generated primary key.*");
+    }
+
+    @Test
+    public void testCtasWithExplicitHashPartitionRequiresPrimaryKey()
+    {
+        assertQueryFails(
+                "CREATE TABLE test_ctas_hash_no_pk_" + randomNameSuffix() +
+                        " WITH (partition_by_hash_columns = ARRAY['a'], partition_by_hash_buckets = 2)" +
+                        " AS SELECT 'x' AS a, 1 AS b",
+                "Kudu tables with explicit partition columns require at least one primary key column.*");
+    }
+
+    @Test
+    public void testCtasWithReservedRowUuidColumnName()
+    {
+        assertQueryFails(
+                "CREATE TABLE test_ctas_row_uuid_" + randomNameSuffix() +
+                        " AS SELECT 'x' AS row_uuid, 1 AS b",
+                "Column name 'row_uuid' is reserved for the auto-generated primary key.*");
     }
 
     @Test
@@ -788,16 +831,6 @@ public class TestKuduConnectorTest
     public void testWrittenStats()
     {
         // TODO Kudu connector supports CTAS and inserts, but the test would fail
-    }
-
-    @Test
-    @Override
-    public void testVarcharCastToDateInPredicate()
-    {
-        assertThatThrownBy(super::testVarcharCastToDateInPredicate)
-                .hasStackTraceContaining("must specify at least one key column");
-
-        abort("TODO: implement the test for Kudu");
     }
 
     @Test
