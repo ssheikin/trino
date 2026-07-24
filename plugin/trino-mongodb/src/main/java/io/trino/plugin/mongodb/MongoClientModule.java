@@ -24,6 +24,7 @@ import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.mongodb.procedure.UpdateSchemaProcedure;
 import io.trino.plugin.mongodb.ptf.Query;
+import io.trino.plugin.mongodb.substitution.MongoSubstitutionMetadata;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.TableProcedureMetadata;
@@ -41,6 +42,7 @@ public class MongoClientModule
     public void setup(Binder binder)
     {
         binder.bind(MongoConnector.class).in(Scopes.SINGLETON);
+        binder.bind(MongoSubstitutionMetadata.class).in(Scopes.SINGLETON);
         binder.bind(MongoTransactionManager.class).in(Scopes.SINGLETON);
         binder.bind(MongoSplitManager.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, ConnectorPageSourceProvider.class).setDefault().to(MongoPageSourceProvider.class).in(Scopes.SINGLETON);
