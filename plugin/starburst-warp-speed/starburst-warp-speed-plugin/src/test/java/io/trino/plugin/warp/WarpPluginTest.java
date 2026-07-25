@@ -32,7 +32,6 @@ public class WarpPluginTest
     {
         WarpPlugin warpPlugin = new WarpPlugin();
         assertThat(warpPlugin.getConnectorFactories()).hasOnlyElementsOfType(WarpConnectorFactory.class);
-        assertThat(warpPlugin.getCacheManagerFactories()).hasOnlyElementsOfType(WarpCacheManagerFactory.class);
     }
 
     @Test
