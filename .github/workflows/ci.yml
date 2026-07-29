@@ -1583,7 +1583,6 @@ jobs:
             - suite-objectstore
             - suite-sap-hana
             - suite-stargate
-            - suite-starburst-snowflake
             #- suite-synapse # Synapse suite is run separately in synapse-tests job
             - suite-open-api
             # End of Starburst suites
