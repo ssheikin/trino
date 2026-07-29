@@ -9,19 +9,17 @@
  */
 package com.starburstdata.trino.plugin.snowflake;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.testing.TestingConnectorContext;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TestSnowflakePlugin
 {
@@ -29,10 +27,7 @@ public class TestSnowflakePlugin
     public void testCreateConnector()
     {
         Plugin plugin = new TestingSnowflakePlugin();
-        List<ConnectorFactory> connectorFactories = ImmutableList.copyOf(plugin.getConnectorFactories());
-        assertThat(connectorFactories).hasSize(3);
-
-        connectorFactory(connectorFactories, "deprecated_snowflake_jdbc")
+        getOnlyElement(plugin.getConnectorFactories())
                 .create("test",
                         ImmutableMap.of(
                                 "connection-url", "jdbc:snowflake:test",
@@ -44,74 +39,34 @@ public class TestSnowflakePlugin
                                 "snowflake.warehouse", "test"),
                         new TestingConnectorContext())
                 .shutdown();
-
-        connectorFactory(connectorFactories, "snowflake_parallel")
-                .create("test",
-                        ImmutableMap.of(
-                                "connection-url", "jdbc:snowflake:test",
-                                "connection-user", "test",
-                                "snowflake.connection-private-key", "test",
-                                "snowflake.connection-private-key.passphrase", "test",
-                                "snowflake.role", "test",
-                                "snowflake.database", "test",
-                                "snowflake.warehouse", "test"),
-                        new TestingConnectorContext())
-                .shutdown();
-    }
-
-    @Test
-    public void testSnowflakeJdbcConnectorNameThrows()
-    {
-        Plugin plugin = new TestingSnowflakePlugin();
-        List<ConnectorFactory> connectorFactories = ImmutableList.copyOf(plugin.getConnectorFactories());
-
-        assertThatThrownBy(() -> connectorFactory(connectorFactories, "snowflake_jdbc")
-                .create("my_catalog",
-                        ImmutableMap.of(),
-                        new TestingConnectorContext()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage(
-                        """
-                        The snowflake_jdbc connector is DEPRECATED.
-                        It will be removed in a future release.
-                        Please migrate to the snowflake_parallel connector.
-                        If you need to continue using the JDBC connector temporarily, set connector.name=deprecated_snowflake_jdbc.
-                        """);
     }
 
     @Test
     public void testCreateConnectorWithProxySettings()
     {
         Plugin plugin = new TestingSnowflakePlugin();
-        List<ConnectorFactory> connectorFactories = ImmutableList.copyOf(plugin.getConnectorFactories());
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
 
-        for (ConnectorFactory factory : connectorFactories) {
-            if (factory.getName().equals("snowflake_jdbc")) {
-                continue;
-            }
-            factory.create(
-                            "test",
-                            ImmutableMap.of(
-                                    "connection-url", "jdbc:snowflake:test",
-                                    "connection-user", "test",
-                                    "snowflake.connection-private-key", "test",
-                                    "snowflake.connection-private-key.passphrase", "test",
-                                    "snowflake.database", "test",
-                                    "snowflake.warehouse", "test",
-                                    "snowflake.proxy.enabled", "true",
-                                    "snowflake.proxy.host", "localhost",
-                                    "snowflake.proxy.port", "9000"),
-                            new TestingConnectorContext())
-                    .shutdown();
-        }
+        factory.create(
+                        "test",
+                        ImmutableMap.of(
+                                "connection-url", "jdbc:snowflake:test",
+                                "connection-user", "test",
+                                "snowflake.connection-private-key", "test",
+                                "snowflake.connection-private-key.passphrase", "test",
+                                "snowflake.database", "test",
+                                "snowflake.warehouse", "test",
+                                "snowflake.proxy.enabled", "true",
+                                "snowflake.proxy.host", "localhost",
+                                "snowflake.proxy.port", "9000"),
+                        new TestingConnectorContext())
+                .shutdown();
     }
 
     @Test
     void testGetSecuritySensitivePropertyNames()
     {
         Plugin plugin = new TestingSnowflakePlugin();
-        List<ConnectorFactory> connectorFactories = ImmutableList.copyOf(plugin.getConnectorFactories());
-        assertThat(connectorFactories.size()).isEqualTo(3);
 
         Map<String, String> config = ImmutableMap.of(
                 "non-existent-property", "value",
@@ -120,21 +75,9 @@ public class TestSnowflakePlugin
                 "snowflake.proxy.password", "password",
                 "snowflake.proxy.username", "user");
 
-        for (ConnectorFactory factory : connectorFactories) {
-            if (factory.getName().equals("snowflake_jdbc")) {
-                continue;
-            }
-            Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new TestingConnectorContext());
+        ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
 
-            assertThat(sensitiveProperties).containsExactlyInAnyOrder("non-existent-property", "snowflake.proxy.password");
-        }
-    }
-
-    private static ConnectorFactory connectorFactory(List<ConnectorFactory> factories, String name)
-    {
-        return factories.stream()
-                .filter(f -> f.getName().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No factory named: " + name));
+        Set<String> sensitiveProperties = factory.getSecuritySensitivePropertyNames("catalog", config, new TestingConnectorContext());
+        assertThat(sensitiveProperties).containsExactlyInAnyOrder("non-existent-property", "snowflake.proxy.password");
     }
 }

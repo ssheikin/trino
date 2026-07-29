@@ -102,20 +102,6 @@ public final class ConnectorSensitiveProperties
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
                             "ssh-tunnel.private-key"))
-            .put("deprecated_snowflake_jdbc",
-                    ImmutableSet.of(
-                            "auth-to-local.ldap.bind-password",
-                            "connection-password",
-                            "http-client.http-proxy.password",
-                            "http-client.https.automatic-shared-secret",
-                            "http-client.key-store-password",
-                            "http-client.trust-store-password",
-                            "keystore-password",
-                            "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password",
-                            "snowflake.connection-private-key",
-                            "snowflake.connection-private-key.passphrase",
-                            "snowflake.proxy.password"))
             .put("druid",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -558,20 +544,6 @@ public final class ConnectorSensitiveProperties
                             "keystore-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password"))
-            .put("snowflake_jdbc",
-                    ImmutableSet.of(
-                            "auth-to-local.ldap.bind-password",
-                            "connection-password",
-                            "http-client.http-proxy.password",
-                            "http-client.https.automatic-shared-secret",
-                            "http-client.key-store-password",
-                            "http-client.trust-store-password",
-                            "keystore-password",
-                            "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password",
-                            "snowflake.connection-private-key",
-                            "snowflake.connection-private-key.passphrase",
-                            "snowflake.proxy.password"))
             .put("snowflake_parallel",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
