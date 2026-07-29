@@ -234,7 +234,7 @@ public final class IcebergQueryRunner
                 queryRunner.installPlugin(new TestingIcebergPlugin(dataDir, Optional::empty, () -> additionalOverrideModule));
                 queryRunner.createCatalog(ICEBERG_CATALOG, "iceberg", icebergProperties.buildOrThrow());
 
-                queryRunner.getServers().forEach(TestingTrinoServer::getCacheManagerRegistry);
+                queryRunner.getServers().forEach(TestingTrinoServer::getSubqueryCacheManagerRegistry);
 
                 schemaInitializer.ifPresent(initializer -> initializer.accept(queryRunner));
 

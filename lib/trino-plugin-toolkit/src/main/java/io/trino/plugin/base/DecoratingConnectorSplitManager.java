@@ -13,7 +13,6 @@
  */
 package io.trino.plugin.base;
 
-import io.trino.spi.cache.CacheSplitId;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplit;
@@ -23,6 +22,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.function.table.ConnectorTableFunctionHandle;
+import io.trino.spi.subquery.cache.CacheSplitId;
 import jakarta.inject.Inject;
 
 import java.util.Optional;
