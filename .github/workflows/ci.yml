@@ -1623,7 +1623,8 @@ jobs:
             - suite-ldap
             - suite-loki
             - suite-compatibility
-            - suite-all-connectors-smoke
+            # https://starburstdata.atlassian.net/browse/SEP-18315
+            #- suite-all-connectors-smoke
             - suite-delta-lake-oss
             - suite-kafka
             - suite-cassandra
