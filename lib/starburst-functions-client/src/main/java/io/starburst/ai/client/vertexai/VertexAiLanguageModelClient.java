@@ -244,7 +244,7 @@ public class VertexAiLanguageModelClient
         Map<String, String> toolCallIdNameMap = messages.stream()
                 .filter(m -> m.role() == ASSISTANT)
                 .flatMap(m -> m.toolCalls().stream())
-                .collect(toImmutableMap(ToolUseResponse.ToolCall::id, ToolUseResponse.ToolCall::name));
+                .collect(toImmutableMap(ToolUseResponse.ToolCall::id, ToolUseResponse.ToolCall::name, (_, replacement) -> replacement));
 
         return messages.stream()
                 .map(message -> toContent(message, toolCallIdNameMap))
