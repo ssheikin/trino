@@ -254,7 +254,8 @@ public final class S3FileSystemLoader
     {
         ApacheHttpClient.Builder client = ApacheHttpClient.builder()
                 .maxConnections(config.getMaxConnections())
-                .tcpKeepAlive(config.getTcpKeepAlive());
+                .tcpKeepAlive(config.getTcpKeepAlive())
+                .expectContinueEnabled(config.isExpectContinueEnabled());
 
         config.getConnectionTtl().ifPresent(ttl -> client.connectionTimeToLive(ttl.toJavaTime()));
         config.getConnectionMaxIdleTime().ifPresent(time -> client.connectionMaxIdleTime(time.toJavaTime()));
