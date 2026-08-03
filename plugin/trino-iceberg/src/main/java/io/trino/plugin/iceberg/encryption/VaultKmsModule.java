@@ -13,11 +13,19 @@
  */
 package io.trino.plugin.iceberg.encryption;
 
-public enum KmsType
+import com.google.inject.Binder;
+import io.airlift.configuration.AbstractConfigurationAwareModule;
+import io.trino.plugin.base.encryption.VaultConfig;
+
+import static io.airlift.configuration.ConfigBinder.configBinder;
+
+public class VaultKmsModule
+        extends AbstractConfigurationAwareModule
 {
-    AWS,
-    AZURE,
-    GCP,
-    VAULT,
-    /**/
+    @Override
+    protected void setup(Binder binder)
+    {
+        configBinder(binder).bindConfig(VaultConfig.class);
+        binder.bind(KmsProperties.class).to(VaultKmsProperties.class);
+    }
 }
