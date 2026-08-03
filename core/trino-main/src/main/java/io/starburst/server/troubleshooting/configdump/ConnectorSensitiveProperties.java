@@ -27,7 +27,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("bigquery",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -41,7 +42,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("blackhole",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -51,7 +53,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("cassandra",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -64,7 +67,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("clickhouse",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -76,7 +80,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("datasketches",
                     ImmutableSet.of())
             .put("delta_lake",
@@ -105,7 +110,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .put("druid",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -117,7 +123,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("duckdb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -129,7 +136,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("elasticsearch",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -143,7 +151,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("exasol",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -155,7 +164,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("faker",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -165,7 +175,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("great_lakes",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -205,7 +216,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .put("gsheets",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -216,7 +228,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("hive",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -243,7 +256,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .put("hudi",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -270,7 +284,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .put("iceberg",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -306,7 +321,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .put("ignite",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -318,7 +334,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("jmx",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -328,7 +345,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("kafka",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -341,7 +359,8 @@ public final class ConnectorSensitiveProperties
                             "kafka.ssl.keystore.password",
                             "kafka.ssl.truststore.password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("kudu",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -351,7 +370,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("lakehouse",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -387,7 +407,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .put("loki",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -397,7 +418,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("mariadb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -409,7 +431,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("memory",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -419,7 +442,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("mongodb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -432,7 +456,8 @@ public final class ConnectorSensitiveProperties
                             "ldap.ssl.truststore.password",
                             "mongodb.connection-url",
                             "mongodb.tls.keystore-password",
-                            "mongodb.tls.truststore-password"))
+                            "mongodb.tls.truststore-password",
+                            "vault.token"))
             .put("mysql",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -444,7 +469,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("opensearch",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -458,7 +484,8 @@ public final class ConnectorSensitiveProperties
                             "opensearch.auth.password",
                             "opensearch.aws.secret-key",
                             "opensearch.tls.keystore-password",
-                            "opensearch.tls.truststore-password"))
+                            "opensearch.tls.truststore-password",
+                            "vault.token"))
             .put("oracle",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -470,7 +497,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("pinot",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -484,7 +512,8 @@ public final class ConnectorSensitiveProperties
                             "pinot.broker.authentication.password",
                             "pinot.controller.authentication.password",
                             "pinot.grpc.tls.keystore-password",
-                            "pinot.grpc.tls.truststore-password"))
+                            "pinot.grpc.tls.truststore-password",
+                            "vault.token"))
             .put("postgresql",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -496,7 +525,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("prometheus",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -507,7 +537,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
-                            "prometheus.auth.password"))
+                            "prometheus.auth.password",
+                            "vault.token"))
             .put("redis",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -520,7 +551,8 @@ public final class ConnectorSensitiveProperties
                             "ldap.ssl.truststore.password",
                             "redis.password",
                             "redis.tls.keystore-password",
-                            "redis.tls.truststore-password"))
+                            "redis.tls.truststore-password",
+                            "vault.token"))
             .put("redshift",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -535,7 +567,8 @@ public final class ConnectorSensitiveProperties
                             "ldap.ssl.truststore.password",
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
-                            "s3.sse.customer-key"))
+                            "s3.sse.customer-key",
+                            "vault.token"))
             .put("sap_hana",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -547,7 +580,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("sas",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -557,7 +591,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("singlestore",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -569,7 +604,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("snowflake_parallel",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -584,7 +620,8 @@ public final class ConnectorSensitiveProperties
                             "ldap.ssl.truststore.password",
                             "snowflake.connection-private-key",
                             "snowflake.connection-private-key.passphrase",
-                            "snowflake.proxy.password"))
+                            "snowflake.proxy.password",
+                            "vault.token"))
             .put("sqlserver",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -596,7 +633,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("starburst_functions",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -624,7 +662,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .put("starburst_internal_testing",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -634,7 +673,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("starburst_kdb",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -645,7 +685,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "kdb.password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("starburst_openapi",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -657,7 +698,8 @@ public final class ConnectorSensitiveProperties
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
                             "openapi.security-scheme.client-secret",
-                            "openapi.security-scheme.secret"))
+                            "openapi.security-scheme.secret",
+                            "vault.token"))
             .put("stargate",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -670,7 +712,8 @@ public final class ConnectorSensitiveProperties
                             "keystore-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
-                            "ssl.truststore.password"))
+                            "ssl.truststore.password",
+                            "vault.token"))
             .put("stargate_parallel",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -683,7 +726,8 @@ public final class ConnectorSensitiveProperties
                             "keystore-password",
                             "ldap.ssl.keystore.password",
                             "ldap.ssl.truststore.password",
-                            "ssl.truststore.password"))
+                            "ssl.truststore.password",
+                            "vault.token"))
             .put("synapse",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -695,7 +739,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("tpcds",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -705,7 +750,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("tpch",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -715,7 +761,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("trino_thrift",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -725,7 +772,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.key-store-password",
                             "http-client.trust-store-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("vertica",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -737,7 +785,8 @@ public final class ConnectorSensitiveProperties
                             "http-client.trust-store-password",
                             "keystore-password",
                             "ldap.ssl.keystore.password",
-                            "ldap.ssl.truststore.password"))
+                            "ldap.ssl.truststore.password",
+                            "vault.token"))
             .put("warp_speed",
                     ImmutableSet.of(
                             "auth-to-local.ldap.bind-password",
@@ -782,7 +831,8 @@ public final class ConnectorSensitiveProperties
                             "s3.aws-secret-key",
                             "s3.http-proxy.password",
                             "s3.sse.customer-key",
-                            "ssh-tunnel.private-key"))
+                            "ssh-tunnel.private-key",
+                            "vault.token"))
             .buildOrThrow();
 
     private ConnectorSensitiveProperties() {}
