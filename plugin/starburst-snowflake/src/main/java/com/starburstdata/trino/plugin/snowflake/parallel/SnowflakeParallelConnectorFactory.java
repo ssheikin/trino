@@ -10,6 +10,7 @@
 package com.starburstdata.trino.plugin.snowflake.parallel;
 
 import com.google.inject.Injector;
+import com.starburstdata.trino.plugin.snowflake.jdbc.SnowflakeJdbcClientModule;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.configuration.ConfigPropertyMetadata;
 import io.trino.plugin.base.ConnectorContextModule;
@@ -66,7 +67,7 @@ public class SnowflakeParallelConnectorFactory
                 "io.trino.bootstrap.catalog." + catalogName,
                 new ConnectorContextModule(catalogName, context),
                 new JdbcModule(),
-                new SnowflakeJdbcOverrideModule(),
+                new SnowflakeJdbcClientModule(),
                 new SnowflakeParallelModule());
 
         return app
