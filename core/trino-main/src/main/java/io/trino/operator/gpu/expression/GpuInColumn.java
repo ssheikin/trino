@@ -15,40 +15,44 @@ package io.trino.operator.gpu.expression;
 
 import ai.rapids.cudf.ColumnVector;
 import io.trino.spi.gpu.borrow.Borrow;
-import io.trino.spi.gpu.borrow.Move;
 
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-public final class GpuIsNull
+public final class GpuInColumn
         extends GpuExpression
 {
-    private final GpuExpression operand;
+    private final GpuExpression source;
+    private final GpuExpression values;
 
-    public GpuIsNull(GpuExpression operand)
+    public GpuInColumn(GpuExpression source, GpuExpression values)
     {
-        this.operand = requireNonNull(operand, "operand is null");
+        this.source = requireNonNull(source, "source is null");
+        this.values = requireNonNull(values, "values is null");
     }
 
     @Override
-    public @Move ColumnVector evaluate(int positionCount, List<@Borrow ColumnVector> inputColumns)
+    public ColumnVector evaluate(int positionCount, List<@Borrow ColumnVector> inputColumns)
     {
-        try (ColumnVector result = operand.evaluate(positionCount, inputColumns)) {
-            return result.isNull();
+        try (ColumnVector source = this.source.evaluate(positionCount, inputColumns);
+                ColumnVector values = this.values.evaluate(positionCount, inputColumns)) {
+            return source.contains(values);
         }
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        return obj instanceof GpuIsNull other && operand.equals(other.operand);
+        return obj instanceof GpuInColumn other
+                && source.equals(other.source)
+                && values.equals(other.values);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getClass(), operand);
+        return Objects.hash(getClass(), source, values);
     }
 }

@@ -22,33 +22,33 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-public final class GpuIsNull
+public final class GpuConstantColumn
         extends GpuExpression
 {
-    private final GpuExpression operand;
+    private final @Borrow ColumnVector columnVector;
 
-    public GpuIsNull(GpuExpression operand)
+    public GpuConstantColumn(@Borrow ColumnVector columnVector)
     {
-        this.operand = requireNonNull(operand, "operand is null");
+        this.columnVector = requireNonNull(columnVector, "columnVector is null");
     }
 
     @Override
     public @Move ColumnVector evaluate(int positionCount, List<@Borrow ColumnVector> inputColumns)
     {
-        try (ColumnVector result = operand.evaluate(positionCount, inputColumns)) {
-            return result.isNull();
-        }
+        return columnVector.incRefCount();
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        return obj instanceof GpuIsNull other && operand.equals(other.operand);
+        return obj instanceof GpuConstantColumn other
+                // reference equality. there is no fast value-based equality for column vectors
+                && columnVector == other.columnVector;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getClass(), operand);
+        return Objects.hash(getClass(), System.identityHashCode(columnVector));
     }
 }

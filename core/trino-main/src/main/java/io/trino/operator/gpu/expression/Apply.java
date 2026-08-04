@@ -14,41 +14,45 @@
 package io.trino.operator.gpu.expression;
 
 import ai.rapids.cudf.ColumnVector;
+import com.google.common.collect.ImmutableList;
 import io.trino.spi.gpu.borrow.Borrow;
-import io.trino.spi.gpu.borrow.Move;
 
 import java.util.List;
 import java.util.Objects;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-public final class GpuIsNull
+public final class Apply
         extends GpuExpression
 {
-    private final GpuExpression operand;
+    private final int channel;
+    private final GpuExpression expression;
 
-    public GpuIsNull(GpuExpression operand)
+    public Apply(int channel, GpuExpression expression)
     {
-        this.operand = requireNonNull(operand, "operand is null");
+        checkArgument(channel >= 0, "channel must be non-negative: %s", channel);
+        this.channel = channel;
+        this.expression = requireNonNull(expression, "expression is null");
     }
 
     @Override
-    public @Move ColumnVector evaluate(int positionCount, List<@Borrow ColumnVector> inputColumns)
+    public ColumnVector evaluate(int positionCount, List<@Borrow ColumnVector> inputColumns)
     {
-        try (ColumnVector result = operand.evaluate(positionCount, inputColumns)) {
-            return result.isNull();
-        }
+        return expression.evaluate(positionCount, ImmutableList.of(inputColumns.get(channel)));
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        return obj instanceof GpuIsNull other && operand.equals(other.operand);
+        return obj instanceof Apply other
+                && channel == other.channel
+                && expression.equals(other.expression);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getClass(), operand);
+        return Objects.hash(getClass(), channel, expression);
     }
 }

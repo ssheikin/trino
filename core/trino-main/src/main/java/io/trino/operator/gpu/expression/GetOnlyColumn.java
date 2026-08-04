@@ -15,40 +15,29 @@ package io.trino.operator.gpu.expression;
 
 import ai.rapids.cudf.ColumnVector;
 import io.trino.spi.gpu.borrow.Borrow;
-import io.trino.spi.gpu.borrow.Move;
 
 import java.util.List;
-import java.util.Objects;
 
-import static java.util.Objects.requireNonNull;
+import static com.google.common.collect.Iterables.getOnlyElement;
 
-public final class GpuIsNull
+public final class GetOnlyColumn
         extends GpuExpression
 {
-    private final GpuExpression operand;
-
-    public GpuIsNull(GpuExpression operand)
-    {
-        this.operand = requireNonNull(operand, "operand is null");
-    }
-
     @Override
-    public @Move ColumnVector evaluate(int positionCount, List<@Borrow ColumnVector> inputColumns)
+    public ColumnVector evaluate(int positionCount, List<@Borrow ColumnVector> inputColumns)
     {
-        try (ColumnVector result = operand.evaluate(positionCount, inputColumns)) {
-            return result.isNull();
-        }
+        return getOnlyElement(inputColumns).incRefCount();
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        return obj instanceof GpuIsNull other && operand.equals(other.operand);
+        return obj instanceof GetOnlyColumn;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getClass(), operand);
+        return getClass().hashCode();
     }
 }
