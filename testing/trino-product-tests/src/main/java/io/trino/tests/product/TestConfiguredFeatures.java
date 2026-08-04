@@ -48,7 +48,8 @@ public class TestConfiguredFeatures
         if (configuredConnectors.isEmpty()) {
             throw new SkipException("Skip checking configured connectors since none were set in Tempto configuration");
         }
-        String sql = "SELECT DISTINCT connector_name FROM system.metadata.catalogs";
+        // TODO: remove the sep_ai exclusion once the built-in catalog is declared in product test environments (https://starburstdata.atlassian.net/browse/SEP-18315)
+        String sql = "SELECT DISTINCT connector_name FROM system.metadata.catalogs WHERE connector_name <> 'sep_ai'";
         assertThat(onTrino().executeQuery(sql))
                 .hasColumns(VARCHAR)
                 .containsOnly(configuredConnectors.stream()
