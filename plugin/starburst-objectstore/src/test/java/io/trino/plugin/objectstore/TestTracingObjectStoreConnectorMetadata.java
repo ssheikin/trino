@@ -18,13 +18,11 @@ import org.junit.jupiter.api.Test;
 
 import static io.trino.testing.InterfaceTestUtils.assertAllMethodsOverridden;
 
-class TracingObjectStoreConnectorMetadataTest
+class TestTracingObjectStoreConnectorMetadata
 {
     @Test
-    public void testEverythingImplemented()
+    void testEverythingImplemented()
     {
-        assertAllMethodsOverridden(
-                ConnectorMetadata.class,
-                TracingObjectStoreConnectorMetadata.class);
+        assertAllMethodsOverridden(ConnectorMetadata.class, TracingObjectStoreConnectorMetadata.class);
     }
 }
