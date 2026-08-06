@@ -423,6 +423,7 @@ public class TestDeltaLakeCacheIds
                 schemaName,
                 tableName,
                 managed,
+                false,
                 Optional.empty(),
                 location,
                 metadataEntry,

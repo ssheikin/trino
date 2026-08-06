@@ -931,7 +931,7 @@ public class DeltaLakeMetadata
         }
         catch (TrinoException e) {
             if (e.getErrorCode().equals(DELTA_LAKE_INVALID_SCHEMA.toErrorCode())) {
-                return new CorruptedDeltaLakeTableHandle(tableName, table.catalogManaged(), table.managed(), tableLocation, e);
+                return new CorruptedDeltaLakeTableHandle(tableName, table.catalogManaged(), table.managed(), table.materializedView(), table.tableId(), tableLocation, e);
             }
             throw e;
         }
@@ -959,6 +959,7 @@ public class DeltaLakeMetadata
                 tableName.getSchemaName(),
                 tableName.getTableName(),
                 managed,
+                table.materializedView(),
                 table.tableId(),
                 tableLocation,
                 metadataEntry,
@@ -1629,6 +1630,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle tableHandle = null;
         if (connectorTableHandle != null) {
             tableHandle = checkValidTableHandle(connectorTableHandle);
+            checkNotMaterializedView(tableHandle);
             checkValidCatalogManagedTable(tableHandle);
         }
         boolean replaceExistingTable = tableHandle != null && saveMode == SaveMode.REPLACE;
@@ -1933,6 +1935,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle handle = null;
         if (connectorTableHandle != null) {
             handle = checkValidTableHandle(connectorTableHandle);
+            checkNotMaterializedView(handle);
             checkValidCatalogManagedTable(handle);
         }
         List<String> partitionedBy = getPartitionedBy(tableMetadata.getProperties());
@@ -2333,6 +2336,7 @@ public class DeltaLakeMetadata
     public void setTableComment(ConnectorSession session, ConnectorTableHandle tableHandle, Optional<String> comment)
     {
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkNotMaterializedView(handle);
         checkValidCatalogManagedTable(handle);
         checkSupportedWriterVersion(handle);
         ColumnMappingMode columnMappingMode = getColumnMappingMode(handle.getMetadataEntry(), handle.getProtocolEntry());
@@ -2375,6 +2379,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle deltaLakeTableHandle = (DeltaLakeTableHandle) tableHandle;
         DeltaLakeColumnHandle deltaLakeColumnHandle = (DeltaLakeColumnHandle) column;
         verify(deltaLakeColumnHandle.isBaseColumn(), "Unexpected dereference: %s", column);
+        checkNotMaterializedView(deltaLakeTableHandle);
         checkSupportedWriterVersion(deltaLakeTableHandle);
         ColumnMappingMode columnMappingMode = getColumnMappingMode(deltaLakeTableHandle.getMetadataEntry(), deltaLakeTableHandle.getProtocolEntry());
         if (columnMappingMode != ID && columnMappingMode != NAME && columnMappingMode != NONE) {
@@ -2448,6 +2453,7 @@ public class DeltaLakeMetadata
         verify(position instanceof ColumnPosition.Last, "ColumnPosition must be instance of Last");
 
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkNotMaterializedView(handle);
         checkValidCatalogManagedTable(handle);
         ProtocolEntry protocolEntry = handle.getProtocolEntry();
         checkSupportedWriterVersion(handle);
@@ -2544,6 +2550,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle table = (DeltaLakeTableHandle) tableHandle;
         DeltaLakeColumnHandle deltaLakeColumn = (DeltaLakeColumnHandle) columnHandle;
         verify(deltaLakeColumn.isBaseColumn(), "Unexpected dereference: %s", deltaLakeColumn);
+        checkNotMaterializedView(table);
         String dropColumnName = deltaLakeColumn.baseColumnName();
         MetadataEntry metadataEntry = table.getMetadataEntry();
         ProtocolEntry protocolEntry = table.getProtocolEntry();
@@ -2632,6 +2639,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle table = (DeltaLakeTableHandle) tableHandle;
         DeltaLakeColumnHandle deltaLakeColumn = (DeltaLakeColumnHandle) columnHandle;
         verify(deltaLakeColumn.isBaseColumn(), "Unexpected dereference: %s", deltaLakeColumn);
+        checkNotMaterializedView(table);
         String sourceColumnName = deltaLakeColumn.baseColumnName();
         ProtocolEntry protocolEntry = table.getProtocolEntry();
         checkUnsupportedWriterFeatures(protocolEntry);
@@ -2691,6 +2699,7 @@ public class DeltaLakeMetadata
         DeltaLakeTableHandle table = (DeltaLakeTableHandle) tableHandle;
         DeltaLakeColumnHandle column = (DeltaLakeColumnHandle) columnHandle;
         verify(column.isBaseColumn(), "Unexpected dereference: %s", column);
+        checkNotMaterializedView(table);
         String columnName = column.baseColumnName();
         MetadataEntry metadataEntry = table.getMetadataEntry();
         ProtocolEntry protocolEntry = table.getProtocolEntry();
@@ -3641,6 +3650,7 @@ public class DeltaLakeMetadata
 
     private void checkWriteAllowed(ConnectorSession session, DeltaLakeTableHandle table)
     {
+        checkNotMaterializedView(table);
         if (!allowWrite(session, table)) {
             String fileSystem = Location.of(table.getLocation()).scheme().orElse("unknown");
             throw new TrinoException(
@@ -3649,6 +3659,13 @@ public class DeltaLakeMetadata
                             "Writes to the %1$s filesystem can be however enabled with the '%2$s' configuration property.", fileSystem, ENABLE_NON_CONCURRENT_WRITES_CONFIGURATION_KEY));
         }
         checkManagedTableWriteSupported(table);
+    }
+
+    private static void checkNotMaterializedView(LocatedTableHandle table)
+    {
+        if (table.materializedView()) {
+            throw new TrinoException(NOT_SUPPORTED, "Writes are not supported against Unity materialized views: " + table.schemaTableName());
+        }
     }
 
     private void checkManagedTableWriteSupported(DeltaLakeTableHandle table)
@@ -3965,6 +3982,7 @@ public class DeltaLakeMetadata
     public void dropTable(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         LocatedTableHandle handle = (LocatedTableHandle) tableHandle;
+        checkNotMaterializedView(handle);
         boolean deleteData = handle.managed();
         metastore.dropTable(handle.schemaTableName(), handle.location(), deleteData);
         if (deleteData) {
@@ -3984,6 +4002,9 @@ public class DeltaLakeMetadata
     public void renameTable(ConnectorSession session, ConnectorTableHandle tableHandle, SchemaTableName newTableName)
     {
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        if (handle.materializedView()) {
+            throw new TrinoException(NOT_SUPPORTED, "Renaming a Unity materialized view is not supported: " + handle.getSchemaTableName());
+        }
         DeltaMetastoreTable table = metastore.getTable(handle.getSchemaName(), handle.getTableName())
                 .orElseThrow(() -> new TableNotFoundException(handle.getSchemaTableName()));
         if (table.managed() && !allowManagedTableRename) {
@@ -4023,6 +4044,7 @@ public class DeltaLakeMetadata
     public void setTableProperties(ConnectorSession session, ConnectorTableHandle tableHandle, Map<String, Optional<Object>> properties)
     {
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkNotMaterializedView(handle);
         checkValidCatalogManagedTable(handle);
         Set<String> unsupportedProperties = difference(properties.keySet(), UPDATABLE_TABLE_PROPERTIES);
         if (!unsupportedProperties.isEmpty()) {
@@ -4359,6 +4381,7 @@ public class DeltaLakeMetadata
                 tableName.getSchemaName(),
                 tableName.getTableName(),
                 tableHandle.isManaged(),
+                tableHandle.materializedView(),
                 tableHandle.getTableId(),
                 tableHandle.getLocation(),
                 tableHandle.getMetadataEntry(),
@@ -4413,6 +4436,7 @@ public class DeltaLakeMetadata
                 firstTable.getSchemaName(),
                 firstTable.getTableName(),
                 firstTable.isManaged(),
+                firstTable.materializedView(),
                 firstTable.getTableId(),
                 firstTable.getLocation(),
                 firstTable.getMetadataEntry(),
@@ -4739,6 +4763,7 @@ public class DeltaLakeMetadata
         }
 
         DeltaLakeTableHandle handle = checkValidTableHandle(tableHandle);
+        checkNotMaterializedView(handle);
         checkValidCatalogManagedTable(handle);
         MetadataEntry metadata = handle.getMetadataEntry();
 
@@ -4792,6 +4817,7 @@ public class DeltaLakeMetadata
                 handle.getSchemaTableName().getSchemaName(),
                 handle.getSchemaTableName().getTableName(),
                 handle.isManaged(),
+                handle.materializedView(),
                 handle.getTableId(),
                 handle.getLocation(),
                 metadata,
