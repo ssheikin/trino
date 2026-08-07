@@ -705,7 +705,9 @@ public class PlanTester
                 defaultSession.getPreparedStatements(),
                 defaultSession.getProtocolHeaders(),
                 defaultSession.getExchangeEncryptionKey(),
-                defaultSession.getQueryDataEncoding());
+                defaultSession.getQueryDataEncoding(),
+                ImmutableSet.of(),
+                ImmutableMap.of());
     }
 
     public static JsonCodec<TupleDomain> getTupleDomainJsonCodec(BlockEncodingSerde blockEncodingSerde, TypeManager typeManager)

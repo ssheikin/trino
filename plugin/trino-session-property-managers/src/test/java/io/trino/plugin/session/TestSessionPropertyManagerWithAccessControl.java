@@ -149,14 +149,23 @@ final class TestSessionPropertyManagerWithAccessControl
     }
 
     @Test
-    void testQueryFailsForRestrictedUser()
+    void testDefaultAppliesForRestrictedUser()
     {
-        // The injected default is validated against the end user's privileges,
-        // so a user without the grant cannot run any query at all once a default matches their session
-        // This leaves administrators stuck:
-        // without a grant to set the property, every query of the user fails;
-        // with the grant, the user is free to override the configured value, so it cannot serve as a guardrail.
-        assertThatThrownBy(() -> queryRunner.execute(session("restricted_user").build(), "SELECT 1"))
+        // The default is configured by the administrator, so it applies even though
+        // the user has no privilege to set the property explicitly
+        assertThat(getSessionPropertyValue(session("restricted_user").build(), QUERY_MAX_RUN_TIME))
+                .isEqualTo(DEFAULT_VALUE);
+    }
+
+    @Test
+    void testUserOverrideDeniedForRestrictedUser()
+    {
+        // A property explicitly set by the user is still subject to access control
+        Session session = session("restricted_user")
+                .setSystemProperty(QUERY_MAX_RUN_TIME, USER_OVERRIDE_VALUE)
+                .build();
+
+        assertThatThrownBy(() -> queryRunner.execute(session, "SELECT 1"))
                 .hasMessageContaining("Access Denied: Cannot set system session property " + QUERY_MAX_RUN_TIME);
     }
 
@@ -186,10 +195,23 @@ final class TestSessionPropertyManagerWithAccessControl
     }
 
     @Test
-    void testQueryFailsForCatalogRestrictedUser()
+    void testCatalogDefaultAppliesForRestrictedUser()
     {
-        // Same problem as testQueryFailsForRestrictedUser, for a catalog session property default
-        assertThatThrownBy(() -> queryRunner.execute(session("catalog_restricted_user").build(), "SELECT 1"))
+        // The default is configured by the administrator, so it applies even though
+        // the user has no privilege to set the property explicitly
+        assertThat(getSessionPropertyValue(session("catalog_restricted_user").build(), QUALIFIED_CATALOG_PROPERTY))
+                .isEqualTo(DEFAULT_CATALOG_VALUE);
+    }
+
+    @Test
+    void testUserCatalogOverrideDeniedForRestrictedUser()
+    {
+        // A property explicitly set by the user is still subject to access control
+        Session session = session("catalog_restricted_user")
+                .setCatalogSessionProperty(MOCK_CATALOG, CATALOG_PROPERTY, USER_OVERRIDE_CATALOG_VALUE)
+                .build();
+
+        assertThatThrownBy(() -> queryRunner.execute(session, "SELECT 1"))
                 .hasMessageContaining("Access Denied: Cannot set catalog session property " + CATALOG_PROPERTY);
     }
 

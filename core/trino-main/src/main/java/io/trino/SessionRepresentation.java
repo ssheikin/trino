@@ -398,6 +398,8 @@ public final class SessionRepresentation
                 preparedStatements,
                 createProtocolHeaders(protocolName),
                 exchangeEncryptionKey,
-                queryDataEncoding);
+                queryDataEncoding,
+                ImmutableSet.of(),
+                ImmutableMap.of());
     }
 }

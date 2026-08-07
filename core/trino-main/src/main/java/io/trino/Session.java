@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.airlift.slice.Slice;
 import io.airlift.units.DataSize;
@@ -43,6 +44,7 @@ import io.trino.transaction.TransactionManager;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -93,6 +95,9 @@ public final class Session
     private final ProtocolHeaders protocolHeaders;
     private final Optional<Slice> exchangeEncryptionKey;
     private final Optional<String> queryDataEncoding;
+    // names of properties that were set from session property defaults rather than by the user
+    private final Set<String> defaultedSystemProperties;
+    private final Map<String, Set<String>> defaultedCatalogProperties;
 
     public Session(
             QueryId queryId,
@@ -121,7 +126,9 @@ public final class Session
             Map<String, String> preparedStatements,
             ProtocolHeaders protocolHeaders,
             Optional<Slice> exchangeEncryptionKey,
-            Optional<String> queryDataEncoding)
+            Optional<String> queryDataEncoding,
+            Set<String> defaultedSystemProperties,
+            Map<String, Set<String>> defaultedCatalogProperties)
     {
         this.queryId = requireNonNull(queryId, "queryId is null");
         this.querySpan = requireNonNull(querySpan, "querySpan is null");
@@ -149,6 +156,7 @@ public final class Session
         this.protocolHeaders = requireNonNull(protocolHeaders, "protocolHeaders is null");
         this.exchangeEncryptionKey = requireNonNull(exchangeEncryptionKey, "exchangeEncryptionKey is null");
         this.queryDataEncoding = requireNonNull(queryDataEncoding, "queryDataEncoding is null");
+        this.defaultedSystemProperties = ImmutableSet.copyOf(requireNonNull(defaultedSystemProperties, "defaultedSystemProperties is null"));
 
         requireNonNull(catalogProperties, "catalogProperties is null");
         ImmutableMap.Builder<String, Map<String, String>> catalogPropertiesBuilder = ImmutableMap.builder();
@@ -156,6 +164,13 @@ public final class Session
                 .map(entry -> Maps.immutableEntry(entry.getKey(), ImmutableMap.copyOf(entry.getValue())))
                 .forEach(catalogPropertiesBuilder::put);
         this.catalogProperties = catalogPropertiesBuilder.buildOrThrow();
+
+        requireNonNull(defaultedCatalogProperties, "defaultedCatalogProperties is null");
+        ImmutableMap.Builder<String, Set<String>> defaultedCatalogPropertiesBuilder = ImmutableMap.builder();
+        defaultedCatalogProperties.entrySet().stream()
+                .map(entry -> Map.entry(entry.getKey(), ImmutableSet.copyOf(entry.getValue())))
+                .forEach(defaultedCatalogPropertiesBuilder::put);
+        this.defaultedCatalogProperties = defaultedCatalogPropertiesBuilder.buildOrThrow();
 
         checkArgument(catalog.isPresent() || schema.isEmpty(), "schema is set but catalog is not");
     }
@@ -398,7 +413,9 @@ public final class Session
                 preparedStatements,
                 protocolHeaders,
                 exchangeEncryptionKey,
-                queryDataEncoding);
+                queryDataEncoding,
+                defaultedSystemProperties,
+                defaultedCatalogProperties);
     }
 
     public Session withDefaultProperties(Map<String, String> systemPropertyDefaults, Map<String, Map<String, String>> catalogPropertyDefaults)
@@ -412,6 +429,7 @@ public final class Session
         Map<String, String> systemProperties = new HashMap<>();
         systemProperties.putAll(systemPropertyDefaults);
         systemProperties.putAll(this.systemProperties);
+        Set<String> defaultedSystemProperties = ImmutableSet.copyOf(Sets.difference(systemPropertyDefaults.keySet(), this.systemProperties.keySet()));
 
         Map<String, Map<String, String>> catalogProperties = catalogPropertyDefaults.entrySet().stream()
                 .map(entry -> Maps.immutableEntry(entry.getKey(), new HashMap<>(entry.getValue())))
@@ -420,11 +438,28 @@ public final class Session
             catalogProperties.computeIfAbsent(catalogEntry.getKey(), _ -> new HashMap<>())
                     .putAll(catalogEntry.getValue());
         }
+        Map<String, Set<String>> defaultedCatalogProperties = new HashMap<>();
+        for (Entry<String, Map<String, String>> catalogEntry : catalogPropertyDefaults.entrySet()) {
+            Set<String> userProperties = this.catalogProperties.getOrDefault(catalogEntry.getKey(), ImmutableMap.of()).keySet();
+            Set<String> defaulted = ImmutableSet.copyOf(Sets.difference(catalogEntry.getValue().keySet(), userProperties));
+            if (!defaulted.isEmpty()) {
+                defaultedCatalogProperties.put(catalogEntry.getKey(), defaulted);
+            }
+        }
 
-        return withProperties(systemProperties, catalogProperties);
+        return withProperties(systemProperties, catalogProperties, defaultedSystemProperties, defaultedCatalogProperties);
     }
 
     public Session withProperties(Map<String, String> systemProperties, Map<String, Map<String, String>> catalogProperties)
+    {
+        return withProperties(systemProperties, catalogProperties, defaultedSystemProperties, defaultedCatalogProperties);
+    }
+
+    private Session withProperties(
+            Map<String, String> systemProperties,
+            Map<String, Map<String, String>> catalogProperties,
+            Set<String> defaultedSystemProperties,
+            Map<String, Set<String>> defaultedCatalogProperties)
     {
         return new Session(
                 queryId,
@@ -453,7 +488,9 @@ public final class Session
                 preparedStatements,
                 protocolHeaders,
                 exchangeEncryptionKey,
-                queryDataEncoding);
+                queryDataEncoding,
+                defaultedSystemProperties,
+                defaultedCatalogProperties);
     }
 
     public Session withExchangeEncryption(Slice encryptionKey)
@@ -486,7 +523,9 @@ public final class Session
                 preparedStatements,
                 protocolHeaders,
                 Optional.of(encryptionKey),
-                queryDataEncoding);
+                queryDataEncoding,
+                defaultedSystemProperties,
+                defaultedCatalogProperties);
     }
 
     public Session withoutSpooling()
@@ -518,7 +557,9 @@ public final class Session
                 preparedStatements,
                 protocolHeaders,
                 exchangeEncryptionKey,
-                Optional.empty());
+                Optional.empty(),
+                defaultedSystemProperties,
+                defaultedCatalogProperties);
     }
 
     public ConnectorSession toConnectorSession()
@@ -620,9 +661,10 @@ public final class Session
             CatalogHandle catalogHandle,
             Map<String, String> catalogProperties)
     {
+        Set<String> defaultedProperties = defaultedCatalogProperties.getOrDefault(catalogName, ImmutableSet.of());
         for (Entry<String, String> property : catalogProperties.entrySet()) {
             // verify permissions
-            if (transactionId.isPresent()) {
+            if (transactionId.isPresent() && !defaultedProperties.contains(property.getKey())) {
                 accessControl.checkCanSetCatalogSessionProperty(new SecurityContext(transactionId.get(), identity, queryId, start), catalogName, property.getKey());
             }
 
@@ -635,7 +677,9 @@ public final class Session
     {
         for (Entry<String, String> property : systemProperties.entrySet()) {
             // verify permissions
-            accessControl.checkCanSetSystemSessionProperty(identity, queryId, property.getKey());
+            if (!defaultedSystemProperties.contains(property.getKey())) {
+                accessControl.checkCanSetSystemSessionProperty(identity, queryId, property.getKey());
+            }
 
             // validate session property value
             sessionPropertyManager.validateSystemSessionProperty(property.getKey(), property.getValue());
@@ -709,6 +753,9 @@ public final class Session
         private Instant start = Instant.now();
         private final Map<String, String> systemProperties = new HashMap<>();
         private final Map<String, Map<String, String>> catalogSessionProperties = new HashMap<>();
+        // names of properties that were set from session property defaults rather than by the user
+        private final Set<String> defaultedSystemProperties = new HashSet<>();
+        private final Map<String, Set<String>> defaultedCatalogProperties = new HashMap<>();
         private final SessionPropertyManager sessionPropertyManager;
         private final Map<String, String> preparedStatements = new HashMap<>();
         private ProtocolHeaders protocolHeaders = TRINO_HEADERS;
@@ -745,6 +792,9 @@ public final class Session
             this.systemProperties.putAll(session.systemProperties);
             session.catalogProperties
                     .forEach((catalog, properties) -> catalogSessionProperties.put(catalog, new HashMap<>(properties)));
+            this.defaultedSystemProperties.addAll(session.defaultedSystemProperties);
+            session.defaultedCatalogProperties
+                    .forEach((catalog, properties) -> defaultedCatalogProperties.put(catalog, new HashSet<>(properties)));
             this.preparedStatements.putAll(session.preparedStatements);
             this.protocolHeaders = session.protocolHeaders;
         }
@@ -947,6 +997,7 @@ public final class Session
         public SessionBuilder setSystemProperty(String propertyName, String propertyValue)
         {
             systemProperties.put(propertyName, propertyValue);
+            defaultedSystemProperties.remove(propertyName);
             return this;
         }
 
@@ -959,6 +1010,7 @@ public final class Session
             requireNonNull(systemProperties, "systemProperties is null");
             this.systemProperties.clear();
             this.systemProperties.putAll(systemProperties);
+            this.defaultedSystemProperties.clear();
             return this;
         }
 
@@ -971,6 +1023,10 @@ public final class Session
         {
             checkArgument(transactionId == null, "Catalog session properties cannot be set if there is an open transaction");
             catalogSessionProperties.computeIfAbsent(catalogName, _ -> new HashMap<>()).put(propertyName, propertyValue);
+            Set<String> defaultedProperties = defaultedCatalogProperties.get(catalogName);
+            if (defaultedProperties != null) {
+                defaultedProperties.remove(propertyName);
+            }
             return this;
         }
 
@@ -1023,7 +1079,9 @@ public final class Session
                     preparedStatements,
                     protocolHeaders,
                     Optional.empty(),
-                    queryDataEncoding);
+                    queryDataEncoding,
+                    defaultedSystemProperties,
+                    defaultedCatalogProperties);
         }
     }
 
