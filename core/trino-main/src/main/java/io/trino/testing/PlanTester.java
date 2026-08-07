@@ -665,7 +665,7 @@ public class PlanTester
                 Optional.of(new HeaderAuthenticatorManager(new HeaderAuthenticatorConfig(), secretsResolver)),
                 eventListenerManager,
                 new GroupProviderManager(secretsResolver),
-                new SessionPropertyDefaults(nodeInfo, accessControl, secretsResolver),
+                new SessionPropertyDefaults(nodeInfo, secretsResolver),
                 typeRegistry,
                 TESTING_BLOCK_ENCODING_MANAGER,
                 new HandleResolver(),

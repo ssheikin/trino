@@ -21,7 +21,6 @@ import io.airlift.configuration.secrets.SecretsResolver;
 import io.airlift.log.Logger;
 import io.airlift.node.NodeInfo;
 import io.trino.Session;
-import io.trino.security.AccessControl;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.resourcegroups.SessionPropertyConfigurationManagerContext;
@@ -55,14 +54,12 @@ public class SessionPropertyDefaults
     private final Map<String, SessionPropertyConfigurationManagerFactory> factories = new ConcurrentHashMap<>();
     private final AtomicReference<SessionPropertyConfigurationManager> delegate = new AtomicReference<>();
 
-    private final AccessControl accessControl;
     private final SecretsResolver secretsResolver;
 
     @Inject
-    public SessionPropertyDefaults(NodeInfo nodeInfo, AccessControl accessControl, SecretsResolver secretsResolver)
+    public SessionPropertyDefaults(NodeInfo nodeInfo, SecretsResolver secretsResolver)
     {
         this.configurationManagerContext = new SessionPropertyConfigurationManagerContextInstance(nodeInfo.getEnvironment());
-        this.accessControl = requireNonNull(accessControl, "accessControl is null");
         this.secretsResolver = requireNonNull(secretsResolver, "secretsResolver is null");
     }
 
@@ -127,7 +124,7 @@ public class SessionPropertyDefaults
 
         Map<String, String> systemPropertyOverrides = configurationManager.getSystemSessionProperties(context);
         Map<String, Map<String, String>> catalogPropertyOverrides = configurationManager.getCatalogSessionProperties(context);
-        return session.withDefaultProperties(systemPropertyOverrides, catalogPropertyOverrides, accessControl);
+        return session.withDefaultProperties(systemPropertyOverrides, catalogPropertyOverrides);
     }
 
     @VisibleForTesting
