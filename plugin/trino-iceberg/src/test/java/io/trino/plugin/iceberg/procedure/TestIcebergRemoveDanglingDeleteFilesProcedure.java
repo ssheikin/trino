@@ -14,6 +14,8 @@
 package io.trino.plugin.iceberg.procedure;
 
 import com.google.common.collect.ImmutableMap;
+import io.trino.filesystem.Location;
+import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.metastore.HiveMetastore;
 import io.trino.plugin.iceberg.IcebergQueryRunner;
@@ -59,6 +61,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
 import static io.trino.plugin.iceberg.IcebergTestUtils.FILE_IO_FACTORY;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getFileSystemFactory;
 import static io.trino.plugin.iceberg.IcebergTestUtils.getHiveMetastore;
@@ -677,6 +680,26 @@ final class TestIcebergRemoveDanglingDeleteFilesProcedure
             manifestWriter.close();
 
             return manifestWriter.toManifestFile();
+        }
+    }
+
+    @Test
+    void testRemoveDanglingDeleteFilesWithUnexpectedMissingManifest()
+            throws Exception
+    {
+        try (TestTable table = newTrinoTable(
+                "test_remove_dangling_deletes_missing_manifest",
+                "(id bigint, part varchar) WITH (partitioning = ARRAY['part'])")) {
+            String tableName = table.getName();
+            assertUpdate("INSERT INTO " + tableName + " VALUES (1, 'a'), (2, 'a')", 2);
+            String manifestToRemove = (String) computeScalar("SELECT path FROM \"" + tableName + "$manifests\" LIMIT 1");
+            TrinoFileSystem fs = fileSystemFactory.create(SESSION);
+            fs.deleteFile(Location.of(manifestToRemove));
+
+            assertThat(query("ALTER TABLE " + tableName + " EXECUTE REMOVE_DANGLING_DELETE_FILES"))
+                    .failure()
+                    .hasErrorCode(ICEBERG_INVALID_METADATA)
+                    .hasMessageContaining("Manifest file does not exist");
         }
     }
 

@@ -55,6 +55,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.plugin.base.util.ExecutorUtil.processWithAdditionalThreads;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
+import static io.trino.plugin.iceberg.IcebergExceptions.isNotFoundException;
 import static io.trino.plugin.iceberg.IcebergUtil.readerForManifest;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -131,6 +132,9 @@ public class RemoveDanglingDeleteFiles
                     .collect(toImmutableSet());
         }
         catch (ExecutionException e) {
+            if (e.getCause() instanceof TrinoException trinoException) {
+                throw trinoException;
+            }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to process delete manifests for table: " + icebergTable.name(), e);
         }
     }
@@ -150,11 +154,11 @@ public class RemoveDanglingDeleteFiles
                 }
             }
         }
-        catch (IOException | UncheckedIOException e) {
+        catch (IOException | UncheckedIOException | NotFoundException e) {
+            if (isNotFoundException(e)) {
+                throw new TrinoException(ICEBERG_INVALID_METADATA, "Manifest file does not exist: " + manifest.path(), e);
+            }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
-        }
-        catch (NotFoundException e) {
-            throw new TrinoException(ICEBERG_INVALID_METADATA, "Manifest file does not exist: " + manifest.path(), e);
         }
         return referencedDataFilePathsBuilder.build();
     }
@@ -177,6 +181,9 @@ public class RemoveDanglingDeleteFiles
                     .orElseGet(() -> DataFilesMinSequenceNumberMetadata.builder().build());
         }
         catch (ExecutionException e) {
+            if (e.getCause() instanceof TrinoException trinoException) {
+                throw trinoException;
+            }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to process data manifests for table: " + icebergTable.name(), e);
         }
     }
@@ -199,11 +206,11 @@ public class RemoveDanglingDeleteFiles
                 builder.addDataFile(contentFile, icebergTable, referencedDataFilePaths);
             }
         }
-        catch (IOException | UncheckedIOException e) {
+        catch (IOException | UncheckedIOException | NotFoundException e) {
+            if (isNotFoundException(e)) {
+                throw new TrinoException(ICEBERG_INVALID_METADATA, "Manifest file does not exist: " + manifest.path(), e);
+            }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
-        }
-        catch (NotFoundException e) {
-            throw new TrinoException(ICEBERG_INVALID_METADATA, "Manifest file does not exist: " + manifest.path(), e);
         }
         return builder.build();
     }
@@ -226,6 +233,9 @@ public class RemoveDanglingDeleteFiles
                     .orElseGet(() -> DeleteFilesMetadata.builder().build());
         }
         catch (ExecutionException e) {
+            if (e.getCause() instanceof TrinoException trinoException) {
+                throw trinoException;
+            }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to process data manifests for table: " + icebergTable.name(), e);
         }
     }
@@ -246,11 +256,11 @@ public class RemoveDanglingDeleteFiles
                 }
             }
         }
-        catch (IOException | UncheckedIOException e) {
+        catch (IOException | UncheckedIOException | NotFoundException e) {
+            if (isNotFoundException(e)) {
+                throw new TrinoException(ICEBERG_INVALID_METADATA, "Manifest file does not exist: " + manifest.path(), e);
+            }
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
-        }
-        catch (NotFoundException e) {
-            throw new TrinoException(ICEBERG_INVALID_METADATA, "Manifest file does not exist: " + manifest.path(), e);
         }
         return builder.build();
     }
