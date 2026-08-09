@@ -22,6 +22,7 @@ import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.cache.CacheFileSystem;
 import io.trino.filesystem.memory.MemoryFileSystemFactory;
 import io.trino.spi.security.ConnectorIdentity;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -70,6 +71,18 @@ public class TestFuzzAlluxioCacheFileSystem
     {
         fuzzTrinoInputOperation((fs, l) -> fs.newInputFile(l).newStream(), (input, position, buffer, bufferOffset, bufferLength) -> {
             input.seek(position);
+            return input.read(buffer, bufferOffset, bufferLength);
+        });
+    }
+
+    // flaky due to alluxio issue
+    @Disabled
+    @Test
+    public void testFuzzTrinoInputStreamReadSkip()
+            throws IOException
+    {
+        fuzzTrinoInputOperation((fs, l) -> fs.newInputFile(l).newStream(), (input, position, buffer, bufferOffset, bufferLength) -> {
+            input.skip(position);
             return input.read(buffer, bufferOffset, bufferLength);
         });
     }
