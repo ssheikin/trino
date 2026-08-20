@@ -153,7 +153,6 @@ import io.trino.operator.scalar.JoniRegexpReplaceLambdaFunction;
 import io.trino.operator.scalar.JsonFunctions;
 import io.trino.operator.scalar.JsonOperators;
 import io.trino.operator.scalar.LegacyCharToVarcharCast;
-import io.trino.operator.scalar.LegacyVarcharToCharSaturatedFloorCast;
 import io.trino.operator.scalar.LuhnCheckFunction;
 import io.trino.operator.scalar.MapCardinalityFunction;
 import io.trino.operator.scalar.MapConcatFunction;
@@ -181,7 +180,6 @@ import io.trino.operator.scalar.TypeOfFunction;
 import io.trino.operator.scalar.UrlFunctions;
 import io.trino.operator.scalar.VarbinaryFunctions;
 import io.trino.operator.scalar.VarcharMethods;
-import io.trino.operator.scalar.VarcharToCharSaturatedFloorCast;
 import io.trino.operator.scalar.VersionFunction;
 import io.trino.operator.scalar.WilsonInterval;
 import io.trino.operator.scalar.WordStemFunction;
@@ -537,7 +535,6 @@ public final class SystemFunctionBundle
                 .scalars(JoniRegexpCasts.class)
                 .scalars(CharacterStringCasts.class)
                 .scalars(featuresConfig.isLegacyVarcharToCharCoercion() ? LegacyCharToVarcharCast.class : CharToVarcharCast.class)
-                .scalars(featuresConfig.isLegacyVarcharToCharCoercion() ? LegacyVarcharToCharSaturatedFloorCast.class : VarcharToCharSaturatedFloorCast.class)
                 .scalars(LuhnCheckFunction.class)
                 .scalar(DecimalOperators.Negation.class)
                 .functions(IDENTITY_CAST, CAST_FROM_UNKNOWN)
