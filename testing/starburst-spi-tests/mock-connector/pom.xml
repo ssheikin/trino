@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.trino</groupId>
         <artifactId>starburst-spi-tests</artifactId>
-        <version>483-e.0.13-SNAPSHOT</version>
+        <version>483-e.0.13</version>
     </parent>
 
     <artifactId>mock-connector</artifactId>
